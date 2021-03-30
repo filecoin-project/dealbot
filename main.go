@@ -65,7 +65,7 @@ func main() {
 			},
 		},
 		Commands: []*cli.Command{
-			commands.MakeStorageDeals,
+			commands.MakeStorageDeal,
 		},
 	}
 

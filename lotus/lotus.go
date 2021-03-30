@@ -6,11 +6,16 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/filecoin-project/go-address"
+	"github.com/filecoin-project/go-fil-markets/storagemarket"
 	"github.com/filecoin-project/lotus/api"
 	"github.com/filecoin-project/lotus/api/client"
+	"github.com/filecoin-project/lotus/chain/actors/builtin/miner"
+	"github.com/filecoin-project/lotus/chain/types"
 	"github.com/filecoin-project/lotus/node/repo"
 	lru "github.com/hashicorp/golang-lru"
 	"github.com/ipfs/go-cid"
+	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/mitchellh/go-homedir"
 	ma "github.com/multiformats/go-multiaddr"
 	manet "github.com/multiformats/go-multiaddr/net"
@@ -21,8 +26,13 @@ import (
 type APICloser func()
 
 type API interface {
-	MakeDeal(ctx context.Context, params *api.StartDealParams) (*cid.Cid, error)
+	StartDeal(ctx context.Context, params *api.StartDealParams) (*cid.Cid, error)
 	Import(ctx context.Context, ref api.FileRef) (*api.ImportRes, error)
+	QueryAsk(ctx context.Context, p peer.ID, miner address.Address) (*storagemarket.StorageAsk, error)
+	ChainHead(ctx context.Context) (*types.TipSet, error)
+	MinerInfo(ctx context.Context, a address.Address, tsk types.TipSetKey) (miner.MinerInfo, error)
+	DealPieceCID(ctx context.Context, root cid.Cid) (api.DataCIDSize, error)
+	GetDealUpdates(ctx context.Context) (<-chan api.DealInfo, error)
 }
 
 type APIOpener struct {
