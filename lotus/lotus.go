@@ -26,11 +26,13 @@ import (
 type APICloser func()
 
 type API interface {
-	MakeDeal(ctx context.Context, params *api.StartDealParams) (*cid.Cid, error)
+	StartDeal(ctx context.Context, params *api.StartDealParams) (*cid.Cid, error)
 	Import(ctx context.Context, ref api.FileRef) (*api.ImportRes, error)
 	QueryAsk(ctx context.Context, p peer.ID, miner address.Address) (*storagemarket.StorageAsk, error)
 	ChainHead(ctx context.Context) (*types.TipSet, error)
 	MinerInfo(ctx context.Context, a address.Address, tsk types.TipSetKey) (miner.MinerInfo, error)
+	DealPieceCID(ctx context.Context, root cid.Cid) (api.DataCIDSize, error)
+	GetDealUpdates(ctx context.Context) (<-chan api.DealInfo, error)
 }
 
 type APIOpener struct {

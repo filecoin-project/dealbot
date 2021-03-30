@@ -29,7 +29,7 @@ func (aw *APIWrapper) Store() adt.Store {
 	return aw.store
 }
 
-func (aw *APIWrapper) MakeDeal(ctx context.Context, params *api.StartDealParams) (*cid.Cid, error) {
+func (aw *APIWrapper) StartDeal(ctx context.Context, params *api.StartDealParams) (*cid.Cid, error) {
 	return aw.FullNode.ClientStartDeal(ctx, params)
 }
 
@@ -47,4 +47,12 @@ func (aw *APIWrapper) ChainHead(ctx context.Context) (*types.TipSet, error) {
 
 func (aw *APIWrapper) MinerInfo(ctx context.Context, a address.Address, tsk types.TipSetKey) (miner.MinerInfo, error) {
 	return aw.FullNode.StateMinerInfo(ctx, a, tsk)
+}
+
+func (aw *APIWrapper) DealPieceCID(ctx context.Context, root cid.Cid) (api.DataCIDSize, error) {
+	return aw.FullNode.ClientDealPieceCID(ctx, root)
+}
+
+func (aw *APIWrapper) GetDealUpdates(ctx context.Context) (<-chan api.DealInfo, error) {
+	return aw.FullNode.ClientGetDealUpdates(ctx)
 }

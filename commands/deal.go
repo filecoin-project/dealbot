@@ -2,6 +2,7 @@ package commands
 
 import (
 	"context"
+	"crypto/rand"
 	"fmt"
 	"github.com/c2h5oh/datasize"
 	"github.com/filecoin-project/dealbot/lotus"
@@ -11,8 +12,10 @@ import (
 	"github.com/filecoin-project/go-state-types/big"
 	"github.com/filecoin-project/lotus/api"
 	"github.com/filecoin-project/lotus/chain/types"
+	"github.com/google/uuid"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/xerrors"
+	"io"
 	"os"
 	"path"
 )
@@ -27,6 +30,12 @@ var MakeStorageDeal = &cli.Command{
 			Aliases:  []string{"d"},
 			EnvVars:  []string{"DEALBOT_DATA_DIRECTORY"},
 			Required: true,
+		},
+		&cli.PathFlag{
+			Name:    "node-data-dir",
+			Usage:   "data-dir from relative to node's location [data-dir]",
+			Aliases: []string{"n"},
+			EnvVars: []string{"DEALBOT_NODE_DATA_DIRECTORY"},
 		},
 		&cli.StringFlag{
 			Name:     "wallet",
@@ -79,18 +88,6 @@ var MakeStorageDeal = &cli.Command{
 	Action: makeDeal,
 }
 
-/*
-Deal Steps:
- * Parse parameters
- * Get and verify ask price
- * Create file in shared directory
- * Import file with file ref
- * ClientCalcCommP to get piece cid
- * get current epoch and choose deal start.
- * Start deal
- * Read from deal status channel until exit
-*/
-
 func makeDeal(cctx *cli.Context) error {
 	if err := setupLogging(cctx); err != nil {
 		return xerrors.Errorf("setup logging: %w", err)
@@ -100,6 +97,10 @@ func makeDeal(cctx *cli.Context) error {
 	dataDir := path.Dir(cctx.Path("data-dir"))
 	if _, err := os.Stat(dataDir); os.IsNotExist(err) {
 		return fmt.Errorf("data-dir does not exist: %s", dataDir)
+	}
+	nodeDataDir := path.Dir(cctx.Path("node-data-dir"))
+	if nodeDataDir == "" {
+		nodeDataDir = dataDir
 	}
 
 	// read addresses and assert they are addresses
@@ -160,9 +161,19 @@ func makeDeal(cctx *cli.Context) error {
 		return fmt.Errorf("miner ask price (%v) exceeds max price (%v)", price, maxPrice)
 	}
 
-	// TODO: create random car file of appropriate size
+	fileName := uuid.New().String()
+	file, err := os.Create(path.Join(dataDir, fileName))
+	if err != nil {
+		return err
+	}
+	_, err = io.CopyN(file, rand.Reader, int64(size))
+	if err != nil {
+		return fmt.Errorf("error creating random file for deal: %s, %v", fileName, err)
+	}
+
+	// import the file into the lotus node
 	ref := api.FileRef{
-		//Path:  path_to_file,
+		Path:  path.Join(nodeDataDir, fileName),
 		IsCAR: true,
 	}
 
@@ -171,31 +182,64 @@ func makeDeal(cctx *cli.Context) error {
 		return err
 	}
 
-	// TODO: compute piece cid and piece size from file
-	dataRef := &storagemarket.DataRef{
-		//TransferType: "",
-		Root: importRes.Root,
-		//PieceCid:     ,
-		PieceSize:    0,
-		RawBlockSize: 0,
+	pieceInfo, err := node.DealPieceCID(cctx.Context, importRes.Root)
+	if err != nil {
+		return err
 	}
 
+	// Prepare parameters for deal
 	params := &api.StartDealParams{
-		Data:       dataRef,
-		Wallet:     walletAddress,
-		Miner:      minerAddress,
-		EpochPrice: price,
-		//MinBlocksDuration:  ?,
-		//ProviderCollateral: ?,
+		Data: &storagemarket.DataRef{
+			TransferType: storagemarket.TTGraphsync,
+			Root:         importRes.Root,
+			PieceCid:     &pieceInfo.PieceCID,
+			PieceSize:    0,
+			RawBlockSize: 0,
+		},
+		Wallet:            walletAddress,
+		Miner:             minerAddress,
+		EpochPrice:        price,
+		MinBlocksDuration: 2880 * 180,
+		//ProviderCollateral: ?, // TODO: configure? what's a good value?
 		DealStartEpoch: tipSet.Height() + abi.ChainEpoch(startOffset),
 		FastRetrieval:  fastRetrieval,
 		VerifiedDeal:   verified,
 	}
 	_ = params
 
-	//node.MakeDeal(ctx, params)
+	// start deal process
+	proposalCid, err := node.StartDeal(cctx.Context, params)
+	if err != nil {
+		return err
+	}
 
-	// TODO: track deal status and log results
+	// track updates to deal
+	updates, err := node.GetDealUpdates(cctx.Context)
+	if err != nil {
+		return err
+	}
+
+	for info := range updates {
+		if proposalCid.Equals(info.ProposalCid) {
+			log.Info(info)
+
+			switch info.State {
+			case storagemarket.StorageDealUnknown:
+			case storagemarket.StorageDealProposalNotFound:
+			case storagemarket.StorageDealProposalRejected:
+			case storagemarket.StorageDealExpired:
+			case storagemarket.StorageDealSlashed:
+			case storagemarket.StorageDealRejecting:
+			case storagemarket.StorageDealFailing:
+			case storagemarket.StorageDealError:
+				// deal failed, exit
+				return nil
+			case storagemarket.StorageDealActive:
+				// deal is on chain, exit
+				return nil
+			}
+		}
+	}
 
 	return nil
 }
