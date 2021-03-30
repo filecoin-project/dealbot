@@ -3,6 +3,8 @@ module github.com/filecoin-project/dealbot
 go 1.15
 
 require (
+	github.com/c2h5oh/datasize v0.0.0-20200825124411-48ed595a09d2 // indirect
+	github.com/filecoin-project/go-address v0.0.5
 	github.com/filecoin-project/go-fil-markets v1.1.9
 	github.com/filecoin-project/lotus v1.5.3
 	github.com/filecoin-project/specs-actors v0.9.13
@@ -10,6 +12,7 @@ require (
 	github.com/ipfs/go-cid v0.0.7
 	github.com/ipfs/go-log/v2 v2.1.2
 	github.com/lib/pq v1.9.0
+	github.com/libp2p/go-libp2p-core v0.7.0
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/multiformats/go-multiaddr v0.3.1
 	github.com/urfave/cli/v2 v2.3.0
