@@ -4,6 +4,10 @@ import (
 	"context"
 	"crypto/rand"
 	"fmt"
+	"io"
+	"os"
+	"path"
+
 	"github.com/c2h5oh/datasize"
 	"github.com/filecoin-project/dealbot/lotus"
 	"github.com/filecoin-project/go-address"
@@ -15,13 +19,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/xerrors"
-	"io"
-	"os"
-	"path"
 )
 
 var MakeStorageDeal = &cli.Command{
-	Name:  "MakeDeal",
+	Name:  "storage-deal",
 	Usage: "Make storage deals with provided miners.",
 	Flags: []cli.Flag{
 		&cli.PathFlag{
@@ -85,10 +86,10 @@ var MakeStorageDeal = &cli.Command{
 			Value:   5e16,
 		},
 	},
-	Action: makeDeal,
+	Action: makeStorageDeal,
 }
 
-func makeDeal(cctx *cli.Context) error {
+func makeStorageDeal(cctx *cli.Context) error {
 	if err := setupLogging(cctx); err != nil {
 		return xerrors.Errorf("setup logging: %w", err)
 	}
