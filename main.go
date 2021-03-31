@@ -45,7 +45,7 @@ func main() {
 		Name:    "dealbot",
 		Usage:   "Filecoin Network Storage and Retrieval Analysis Utility",
 		Version: version.String(),
-		Flags: []cli.Flag{
+		Flags: append(commands.CommonFlags, []cli.Flag{
 			&cli.StringFlag{
 				Name:    "api",
 				EnvVars: []string{"FULLNODE_API_INFO"},
@@ -63,7 +63,7 @@ func main() {
 				Value:   "",
 				Usage:   "A comma delimited list of named loggers and log levels formatted as name:level, for example 'logger1:debug,logger2:info'",
 			},
-		},
+		}...),
 		Commands: []*cli.Command{
 			commands.MakeStorageDeal,
 			commands.MakeRetrievalDeal,

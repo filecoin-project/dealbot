@@ -2,6 +2,7 @@ package commands
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -22,11 +23,6 @@ var MakeRetrievalDeal = &cli.Command{
 			Name:  "cid",
 			Usage: "payload cid to fetch from miner",
 			Value: "bafykbzacedikkmeotawrxqquthryw3cijaonobygdp7fb5bujhuos6wdkwomm",
-		},
-		&cli.StringFlag{
-			Name:  "miner",
-			Usage: "miner to fetch content from",
-			Value: "f0127896",
 		},
 	},
 	Action: makeRetrievalDeal,
@@ -66,7 +62,14 @@ func makeRetrievalDeal(cctx *cli.Context) error {
 
 	log.Infof("retrieving cid: %s", payloadCid)
 
-	err = RetrieveData(context.Background(), node, cctx.String("miner"), payloadCid, carExport)
+	// get miner address
+	minerParam := cctx.String("miner")
+	minerAddress, err := address.NewFromString(minerParam)
+	if err != nil {
+		return fmt.Errorf("miner is not a Filecoint address: %s, %s", minerParam, err)
+	}
+
+	err = RetrieveData(context.Background(), node, minerAddress, payloadCid, carExport)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -76,13 +79,8 @@ func makeRetrievalDeal(cctx *cli.Context) error {
 	return nil
 }
 
-func RetrieveData(ctx context.Context, client lotus.API, miner string, fcid cid.Cid, carExport bool) error {
-	minerAddr, err := address.NewFromString(miner)
-	if err != nil {
-		return err
-	}
-
-	offer, err := client.ClientMinerQueryOffer(ctx, minerAddr, fcid, nil)
+func RetrieveData(ctx context.Context, client lotus.API, miner address.Address, fcid cid.Cid, carExport bool) error {
+	offer, err := client.ClientMinerQueryOffer(ctx, miner, fcid, nil)
 	if err != nil {
 		return err
 	}

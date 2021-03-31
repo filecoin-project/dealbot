@@ -48,3 +48,38 @@ func setupLogging(cctx *cli.Context) error {
 func setupLotusAPI(cctx *cli.Context) (*lotus.APIOpener, lotus.APICloser, error) {
 	return lotus.NewAPIOpener(cctx, 50_000)
 }
+
+var CommonFlags []cli.Flag = []cli.Flag{
+	&cli.PathFlag{
+		Name:     "data-dir",
+		Usage:    "writable directory used to transfer data to node",
+		Aliases:  []string{"d"},
+		EnvVars:  []string{"DEALBOT_DATA_DIRECTORY"},
+		Required: true,
+	},
+	&cli.PathFlag{
+		Name:    "node-data-dir",
+		Usage:   "data-dir from relative to node's location [data-dir]",
+		Aliases: []string{"n"},
+		EnvVars: []string{"DEALBOT_NODE_DATA_DIRECTORY"},
+	},
+	&cli.StringFlag{
+		Name:    "wallet",
+		Usage:   "deal client wallet address on node",
+		Aliases: []string{"w"},
+		EnvVars: []string{"DEALBOT_WALLET_ADDRESS"},
+	},
+	&cli.StringFlag{
+		Name:     "miner",
+		Usage:    "address of miner to make deal with",
+		Aliases:  []string{"m"},
+		EnvVars:  []string{"DEALBOT_MINER_ADDRESS"},
+		Required: true,
+	},
+	&cli.Int64Flag{
+		Name:    "start-offset",
+		Usage:   "epochs deal start will be offset from now [2880]",
+		EnvVars: []string{"DEALBOT_START_OFFSET"},
+		Value:   2888,
+	},
+}
