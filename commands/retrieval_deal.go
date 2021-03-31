@@ -77,11 +77,6 @@ func makeRetrievalDeal(cctx *cli.Context) error {
 }
 
 func RetrieveData(ctx context.Context, client lotus.API, miner string, fcid cid.Cid, carExport bool) error {
-	//offers, err := client.ClientFindData(ctx, fcid, nil)
-	//if err != nil {
-	//panic(err)
-	//}
-
 	minerAddr, err := address.NewFromString(miner)
 	if err != nil {
 		return err
@@ -93,12 +88,6 @@ func RetrieveData(ctx context.Context, client lotus.API, miner string, fcid cid.
 	}
 
 	log.Info("got offer")
-
-	//spew.Dump(offer)
-
-	//if len(offers) < 1 {
-	//return errors.New("no offers")
-	//}
 
 	rpath, err := ioutil.TempDir("", "dealbot-retrieve-test-")
 	if err != nil {
@@ -119,7 +108,6 @@ func RetrieveData(ctx context.Context, client lotus.API, miner string, fcid cid.
 	}
 
 	err = client.ClientRetrieve(ctx, offer.Order(caddr), ref)
-	//err = client.ClientRetrieve(ctx, offers[0].Order(caddr), ref)
 	if err != nil {
 		return err
 	}
