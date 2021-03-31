@@ -33,6 +33,12 @@ type API interface {
 	MinerInfo(ctx context.Context, a address.Address, tsk types.TipSetKey) (miner.MinerInfo, error)
 	DealPieceCID(ctx context.Context, root cid.Cid) (api.DataCIDSize, error)
 	GetDealUpdates(ctx context.Context) (<-chan api.DealInfo, error)
+
+	Version(ctx context.Context) (api.APIVersion, error)
+	ClientFindData(ctx context.Context, root cid.Cid, piece *cid.Cid) ([]api.QueryOffer, error)
+	WalletDefaultAddress(context.Context) (address.Address, error)
+	ClientRetrieve(ctx context.Context, order api.RetrievalOrder, ref *api.FileRef) error
+	ClientMinerQueryOffer(ctx context.Context, miner address.Address, root cid.Cid, piece *cid.Cid) (api.QueryOffer, error)
 }
 
 type APIOpener struct {

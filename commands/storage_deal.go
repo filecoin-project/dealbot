@@ -4,6 +4,10 @@ import (
 	"context"
 	"crypto/rand"
 	"fmt"
+	"io"
+	"os"
+	"path"
+
 	"github.com/c2h5oh/datasize"
 	"github.com/filecoin-project/dealbot/lotus"
 	"github.com/filecoin-project/go-address"
@@ -15,42 +19,12 @@ import (
 	"github.com/google/uuid"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/xerrors"
-	"io"
-	"os"
-	"path"
 )
 
 var MakeStorageDeal = &cli.Command{
-	Name:  "MakeDeal",
+	Name:  "storage-deal",
 	Usage: "Make storage deals with provided miners.",
 	Flags: []cli.Flag{
-		&cli.PathFlag{
-			Name:     "data-dir",
-			Usage:    "writable directory used to transfer data to node",
-			Aliases:  []string{"d"},
-			EnvVars:  []string{"DEALBOT_DATA_DIRECTORY"},
-			Required: true,
-		},
-		&cli.PathFlag{
-			Name:    "node-data-dir",
-			Usage:   "data-dir from relative to node's location [data-dir]",
-			Aliases: []string{"n"},
-			EnvVars: []string{"DEALBOT_NODE_DATA_DIRECTORY"},
-		},
-		&cli.StringFlag{
-			Name:     "wallet",
-			Usage:    "deal client wallet address on node",
-			Aliases:  []string{"w"},
-			EnvVars:  []string{"DEALBOT_WALLET_ADDRESS"},
-			Required: true,
-		},
-		&cli.StringFlag{
-			Name:     "miner",
-			Usage:    "address of miner receiving deal",
-			Aliases:  []string{"m"},
-			EnvVars:  []string{"DEALBOT_MINER_ADDRESS"},
-			Required: true,
-		},
 		&cli.BoolFlag{
 			Name:    "fast-retrieval",
 			Usage:   "request fast retrieval [true]",
@@ -73,22 +47,16 @@ var MakeStorageDeal = &cli.Command{
 			Value:   "1Mb",
 		},
 		&cli.Int64Flag{
-			Name:    "start-offset",
-			Usage:   "epochs deal start will be offset from now [2880]",
-			EnvVars: []string{"DEALBOT_START_OFFSET"},
-			Value:   2888,
-		},
-		&cli.Int64Flag{
 			Name:    "max-price",
 			Usage:   "maximum Attofil to pay per byte per epoch []",
 			EnvVars: []string{"DEALBOT_MAX_PRICE"},
 			Value:   5e16,
 		},
 	},
-	Action: makeDeal,
+	Action: makeStorageDeal,
 }
 
-func makeDeal(cctx *cli.Context) error {
+func makeStorageDeal(cctx *cli.Context) error {
 	if err := setupLogging(cctx); err != nil {
 		return xerrors.Errorf("setup logging: %w", err)
 	}
