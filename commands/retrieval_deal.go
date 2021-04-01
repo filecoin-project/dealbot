@@ -97,7 +97,11 @@ func RetrieveData(ctx context.Context, client lotus.API, miner address.Address, 
 		return err
 	}
 
-	log.Info("got offer")
+	if offer.Err != "" {
+		return fmt.Errorf("got error in offer: %s", offer.Err)
+	}
+
+	log.Info("got query offer", "root", offer.Root, "piece", offer.Piece, "size", offer.Size, "minprice", offer.MinPrice, "unseal_price", offer.UnsealPrice)
 
 	rpath, err := ioutil.TempDir("", "dealbot-retrieve-test-")
 	if err != nil {
