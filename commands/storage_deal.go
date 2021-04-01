@@ -9,7 +9,6 @@ import (
 	"path"
 
 	"github.com/c2h5oh/datasize"
-	"github.com/filecoin-project/dealbot/lotus"
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-fil-markets/storagemarket"
 	"github.com/filecoin-project/go-state-types/abi"
@@ -80,10 +79,11 @@ func makeStorageDeal(cctx *cli.Context) error {
 
 	_ = opener
 
-	node, closer, err := opener.Open(cctx.Context)
+	node, jsoncloser, err := opener.Open(cctx.Context)
 	if err != nil {
 		return err
 	}
+	defer jsoncloser()
 
 	// read addresses and assert they are addresses
 	var walletAddress address.Address
@@ -150,12 +150,12 @@ func makeStorageDeal(cctx *cli.Context) error {
 		IsCAR: true,
 	}
 
-	importRes, err := node.Import(cctx.Context, ref)
+	importRes, err := node.ClientImport(cctx.Context, ref)
 	if err != nil {
 		return err
 	}
 
-	pieceInfo, err := node.DealPieceCID(cctx.Context, importRes.Root)
+	pieceInfo, err := node.ClientDealPieceCID(cctx.Context, importRes.Root)
 	if err != nil {
 		return err
 	}
@@ -181,13 +181,13 @@ func makeStorageDeal(cctx *cli.Context) error {
 	_ = params
 
 	// start deal process
-	proposalCid, err := node.StartDeal(cctx.Context, params)
+	proposalCid, err := node.ClientStartDeal(cctx.Context, params)
 	if err != nil {
 		return err
 	}
 
 	// track updates to deal
-	updates, err := node.GetDealUpdates(cctx.Context)
+	updates, err := node.ClientGetDealUpdates(cctx.Context)
 	if err != nil {
 		return err
 	}
@@ -217,14 +217,14 @@ func makeStorageDeal(cctx *cli.Context) error {
 	return nil
 }
 
-func minerAskPrice(ctx context.Context, api lotus.API, tipSet *types.TipSet, addr address.Address) (abi.TokenAmount, error) {
-	minerInfo, err := api.MinerInfo(ctx, addr, tipSet.Key())
+func minerAskPrice(ctx context.Context, api api.FullNode, tipSet *types.TipSet, addr address.Address) (abi.TokenAmount, error) {
+	minerInfo, err := api.StateMinerInfo(ctx, addr, tipSet.Key())
 	if err != nil {
 		return big.Zero(), err
 	}
 
 	peerId := *minerInfo.PeerId
-	ask, err := api.QueryAsk(ctx, peerId, addr)
+	ask, err := api.ClientQueryAsk(ctx, peerId, addr)
 	if err != nil {
 		return big.Zero(), err
 	}
