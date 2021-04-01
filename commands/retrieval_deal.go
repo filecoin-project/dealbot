@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/filecoin-project/dealbot/lotus"
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/lotus/api"
 	"github.com/ipfs/go-cid"
@@ -42,10 +41,11 @@ func makeRetrievalDeal(cctx *cli.Context) error {
 
 	_ = opener
 
-	node, closer, err := opener.Open(cctx.Context)
+	node, jsoncloser, err := opener.Open(cctx.Context)
 	if err != nil {
 		return err
 	}
+	defer jsoncloser()
 
 	// read addresses and assert they are addresses
 	var walletAddress address.Address
@@ -91,13 +91,17 @@ func makeRetrievalDeal(cctx *cli.Context) error {
 	return nil
 }
 
-func RetrieveData(ctx context.Context, client lotus.API, miner address.Address, caddr address.Address, fcid cid.Cid, carExport bool) error {
+func RetrieveData(ctx context.Context, client api.FullNode, miner address.Address, caddr address.Address, fcid cid.Cid, carExport bool) error {
 	offer, err := client.ClientMinerQueryOffer(ctx, miner, fcid, nil)
 	if err != nil {
 		return err
 	}
 
-	log.Info("got offer")
+	if offer.Err != "" {
+		return fmt.Errorf("got error in offer: %s", offer.Err)
+	}
+
+	log.Info("got query offer", "root", offer.Root, "piece", offer.Piece, "size", offer.Size, "minprice", offer.MinPrice, "unseal_price", offer.UnsealPrice)
 
 	rpath, err := ioutil.TempDir("", "dealbot-retrieve-test-")
 	if err != nil {

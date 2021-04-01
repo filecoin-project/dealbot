@@ -6,16 +6,10 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/filecoin-project/go-address"
-	"github.com/filecoin-project/go-fil-markets/storagemarket"
+	"github.com/filecoin-project/go-jsonrpc"
 	"github.com/filecoin-project/lotus/api"
 	"github.com/filecoin-project/lotus/api/client"
-	"github.com/filecoin-project/lotus/chain/actors/builtin/miner"
-	"github.com/filecoin-project/lotus/chain/types"
 	"github.com/filecoin-project/lotus/node/repo"
-	lru "github.com/hashicorp/golang-lru"
-	"github.com/ipfs/go-cid"
-	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/mitchellh/go-homedir"
 	ma "github.com/multiformats/go-multiaddr"
 	manet "github.com/multiformats/go-multiaddr/net"
@@ -23,36 +17,14 @@ import (
 	"golang.org/x/xerrors"
 )
 
-type APICloser func()
-
-type API interface {
-	StartDeal(ctx context.Context, params *api.StartDealParams) (*cid.Cid, error)
-	Import(ctx context.Context, ref api.FileRef) (*api.ImportRes, error)
-	QueryAsk(ctx context.Context, p peer.ID, miner address.Address) (*storagemarket.StorageAsk, error)
-	ChainHead(ctx context.Context) (*types.TipSet, error)
-	MinerInfo(ctx context.Context, a address.Address, tsk types.TipSetKey) (miner.MinerInfo, error)
-	DealPieceCID(ctx context.Context, root cid.Cid) (api.DataCIDSize, error)
-	GetDealUpdates(ctx context.Context) (<-chan api.DealInfo, error)
-
-	Version(ctx context.Context) (api.APIVersion, error)
-	ClientFindData(ctx context.Context, root cid.Cid, piece *cid.Cid) ([]api.QueryOffer, error)
-	WalletDefaultAddress(context.Context) (address.Address, error)
-	ClientRetrieve(ctx context.Context, order api.RetrievalOrder, ref *api.FileRef) error
-	ClientMinerQueryOffer(ctx context.Context, miner address.Address, root cid.Cid, piece *cid.Cid) (api.QueryOffer, error)
-}
-
 type APIOpener struct {
-	cache   *lru.ARCCache // cache shared across all instances of the api
 	addr    string
 	headers http.Header
 }
 
-func NewAPIOpener(cctx *cli.Context, cacheSize int) (*APIOpener, APICloser, error) {
-	ac, err := lru.NewARC(cacheSize)
-	if err != nil {
-		return nil, nil, xerrors.Errorf("new arc cache: %w", err)
-	}
+type APICloser func()
 
+func NewAPIOpener(cctx *cli.Context, cacheSize int) (*APIOpener, APICloser, error) {
 	var rawaddr, rawtoken string
 
 	if cctx.IsSet("api") {
@@ -103,7 +75,6 @@ func NewAPIOpener(cctx *cli.Context, cacheSize int) (*APIOpener, APICloser, erro
 	}
 
 	o := &APIOpener{
-		cache:   ac,
 		addr:    apiURI(addr),
 		headers: apiHeaders(rawtoken),
 	}
@@ -111,20 +82,8 @@ func NewAPIOpener(cctx *cli.Context, cacheSize int) (*APIOpener, APICloser, erro
 	return o, APICloser(func() {}), nil
 }
 
-func (o *APIOpener) Open(ctx context.Context) (API, APICloser, error) {
-	api, closer, err := client.NewFullNodeRPC(ctx, o.addr, o.headers)
-	if err != nil {
-		return nil, nil, xerrors.Errorf("new full node rpc: %w", err)
-	}
-
-	cacheStore, err := NewCacheCtxStore(ctx, api, o.cache)
-	if err != nil {
-		return nil, nil, xerrors.Errorf("new cache store: %w", err)
-	}
-
-	lotusAPI := NewAPIWrapper(api, cacheStore)
-
-	return lotusAPI, APICloser(closer), nil
+func (o *APIOpener) Open(ctx context.Context) (api.FullNode, jsonrpc.ClientCloser, error) {
+	return client.NewFullNodeRPC(ctx, o.addr, o.headers)
 }
 
 func apiURI(addr string) string {
