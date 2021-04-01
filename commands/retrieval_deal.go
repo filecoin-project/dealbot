@@ -47,6 +47,18 @@ func makeRetrievalDeal(cctx *cli.Context) error {
 		return err
 	}
 
+	// read addresses and assert they are addresses
+	var walletAddress address.Address
+	if cctx.IsSet("wallet") {
+		walletParam := cctx.String("wallet")
+		walletAddress, err = address.NewFromString(walletParam)
+	} else {
+		walletAddress, err = node.WalletDefaultAddress(context.Background())
+	}
+	if err != nil {
+		return fmt.Errorf("wallet is not a Filecoin address: %s, %s", cctx.String("wallet"), err)
+	}
+
 	v, err := node.Version(context.Background())
 	if err != nil {
 		return err
@@ -69,7 +81,7 @@ func makeRetrievalDeal(cctx *cli.Context) error {
 		return fmt.Errorf("miner is not a Filecoint address: %s, %s", minerParam, err)
 	}
 
-	err = RetrieveData(context.Background(), node, minerAddress, payloadCid, carExport)
+	err = RetrieveData(context.Background(), node, minerAddress, walletAddress, payloadCid, carExport)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -79,7 +91,7 @@ func makeRetrievalDeal(cctx *cli.Context) error {
 	return nil
 }
 
-func RetrieveData(ctx context.Context, client lotus.API, miner address.Address, fcid cid.Cid, carExport bool) error {
+func RetrieveData(ctx context.Context, client lotus.API, miner address.Address, caddr address.Address, fcid cid.Cid, carExport bool) error {
 	offer, err := client.ClientMinerQueryOffer(ctx, miner, fcid, nil)
 	if err != nil {
 		return err
@@ -92,13 +104,6 @@ func RetrieveData(ctx context.Context, client lotus.API, miner address.Address, 
 		panic(err)
 	}
 	defer os.RemoveAll(rpath)
-
-	caddr, err := client.WalletDefaultAddress(ctx)
-	if err != nil {
-		return err
-	}
-
-	log.Info("got wallet")
 
 	ref := &api.FileRef{
 		Path:  filepath.Join(rpath, "ret"),

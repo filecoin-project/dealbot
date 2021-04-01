@@ -71,11 +71,30 @@ func makeStorageDeal(cctx *cli.Context) error {
 		nodeDataDir = dataDir
 	}
 
-	// read addresses and assert they are addresses
-	walletParam := cctx.String("wallet")
-	walletAddress, err := address.NewFromString(walletParam)
+	// start API to lotus node
+	opener, closer, err := setupLotusAPI(cctx)
 	if err != nil {
-		return fmt.Errorf("wallet is not a Filecoin address: %s, %s", walletParam, err)
+		return err
+	}
+	defer closer()
+
+	_ = opener
+
+	node, closer, err := opener.Open(cctx.Context)
+	if err != nil {
+		return err
+	}
+
+	// read addresses and assert they are addresses
+	var walletAddress address.Address
+	if cctx.IsSet("wallet") {
+		walletParam := cctx.String("wallet")
+		walletAddress, err = address.NewFromString(walletParam)
+	} else {
+		walletAddress, err = node.WalletDefaultAddress(context.Background())
+	}
+	if err != nil {
+		return fmt.Errorf("wallet is not a Filecoin address: %s, %s", cctx.String("wallet"), err)
 	}
 
 	// get miner address
@@ -98,20 +117,6 @@ func makeStorageDeal(cctx *cli.Context) error {
 	fastRetrieval := cctx.Bool("fast-retrieval")
 	startOffset := cctx.Int64("start-offset")
 	maxPrice := abi.NewTokenAmount(cctx.Int64("max-price"))
-
-	// start API to lotus node
-	opener, closer, err := setupLotusAPI(cctx)
-	if err != nil {
-		return err
-	}
-	defer closer()
-
-	_ = opener
-
-	node, closer, err := opener.Open(cctx.Context)
-	if err != nil {
-		return err
-	}
 
 	// get chain head for chain queries and to get height
 	tipSet, err := node.ChainHead(cctx.Context)
