@@ -78,8 +78,8 @@ var CommonFlags []cli.Flag = []cli.Flag{
 	},
 	&cli.Int64Flag{
 		Name:    "start-offset",
-		Usage:   "epochs deal start will be offset from now [2880]",
+		Usage:   "epochs deal start will be offset from now [5760 (2 days)]",
 		EnvVars: []string{"DEALBOT_START_OFFSET"},
-		Value:   2888,
+		Value:   30760,
 	},
 }
