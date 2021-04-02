@@ -65,12 +65,11 @@ func makeStorageDeal(cctx *cli.Context) error {
 	if _, err := os.Stat(dataDir); os.IsNotExist(err) {
 		return fmt.Errorf("data-dir does not exist: %s", dataDir)
 	}
-	log.Infow("datadir", "val", dataDir)
 
-	//nodeDataDir := path.Dir(cctx.Path("node-data-dir"))
-	//if nodeDataDir == "" {
-	//nodeDataDir := dataDir
-	//}
+	nodeDataDir := cctx.String("node-data-dir")
+	if nodeDataDir == "" {
+		nodeDataDir = dataDir
+	}
 
 	// start API to lotus node
 	opener, closer, err := setupLotusAPI(cctx)
@@ -139,20 +138,20 @@ func makeStorageDeal(cctx *cli.Context) error {
 	fileName := uuid.New().String()
 	filepath := path.Join(dataDir, fileName)
 	file, err := os.Create(filepath)
-	log.Infow("got filename", "name", fileName, "size", size, "path", filepath)
 	if err != nil {
 		return fmt.Errorf("failed to create file: %w", err)
 	}
+	defer file.Close()
+
+	log.Infow("creating deal file", "name", fileName, "size", size, "path", filepath)
 	_, err = io.CopyN(file, rand.Reader, int64(size))
 	if err != nil {
 		return fmt.Errorf("error creating random file for deal: %s, %v", fileName, err)
 	}
-	defer file.Close()
 
-	log.Infow("doing node.ClientImport", "ref.Path", file.Name())
 	// import the file into the lotus node
 	ref := api.FileRef{
-		Path:  file.Name(), // TODO: fix with dataDir
+		Path:  path.Join(nodeDataDir, fileName),
 		IsCAR: false,
 	}
 
@@ -161,7 +160,7 @@ func makeStorageDeal(cctx *cli.Context) error {
 		return err
 	}
 
-	log.Infow("imported ref, got data cid", "datacid", importRes.Root)
+	log.Infow("imported deal file, got data cid", "datacid", importRes.Root)
 
 	// Prepare parameters for deal
 	params := &api.StartDealParams{
@@ -191,9 +190,19 @@ func makeStorageDeal(cctx *cli.Context) error {
 		return err
 	}
 
+	lastState := storagemarket.StorageDealUnknown
 	for info := range updates {
 		if proposalCid.Equals(info.ProposalCid) {
-			log.Info(info)
+			if info.State != lastState {
+				log.Infow("Deal status",
+					"cid", info.ProposalCid,
+					"piece", info.PieceCID,
+					"state", info.State,
+					"message", info.Message,
+					"provider", info.Provider,
+				)
+				lastState = info.State
+			}
 
 			switch info.State {
 			case storagemarket.StorageDealUnknown:
@@ -205,9 +214,26 @@ func makeStorageDeal(cctx *cli.Context) error {
 			case storagemarket.StorageDealFailing:
 			case storagemarket.StorageDealError:
 				// deal failed, exit
-				return nil
 			case storagemarket.StorageDealActive:
 				// deal is on chain, exit
+				for _, stage := range info.DealStages.Stages {
+					log.Infow("Deal stage",
+						"cid", info.ProposalCid,
+						"name", stage.Name,
+						"description", stage.Description,
+						"created", stage.CreatedTime,
+						"expected", stage.ExpectedDuration,
+						"updated", stage.UpdatedTime,
+						"size", info.Size,
+						"duration", info.Duration,
+						"deal_id", info.DealID,
+						"piece_cid", info.PieceCID,
+						"message", info.Message,
+						"provider", info.Provider,
+						"price", info.PricePerEpoch,
+						"verfied", info.Verified,
+					)
+				}
 				return nil
 			}
 		}

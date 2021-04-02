@@ -6,10 +6,10 @@ require (
 	github.com/c2h5oh/datasize v0.0.0-20200825124411-48ed595a09d2
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/filecoin-project/go-address v0.0.5
-	github.com/filecoin-project/go-fil-markets v1.1.9
+	github.com/filecoin-project/go-fil-markets v1.2.4
 	github.com/filecoin-project/go-jsonrpc v0.1.4-0.20210217175800-45ea43ac2bec
 	github.com/filecoin-project/go-state-types v0.1.0
-	github.com/filecoin-project/lotus v1.5.3
+	github.com/filecoin-project/lotus v1.5.4-0.20210402110700-eede19fb0b2d
 	github.com/filecoin-project/specs-actors v0.9.13
 	github.com/google/uuid v1.1.2
 	github.com/hashicorp/golang-lru v0.5.4
