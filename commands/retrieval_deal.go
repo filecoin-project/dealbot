@@ -50,9 +50,10 @@ func makeRetrievalDeal(cctx *cli.Context) error {
 	// read addresses and assert they are addresses
 	var walletAddress address.Address
 	if cctx.IsSet("wallet") {
-		walletParam := cctx.String("wallet")
-		walletAddress, err = address.NewFromString(walletParam)
+		log.Infow("using set wallet", cctx.String("wallet"))
+		walletAddress, err = address.NewFromString(cctx.String("wallet"))
 	} else {
+		log.Infow("using default wallet")
 		walletAddress, err = node.WalletDefaultAddress(context.Background())
 	}
 	if err != nil {
@@ -101,7 +102,7 @@ func RetrieveData(ctx context.Context, client api.FullNode, miner address.Addres
 		return fmt.Errorf("got error in offer: %s", offer.Err)
 	}
 
-	log.Info("got query offer", "root", offer.Root, "piece", offer.Piece, "size", offer.Size, "minprice", offer.MinPrice, "unseal_price", offer.UnsealPrice)
+	log.Infow("got query offer", "root", offer.Root, "piece", offer.Piece, "size", offer.Size, "minprice", offer.MinPrice, "unseal_price", offer.UnsealPrice)
 
 	rpath, err := ioutil.TempDir("", "dealbot-retrieve-test-")
 	if err != nil {

@@ -40,10 +40,10 @@ var MakeStorageDeal = &cli.Command{
 		},
 		&cli.StringFlag{
 			Name:    "size",
-			Usage:   "size of deal (1Kb, 2Mb, 12Gb, etc.) [1Mb]",
+			Usage:   "size of deal (1KB, 2MB, 12GB, etc.) [1MB]",
 			Aliases: []string{"s"},
 			EnvVars: []string{"DEALBOT_DEAL_SIZE"},
-			Value:   "1Mb",
+			Value:   "1MB",
 		},
 		&cli.Int64Flag{
 			Name:    "max-price",
@@ -61,11 +61,12 @@ func makeStorageDeal(cctx *cli.Context) error {
 	}
 
 	// read dir and assert it exists
-	dataDir := path.Dir(cctx.Path("data-dir"))
+	dataDir := cctx.String("data-dir")
 	if _, err := os.Stat(dataDir); os.IsNotExist(err) {
 		return fmt.Errorf("data-dir does not exist: %s", dataDir)
 	}
-	nodeDataDir := path.Dir(cctx.Path("node-data-dir"))
+
+	nodeDataDir := cctx.String("node-data-dir")
 	if nodeDataDir == "" {
 		nodeDataDir = dataDir
 	}
@@ -73,7 +74,7 @@ func makeStorageDeal(cctx *cli.Context) error {
 	// start API to lotus node
 	opener, closer, err := setupLotusAPI(cctx)
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot setup lotus api: %w", err)
 	}
 	defer closer()
 
@@ -81,7 +82,7 @@ func makeStorageDeal(cctx *cli.Context) error {
 
 	node, jsoncloser, err := opener.Open(cctx.Context)
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot open lotus api: %w", err)
 	}
 	defer jsoncloser()
 
@@ -101,7 +102,7 @@ func makeStorageDeal(cctx *cli.Context) error {
 	minerParam := cctx.String("miner")
 	minerAddress, err := address.NewFromString(minerParam)
 	if err != nil {
-		return fmt.Errorf("miner is not a Filecoint address: %s, %s", minerParam, err)
+		return fmt.Errorf("miner is not a Filecoin address: %s, %s", minerParam, err)
 	}
 
 	// Read size parameter and interpret as file size (pre-piece padding)
@@ -135,10 +136,14 @@ func makeStorageDeal(cctx *cli.Context) error {
 	}
 
 	fileName := uuid.New().String()
-	file, err := os.Create(path.Join(dataDir, fileName))
+	filepath := path.Join(dataDir, fileName)
+	file, err := os.Create(filepath)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create file: %w", err)
 	}
+	defer file.Close()
+
+	log.Infow("creating deal file", "name", fileName, "size", size, "path", filepath)
 	_, err = io.CopyN(file, rand.Reader, int64(size))
 	if err != nil {
 		return fmt.Errorf("error creating random file for deal: %s, %v", fileName, err)
@@ -147,7 +152,7 @@ func makeStorageDeal(cctx *cli.Context) error {
 	// import the file into the lotus node
 	ref := api.FileRef{
 		Path:  path.Join(nodeDataDir, fileName),
-		IsCAR: true,
+		IsCAR: false,
 	}
 
 	importRes, err := node.ClientImport(cctx.Context, ref)
@@ -155,28 +160,21 @@ func makeStorageDeal(cctx *cli.Context) error {
 		return err
 	}
 
-	pieceInfo, err := node.ClientDealPieceCID(cctx.Context, importRes.Root)
-	if err != nil {
-		return err
-	}
+	log.Infow("imported deal file, got data cid", "datacid", importRes.Root)
 
 	// Prepare parameters for deal
 	params := &api.StartDealParams{
 		Data: &storagemarket.DataRef{
 			TransferType: storagemarket.TTGraphsync,
 			Root:         importRes.Root,
-			PieceCid:     &pieceInfo.PieceCID,
-			PieceSize:    0,
-			RawBlockSize: 0,
 		},
 		Wallet:            walletAddress,
 		Miner:             minerAddress,
 		EpochPrice:        price,
 		MinBlocksDuration: 2880 * 180,
-		//ProviderCollateral: ?, // TODO: configure? what's a good value?
-		DealStartEpoch: tipSet.Height() + abi.ChainEpoch(startOffset),
-		FastRetrieval:  fastRetrieval,
-		VerifiedDeal:   verified,
+		DealStartEpoch:    tipSet.Height() + abi.ChainEpoch(startOffset),
+		FastRetrieval:     fastRetrieval,
+		VerifiedDeal:      verified,
 	}
 	_ = params
 
@@ -192,9 +190,19 @@ func makeStorageDeal(cctx *cli.Context) error {
 		return err
 	}
 
+	lastState := storagemarket.StorageDealUnknown
 	for info := range updates {
 		if proposalCid.Equals(info.ProposalCid) {
-			log.Info(info)
+			if info.State != lastState {
+				log.Infow("Deal status",
+					"cid", info.ProposalCid,
+					"piece", info.PieceCID,
+					"state", info.State,
+					"message", info.Message,
+					"provider", info.Provider,
+				)
+				lastState = info.State
+			}
 
 			switch info.State {
 			case storagemarket.StorageDealUnknown:
@@ -206,9 +214,26 @@ func makeStorageDeal(cctx *cli.Context) error {
 			case storagemarket.StorageDealFailing:
 			case storagemarket.StorageDealError:
 				// deal failed, exit
-				return nil
 			case storagemarket.StorageDealActive:
 				// deal is on chain, exit
+				for _, stage := range info.DealStages.Stages {
+					log.Infow("Deal stage",
+						"cid", info.ProposalCid,
+						"name", stage.Name,
+						"description", stage.Description,
+						"created", stage.CreatedTime,
+						"expected", stage.ExpectedDuration,
+						"updated", stage.UpdatedTime,
+						"size", info.Size,
+						"duration", info.Duration,
+						"deal_id", info.DealID,
+						"piece_cid", info.PieceCID,
+						"message", info.Message,
+						"provider", info.Provider,
+						"price", info.PricePerEpoch,
+						"verfied", info.Verified,
+					)
+				}
 				return nil
 			}
 		}
