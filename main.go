@@ -68,6 +68,7 @@ func main() {
 			commands.MakeStorageDealCmd,
 			commands.MakeRetrievalDealCmd,
 			commands.DaemonCmd,
+			commands.CoordinateCmd,
 		},
 	}
 
