@@ -20,7 +20,7 @@ import (
 	"golang.org/x/xerrors"
 )
 
-var MakeStorageDeal = &cli.Command{
+var MakeStorageDealCmd = &cli.Command{
 	Name:  "storage-deal",
 	Usage: "Make storage deals with provided miners.",
 	Flags: []cli.Flag{

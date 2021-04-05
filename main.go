@@ -65,8 +65,9 @@ func main() {
 			},
 		}...),
 		Commands: []*cli.Command{
-			commands.MakeStorageDeal,
-			commands.MakeRetrievalDeal,
+			commands.MakeStorageDealCmd,
+			commands.MakeRetrievalDealCmd,
+			commands.DaemonCmd,
 		},
 	}
 

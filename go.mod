@@ -12,6 +12,7 @@ require (
 	github.com/filecoin-project/lotus v1.5.4-0.20210402110700-eede19fb0b2d
 	github.com/filecoin-project/specs-actors v0.9.13
 	github.com/google/uuid v1.1.2
+	github.com/gorilla/mux v1.7.4
 	github.com/hashicorp/golang-lru v0.5.4
 	github.com/ipfs/go-cid v0.0.7
 	github.com/ipfs/go-log/v2 v2.1.2
@@ -19,6 +20,7 @@ require (
 	github.com/libp2p/go-libp2p-core v0.7.0
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/multiformats/go-multiaddr v0.3.1
+	github.com/pborman/uuid v1.2.0
 	github.com/urfave/cli/v2 v2.3.0
 	github.com/whyrusleeping/cbor-gen v0.0.0-20210303213153-67a261a1d291
 	go.opentelemetry.io/otel v0.12.0

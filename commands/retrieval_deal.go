@@ -14,7 +14,7 @@ import (
 	"golang.org/x/xerrors"
 )
 
-var MakeRetrievalDeal = &cli.Command{
+var MakeRetrievalDealCmd = &cli.Command{
 	Name:  "retrieval-deal",
 	Usage: "Make retrieval deals with provided miners.",
 	Flags: []cli.Flag{

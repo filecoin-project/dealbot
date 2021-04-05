@@ -51,11 +51,11 @@ func setupLotusAPI(cctx *cli.Context) (*lotus.APIOpener, lotus.APICloser, error)
 
 var CommonFlags []cli.Flag = []cli.Flag{
 	&cli.PathFlag{
-		Name:     "data-dir",
-		Usage:    "writable directory used to transfer data to node",
-		Aliases:  []string{"d"},
-		EnvVars:  []string{"DEALBOT_DATA_DIRECTORY"},
-		Required: true,
+		Name:    "data-dir",
+		Usage:   "writable directory used to transfer data to node",
+		Aliases: []string{"d"},
+		EnvVars: []string{"DEALBOT_DATA_DIRECTORY"},
+		//Required: true,
 	},
 	&cli.PathFlag{
 		Name:    "node-data-dir",
@@ -70,11 +70,11 @@ var CommonFlags []cli.Flag = []cli.Flag{
 		EnvVars: []string{"DEALBOT_WALLET_ADDRESS"},
 	},
 	&cli.StringFlag{
-		Name:     "miner",
-		Usage:    "address of miner to make deal with",
-		Aliases:  []string{"m"},
-		EnvVars:  []string{"DEALBOT_MINER_ADDRESS"},
-		Required: true,
+		Name:    "miner",
+		Usage:   "address of miner to make deal with",
+		Aliases: []string{"m"},
+		EnvVars: []string{"DEALBOT_MINER_ADDRESS"},
+		//Required: true,
 	},
 	&cli.Int64Flag{
 		Name:    "start-offset",
