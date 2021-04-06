@@ -63,15 +63,9 @@ var CommonFlags []cli.Flag = []cli.Flag{
 		Aliases: []string{"w"},
 		EnvVars: []string{"DEALBOT_WALLET_ADDRESS"},
 	},
-	&cli.Int64Flag{
-		Name:    "start-offset",
-		Usage:   "epochs deal start will be offset from now [5760 (2 days)]",
-		EnvVars: []string{"DEALBOT_START_OFFSET"},
-		Value:   30760,
-	},
 }
 
-var SingleTaskFlags = []cli.Flag{
+var DealFlags = []cli.Flag{
 	&cli.PathFlag{
 		Name:     "data-dir",
 		Usage:    "writable directory used to transfer data to node",
@@ -85,6 +79,9 @@ var SingleTaskFlags = []cli.Flag{
 		Aliases: []string{"n"},
 		EnvVars: []string{"DEALBOT_NODE_DATA_DIRECTORY"},
 	},
+}
+
+var SingleTaskFlags = append(DealFlags, []cli.Flag{
 	&cli.StringFlag{
 		Name:     "miner",
 		Usage:    "address of miner to make deal with",
@@ -92,7 +89,7 @@ var SingleTaskFlags = []cli.Flag{
 		EnvVars:  []string{"DEALBOT_MINER_ADDRESS"},
 		Required: true,
 	},
-}
+}...)
 
 func setupCLIClient(cctx *cli.Context) (tasks.ClientConfig, api.FullNode, NodeCloser, error) {
 	// read dir and assert it exists

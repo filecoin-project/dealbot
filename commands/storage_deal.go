@@ -38,6 +38,12 @@ var MakeStorageDealCmd = &cli.Command{
 			EnvVars: []string{"DEALBOT_MAX_PRICE"},
 			Value:   5e16,
 		},
+		&cli.Int64Flag{
+			Name:    "start-offset",
+			Usage:   "epochs deal start will be offset from now [5760 (2 days)]",
+			EnvVars: []string{"DEALBOT_START_OFFSET"},
+			Value:   30760,
+		},
 	}...),
 	Action: makeStorageDeal,
 }
