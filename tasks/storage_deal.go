@@ -18,7 +18,81 @@ import (
 	"github.com/google/uuid"
 )
 
-func MakeStorageDeal(ctx context.Context, config ClientConfig, node api.FullNode, task StorageDealTask, log UpdateStatus) error {
+type StorageTask struct {
+	Miner           string `json:"miner"`
+	MaxPriceAttoFIL uint64 `json:"max_price_attofil"`
+	Size            uint64 `json:"size"`
+	StartOffset     uint64 `json:"start_offset"`
+	FastRetrieval   bool   `json:"fast_retrieval"`
+	Verified        bool   `json:"verified"`
+}
+
+func (t *StorageTask) FromMap(m map[string]interface{}) error {
+	if ms, ok := m["miner"]; ok {
+		if s, ok := ms.(string); ok {
+			t.Miner = s
+		} else {
+			return fmt.Errorf("`Miner` field is not a string: %v, %v", ms, m)
+		}
+	} else {
+		return fmt.Errorf("storage task JSON missing `miner` field: %v", m)
+	}
+
+	if ns, ok := m["max_price_attofil"]; ok {
+		if n, ok := ns.(int); ok {
+			t.MaxPriceAttoFIL = uint64(n)
+		} else {
+			return fmt.Errorf("`max_price_attofil` field is not an int: %v, %v", ns, m)
+		}
+	} else {
+		t.MaxPriceAttoFIL = 5e16
+	}
+
+	if ns, ok := m["size"]; ok {
+		if n, ok := ns.(string); ok {
+			var size datasize.ByteSize
+			err := size.UnmarshalText([]byte(n))
+			if err != nil {
+				return fmt.Errorf("size is not a recognizable byte size: %s, %v", n, m)
+			}
+			t.Size = size.Bytes()
+		} else {
+			return fmt.Errorf("`size` field is not a string: %v, %v", ns, m)
+		}
+	} else {
+		t.MaxPriceAttoFIL = 1e6
+	}
+
+	if ns, ok := m["start_offset"]; ok {
+		if n, ok := ns.(int); ok {
+			t.StartOffset = uint64(n)
+		} else {
+			return fmt.Errorf("`start_offset` field is not an int: %v, %v", ns, m)
+		}
+	} else {
+		t.StartOffset = 30760
+	}
+
+	if cs, ok := m["fast_retrieval"]; ok {
+		if b, ok := cs.(bool); ok {
+			t.FastRetrieval = b
+		} else {
+			return fmt.Errorf("`fast_retrieval` field is not a bool: %v, %v", cs, m)
+		}
+	}
+
+	if cs, ok := m["verified"]; ok {
+		if b, ok := cs.(bool); ok {
+			t.Verified = b
+		} else {
+			return fmt.Errorf("`verified` field is not a bool: %v, %v", cs, m)
+		}
+	}
+
+	return nil
+}
+
+func MakeStorageDeal(ctx context.Context, config NodeConfig, node api.FullNode, task StorageTask, log UpdateStatus) error {
 	// get chain head for chain queries and to get height
 	tipSet, err := node.ChainHead(ctx)
 	if err != nil {
@@ -35,7 +109,7 @@ func MakeStorageDeal(ctx context.Context, config ClientConfig, node api.FullNode
 		return err
 	}
 
-	maxPrice := abi.NewTokenAmount(int64(task.MaxPriceAFIL))
+	maxPrice := abi.NewTokenAmount(int64(task.MaxPriceAttoFIL))
 	if price.GreaterThan(maxPrice) {
 		return fmt.Errorf("miner ask price (%v) exceeds max price (%v)", price, maxPrice)
 	}
@@ -160,78 +234,4 @@ func minerAskPrice(ctx context.Context, api api.FullNode, tipSet *types.TipSet, 
 	}
 
 	return ask.Price, nil
-}
-
-type StorageDealTask struct {
-	Miner         string
-	MaxPriceAFIL  uint64
-	Size          uint64
-	StartOffset   uint64
-	FastRetrieval bool
-	Verified      bool
-}
-
-func (t *StorageDealTask) FromMap(m map[string]interface{}) error {
-	if ms, ok := m["Miner"]; ok {
-		if s, ok := ms.(string); ok {
-			t.Miner = s
-		} else {
-			return fmt.Errorf("`Miner` field is not a string: %v, %v", ms, m)
-		}
-	} else {
-		return fmt.Errorf("storage task JSON missing `Miner` field: %v", m)
-	}
-
-	if ns, ok := m["MaxPriceAFIL"]; ok {
-		if n, ok := ns.(int); ok {
-			t.MaxPriceAFIL = uint64(n)
-		} else {
-			return fmt.Errorf("`MaxPriceAFIL` field is not an int: %v, %v", ns, m)
-		}
-	} else {
-		t.MaxPriceAFIL = 5e16
-	}
-
-	if ns, ok := m["Size"]; ok {
-		if n, ok := ns.(string); ok {
-			var size datasize.ByteSize
-			err := size.UnmarshalText([]byte(n))
-			if err != nil {
-				return fmt.Errorf("size is not a recognizable byte size: %s, %v", n, m)
-			}
-			t.Size = size.Bytes()
-		} else {
-			return fmt.Errorf("`Size` field is not a string: %v, %v", ns, m)
-		}
-	} else {
-		t.MaxPriceAFIL = 1e6
-	}
-
-	if ns, ok := m["StartOffset"]; ok {
-		if n, ok := ns.(int); ok {
-			t.StartOffset = uint64(n)
-		} else {
-			return fmt.Errorf("`StartOffset` field is not an int: %v, %v", ns, m)
-		}
-	} else {
-		t.StartOffset = 30760
-	}
-
-	if cs, ok := m["FastRetrieval"]; ok {
-		if b, ok := cs.(bool); ok {
-			t.FastRetrieval = b
-		} else {
-			return fmt.Errorf("`FastRetrieval` field is not a bool: %v, %v", cs, m)
-		}
-	}
-
-	if cs, ok := m["Verified"]; ok {
-		if b, ok := cs.(bool); ok {
-			t.Verified = b
-		} else {
-			return fmt.Errorf("`Verified` field is not a bool: %v, %v", cs, m)
-		}
-	}
-
-	return nil
 }

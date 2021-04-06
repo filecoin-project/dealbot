@@ -29,7 +29,7 @@ func coordinateCommand(cctx *cli.Context) error {
 		return err
 	}
 
-	clientConfig, node, closer, err := setupCLIClient(cctx)
+	nodeConfig, node, closer, err := setupCLIClient(cctx)
 	if err != nil {
 		return err
 	}
@@ -42,10 +42,10 @@ func coordinateCommand(cctx *cli.Context) error {
 	for _, task := range taskList {
 		var err error
 		switch t := task.(type) {
-		case tasks.StorageDealTask:
-			err = tasks.MakeStorageDeal(cctx.Context, clientConfig, node, t, logger)
+		case tasks.StorageTask:
+			err = tasks.MakeStorageDeal(cctx.Context, nodeConfig, node, t, logger)
 		case tasks.RetrievalTask:
-			err = tasks.MakeRetrievalDeal(cctx.Context, clientConfig, node, t, logger)
+			err = tasks.MakeRetrievalDeal(cctx.Context, nodeConfig, node, t, logger)
 		}
 		if err != nil {
 			log.Error(err)
@@ -76,7 +76,7 @@ func parseTasks() ([]interface{}, error) {
 			}
 			taskList[i] = task
 		case "storage":
-			var task tasks.StorageDealTask
+			var task tasks.StorageTask
 			err := (&task).FromMap(taskJson)
 			if err != nil {
 				return nil, err
