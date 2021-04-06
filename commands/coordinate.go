@@ -41,11 +41,10 @@ func coordinateCommand(cctx *cli.Context) error {
 
 	for _, task := range taskList {
 		var err error
-		switch t := task.(type) {
-		case tasks.StorageTask:
-			err = tasks.MakeStorageDeal(cctx.Context, nodeConfig, node, t, logger)
-		case tasks.RetrievalTask:
-			err = tasks.MakeRetrievalDeal(cctx.Context, nodeConfig, node, t, logger)
+		if task.StorageTask != nil {
+			err = tasks.MakeStorageDeal(cctx.Context, nodeConfig, node, *task.StorageTask, logger)
+		} else if task.RetrievalTask != nil {
+			err = tasks.MakeRetrievalDeal(cctx.Context, nodeConfig, node, *task.RetrievalTask, logger)
 		}
 		if err != nil {
 			log.Error(err)
@@ -55,36 +54,26 @@ func coordinateCommand(cctx *cli.Context) error {
 	return nil
 }
 
-func parseTasks() ([]interface{}, error) {
+func parseTasks() ([]tasks.Task, error) {
 	stdin := bufio.NewReader(os.Stdin)
 	dec := json.NewDecoder(stdin)
 
-	var tasksJson []map[string]interface{}
-	err := dec.Decode(&tasksJson)
+	var taskList []tasks.Task
+	err := dec.Decode(&taskList)
 	if err != nil {
 		return nil, err
 	}
 
-	taskList := make([]interface{}, len(tasksJson))
-	for i, taskJson := range tasksJson {
-		switch taskJson["Task"] {
-		case "retrieval":
-			var task tasks.RetrievalTask
-			err := (&task).FromMap(taskJson)
-			if err != nil {
-				return nil, err
-			}
-			taskList[i] = task
-		case "storage":
-			var task tasks.StorageTask
-			err := (&task).FromMap(taskJson)
-			if err != nil {
-				return nil, err
-			}
-			taskList[i] = task
-		default:
-			return nil, fmt.Errorf("unknown task type: %v", taskJson["Task"])
+	// validate we only have one retrieval or storage per task
+	for _, task := range taskList {
+
+		if task.StorageTask == nil && task.RetrievalTask == nil {
+			return nil, fmt.Errorf("task %v must have exactly one storage or retrieval task", task.UUID)
+		}
+		if task.StorageTask != nil && task.RetrievalTask != nil {
+			return nil, fmt.Errorf("task %v should not have both a storage and retrieval task", task.UUID)
 		}
 	}
+
 	return taskList, nil
 }

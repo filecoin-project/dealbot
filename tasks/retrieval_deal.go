@@ -17,32 +17,6 @@ type RetrievalTask struct {
 	CARExport  bool   `json:"car_export"`
 }
 
-func (t *RetrievalTask) FromMap(m map[string]interface{}) error {
-	if ms, ok := m["miner"]; ok {
-		if s, ok := ms.(string); ok {
-			t.Miner = s
-		}
-	} else {
-		return fmt.Errorf("retrieval task JSON missing `miner` field: %v", m)
-	}
-
-	if ps, ok := m["payload_cid"]; ok {
-		if s, ok := ps.(string); ok {
-			t.PayloadCID = s
-		}
-	} else {
-		return fmt.Errorf("retrieval task JSON missing `payload_cid` field: %v", m)
-	}
-
-	if cs, ok := m["car_export"]; ok {
-		if b, ok := cs.(bool); ok {
-			t.CARExport = b
-		}
-	}
-
-	return nil
-}
-
 func MakeRetrievalDeal(ctx context.Context, config NodeConfig, node api.FullNode, task RetrievalTask, log UpdateStatus) error {
 	payloadCid, err := cid.Parse(task.PayloadCID)
 	if err != nil {

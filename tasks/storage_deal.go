@@ -8,7 +8,6 @@ import (
 	"os"
 	"path"
 
-	"github.com/c2h5oh/datasize"
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-fil-markets/storagemarket"
 	"github.com/filecoin-project/go-state-types/abi"
@@ -27,70 +26,8 @@ type StorageTask struct {
 	Verified        bool   `json:"verified"`
 }
 
-func (t *StorageTask) FromMap(m map[string]interface{}) error {
-	if ms, ok := m["miner"]; ok {
-		if s, ok := ms.(string); ok {
-			t.Miner = s
-		} else {
-			return fmt.Errorf("`Miner` field is not a string: %v, %v", ms, m)
-		}
-	} else {
-		return fmt.Errorf("storage task JSON missing `miner` field: %v", m)
-	}
-
-	if ns, ok := m["max_price_attofil"]; ok {
-		if n, ok := ns.(int); ok {
-			t.MaxPriceAttoFIL = uint64(n)
-		} else {
-			return fmt.Errorf("`max_price_attofil` field is not an int: %v, %v", ns, m)
-		}
-	} else {
-		t.MaxPriceAttoFIL = 5e16
-	}
-
-	if ns, ok := m["size"]; ok {
-		if n, ok := ns.(string); ok {
-			var size datasize.ByteSize
-			err := size.UnmarshalText([]byte(n))
-			if err != nil {
-				return fmt.Errorf("size is not a recognizable byte size: %s, %v", n, m)
-			}
-			t.Size = size.Bytes()
-		} else {
-			return fmt.Errorf("`size` field is not a string: %v, %v", ns, m)
-		}
-	} else {
-		t.MaxPriceAttoFIL = 1e6
-	}
-
-	if ns, ok := m["start_offset"]; ok {
-		if n, ok := ns.(int); ok {
-			t.StartOffset = uint64(n)
-		} else {
-			return fmt.Errorf("`start_offset` field is not an int: %v, %v", ns, m)
-		}
-	} else {
-		t.StartOffset = 30760
-	}
-
-	if cs, ok := m["fast_retrieval"]; ok {
-		if b, ok := cs.(bool); ok {
-			t.FastRetrieval = b
-		} else {
-			return fmt.Errorf("`fast_retrieval` field is not a bool: %v, %v", cs, m)
-		}
-	}
-
-	if cs, ok := m["verified"]; ok {
-		if b, ok := cs.(bool); ok {
-			t.Verified = b
-		} else {
-			return fmt.Errorf("`verified` field is not a bool: %v, %v", cs, m)
-		}
-	}
-
-	return nil
-}
+const maxPriceDefault = 5e16
+const startOffsetDefault = 30760
 
 func MakeStorageDeal(ctx context.Context, config NodeConfig, node api.FullNode, task StorageTask, log UpdateStatus) error {
 	// get chain head for chain queries and to get height
@@ -110,6 +47,9 @@ func MakeStorageDeal(ctx context.Context, config NodeConfig, node api.FullNode, 
 	}
 
 	maxPrice := abi.NewTokenAmount(int64(task.MaxPriceAttoFIL))
+	if task.MaxPriceAttoFIL == 0 {
+		maxPrice = abi.NewTokenAmount(maxPriceDefault)
+	}
 	if price.GreaterThan(maxPrice) {
 		return fmt.Errorf("miner ask price (%v) exceeds max price (%v)", price, maxPrice)
 	}
@@ -139,6 +79,11 @@ func MakeStorageDeal(ctx context.Context, config NodeConfig, node api.FullNode, 
 		return err
 	}
 
+	startOffset := task.StartOffset
+	if startOffset == 0 {
+		startOffset = startOffsetDefault
+	}
+
 	log("imported deal file, got data cid", "datacid", importRes.Root)
 
 	// Prepare parameters for deal
@@ -151,7 +96,7 @@ func MakeStorageDeal(ctx context.Context, config NodeConfig, node api.FullNode, 
 		Miner:             minerAddress,
 		EpochPrice:        price,
 		MinBlocksDuration: 2880 * 180,
-		DealStartEpoch:    tipSet.Height() + abi.ChainEpoch(task.StartOffset),
+		DealStartEpoch:    tipSet.Height() + abi.ChainEpoch(startOffset),
 		FastRetrieval:     task.FastRetrieval,
 		VerifiedDeal:      task.Verified,
 	}
