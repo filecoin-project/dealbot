@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+
 	"github.com/c2h5oh/datasize"
 	"github.com/filecoin-project/dealbot/tasks"
 	"github.com/urfave/cli/v2"
@@ -70,13 +71,13 @@ func makeStorageDeal(cctx *cli.Context) error {
 	startOffset := cctx.Uint64("start-offset")
 	maxPrice := cctx.Uint64("max-price")
 
-	task := tasks.StorageDealTask{
-		Miner:         miner,
-		MaxPriceAFIL:  maxPrice,
-		Size:          size.Bytes(),
-		StartOffset:   startOffset,
-		FastRetrieval: fastRetrieval,
-		Verified:      verified,
+	task := tasks.StorageTask{
+		Miner:           miner,
+		MaxPriceAttoFIL: maxPrice,
+		Size:            size.Bytes(),
+		StartOffset:     startOffset,
+		FastRetrieval:   fastRetrieval,
+		Verified:        verified,
 	}
 
 	return tasks.MakeStorageDeal(cctx.Context, clientConfig, node, task, func(msg string, keysAndValues ...interface{}) {

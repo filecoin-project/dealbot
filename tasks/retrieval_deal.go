@@ -12,38 +12,12 @@ import (
 )
 
 type RetrievalTask struct {
-	Miner      string
-	PayloadCID string
-	CarExport  bool
+	Miner      string `json:"miner"`
+	PayloadCID string `json:"payload_cid"`
+	CARExport  bool   `json:"car_export"`
 }
 
-func (t *RetrievalTask) FromMap(m map[string]interface{}) error {
-	if ms, ok := m["Miner"]; ok {
-		if s, ok := ms.(string); ok {
-			t.Miner = s
-		}
-	} else {
-		return fmt.Errorf("retrieval task JSON missing `Miner` field: %v", m)
-	}
-
-	if ps, ok := m["PayloadCID"]; ok {
-		if s, ok := ps.(string); ok {
-			t.PayloadCID = s
-		}
-	} else {
-		return fmt.Errorf("retrieval task JSON missing `PayloadCID` field: %v", m)
-	}
-
-	if cs, ok := m["CarExport"]; ok {
-		if b, ok := cs.(bool); ok {
-			t.CarExport = b
-		}
-	}
-
-	return nil
-}
-
-func MakeRetrievalDeal(ctx context.Context, config ClientConfig, node api.FullNode, task RetrievalTask, log UpdateStatus) error {
+func MakeRetrievalDeal(ctx context.Context, config NodeConfig, node api.FullNode, task RetrievalTask, log UpdateStatus) error {
 	payloadCid, err := cid.Parse(task.PayloadCID)
 	if err != nil {
 		return err
@@ -67,7 +41,7 @@ func MakeRetrievalDeal(ctx context.Context, config ClientConfig, node api.FullNo
 
 	ref := &api.FileRef{
 		Path:  filepath.Join(config.NodeDataDir, "ret"),
-		IsCAR: task.CarExport,
+		IsCAR: task.CARExport,
 	}
 
 	err = node.ClientRetrieve(ctx, offer.Order(config.WalletAddress), ref)

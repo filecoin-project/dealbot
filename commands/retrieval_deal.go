@@ -2,6 +2,7 @@ package commands
 
 import (
 	"context"
+
 	"github.com/filecoin-project/dealbot/tasks"
 	"github.com/urfave/cli/v2"
 )
@@ -44,7 +45,7 @@ func makeRetrievalDeal(cctx *cli.Context) error {
 	task := tasks.RetrievalTask{
 		Miner:      minerParam,
 		PayloadCID: payloadCid,
-		CarExport:  carExport,
+		CARExport:  carExport,
 	}
 
 	err = tasks.MakeRetrievalDeal(cctx.Context, clientConfig, node, task, func(msg string, keysAndValues ...interface{}) {

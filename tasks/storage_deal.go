@@ -8,7 +8,6 @@ import (
 	"os"
 	"path"
 
-	"github.com/c2h5oh/datasize"
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-fil-markets/storagemarket"
 	"github.com/filecoin-project/go-state-types/abi"
@@ -18,7 +17,19 @@ import (
 	"github.com/google/uuid"
 )
 
-func MakeStorageDeal(ctx context.Context, config ClientConfig, node api.FullNode, task StorageDealTask, log UpdateStatus) error {
+type StorageTask struct {
+	Miner           string `json:"miner"`
+	MaxPriceAttoFIL uint64 `json:"max_price_attofil"`
+	Size            uint64 `json:"size"`
+	StartOffset     uint64 `json:"start_offset"`
+	FastRetrieval   bool   `json:"fast_retrieval"`
+	Verified        bool   `json:"verified"`
+}
+
+const maxPriceDefault = 5e16
+const startOffsetDefault = 30760
+
+func MakeStorageDeal(ctx context.Context, config NodeConfig, node api.FullNode, task StorageTask, log UpdateStatus) error {
 	// get chain head for chain queries and to get height
 	tipSet, err := node.ChainHead(ctx)
 	if err != nil {
@@ -35,7 +46,10 @@ func MakeStorageDeal(ctx context.Context, config ClientConfig, node api.FullNode
 		return err
 	}
 
-	maxPrice := abi.NewTokenAmount(int64(task.MaxPriceAFIL))
+	maxPrice := abi.NewTokenAmount(int64(task.MaxPriceAttoFIL))
+	if task.MaxPriceAttoFIL == 0 {
+		maxPrice = abi.NewTokenAmount(maxPriceDefault)
+	}
 	if price.GreaterThan(maxPrice) {
 		return fmt.Errorf("miner ask price (%v) exceeds max price (%v)", price, maxPrice)
 	}
@@ -65,6 +79,11 @@ func MakeStorageDeal(ctx context.Context, config ClientConfig, node api.FullNode
 		return err
 	}
 
+	startOffset := task.StartOffset
+	if startOffset == 0 {
+		startOffset = startOffsetDefault
+	}
+
 	log("imported deal file, got data cid", "datacid", importRes.Root)
 
 	// Prepare parameters for deal
@@ -77,7 +96,7 @@ func MakeStorageDeal(ctx context.Context, config ClientConfig, node api.FullNode
 		Miner:             minerAddress,
 		EpochPrice:        price,
 		MinBlocksDuration: 2880 * 180,
-		DealStartEpoch:    tipSet.Height() + abi.ChainEpoch(task.StartOffset),
+		DealStartEpoch:    tipSet.Height() + abi.ChainEpoch(startOffset),
 		FastRetrieval:     task.FastRetrieval,
 		VerifiedDeal:      task.Verified,
 	}
@@ -160,78 +179,4 @@ func minerAskPrice(ctx context.Context, api api.FullNode, tipSet *types.TipSet, 
 	}
 
 	return ask.Price, nil
-}
-
-type StorageDealTask struct {
-	Miner         string
-	MaxPriceAFIL  uint64
-	Size          uint64
-	StartOffset   uint64
-	FastRetrieval bool
-	Verified      bool
-}
-
-func (t *StorageDealTask) FromMap(m map[string]interface{}) error {
-	if ms, ok := m["Miner"]; ok {
-		if s, ok := ms.(string); ok {
-			t.Miner = s
-		} else {
-			return fmt.Errorf("`Miner` field is not a string: %v, %v", ms, m)
-		}
-	} else {
-		return fmt.Errorf("storage task JSON missing `Miner` field: %v", m)
-	}
-
-	if ns, ok := m["MaxPriceAFIL"]; ok {
-		if n, ok := ns.(int); ok {
-			t.MaxPriceAFIL = uint64(n)
-		} else {
-			return fmt.Errorf("`MaxPriceAFIL` field is not an int: %v, %v", ns, m)
-		}
-	} else {
-		t.MaxPriceAFIL = 5e16
-	}
-
-	if ns, ok := m["Size"]; ok {
-		if n, ok := ns.(string); ok {
-			var size datasize.ByteSize
-			err := size.UnmarshalText([]byte(n))
-			if err != nil {
-				return fmt.Errorf("size is not a recognizable byte size: %s, %v", n, m)
-			}
-			t.Size = size.Bytes()
-		} else {
-			return fmt.Errorf("`Size` field is not a string: %v, %v", ns, m)
-		}
-	} else {
-		t.MaxPriceAFIL = 1e6
-	}
-
-	if ns, ok := m["StartOffset"]; ok {
-		if n, ok := ns.(int); ok {
-			t.StartOffset = uint64(n)
-		} else {
-			return fmt.Errorf("`StartOffset` field is not an int: %v, %v", ns, m)
-		}
-	} else {
-		t.StartOffset = 30760
-	}
-
-	if cs, ok := m["FastRetrieval"]; ok {
-		if b, ok := cs.(bool); ok {
-			t.FastRetrieval = b
-		} else {
-			return fmt.Errorf("`FastRetrieval` field is not a bool: %v, %v", cs, m)
-		}
-	}
-
-	if cs, ok := m["Verified"]; ok {
-		if b, ok := cs.(bool); ok {
-			t.Verified = b
-		} else {
-			return fmt.Errorf("`Verified` field is not a bool: %v, %v", cs, m)
-		}
-	}
-
-	return nil
 }

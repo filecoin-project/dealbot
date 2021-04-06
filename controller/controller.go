@@ -1,4 +1,4 @@
-package daemon
+package controller
 
 import (
 	"context"
@@ -14,16 +14,16 @@ import (
 	"github.com/pborman/uuid"
 )
 
-var log = logging.Logger("daemon")
+var log = logging.Logger("controller")
 
-type Daemon struct {
+type Controller struct {
 	server *http.Server
 	l      net.Listener
 	doneCh chan struct{}
 }
 
-func New(cfg *config.EnvConfig) (srv *Daemon, err error) {
-	srv = new(Daemon)
+func New(cfg *config.EnvConfig) (srv *Controller, err error) {
+	srv = new(Controller)
 
 	r := mux.NewRouter().StrictSlash(true)
 
@@ -35,7 +35,9 @@ func New(cfg *config.EnvConfig) (srv *Daemon, err error) {
 		})
 	})
 
-	//r.HandleFunc("/tasks", srv.listTasksHandler).Methods("GET")
+	r.HandleFunc("/tasks", srv.getTasksHandler).Methods("GET")
+	//r.HandleFunc("/task", srv.getTaskHandler).Methods("GET")
+	//r.HandleFunc("/task", srv.updateTaskHandler).Methods("PUT")
 
 	srv.doneCh = make(chan struct{})
 	srv.server = &http.Server{
@@ -44,7 +46,7 @@ func New(cfg *config.EnvConfig) (srv *Daemon, err error) {
 		ReadTimeout:  30 * time.Second,
 	}
 
-	srv.l, err = net.Listen("tcp", cfg.Daemon.Listen)
+	srv.l, err = net.Listen("tcp", cfg.Controller.Listen)
 	if err != nil {
 		return nil, err
 	}
@@ -55,26 +57,26 @@ func New(cfg *config.EnvConfig) (srv *Daemon, err error) {
 // Serve starts the server and blocks until the server is closed, either
 // explicitly via Shutdown, or due to a fault condition. It propagates the
 // non-nil err return value from http.Serve.
-func (d *Daemon) Serve() error {
+func (c *Controller) Serve() error {
 	select {
-	case <-d.doneCh:
+	case <-c.doneCh:
 		return fmt.Errorf("tried to reuse a stopped server")
 	default:
 	}
 
-	log.Infow("daemon listening", "addr", d.Addr())
-	return d.server.Serve(d.l)
+	log.Infow("controller listening", "addr", c.Addr())
+	return c.server.Serve(c.l)
 }
 
-func (d *Daemon) Addr() string {
-	return d.l.Addr().String()
+func (c *Controller) Addr() string {
+	return c.l.Addr().String()
 }
 
-func (d *Daemon) Port() int {
-	return d.l.Addr().(*net.TCPAddr).Port
+func (c *Controller) Port() int {
+	return c.l.Addr().(*net.TCPAddr).Port
 }
 
-func (d *Daemon) Shutdown(ctx context.Context) error {
-	defer close(d.doneCh)
-	return d.server.Shutdown(ctx)
+func (c *Controller) Shutdown(ctx context.Context) error {
+	defer close(c.doneCh)
+	return c.server.Shutdown(ctx)
 }
