@@ -3,14 +3,13 @@ package main
 import (
 	"context"
 	"fmt"
-	"os"
-	"os/signal"
-	"syscall"
-
 	"github.com/filecoin-project/dealbot/commands"
 	"github.com/filecoin-project/dealbot/version"
 	logging "github.com/ipfs/go-log/v2"
 	"github.com/urfave/cli/v2"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 var log = logging.Logger("dealbot")
@@ -68,6 +67,7 @@ func main() {
 			commands.MakeStorageDealCmd,
 			commands.MakeRetrievalDealCmd,
 			commands.DaemonCmd,
+			commands.CoordinateCmd,
 		},
 	}
 
