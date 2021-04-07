@@ -40,9 +40,9 @@ func init() {
 			UUID:   uuid.New()[:8],
 			Status: tasks.Available,
 			StorageTask: &tasks.StorageTask{
-				Miner:           "f0127896",
+				Miner:           "t01000",
 				MaxPriceAttoFIL: 100000000000000000, // 0.10 FIL
-				Size:            512000000,          // 512mb
+				Size:            1024,               // 1024mb
 				StartOffset:     0,
 				FastRetrieval:   true,
 				Verified:        false,

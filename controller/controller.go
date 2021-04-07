@@ -36,6 +36,7 @@ func New(cfg *config.EnvConfig) (srv *Controller, err error) {
 	})
 
 	r.HandleFunc("/tasks", srv.getTasksHandler).Methods("GET")
+	r.HandleFunc("/status", srv.reportStatusHandler).Methods("POST")
 	//r.HandleFunc("/task", srv.getTaskHandler).Methods("GET")
 	//r.HandleFunc("/task", srv.updateTaskHandler).Methods("PUT")
 
