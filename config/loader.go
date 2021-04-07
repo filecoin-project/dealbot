@@ -10,7 +10,7 @@ const (
 	EnvDealbotHome = "DEALBOT_HOME"
 
 	// DefaultDaemonListenAddr is a host:port value, where we set up an HTTP endpoint.
-	DefaultDaemonListenAddr = "localhost:8765"
+	DefaultDaemonListenAddr = "localhost:0"
 
 	DefaultControllerListenAddr = "localhost:8764"
 )
@@ -19,7 +19,7 @@ func (e *EnvConfig) Load() error {
 	// apply fallbacks.
 	e.Daemon.Listen = DefaultDaemonListenAddr
 	e.Controller.Listen = DefaultControllerListenAddr
-	e.Client.Endpoint = "http://" + DefaultDaemonListenAddr
+	e.Client.Endpoint = "http://" + DefaultControllerListenAddr
 
 	// calculate home directory; use env var, or fall back to $HOME/testground
 	// otherwise.

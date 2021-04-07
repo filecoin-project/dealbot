@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/filecoin-project/dealbot/config"
+	"github.com/filecoin-project/dealbot/engine"
 	logging "github.com/ipfs/go-log/v2"
 
 	"github.com/gorilla/mux"
@@ -26,6 +27,9 @@ func New(cfg *config.EnvConfig) (srv *Daemon, err error) {
 	srv = new(Daemon)
 
 	r := mux.NewRouter().StrictSlash(true)
+
+	e := engine.New(cfg)
+	_ = e
 
 	// Set a unique request ID.
 	r.Use(func(next http.Handler) http.Handler {
