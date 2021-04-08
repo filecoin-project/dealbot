@@ -101,7 +101,6 @@ func (e *Engine) worker(n int) {
 						continue
 					}
 
-					// we have successfully acquired task
 					log.Infow("successfully acquired task", "uuid", t.UUID)
 
 					if t.RetrievalTask != nil {
@@ -130,7 +129,6 @@ func (e *Engine) worker(n int) {
 						log.Info("successfully stored data")
 					}
 
-					// TODO: process task
 					return
 				}
 			}

@@ -40,8 +40,6 @@ func (c *Controller) updateTaskHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//spew.Dump(req)
-
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(State)
 }

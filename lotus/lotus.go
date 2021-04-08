@@ -100,36 +100,34 @@ func apiHeaders(token string) http.Header {
 	return headers
 }
 
-//func setupLogging(cctx *cli.Context) error {
-//ll := cctx.String("log-level")
-//if err := logging.SetLogLevel("*", ll); err != nil {
-//return xerrors.Errorf("set log level: %w", err)
-//}
+func setupLogging(cctx *cli.Context) error {
+	ll := cctx.String("log-level")
+	if err := logging.SetLogLevel("*", ll); err != nil {
+		return xerrors.Errorf("set log level: %w", err)
+	}
 
-//if err := logging.SetLogLevel("rpc", "error"); err != nil {
-//return xerrors.Errorf("set rpc log level: %w", err)
-//}
+	if err := logging.SetLogLevel("rpc", "error"); err != nil {
+		return xerrors.Errorf("set rpc log level: %w", err)
+	}
 
-//llnamed := cctx.String("log-level-named")
-//if llnamed == "" {
-//return nil
-//}
+	llnamed := cctx.String("log-level-named")
+	if llnamed == "" {
+		return nil
+	}
 
-//for _, llname := range strings.Split(llnamed, ",") {
-//parts := strings.Split(llname, ":")
-//if len(parts) != 2 {
-//return xerrors.Errorf("invalid named log level format: %q", llname)
-//}
-//if err := logging.SetLogLevel(parts[0], parts[1]); err != nil {
-//return xerrors.Errorf("set named log level %q to %q: %w", parts[0], parts[1], err)
-//}
+	for _, llname := range strings.Split(llnamed, ",") {
+		parts := strings.Split(llname, ":")
+		if len(parts) != 2 {
+			return xerrors.Errorf("invalid named log level format: %q", llname)
+		}
+		if err := logging.SetLogLevel(parts[0], parts[1]); err != nil {
+			return xerrors.Errorf("set named log level %q to %q: %w", parts[0], parts[1], err)
+		}
 
-//}
+	}
 
-//log.Infof("Dealbot version:%s", version.String())
-
-//return nil
-//}
+	return nil
+}
 
 func NewAPIOpener(cfg *config.EnvConfig) (*APIOpener, APICloser, error) {
 	var rawaddr, rawtoken string

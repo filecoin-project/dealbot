@@ -44,12 +44,10 @@ func (e *EnvConfig) Load(configpath string) error {
 	if f == "" {
 		switch fi, err := os.Stat(home); {
 		case os.IsNotExist(err):
-			//logging.S().Infof("creating home directory at %s", home)
 			if err := os.MkdirAll(home, 0777); err != nil {
 				return fmt.Errorf("failed to create home directory at %s: %w", home, err)
 			}
 		case err == nil:
-			//logging.S().Infof("using home directory: %s", home)
 		case !fi.IsDir():
 			return fmt.Errorf("home path is not a directory %s", home)
 		}
@@ -64,9 +62,6 @@ func (e *EnvConfig) Load(configpath string) error {
 		if err != nil {
 			return fmt.Errorf("found .env.toml at %s, but failed to parse: %w", f, err)
 		}
-		//logging.S().Infof(".env.toml loaded from: %s", f)
-	} else {
-		//logging.S().Infof("no .env.toml found at %s; running with defaults", f)
 	}
 
 	return nil
