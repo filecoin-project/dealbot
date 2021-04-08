@@ -17,7 +17,7 @@ var DaemonCmd = &cli.Command{
 		&cli.StringFlag{
 			Name:  "configpath",
 			Usage: "path to config toml file",
-			Value: ".env.toml",
+			Value: ".dealbot.env.toml",
 		},
 	},
 	Action: daemonCommand,
