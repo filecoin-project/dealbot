@@ -25,7 +25,7 @@ type Engine struct {
 }
 
 func New(cfg *config.EnvConfig) (*Engine, error) {
-	workers := 2
+	workers := 1
 
 	client := client.New(cfg)
 
@@ -107,10 +107,24 @@ func (e *Engine) worker(n int) {
 							log.Infow(msg, keysAndValues...)
 						})
 						if err != nil {
-							log.Fatal(err)
+							log.Errorw("retrieval task returned error", "err", err)
+							return
 						}
 
-						log.Info("successfully retrieved")
+						log.Info("successfully retrieved data")
+					}
+
+					if t.StorageTask != nil {
+						ctx := context.TODO()
+						err = tasks.MakeStorageDeal(ctx, e.nodeConfig, e.node, *t.StorageTask, func(msg string, keysAndValues ...interface{}) {
+							log.Infow(msg, keysAndValues...)
+						})
+						if err != nil {
+							log.Errorw("storage task returned error", "err", err)
+							return
+						}
+
+						log.Info("successfully stored data")
 					}
 
 					// TODO: process task

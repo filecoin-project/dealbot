@@ -32,7 +32,7 @@ var MakeStorageDealCmd = &cli.Command{
 			Usage:   "size of deal (1KB, 2MB, 12GB, etc.) [1MB]",
 			Aliases: []string{"s"},
 			EnvVars: []string{"DEALBOT_DEAL_SIZE"},
-			Value:   "1MB",
+			Value:   "1KB",
 		},
 		&cli.Int64Flag{
 			Name:    "max-price",
