@@ -68,7 +68,7 @@ func SetupClientFromCLI(cctx *cli.Context) (tasks.NodeConfig, api.FullNode, Node
 	}, node, closer, nil
 }
 
-func SetupClient(cfg *config.EnvConfig) (tasks.NodeConfig, api.FullNode, NodeCloser, error) {
+func SetupClient(ctx context.Context, cfg *config.EnvConfig) (tasks.NodeConfig, api.FullNode, NodeCloser, error) {
 	// read dir and assert it exists
 	dataDir := cfg.Daemon.DataDir
 	if _, err := os.Stat(dataDir); os.IsNotExist(err) {
@@ -86,7 +86,6 @@ func SetupClient(cfg *config.EnvConfig) (tasks.NodeConfig, api.FullNode, NodeClo
 		return tasks.NodeConfig{}, nil, nil, err
 	}
 
-	ctx := context.TODO()
 	node, jsoncloser, err := opener.Open(ctx)
 	if err != nil {
 		apiCloser()

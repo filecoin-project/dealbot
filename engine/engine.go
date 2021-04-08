@@ -26,17 +26,17 @@ type Engine struct {
 	closer     lotus.NodeCloser
 }
 
-func New(cfg *config.EnvConfig) (*Engine, error) {
+func New(ctx context.Context, cfg *config.EnvConfig) (*Engine, error) {
 	workers := 1
 
 	client := client.New(cfg)
 
-	nodeConfig, node, closer, err := lotus.SetupClient(cfg)
+	nodeConfig, node, closer, err := lotus.SetupClient(ctx, cfg)
 	if err != nil {
 		return nil, err
 	}
 
-	v, err := node.Version(context.Background())
+	v, err := node.Version(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -67,6 +67,7 @@ func (e *Engine) worker(n int) {
 
 	for {
 		func() {
+			// add delay to avoid querying the controller many times if there are no available tasks
 			time.Sleep(5 * time.Second)
 
 			// fetch tasks

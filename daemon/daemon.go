@@ -24,12 +24,12 @@ type Daemon struct {
 	e      *engine.Engine
 }
 
-func New(cfg *config.EnvConfig) (srv *Daemon, err error) {
+func New(ctx context.Context, cfg *config.EnvConfig) (srv *Daemon, err error) {
 	srv = new(Daemon)
 
 	r := mux.NewRouter().StrictSlash(true)
 
-	srv.e, err = engine.New(cfg)
+	srv.e, err = engine.New(ctx, cfg)
 	if err != nil {
 		return nil, err
 	}

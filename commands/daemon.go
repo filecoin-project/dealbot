@@ -34,7 +34,7 @@ func daemonCommand(c *cli.Context) error {
 		return err
 	}
 
-	srv, err := daemon.New(cfg)
+	srv, err := daemon.New(ctx, cfg)
 	if err != nil {
 		return err
 	}
