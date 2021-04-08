@@ -11,8 +11,15 @@ import (
 )
 
 var DaemonCmd = &cli.Command{
-	Name:   "daemon",
-	Usage:  "Start a dealbot daemon, accepting tasks over RPC",
+	Name:  "daemon",
+	Usage: "Start a dealbot daemon, accepting tasks over RPC",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:  "configpath",
+			Usage: "path to config toml file",
+			Value: ".env.toml",
+		},
+	},
 	Action: daemonCommand,
 }
 
@@ -20,8 +27,10 @@ func daemonCommand(c *cli.Context) error {
 	ctx, cancel := context.WithCancel(ProcessContext())
 	defer cancel()
 
+	configpath := c.String("configpath")
+
 	cfg := &config.EnvConfig{}
-	if err := cfg.Load(); err != nil {
+	if err := cfg.Load(configpath); err != nil {
 		return err
 	}
 

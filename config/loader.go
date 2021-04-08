@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+
+	"github.com/BurntSushi/toml"
 )
 
 const (
@@ -15,7 +17,7 @@ const (
 	DefaultControllerListenAddr = "localhost:8764"
 )
 
-func (e *EnvConfig) Load() error {
+func (e *EnvConfig) Load(configpath string) error {
 	// apply fallbacks.
 	e.Daemon.Listen = DefaultDaemonListenAddr
 	e.Controller.Listen = DefaultControllerListenAddr
@@ -24,7 +26,10 @@ func (e *EnvConfig) Load() error {
 	// calculate home directory; use env var, or fall back to $HOME/dealbot
 	// otherwise.
 	var home string
-	if v, ok := os.LookupEnv(EnvDealbotHome); ok {
+	var f string
+	if configpath != "" {
+		f = configpath
+	} else if v, ok := os.LookupEnv(EnvDealbotHome); ok {
 		// we have an env var.
 		home = v
 	} else {
@@ -36,16 +41,32 @@ func (e *EnvConfig) Load() error {
 		home = filepath.Join(v, "dealbot")
 	}
 
-	switch fi, err := os.Stat(home); {
-	case os.IsNotExist(err):
-		//logging.S().Infof("creating home directory at %s", home)
-		if err := os.MkdirAll(home, 0777); err != nil {
-			return fmt.Errorf("failed to create home directory at %s: %w", home, err)
+	if f == "" {
+		switch fi, err := os.Stat(home); {
+		case os.IsNotExist(err):
+			//logging.S().Infof("creating home directory at %s", home)
+			if err := os.MkdirAll(home, 0777); err != nil {
+				return fmt.Errorf("failed to create home directory at %s: %w", home, err)
+			}
+		case err == nil:
+			//logging.S().Infof("using home directory: %s", home)
+		case !fi.IsDir():
+			return fmt.Errorf("home path is not a directory %s", home)
 		}
-	case err == nil:
-		//logging.S().Infof("using home directory: %s", home)
-	case !fi.IsDir():
-		return fmt.Errorf("home path is not a directory %s", home)
+
+		// parse the .env.toml file, if it exists.
+		f = filepath.Join(home, ".env.toml")
+	}
+
+	if _, err := os.Stat(f); err == nil {
+		// try to load the optional .env.toml file
+		_, err = toml.DecodeFile(f, e)
+		if err != nil {
+			return fmt.Errorf("found .env.toml at %s, but failed to parse: %w", f, err)
+		}
+		//logging.S().Infof(".env.toml loaded from: %s", f)
+	} else {
+		//logging.S().Infof("no .env.toml found at %s; running with defaults", f)
 	}
 
 	return nil

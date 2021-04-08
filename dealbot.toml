@@ -1,0 +1,12 @@
+[controller]
+listen = "localhost:8764"
+
+[daemon]
+listen        = "localhost:0"
+data_dir      = "/Users/nonsense/code/src/github.com/filecoin-project/dealbot"
+node_data_dir = "/Users/nonsense/code/src/github.com/filecoin-project/dealbot"
+api           = "token:api"
+wallet        = ""
+
+[client]
+endpoint = "http://localhost:8764"
