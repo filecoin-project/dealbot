@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/filecoin-project/dealbot/config"
 	"github.com/filecoin-project/go-jsonrpc"
 	"github.com/filecoin-project/lotus/api"
 	"github.com/filecoin-project/lotus/api/client"
@@ -129,3 +130,33 @@ func apiHeaders(token string) http.Header {
 
 //return nil
 //}
+
+func NewAPIOpener(cfg *config.EnvConfig) (*APIOpener, APICloser, error) {
+	var rawaddr, rawtoken string
+
+	tokenMaddr := cfg.Daemon.API
+	toks := strings.Split(tokenMaddr, ":")
+	if len(toks) != 2 {
+		return nil, nil, fmt.Errorf("invalid api tokens, expected <token>:<maddr>, got: %s", tokenMaddr)
+	}
+
+	rawtoken = toks[0]
+	rawaddr = toks[1]
+
+	parsedAddr, err := ma.NewMultiaddr(rawaddr)
+	if err != nil {
+		return nil, nil, xerrors.Errorf("parse listen address: %w", err)
+	}
+
+	_, addr, err := manet.DialArgs(parsedAddr)
+	if err != nil {
+		return nil, nil, xerrors.Errorf("dial multiaddress: %w", err)
+	}
+
+	o := &APIOpener{
+		addr:    apiURI(addr),
+		headers: apiHeaders(rawtoken),
+	}
+
+	return o, APICloser(func() {}), nil
+}

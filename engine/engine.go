@@ -7,7 +7,9 @@ import (
 
 	"github.com/filecoin-project/dealbot/config"
 	"github.com/filecoin-project/dealbot/controller/client"
+	"github.com/filecoin-project/dealbot/lotus"
 	"github.com/filecoin-project/dealbot/tasks"
+	"github.com/filecoin-project/lotus/api"
 
 	logging "github.com/ipfs/go-log/v2"
 )
@@ -16,29 +18,45 @@ var log = logging.Logger("engine")
 
 type Engine struct {
 	client *client.Client
+
+	nodeConfig tasks.NodeConfig
+	node       api.FullNode
+	closer     lotus.NodeCloser
 }
 
-func New(cfg *config.EnvConfig) *Engine {
+func New(cfg *config.EnvConfig) (*Engine, error) {
 	workers := 2
 
 	client := client.New(cfg)
 
-	//v, err := node.Version(context.Background())
-	//if err != nil {
-	//panic(err)
-	//}
+	nodeConfig, node, closer, err := lotus.SetupClient(cfg)
+	if err != nil {
+		return nil, err
+	}
 
-	//log.Infof("remote version: %s", v.Version)
+	v, err := node.Version(context.Background())
+	if err != nil {
+		return nil, err
+	}
+
+	log.Infof("remote version: %s", v.Version)
 
 	e := &Engine{
-		client: client,
+		client:     client,
+		nodeConfig: nodeConfig,
+		node:       node,
+		closer:     closer,
 	}
 
 	for i := 0; i < workers; i++ {
 		go e.worker(i)
 	}
 
-	return e
+	return e, nil
+}
+
+func (e *Engine) Close() {
+	e.closer()
 }
 
 func (e *Engine) worker(n int) {
@@ -83,17 +101,17 @@ func (e *Engine) worker(n int) {
 					// we have successfully acquired task
 					log.Infow("successfully acquired task", "uuid", t.UUID)
 
-					//if t.RetrievalTask != nil {
-					//ctx := context.TODO()
-					//err = tasks.MakeRetrievalDeal(ctx, clientConfig, node, t, func(msg string, keysAndValues ...interface{}) {
-					//log.Infow(msg, keysAndValues...)
-					//})
-					//if err != nil {
-					//log.Fatal(err)
-					//}
+					if t.RetrievalTask != nil {
+						ctx := context.TODO()
+						err = tasks.MakeRetrievalDeal(ctx, e.nodeConfig, e.node, *t.RetrievalTask, func(msg string, keysAndValues ...interface{}) {
+							log.Infow(msg, keysAndValues...)
+						})
+						if err != nil {
+							log.Fatal(err)
+						}
 
-					//log.Info("successfully retrieved")
-					//}
+						log.Info("successfully retrieved")
+					}
 
 					// TODO: process task
 					return

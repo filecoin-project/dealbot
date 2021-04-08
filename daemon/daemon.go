@@ -28,7 +28,10 @@ func New(cfg *config.EnvConfig) (srv *Daemon, err error) {
 
 	r := mux.NewRouter().StrictSlash(true)
 
-	e := engine.New(cfg)
+	e, err := engine.New(cfg)
+	if err != nil {
+		return nil, err
+	}
 	_ = e
 
 	// Set a unique request ID.
