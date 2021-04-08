@@ -69,7 +69,7 @@ func main() {
 			commands.MakeRetrievalDealCmd,
 			commands.DaemonCmd,
 			commands.ControllerCmd,
-			commands.ClientCmd,
+			//commands.ClientCmd,
 		},
 	}
 
