@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/filecoin-project/dealbot/config"
+	"github.com/filecoin-project/dealbot/engine"
 	logging "github.com/ipfs/go-log/v2"
 
 	"github.com/gorilla/mux"
@@ -20,12 +21,18 @@ type Daemon struct {
 	server *http.Server
 	l      net.Listener
 	doneCh chan struct{}
+	e      *engine.Engine
 }
 
-func New(cfg *config.EnvConfig) (srv *Daemon, err error) {
+func New(ctx context.Context, cfg *config.EnvConfig) (srv *Daemon, err error) {
 	srv = new(Daemon)
 
 	r := mux.NewRouter().StrictSlash(true)
+
+	srv.e, err = engine.New(ctx, cfg)
+	if err != nil {
+		return nil, err
+	}
 
 	// Set a unique request ID.
 	r.Use(func(next http.Handler) http.Handler {
@@ -75,6 +82,9 @@ func (d *Daemon) Port() int {
 }
 
 func (d *Daemon) Shutdown(ctx context.Context) error {
-	defer close(d.doneCh)
+	defer func() {
+		close(d.doneCh)
+		d.e.Close()
+	}()
 	return d.server.Shutdown(ctx)
 }

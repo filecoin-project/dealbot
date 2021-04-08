@@ -121,7 +121,7 @@ func MakeStorageDeal(ctx context.Context, config NodeConfig, node api.FullNode, 
 				log("Deal status",
 					"cid", info.ProposalCid,
 					"piece", info.PieceCID,
-					"state", info.State,
+					"state", storagemarket.DealStates[info.State],
 					"message", info.Message,
 					"provider", info.Provider,
 				)
