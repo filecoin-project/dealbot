@@ -1,6 +1,9 @@
 package tasks
 
-import "github.com/filecoin-project/go-address"
+import (
+	"github.com/filecoin-project/go-address"
+	logging "github.com/ipfs/go-log/v2"
+)
 
 type UpdateStatus func(msg string, keysAndValues ...interface{})
 
@@ -17,6 +20,16 @@ type Task struct {
 
 	RetrievalTask *RetrievalTask `json:"retrieval_task,omitempty"`
 	StorageTask   *StorageTask   `json:"storage_task,omitempty"`
+}
+
+func (t *Task) Log(log *logging.ZapEventLogger) {
+	if t.RetrievalTask != nil {
+		log.Infow("retrieval task", "uuid", t.UUID, "status", t.Status, "worked_by", t.WorkedBy)
+	} else if t.StorageTask != nil {
+		log.Infow("storage task", "uuid", t.UUID, "status", t.Status, "worked_by", t.WorkedBy)
+	} else {
+		panic("both tasks are nil")
+	}
 }
 
 type Status int

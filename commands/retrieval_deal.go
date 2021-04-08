@@ -3,6 +3,7 @@ package commands
 import (
 	"context"
 
+	"github.com/filecoin-project/dealbot/lotus"
 	"github.com/filecoin-project/dealbot/tasks"
 	"github.com/urfave/cli/v2"
 )
@@ -21,7 +22,7 @@ var MakeRetrievalDealCmd = &cli.Command{
 }
 
 func makeRetrievalDeal(cctx *cli.Context) error {
-	clientConfig, node, closer, err := setupCLIClient(cctx)
+	nodeConfig, node, closer, err := lotus.SetupClientFromCLI(cctx)
 	if err != nil {
 		return err
 	}
@@ -48,7 +49,7 @@ func makeRetrievalDeal(cctx *cli.Context) error {
 		CARExport:  carExport,
 	}
 
-	err = tasks.MakeRetrievalDeal(cctx.Context, clientConfig, node, task, func(msg string, keysAndValues ...interface{}) {
+	err = tasks.MakeRetrievalDeal(cctx.Context, nodeConfig, node, task, func(msg string, keysAndValues ...interface{}) {
 		log.Infow(msg, keysAndValues...)
 	})
 	if err != nil {

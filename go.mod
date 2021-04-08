@@ -3,6 +3,7 @@ module github.com/filecoin-project/dealbot
 go 1.15
 
 require (
+	github.com/BurntSushi/toml v0.3.1 // indirect
 	github.com/c2h5oh/datasize v0.0.0-20200825124411-48ed595a09d2
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/filecoin-project/go-address v0.0.5

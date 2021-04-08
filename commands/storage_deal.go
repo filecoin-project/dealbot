@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/c2h5oh/datasize"
+	"github.com/filecoin-project/dealbot/lotus"
 	"github.com/filecoin-project/dealbot/tasks"
 	"github.com/urfave/cli/v2"
 )
@@ -31,7 +32,7 @@ var MakeStorageDealCmd = &cli.Command{
 			Usage:   "size of deal (1KB, 2MB, 12GB, etc.) [1MB]",
 			Aliases: []string{"s"},
 			EnvVars: []string{"DEALBOT_DEAL_SIZE"},
-			Value:   "1MB",
+			Value:   "1KB",
 		},
 		&cli.Int64Flag{
 			Name:    "max-price",
@@ -50,7 +51,7 @@ var MakeStorageDealCmd = &cli.Command{
 }
 
 func makeStorageDeal(cctx *cli.Context) error {
-	clientConfig, node, closer, err := setupCLIClient(cctx)
+	nodeConfig, node, closer, err := lotus.SetupClientFromCLI(cctx)
 	if err != nil {
 		return err
 	}
@@ -80,7 +81,7 @@ func makeStorageDeal(cctx *cli.Context) error {
 		Verified:        verified,
 	}
 
-	return tasks.MakeStorageDeal(cctx.Context, clientConfig, node, task, func(msg string, keysAndValues ...interface{}) {
+	return tasks.MakeStorageDeal(cctx.Context, nodeConfig, node, task, func(msg string, keysAndValues ...interface{}) {
 		log.Infow(msg, keysAndValues...)
 	})
 }

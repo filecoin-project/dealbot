@@ -11,8 +11,15 @@ import (
 )
 
 var ControllerCmd = &cli.Command{
-	Name:   "controller",
-	Usage:  "Start the dealbot controller",
+	Name:  "controller",
+	Usage: "Start the dealbot controller",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:  "configpath",
+			Usage: "path to config toml file",
+			Value: ".dealbot-controller.env.toml",
+		},
+	},
 	Action: controllerCommand,
 }
 
@@ -20,8 +27,10 @@ func controllerCommand(c *cli.Context) error {
 	ctx, cancel := context.WithCancel(ProcessContext())
 	defer cancel()
 
+	configpath := c.String("configpath")
+
 	cfg := &config.EnvConfig{}
-	if err := cfg.Load(); err != nil {
+	if err := cfg.Load(configpath); err != nil {
 		return err
 	}
 
