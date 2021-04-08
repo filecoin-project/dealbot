@@ -10,6 +10,7 @@ import (
 	"github.com/filecoin-project/dealbot/lotus"
 	"github.com/filecoin-project/dealbot/tasks"
 	"github.com/filecoin-project/lotus/api"
+	"github.com/pborman/uuid"
 
 	logging "github.com/ipfs/go-log/v2"
 )
@@ -17,6 +18,7 @@ import (
 var log = logging.Logger("engine")
 
 type Engine struct {
+	host   string
 	client *client.Client
 
 	nodeConfig tasks.NodeConfig
@@ -46,6 +48,7 @@ func New(cfg *config.EnvConfig) (*Engine, error) {
 		nodeConfig: nodeConfig,
 		node:       node,
 		closer:     closer,
+		host:       uuid.New()[:8], // TODO: set from config toml
 	}
 
 	for i := 0; i < workers; i++ {
@@ -85,7 +88,7 @@ func (e *Engine) worker(n int) {
 					req := &client.UpdateTaskRequest{
 						UUID:     t.UUID,
 						Status:   2,
-						WorkedBy: "dealbotN", // TODO: add our name
+						WorkedBy: e.host,
 					}
 
 					_, status, err := e.client.UpdateTask(ctx, req)
