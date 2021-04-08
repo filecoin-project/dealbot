@@ -10,12 +10,15 @@ import (
 	"github.com/filecoin-project/lotus/api"
 	"github.com/filecoin-project/lotus/api/client"
 	"github.com/filecoin-project/lotus/node/repo"
+	logging "github.com/ipfs/go-log/v2"
 	"github.com/mitchellh/go-homedir"
 	ma "github.com/multiformats/go-multiaddr"
 	manet "github.com/multiformats/go-multiaddr/net"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/xerrors"
 )
+
+var log = logging.Logger("dealbot")
 
 type APIOpener struct {
 	addr    string
@@ -24,7 +27,7 @@ type APIOpener struct {
 
 type APICloser func()
 
-func NewAPIOpener(cctx *cli.Context, cacheSize int) (*APIOpener, APICloser, error) {
+func NewAPIOpenerFromCLI(cctx *cli.Context) (*APIOpener, APICloser, error) {
 	var rawaddr, rawtoken string
 
 	if cctx.IsSet("api") {
@@ -95,3 +98,34 @@ func apiHeaders(token string) http.Header {
 	headers.Add("Authorization", "Bearer "+token)
 	return headers
 }
+
+//func setupLogging(cctx *cli.Context) error {
+//ll := cctx.String("log-level")
+//if err := logging.SetLogLevel("*", ll); err != nil {
+//return xerrors.Errorf("set log level: %w", err)
+//}
+
+//if err := logging.SetLogLevel("rpc", "error"); err != nil {
+//return xerrors.Errorf("set rpc log level: %w", err)
+//}
+
+//llnamed := cctx.String("log-level-named")
+//if llnamed == "" {
+//return nil
+//}
+
+//for _, llname := range strings.Split(llnamed, ",") {
+//parts := strings.Split(llname, ":")
+//if len(parts) != 2 {
+//return xerrors.Errorf("invalid named log level format: %q", llname)
+//}
+//if err := logging.SetLogLevel(parts[0], parts[1]); err != nil {
+//return xerrors.Errorf("set named log level %q to %q: %w", parts[0], parts[1], err)
+//}
+
+//}
+
+//log.Infof("Dealbot version:%s", version.String())
+
+//return nil
+//}

@@ -23,6 +23,13 @@ func New(cfg *config.EnvConfig) *Engine {
 
 	client := client.New(cfg)
 
+	//v, err := node.Version(context.Background())
+	//if err != nil {
+	//panic(err)
+	//}
+
+	//log.Infof("remote version: %s", v.Version)
+
 	e := &Engine{
 		client: client,
 	}
@@ -75,6 +82,18 @@ func (e *Engine) worker(n int) {
 
 					// we have successfully acquired task
 					log.Infow("successfully acquired task", "uuid", t.UUID)
+
+					//if t.RetrievalTask != nil {
+					//ctx := context.TODO()
+					//err = tasks.MakeRetrievalDeal(ctx, clientConfig, node, t, func(msg string, keysAndValues ...interface{}) {
+					//log.Infow(msg, keysAndValues...)
+					//})
+					//if err != nil {
+					//log.Fatal(err)
+					//}
+
+					//log.Info("successfully retrieved")
+					//}
 
 					// TODO: process task
 					return

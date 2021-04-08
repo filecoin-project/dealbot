@@ -9,6 +9,7 @@ import (
 
 	"github.com/filecoin-project/dealbot/config"
 	"github.com/filecoin-project/dealbot/controller"
+	"github.com/filecoin-project/dealbot/lotus"
 	"github.com/filecoin-project/dealbot/tasks"
 	"github.com/urfave/cli/v2"
 )
@@ -45,7 +46,7 @@ func clientCommand(cctx *cli.Context) error {
 		return err
 	}
 
-	nodeConfig, node, closer, err := setupCLIClient(cctx)
+	nodeConfig, node, closer, err := lotus.SetupClientFromCLI(cctx)
 	if err != nil {
 		return err
 	}

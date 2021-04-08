@@ -11,7 +11,9 @@ type ControllerConfig struct {
 }
 
 type DaemonConfig struct {
-	Listen string `toml:"listen"`
+	Listen      string `toml:"listen"`
+	DataDir     string `toml:"data_dir"`      // writable directory used to transfer data to node
+	NodeDataDir string `toml:"node_data_dir"` // data-dir from relative to node's location
 }
 
 type ClientConfig struct {
