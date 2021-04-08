@@ -5,7 +5,7 @@ listen = "localhost:8764"
 listen        = "localhost:0"
 data_dir      = "/Users/nonsense/code/src/github.com/filecoin-project/dealbot"
 node_data_dir = "/Users/nonsense/code/src/github.com/filecoin-project/dealbot"
-api           = "token:api"
+api           = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJBbGxvdyI6WyJyZWFkIiwid3JpdGUiLCJzaWduIiwiYWRtaW4iXX0.Q9gom7KbWTT8XRFMVMC6Ds5uIBk7KKb8xhdVlEgRyk4:/ip4/127.0.0.1/tcp/1234/http"
 wallet        = ""
 
 [client]
