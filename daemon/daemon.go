@@ -21,6 +21,7 @@ type Daemon struct {
 	server *http.Server
 	l      net.Listener
 	doneCh chan struct{}
+	e      *engine.Engine
 }
 
 func New(cfg *config.EnvConfig) (srv *Daemon, err error) {
@@ -28,11 +29,10 @@ func New(cfg *config.EnvConfig) (srv *Daemon, err error) {
 
 	r := mux.NewRouter().StrictSlash(true)
 
-	e, err := engine.New(cfg)
+	srv.e, err = engine.New(cfg)
 	if err != nil {
 		return nil, err
 	}
-	_ = e
 
 	// Set a unique request ID.
 	r.Use(func(next http.Handler) http.Handler {
@@ -82,6 +82,9 @@ func (d *Daemon) Port() int {
 }
 
 func (d *Daemon) Shutdown(ctx context.Context) error {
-	defer close(d.doneCh)
+	defer func() {
+		close(d.doneCh)
+		d.e.Close()
+	}()
 	return d.server.Shutdown(ctx)
 }
