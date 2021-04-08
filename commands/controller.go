@@ -17,7 +17,7 @@ var ControllerCmd = &cli.Command{
 		&cli.StringFlag{
 			Name:  "configpath",
 			Usage: "path to config toml file",
-			Value: ".env.toml",
+			Value: ".dealbot-controller.env.toml",
 		},
 	},
 	Action: controllerCommand,
