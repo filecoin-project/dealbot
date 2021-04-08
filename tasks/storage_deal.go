@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"fmt"
 	"io"
+	"math"
 	"os"
 	"path"
 
@@ -86,6 +87,12 @@ func MakeStorageDeal(ctx context.Context, config NodeConfig, node api.FullNode, 
 
 	log("imported deal file, got data cid", "datacid", importRes.Root)
 
+	// convert size from bytes to Gb
+	sizeGB := float64(task.Size) / float64(1<<30)
+	// pad by 5% and find next greatest power of 2
+	paddedPo2Estimate := uint64(math.Ceil(math.Log2(1.05 * sizeGB)))
+	dealPrice := big.Mul(price, big.NewInt(1<<paddedPo2Estimate))
+
 	// Prepare parameters for deal
 	params := &api.StartDealParams{
 		Data: &storagemarket.DataRef{
@@ -94,7 +101,7 @@ func MakeStorageDeal(ctx context.Context, config NodeConfig, node api.FullNode, 
 		},
 		Wallet:            config.WalletAddress,
 		Miner:             minerAddress,
-		EpochPrice:        price,
+		EpochPrice:        dealPrice,
 		MinBlocksDuration: 2880 * 180,
 		DealStartEpoch:    tipSet.Height() + abi.ChainEpoch(startOffset),
 		FastRetrieval:     task.FastRetrieval,
@@ -130,39 +137,50 @@ func MakeStorageDeal(ctx context.Context, config NodeConfig, node api.FullNode, 
 
 			switch info.State {
 			case storagemarket.StorageDealUnknown:
+				return logStages(info, log)
 			case storagemarket.StorageDealProposalNotFound:
+				return logStages(info, log)
 			case storagemarket.StorageDealProposalRejected:
+				return logStages(info, log)
 			case storagemarket.StorageDealExpired:
+				return logStages(info, log)
 			case storagemarket.StorageDealSlashed:
+				return logStages(info, log)
 			case storagemarket.StorageDealRejecting:
+				return logStages(info, log)
 			case storagemarket.StorageDealFailing:
+				return logStages(info, log)
 			case storagemarket.StorageDealError:
-				// deal failed, exit
+				return logStages(info, log)
 			case storagemarket.StorageDealActive:
-				// deal is on chain, exit
-				for _, stage := range info.DealStages.Stages {
-					log("Deal stage",
-						"cid", info.ProposalCid,
-						"name", stage.Name,
-						"description", stage.Description,
-						"created", stage.CreatedTime,
-						"expected", stage.ExpectedDuration,
-						"updated", stage.UpdatedTime,
-						"size", info.Size,
-						"duration", info.Duration,
-						"deal_id", info.DealID,
-						"piece_cid", info.PieceCID,
-						"message", info.Message,
-						"provider", info.Provider,
-						"price", info.PricePerEpoch,
-						"verfied", info.Verified,
-					)
-				}
-				return nil
+				// deal is on chain, exit successfully
+				return logStages(info, log)
 			}
 		}
 	}
 
+	return nil
+}
+
+func logStages(info api.DealInfo, log UpdateStatus) error {
+	for _, stage := range info.DealStages.Stages {
+		log("Deal stage",
+			"cid", info.ProposalCid,
+			"name", stage.Name,
+			"description", stage.Description,
+			"created", stage.CreatedTime,
+			"expected", stage.ExpectedDuration,
+			"updated", stage.UpdatedTime,
+			"size", info.Size,
+			"duration", info.Duration,
+			"deal_id", info.DealID,
+			"piece_cid", info.PieceCID,
+			"message", info.Message,
+			"provider", info.Provider,
+			"price", info.PricePerEpoch,
+			"verfied", info.Verified,
+		)
+	}
 	return nil
 }
 
