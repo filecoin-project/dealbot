@@ -40,8 +40,8 @@ func NewAPIOpenerFromCLI(cctx *cli.Context) (*APIOpener, APICloser, error) {
 
 		rawtoken = toks[0]
 		rawaddr = toks[1]
-	} else if cctx.IsSet("repo") {
-		repoPath := cctx.String("repo")
+	} else if cctx.IsSet("lotus-path") {
+		repoPath := cctx.String("lotus-path")
 		p, err := homedir.Expand(repoPath)
 		if err != nil {
 			return nil, nil, xerrors.Errorf("expand home dir (%s): %w", repoPath, err)
