@@ -52,6 +52,12 @@ func main() {
 				Value:   "",
 			},
 			&cli.StringFlag{
+				Name:    "lotus-path",
+				EnvVars: []string{"LOTUS_PATH"},
+				Value:   "",
+				Usage:   "Set the lotus path instead of the API determine the api url automatically",
+			},
+			&cli.StringFlag{
 				Name:    "log-level",
 				EnvVars: []string{"GOLOG_LOG_LEVEL"},
 				Value:   "debug",
