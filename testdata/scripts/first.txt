@@ -1,0 +1,10 @@
+exec devnet &
+
+exec sleep 20
+
+env TOKEN=`cat ~/.devLotus/token`
+env API=`cat ~/.devLotus/api`
+env DATADIR=/tmp
+env MINER=t01000
+
+exec dealbot --api $TOKEN:$API storage-deal --data-dir $DATADIR --miner $MINER
