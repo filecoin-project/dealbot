@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 	"fmt"
 	"io"
-	"math"
 	"os"
 	"path/filepath"
 
@@ -87,12 +86,6 @@ func MakeStorageDeal(ctx context.Context, config NodeConfig, node api.FullNode, 
 
 	log("imported deal file, got data cid", "datacid", importRes.Root)
 
-	// convert size from bytes to Gb
-	sizeGB := float64(task.Size) / float64(1<<30)
-	// pad by 5% and find next greatest power of 2
-	paddedPo2Estimate := uint64(math.Ceil(math.Log2(1.05 * sizeGB)))
-	dealPrice := big.Mul(price, big.NewInt(1<<paddedPo2Estimate))
-
 	// Prepare parameters for deal
 	params := &api.StartDealParams{
 		Data: &storagemarket.DataRef{
@@ -101,7 +94,7 @@ func MakeStorageDeal(ctx context.Context, config NodeConfig, node api.FullNode, 
 		},
 		Wallet:            config.WalletAddress,
 		Miner:             minerAddress,
-		EpochPrice:        dealPrice,
+		EpochPrice:        price,
 		MinBlocksDuration: 2880 * 180,
 		DealStartEpoch:    tipSet.Height() + abi.ChainEpoch(startOffset),
 		FastRetrieval:     task.FastRetrieval,
@@ -157,6 +150,21 @@ func MakeStorageDeal(ctx context.Context, config NodeConfig, node api.FullNode, 
 	return nil
 }
 
+func minerAskPrice(ctx context.Context, api api.FullNode, tipSet *types.TipSet, addr address.Address) (abi.TokenAmount, error) {
+	minerInfo, err := api.StateMinerInfo(ctx, addr, tipSet.Key())
+	if err != nil {
+		return big.Zero(), err
+	}
+
+	peerId := *minerInfo.PeerId
+	ask, err := api.ClientQueryAsk(ctx, peerId, addr)
+	if err != nil {
+		return big.Zero(), err
+	}
+
+	return ask.Price, nil
+}
+
 func logStages(info api.DealInfo, log UpdateStatus) error {
 	for _, stage := range info.DealStages.Stages {
 		log("Deal stage",
@@ -177,19 +185,4 @@ func logStages(info api.DealInfo, log UpdateStatus) error {
 		)
 	}
 	return nil
-}
-
-func minerAskPrice(ctx context.Context, api api.FullNode, tipSet *types.TipSet, addr address.Address) (abi.TokenAmount, error) {
-	minerInfo, err := api.StateMinerInfo(ctx, addr, tipSet.Key())
-	if err != nil {
-		return big.Zero(), err
-	}
-
-	peerId := *minerInfo.PeerId
-	ask, err := api.ClientQueryAsk(ctx, peerId, addr)
-	if err != nil {
-		return big.Zero(), err
-	}
-
-	return ask.Price, nil
 }
