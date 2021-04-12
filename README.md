@@ -30,10 +30,10 @@ Dealbot runs on multiple machines with a centralized controller. The controller 
 See dealbot-example.toml for configuration parameters. Individual Dealbot nodes run with the daemon command:
  
 ```
-./dealbot --api [LOTUS_API_URL] controller --configpath config.toml
+./dealbot --api [LOTUS_API_URL] daemon --configpath config.toml
 ```
 
-The api parameter points to the Lotus api and can be specified as a url token pair or by specifying the lotus path either as a parameter or environment variable:
+The `--api` parameter points to the Lotus API and can be specified as a URL token pair. Alternatively you can specify `--lotus-path` either as a parameter or environment variable:
 
 ```
 --api [lotus_api_url]:[lotus_api_token]
@@ -42,16 +42,16 @@ export FULLNODE_API_INFO=[lotus_api_url]:[lotus_api_token]
 export LOTUS_PATH=~/.lotus
 ```
 
-Dealbot can also run individual storage or retrieval task with:
+Dealbot can also run individual storage or retrieval task when invoked from the command-line with:
 
 ```
-./dealbot --api [api] storage-deal --deata-dir [shared-dir] --miner [miner-address] --size 2GB 
+./dealbot --api [api] storage-deal --data-dir [shared-dir] --miner [miner-address] --size 2GB 
 ``` 
 
 or 
 
 ```
-./dealbot --api [api] retrieval-deal --deata-dir [shared-dir] --miner [miner-address] --cid [payload-cid] 
+./dealbot --api [api] retrieval-deal --data-dir [shared-dir] --miner [miner-address] --cid [payload-cid] 
 ``` 
 
 ## Versioning and Releases
