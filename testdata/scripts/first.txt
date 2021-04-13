@@ -7,11 +7,16 @@ env LOTUS_PATH=${HOME}/.lotus
 
 devnet &
 
-exec sleep 20
+
+exec echo "before sleep"
+sleep 20
+exec echo "after sleep"
+
 
 readenv TOKEN ${LOTUS_PATH}/token
 readenv API ${LOTUS_PATH}/api
 env DATADIR=/tmp
 env MINER=t01000
 
-exec dealbot --api $TOKEN:$API storage-deal --data-dir $DATADIR --miner $MINER
+
+exec dealbot --api ${TOKEN}:${API} storage-deal --data-dir ${DATADIR} --miner ${MINER}
