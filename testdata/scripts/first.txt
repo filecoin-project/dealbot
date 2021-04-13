@@ -1,4 +1,4 @@
-exec devnet &
+devnet &
 
 exec sleep 20
 
