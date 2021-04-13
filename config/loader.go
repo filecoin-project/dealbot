@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"reflect"
 
 	"github.com/BurntSushi/toml"
+	"github.com/urfave/cli/v2"
 )
 
 const (
@@ -64,5 +66,29 @@ func (e *EnvConfig) Load(configpath string) error {
 		}
 	}
 
+	return nil
+}
+
+// OverrideFromEnv sets config fields based on environmental variables
+// of the format DEALBOT_DAEMON_LISTEN
+func (e *EnvConfig) OverrideFromEnv(c *cli.Context) error {
+	v := reflect.ValueOf(e)
+	envConfType := v.Type()
+
+	// for daemon/controller/client...
+	for i := 0; i < v.NumField(); i++ {
+		subConfType := v.Field(i).Type()
+		// for fields within each sub-config
+		for j := 0; j < v.Field(i).NumField(); j++ {
+			if val, ok := os.LookupEnv(fmt.Sprintf("DEALBOT_%s_%s", envConfType.Field(i).Name, subConfType.Field(j).Name)); ok {
+				switch v.Field(i).Field(j).Type().Kind() {
+				case reflect.String:
+					v.Field(i).Field(j).SetString(val)
+				default:
+					return fmt.Errorf("Unexpected type %s", v.Field(i).Field(j).Type().Kind())
+				}
+			}
+		}
+	}
 	return nil
 }

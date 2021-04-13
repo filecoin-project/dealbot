@@ -33,6 +33,9 @@ func controllerCommand(c *cli.Context) error {
 	if err := cfg.Load(configpath); err != nil {
 		return err
 	}
+	if err := cfg.OverrideFromEnv(c); err != nil {
+		return err
+	}
 
 	srv, err := controller.New(cfg)
 	if err != nil {
