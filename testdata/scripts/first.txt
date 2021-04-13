@@ -1,3 +1,7 @@
+[!exec:lotus] skip 'dealbot integration tests need `lotus` to run'
+[!exec:lotus-seed] skip 'dealbot integration tests need `lotus-seed` to run'
+[!exec:lotus-miner] skip 'dealbot integration tests need `lotus-miner` to run'
+
 devnet &
 
 exec sleep 20
