@@ -23,8 +23,8 @@ func TestStorageAndRetrievalTasks(t *testing.T) {
 		Dir: "testdata/scripts",
 		Cmds: map[string]func(*testscript.TestScript, bool, []string){
 			"readenv": func(ts *testscript.TestScript, neg bool, args []string) {
-				value := ts.ReadFile(args[2])
-				ts.Setenv(args[1], value)
+				value := ts.ReadFile(args[1])
+				ts.Setenv(args[0], value)
 				return
 			},
 		},

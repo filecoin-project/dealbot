@@ -6,8 +6,8 @@ devnet &
 
 exec sleep 20
 
-readenv TOKEN ~/.devLotus/token
-readenv API ~/.devLotus/api
+readenv TOKEN /Users/nonsense/.devLotus/token
+readenv API /Users/nonsense/.devLotus/api
 env DATADIR=/tmp
 env MINER=t01000
 
