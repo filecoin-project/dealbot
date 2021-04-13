@@ -20,5 +20,12 @@ func TestMain(m *testing.M) {
 func TestStorageAndRetrievalTasks(t *testing.T) {
 	testscript.Run(t, testscript.Params{
 		Dir: "testdata/scripts",
+		Cmds: map[string]func(*testscript.TestScript, bool, []string){
+			"readenv": func(ts *testscript.TestScript, neg bool, args []string) {
+				value := ts.ReadFile(args[2])
+				ts.Setenv(args[1], value)
+				return
+			},
+		},
 	})
 }
