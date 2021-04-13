@@ -7,7 +7,7 @@ import (
 	"io"
 	"math"
 	"os"
-	"path"
+	"path/filepath"
 
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-fil-markets/storagemarket"
@@ -56,14 +56,14 @@ func MakeStorageDeal(ctx context.Context, config NodeConfig, node api.FullNode, 
 	}
 
 	fileName := uuid.New().String()
-	filepath := path.Join(config.DataDir, fileName)
-	file, err := os.Create(filepath)
+	filePath := filepath.Join(config.DataDir, fileName)
+	file, err := os.Create(filePath)
 	if err != nil {
 		return fmt.Errorf("failed to create file: %w", err)
 	}
 	defer file.Close()
 
-	log("creating deal file", "name", fileName, "size", task.Size, "path", filepath)
+	log("creating deal file", "name", fileName, "size", task.Size, "path", filePath)
 	_, err = io.CopyN(file, rand.Reader, int64(task.Size))
 	if err != nil {
 		return fmt.Errorf("error creating random file for deal: %s, %v", fileName, err)
@@ -71,7 +71,7 @@ func MakeStorageDeal(ctx context.Context, config NodeConfig, node api.FullNode, 
 
 	// import the file into the lotus node
 	ref := api.FileRef{
-		Path:  path.Join(config.NodeDataDir, fileName),
+		Path:  filepath.Join(config.NodeDataDir, fileName),
 		IsCAR: false,
 	}
 
@@ -123,39 +123,34 @@ func MakeStorageDeal(ctx context.Context, config NodeConfig, node api.FullNode, 
 
 	lastState := storagemarket.StorageDealUnknown
 	for info := range updates {
-		if proposalCid.Equals(info.ProposalCid) {
-			if info.State != lastState {
-				log("Deal status",
-					"cid", info.ProposalCid,
-					"piece", info.PieceCID,
-					"state", storagemarket.DealStates[info.State],
-					"message", info.Message,
-					"provider", info.Provider,
-				)
-				lastState = info.State
-			}
+		if !proposalCid.Equals(info.ProposalCid) {
+			continue
+		}
+		if info.State != lastState {
+			log("Deal status",
+				"cid", info.ProposalCid,
+				"piece", info.PieceCID,
+				"state", storagemarket.DealStates[info.State],
+				"message", info.Message,
+				"provider", info.Provider,
+			)
+			lastState = info.State
+		}
 
-			switch info.State {
-			case storagemarket.StorageDealUnknown:
-				return logStages(info, log)
-			case storagemarket.StorageDealProposalNotFound:
-				return logStages(info, log)
-			case storagemarket.StorageDealProposalRejected:
-				return logStages(info, log)
-			case storagemarket.StorageDealExpired:
-				return logStages(info, log)
-			case storagemarket.StorageDealSlashed:
-				return logStages(info, log)
-			case storagemarket.StorageDealRejecting:
-				return logStages(info, log)
-			case storagemarket.StorageDealFailing:
-				return logStages(info, log)
-			case storagemarket.StorageDealError:
-				return logStages(info, log)
-			case storagemarket.StorageDealActive:
-				// deal is on chain, exit successfully
-				return logStages(info, log)
-			}
+		switch info.State {
+		case storagemarket.StorageDealUnknown,
+			storagemarket.StorageDealProposalNotFound,
+			storagemarket.StorageDealProposalRejected,
+			storagemarket.StorageDealExpired,
+			storagemarket.StorageDealSlashed,
+			storagemarket.StorageDealRejecting,
+			storagemarket.StorageDealFailing,
+			storagemarket.StorageDealError,
+
+			// deal is on chain, exit successfully
+			storagemarket.StorageDealActive:
+
+			return logStages(info, log)
 		}
 	}
 
