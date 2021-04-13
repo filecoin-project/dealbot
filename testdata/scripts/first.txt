@@ -2,12 +2,15 @@
 [!exec:lotus-seed] skip 'dealbot integration tests need `lotus-seed` to run'
 [!exec:lotus-miner] skip 'dealbot integration tests need `lotus-miner` to run'
 
+env HOME=${WORK}/home
+env LOTUS_PATH=${HOME}/.lotus
+
 devnet &
 
 exec sleep 20
 
-readenv TOKEN /Users/nonsense/.devLotus/token
-readenv API /Users/nonsense/.devLotus/api
+readenv TOKEN ${LOTUS_PATH}/token
+readenv API ${LOTUS_PATH}/api
 env DATADIR=/tmp
 env MINER=t01000
 
