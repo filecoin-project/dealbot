@@ -66,73 +66,77 @@ func (e *Engine) worker(n int) {
 	log.Infow("engine worker started", "worker_id", n)
 
 	for {
-		func() {
-			// add delay to avoid querying the controller many times if there are no available tasks
-			time.Sleep(5 * time.Second)
+		// add delay to avoid querying the controller many times if there are no available tasks
+		time.Sleep(5 * time.Second)
 
-			// fetch tasks
-			ctx := context.Background()
-			alltasks, err := e.client.ListTasks(ctx)
+		// fetch tasks
+		ctx := context.Background()
+		alltasks, err := e.client.ListTasks(ctx)
+		if err != nil {
+			log.Warnw("list tasks returned error", "err", err)
+			continue
+		}
+
+		// log tasks
+		for _, t := range alltasks {
+			t.Log(log)
+		}
+
+		// pick first available task
+		var task *tasks.Task
+		for _, t := range alltasks {
+			if t.Status != tasks.Available {
+				continue
+			}
+			task = t
+			break
+		}
+		if task == nil {
+			continue // no task available
+		}
+
+		req := &client.UpdateTaskRequest{
+			UUID:     task.UUID,
+			Status:   2,
+			WorkedBy: e.host,
+		}
+
+		_, status, err := e.client.UpdateTask(ctx, req)
+		if err != nil {
+			log.Warnw("update task returned error", "err", err)
+			continue
+		}
+		if status != http.StatusOK {
+			log.Warnw("status is different to 200", "status", status)
+			continue
+		}
+
+		log.Infow("successfully acquired task", "uuid", task.UUID)
+
+		if task.RetrievalTask != nil {
+			ctx := context.TODO()
+			err = tasks.MakeRetrievalDeal(ctx, e.nodeConfig, e.node, *task.RetrievalTask, func(msg string, keysAndValues ...interface{}) {
+				log.Infow(msg, keysAndValues...)
+			})
 			if err != nil {
-				log.Warnw("list tasks returned error", "err", err)
-				return
+				log.Errorw("retrieval task returned error", "err", err)
+				continue
 			}
 
-			// log tasks
-			for _, t := range alltasks {
-				t.Log(log)
+			log.Info("successfully retrieved data")
+		}
+
+		if task.StorageTask != nil {
+			ctx := context.TODO()
+			err = tasks.MakeStorageDeal(ctx, e.nodeConfig, e.node, *task.StorageTask, func(msg string, keysAndValues ...interface{}) {
+				log.Infow(msg, keysAndValues...)
+			})
+			if err != nil {
+				log.Errorw("storage task returned error", "err", err)
+				continue
 			}
 
-			// pick first available task
-			for _, t := range alltasks {
-				if t.Status == tasks.Available {
-					req := &client.UpdateTaskRequest{
-						UUID:     t.UUID,
-						Status:   2,
-						WorkedBy: e.host,
-					}
-
-					_, status, err := e.client.UpdateTask(ctx, req)
-					if err != nil {
-						log.Warnw("update task returned error", "err", err)
-						continue
-					}
-					if status != http.StatusOK {
-						log.Warnw("status is different to 200", "status", status)
-						continue
-					}
-
-					log.Infow("successfully acquired task", "uuid", t.UUID)
-
-					if t.RetrievalTask != nil {
-						ctx := context.TODO()
-						err = tasks.MakeRetrievalDeal(ctx, e.nodeConfig, e.node, *t.RetrievalTask, func(msg string, keysAndValues ...interface{}) {
-							log.Infow(msg, keysAndValues...)
-						})
-						if err != nil {
-							log.Errorw("retrieval task returned error", "err", err)
-							return
-						}
-
-						log.Info("successfully retrieved data")
-					}
-
-					if t.StorageTask != nil {
-						ctx := context.TODO()
-						err = tasks.MakeStorageDeal(ctx, e.nodeConfig, e.node, *t.StorageTask, func(msg string, keysAndValues ...interface{}) {
-							log.Infow(msg, keysAndValues...)
-						})
-						if err != nil {
-							log.Errorw("storage task returned error", "err", err)
-							return
-						}
-
-						log.Info("successfully stored data")
-					}
-
-					return
-				}
-			}
-		}()
+			log.Info("successfully stored data")
+		}
 	}
 }
