@@ -8,7 +8,7 @@ import (
 
 	"github.com/filecoin-project/dealbot/controller/client"
 	"github.com/filecoin-project/dealbot/tasks"
-	"github.com/pborman/uuid"
+	"github.com/google/uuid"
 )
 
 var State *state
@@ -47,8 +47,8 @@ func (s *state) Update(req *client.UpdateTaskRequest) error {
 func init() {
 	State = &state{}
 	State.tasks = []*tasks.Task{
-		&tasks.Task{
-			UUID:   uuid.New()[:8],
+		{
+			UUID:   uuid.New().String()[:8],
 			Status: tasks.Available,
 			RetrievalTask: &tasks.RetrievalTask{
 				Miner:      "t01000",
@@ -56,8 +56,8 @@ func init() {
 				CARExport:  false,
 			},
 		},
-		&tasks.Task{
-			UUID:   uuid.New()[:8],
+		{
+			UUID:   uuid.New().String()[:8],
 			Status: tasks.Available,
 			RetrievalTask: &tasks.RetrievalTask{
 				Miner:      "t01000",
@@ -65,8 +65,8 @@ func init() {
 				CARExport:  false,
 			},
 		},
-		&tasks.Task{
-			UUID:   uuid.New()[:8],
+		{
+			UUID:   uuid.New().String()[:8],
 			Status: tasks.Available,
 			RetrievalTask: &tasks.RetrievalTask{
 				Miner:      "f0127896",
@@ -74,8 +74,8 @@ func init() {
 				CARExport:  false,
 			},
 		},
-		&tasks.Task{
-			UUID:   uuid.New()[:8],
+		{
+			UUID:   uuid.New().String()[:8],
 			Status: tasks.Available,
 			StorageTask: &tasks.StorageTask{
 				Miner:           "t01000",
