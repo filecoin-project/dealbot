@@ -10,7 +10,7 @@ import (
 	"github.com/filecoin-project/dealbot/lotus"
 	"github.com/filecoin-project/dealbot/tasks"
 	"github.com/filecoin-project/lotus/api"
-	"github.com/pborman/uuid"
+	"github.com/google/uuid"
 
 	logging "github.com/ipfs/go-log/v2"
 )
@@ -48,7 +48,7 @@ func New(ctx context.Context, cfg *config.EnvConfig) (*Engine, error) {
 		nodeConfig: nodeConfig,
 		node:       node,
 		closer:     closer,
-		host:       uuid.New()[:8], // TODO: set from config toml
+		host:       uuid.New().String()[:8], // TODO: set from config toml
 	}
 
 	for i := 0; i < workers; i++ {

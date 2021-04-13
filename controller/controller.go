@@ -10,8 +10,8 @@ import (
 	"github.com/filecoin-project/dealbot/config"
 	logging "github.com/ipfs/go-log/v2"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
-	"github.com/pborman/uuid"
 )
 
 var log = logging.Logger("controller")
@@ -30,7 +30,7 @@ func New(cfg *config.EnvConfig) (srv *Controller, err error) {
 	// Set a unique request ID.
 	r.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			r.Header.Set("X-Request-ID", uuid.New()[:8])
+			r.Header.Set("X-Request-ID", uuid.New().String()[:8])
 			next.ServeHTTP(w, r)
 		})
 	})
