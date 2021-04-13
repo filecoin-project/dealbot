@@ -16,6 +16,10 @@ import (
 var log = logging.Logger("dealbot")
 
 func main() {
+	os.Exit(main1())
+}
+
+func main1() int {
 	// Set up a context that is canceled when the command is interrupted
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -81,4 +85,6 @@ func main() {
 	if err := app.RunContext(ctx, os.Args); err != nil {
 		log.Fatal(err)
 	}
+
+	return 0
 }

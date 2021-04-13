@@ -14,6 +14,7 @@ func TestMain(m *testing.M) {
 			devnet.Main()
 			return 0
 		},
+		"dealbot": main1,
 	}))
 }
 
