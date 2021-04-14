@@ -144,7 +144,7 @@ func MakeStorageDeal(ctx context.Context, config NodeConfig, node api.FullNode, 
 			logStages(info, log)
 			return errors.New("storage deal failed")
 
-			// deal is on chain, exit successfully
+		// deal is on chain, exit successfully
 		case storagemarket.StorageDealActive:
 
 			logStages(info, log)
