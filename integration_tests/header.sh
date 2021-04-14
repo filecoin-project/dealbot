@@ -14,6 +14,12 @@ function finish {
 }
 trap finish EXIT
 
+# go install dealbot and devnet
+my_dir="$(dirname "$0")"
+pushd $my_dir/../
+go install ./...
+popd
+
 TEMPDIR=`mktemp -d`
 export HOME=$TEMPDIR
 export LOTUS_PATH=$TEMPDIR/.lotus
