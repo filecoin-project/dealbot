@@ -30,4 +30,4 @@ pushd $TEMPDIR
 devnet &
 DEVNETPID=$!
 
-sleep 30
+sleep 60

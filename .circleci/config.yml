@@ -1,0 +1,43 @@
+version: 2.1
+orbs:
+  go: gotest/tools@0.0.13
+
+executors:
+  golang:
+    docker:
+      - image: circleci/golang:1.16.3
+    resource_class: 2xlarge
+
+commands:
+  checkout-dealbot:
+    steps:
+      - checkout
+  install-lotus:
+    steps:
+      - run: sudo apt-get update
+      - run: sudo apt-get install ocl-icd-opencl-dev libhwloc-dev
+      - run: git clone https://github.com/filecoin-project/lotus.git /tmp/lotus
+      - run: cd /tmp/lotus && git submodule sync && git submodule update --init
+      - run: cd /tmp/lotus && make debug && sudo make install
+      - run: cd /tmp/lotus && sudo cp lotus-seed /usr/local/bin
+  test-dealbot:
+    steps:
+      - run: go build -o ./devnet-binary cmd/devnet/*.go
+      - run: go build -o dealbot-binary
+      - run: sudo cp devnet-binary /usr/local/bin/devnet
+      - run: sudo cp dealbot-binary /usr/local/bin/dealbot
+      - run: ./integration_tests/01_storage_retrieval_ok.sh
+
+jobs:
+  build-and-test:
+    executor: golang
+    steps:
+      - checkout-dealbot
+      - install-lotus
+      - test-dealbot
+
+workflows:
+  version: 2.1
+  ci:
+    jobs:
+      - build-and-test
