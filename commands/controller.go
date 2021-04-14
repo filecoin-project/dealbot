@@ -5,21 +5,14 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/filecoin-project/dealbot/config"
 	"github.com/filecoin-project/dealbot/controller"
 	"github.com/urfave/cli/v2"
 )
 
 var ControllerCmd = &cli.Command{
-	Name:  "controller",
-	Usage: "Start the dealbot controller",
-	Flags: []cli.Flag{
-		&cli.StringFlag{
-			Name:  "configpath",
-			Usage: "path to config toml file",
-			Value: ".dealbot-controller.env.toml",
-		},
-	},
+	Name:   "controller",
+	Usage:  "Start the dealbot controller",
+	Flags:  ControllerFlags,
 	Action: controllerCommand,
 }
 
@@ -27,17 +20,7 @@ func controllerCommand(c *cli.Context) error {
 	ctx, cancel := context.WithCancel(ProcessContext())
 	defer cancel()
 
-	configpath := c.String("configpath")
-
-	cfg := &config.EnvConfig{}
-	if err := cfg.Load(configpath); err != nil {
-		return err
-	}
-	if err := cfg.OverrideFromEnv(c); err != nil {
-		return err
-	}
-
-	srv, err := controller.New(cfg)
+	srv, err := controller.New(c)
 	if err != nil {
 		return err
 	}

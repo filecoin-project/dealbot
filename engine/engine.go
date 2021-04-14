@@ -5,12 +5,12 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/filecoin-project/dealbot/config"
 	"github.com/filecoin-project/dealbot/controller/client"
 	"github.com/filecoin-project/dealbot/lotus"
 	"github.com/filecoin-project/dealbot/tasks"
 	"github.com/filecoin-project/lotus/api"
 	"github.com/google/uuid"
+	"github.com/urfave/cli/v2"
 
 	logging "github.com/ipfs/go-log/v2"
 )
@@ -26,12 +26,12 @@ type Engine struct {
 	closer     lotus.NodeCloser
 }
 
-func New(ctx context.Context, cfg *config.EnvConfig) (*Engine, error) {
+func New(ctx context.Context, cliCtx *cli.Context) (*Engine, error) {
 	workers := 1
 
-	client := client.New(cfg)
+	client := client.New(cliCtx)
 
-	nodeConfig, node, closer, err := lotus.SetupClient(ctx, cfg)
+	nodeConfig, node, closer, err := lotus.SetupClient(ctx, cliCtx)
 	if err != nil {
 		return nil, err
 	}

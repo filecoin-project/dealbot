@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/filecoin-project/dealbot/config"
 	"github.com/filecoin-project/go-jsonrpc"
 	"github.com/filecoin-project/lotus/api"
 	"github.com/filecoin-project/lotus/api/client"
@@ -129,10 +128,10 @@ func setupLogging(cctx *cli.Context) error {
 	return nil
 }
 
-func NewAPIOpener(cfg *config.EnvConfig) (*APIOpener, APICloser, error) {
+func NewAPIOpener(ctx *cli.Context) (*APIOpener, APICloser, error) {
 	var rawaddr, rawtoken string
 
-	tokenMaddr := cfg.Daemon.API
+	tokenMaddr := ctx.String("api")
 	toks := strings.Split(tokenMaddr, ":")
 	if len(toks) != 2 {
 		return nil, nil, fmt.Errorf("invalid api tokens, expected <token>:<maddr>, got: %s", tokenMaddr)

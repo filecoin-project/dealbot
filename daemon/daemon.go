@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/filecoin-project/dealbot/config"
 	"github.com/filecoin-project/dealbot/engine"
 	logging "github.com/ipfs/go-log/v2"
+	"github.com/urfave/cli/v2"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
@@ -24,12 +24,12 @@ type Daemon struct {
 	e      *engine.Engine
 }
 
-func New(ctx context.Context, cfg *config.EnvConfig) (srv *Daemon, err error) {
+func New(ctx context.Context, cliCtx *cli.Context) (srv *Daemon, err error) {
 	srv = new(Daemon)
 
 	r := mux.NewRouter().StrictSlash(true)
 
-	srv.e, err = engine.New(ctx, cfg)
+	srv.e, err = engine.New(ctx, cliCtx)
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +51,7 @@ func New(ctx context.Context, cfg *config.EnvConfig) (srv *Daemon, err error) {
 		ReadTimeout:  30 * time.Second,
 	}
 
-	srv.l, err = net.Listen("tcp", cfg.Daemon.Listen)
+	srv.l, err = net.Listen("tcp", cliCtx.String("listen"))
 	if err != nil {
 		return nil, err
 	}

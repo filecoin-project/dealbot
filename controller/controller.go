@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/filecoin-project/dealbot/config"
 	logging "github.com/ipfs/go-log/v2"
+	"github.com/urfave/cli/v2"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
@@ -22,7 +22,7 @@ type Controller struct {
 	doneCh chan struct{}
 }
 
-func New(cfg *config.EnvConfig) (srv *Controller, err error) {
+func New(ctx *cli.Context) (srv *Controller, err error) {
 	srv = new(Controller)
 
 	r := mux.NewRouter().StrictSlash(true)
@@ -47,7 +47,7 @@ func New(cfg *config.EnvConfig) (srv *Controller, err error) {
 		ReadTimeout:  30 * time.Second,
 	}
 
-	srv.l, err = net.Listen("tcp", cfg.Controller.Listen)
+	srv.l, err = net.Listen("tcp", ctx.String("listen"))
 	if err != nil {
 		return nil, err
 	}

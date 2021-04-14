@@ -8,8 +8,8 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/filecoin-project/dealbot/config"
 	"github.com/filecoin-project/dealbot/tasks"
+	"github.com/urfave/cli/v2"
 
 	logging "github.com/ipfs/go-log/v2"
 )
@@ -20,19 +20,17 @@ var log = logging.Logger("controller")
 // against the dealbot controller.
 type Client struct {
 	client   *http.Client
-	cfg      *config.EnvConfig
 	endpoint string
 }
 
 // New initializes a new API client
-func New(cfg *config.EnvConfig) *Client {
-	endpoint := cfg.Client.Endpoint
+func New(ctx *cli.Context) *Client {
+	endpoint := ctx.String("endpoint")
 
 	log.Infow("dealbot controller client initialized", "addr", endpoint)
 
 	return &Client{
 		client:   &http.Client{},
-		cfg:      cfg,
 		endpoint: endpoint,
 	}
 }
