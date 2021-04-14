@@ -14,3 +14,7 @@ MINER=t01000
 dealbot --api $TOKEN:$API storage-deal --data-dir $DATADIR --miner $MINER
 
 dealbot --api $TOKEN:$API storage-deal --data-dir $DATADIR --miner $MINER
+
+CID=`lotus client local | tail -1 | awk '{print $2}'`
+
+dealbot --api $TOKEN:$API retrieval-deal --data-dir $DATADIR --miner $MINER --cid=$CID
