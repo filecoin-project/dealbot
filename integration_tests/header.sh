@@ -1,14 +1,13 @@
 #!/bin/bash
 
-set -o errexit
+#set -o errexit ... re-enable when we fix the storage deal bug on Lotus side
 set -x
-set -e
 
 err_report() {
     echo "Error on line $1 : $2"
 }
-FILENAME=`basename $0`
-trap 'err_report $LINENO $FILENAME' ERR
+#FILENAME=`basename $0`
+#trap 'err_report $LINENO $FILENAME' ERR
 
 function finish {
   kill -9 $DEVNETPID

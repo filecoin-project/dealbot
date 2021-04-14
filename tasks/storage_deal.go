@@ -3,6 +3,7 @@ package tasks
 import (
 	"context"
 	"crypto/rand"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -138,31 +139,18 @@ func MakeStorageDeal(ctx context.Context, config NodeConfig, node api.FullNode, 
 			storagemarket.StorageDealSlashed,
 			storagemarket.StorageDealRejecting,
 			storagemarket.StorageDealFailing,
-			storagemarket.StorageDealError,
+			storagemarket.StorageDealError:
+			logStages(info, log)
+			return errors.New("storage deal failed")
 
 			// deal is on chain, exit successfully
-			storagemarket.StorageDealActive:
+		case storagemarket.StorageDealActive:
 
 			return logStages(info, log)
 		}
 	}
 
 	return nil
-}
-
-func minerAskPrice(ctx context.Context, api api.FullNode, tipSet *types.TipSet, addr address.Address) (abi.TokenAmount, error) {
-	minerInfo, err := api.StateMinerInfo(ctx, addr, tipSet.Key())
-	if err != nil {
-		return big.Zero(), err
-	}
-
-	peerId := *minerInfo.PeerId
-	ask, err := api.ClientQueryAsk(ctx, peerId, addr)
-	if err != nil {
-		return big.Zero(), err
-	}
-
-	return ask.Price, nil
 }
 
 func logStages(info api.DealInfo, log UpdateStatus) error {
@@ -185,4 +173,19 @@ func logStages(info api.DealInfo, log UpdateStatus) error {
 		)
 	}
 	return nil
+}
+
+func minerAskPrice(ctx context.Context, api api.FullNode, tipSet *types.TipSet, addr address.Address) (abi.TokenAmount, error) {
+	minerInfo, err := api.StateMinerInfo(ctx, addr, tipSet.Key())
+	if err != nil {
+		return big.Zero(), err
+	}
+
+	peerId := *minerInfo.PeerId
+	ask, err := api.ClientQueryAsk(ctx, peerId, addr)
+	if err != nil {
+		return big.Zero(), err
+	}
+
+	return ask.Price, nil
 }
