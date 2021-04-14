@@ -14,7 +14,7 @@ MINER=t01000
 dealbot --api $TOKEN:$API storage-deal --data-dir $DATADIR --miner $MINER
 
 returnValue=$?
-if [ $returnValue -eq 0 ]; then
+if [[ $returnValue -eq 0 ]]; then
     echo "expected first storage-deal to fail, but it returned exit code 0"
     exit 1
 fi
@@ -22,7 +22,7 @@ fi
 dealbot --api $TOKEN:$API storage-deal --data-dir $DATADIR --miner $MINER
 
 returnValue=$?
-if [ $returnValue -ne 0 ]; then
+if [[ $returnValue -ne 0 ]]; then
     echo "expected second storage-deal to succeed, but it returned exit code != 0"
     exit 1
 fi
@@ -32,7 +32,7 @@ CID=`lotus client local | tail -1 | awk '{print $2}'`
 dealbot --api $TOKEN:$API retrieval-deal --data-dir $DATADIR --miner $MINER --cid=$CID
 
 returnValue=$?
-if [ $returnValue -ne 0 ]; then
+if [[ $returnValue -ne 0 ]]; then
     echo "expected retrieval-deal to succeed, but it returned exit code != 0"
     exit 1
 fi
