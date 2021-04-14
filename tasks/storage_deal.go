@@ -140,20 +140,22 @@ func MakeStorageDeal(ctx context.Context, config NodeConfig, node api.FullNode, 
 			storagemarket.StorageDealRejecting,
 			storagemarket.StorageDealFailing,
 			storagemarket.StorageDealError:
+
 			logStages(info, log)
 			return errors.New("storage deal failed")
 
 			// deal is on chain, exit successfully
 		case storagemarket.StorageDealActive:
 
-			return logStages(info, log)
+			logStages(info, log)
+			return nil
 		}
 	}
 
 	return nil
 }
 
-func logStages(info api.DealInfo, log UpdateStatus) error {
+func logStages(info api.DealInfo, log UpdateStatus) {
 	for _, stage := range info.DealStages.Stages {
 		log("Deal stage",
 			"cid", info.ProposalCid,
@@ -172,7 +174,6 @@ func logStages(info api.DealInfo, log UpdateStatus) error {
 			"verfied", info.Verified,
 		)
 	}
-	return nil
 }
 
 func minerAskPrice(ctx context.Context, api api.FullNode, tipSet *types.TipSet, addr address.Address) (abi.TokenAmount, error) {
