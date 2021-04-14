@@ -1,6 +1,7 @@
 package devnet
 
 import (
+	"bytes"
 	"context"
 	"log"
 	"os"
@@ -11,13 +12,24 @@ import (
 	"time"
 )
 
+func logExecError(err error, out []byte) {
+	// If the output is large, just keep the last 5 lines.
+	// We assume the lines aren't very long.
+	const maxLines = 5
+	if lines := bytes.Split(out, []byte("\n")); len(lines) > maxLines {
+		lines = lines[len(lines)-maxLines:]
+		out = append([]byte("…\n"), bytes.Join(lines, []byte("\n"))...)
+	}
+	log.Printf("%s; output:\n%s", err, out)
+}
+
 func runLotusNode(ctx context.Context) {
 	lotusNodeCmd := "lotus-seed genesis new localnet.json  && lotus-seed pre-seal --sector-size 2048 --num-sectors 10 && lotus-seed genesis add-miner localnet.json ~/.genesis-sectors/pre-seal-t01000.json && lotus daemon --lotus-make-genesis=dev.gen --genesis-template=localnet.json --bootstrap=false"
 
 	cmd := exec.CommandContext(ctx, "sh", "-c", lotusNodeCmd)
-	_, err := cmd.CombinedOutput()
+	out, err := cmd.CombinedOutput()
 	if err != nil {
-		log.Println(err.Error())
+		logExecError(err, out)
 	}
 }
 
@@ -27,9 +39,9 @@ func runMiner(ctx context.Context) {
 	lotusMinerCmd := "lotus wallet import ~/.genesis-sectors/pre-seal-t01000.key && lotus-miner init --genesis-miner --actor=t01000 --sector-size=2048 --pre-sealed-sectors=~/.genesis-sectors --pre-sealed-metadata=~/.genesis-sectors/pre-seal-t01000.json --nosync && lotus-miner run --nosync"
 
 	cmd := exec.CommandContext(ctx, "sh", "-c", lotusMinerCmd)
-	_, err := cmd.CombinedOutput()
+	out, err := cmd.CombinedOutput()
 	if err != nil {
-		log.Println(err.Error())
+		logExecError(err, out)
 	}
 }
 
