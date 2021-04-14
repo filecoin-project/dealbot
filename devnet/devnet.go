@@ -1,9 +1,7 @@
 package devnet
 
 import (
-	"bytes"
 	"context"
-	"fmt"
 	"log"
 	"os"
 	"os/exec"
@@ -14,46 +12,28 @@ import (
 )
 
 func runLotusNode(ctx context.Context) {
-	var stdout, stderr bytes.Buffer
 	lotusNodeCmd := "lotus-seed genesis new localnet.json  && lotus-seed pre-seal --sector-size 2048 --num-sectors 10 && lotus-seed genesis add-miner localnet.json ~/.genesis-sectors/pre-seal-t01000.json && lotus daemon --lotus-make-genesis=dev.gen --genesis-template=localnet.json --bootstrap=false"
 
 	cmd := exec.CommandContext(ctx, "sh", "-c", lotusNodeCmd)
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-	err := cmd.Start()
+	_, err := cmd.CombinedOutput()
 	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = cmd.Wait()
-	if err != nil {
-		log.Println(string(stderr.Bytes()))
-		log.Println("waiting on lotus node:", err)
+		log.Println(err.Error())
 	}
 }
 
 func runMiner(ctx context.Context) {
 	time.Sleep(5 * time.Second) // wait for lotus node to run
 
-	var stdout, stderr bytes.Buffer
 	lotusMinerCmd := "lotus wallet import ~/.genesis-sectors/pre-seal-t01000.key && lotus-miner init --genesis-miner --actor=t01000 --sector-size=2048 --pre-sealed-sectors=~/.genesis-sectors --pre-sealed-metadata=~/.genesis-sectors/pre-seal-t01000.json --nosync && lotus-miner run --nosync"
 
 	cmd := exec.CommandContext(ctx, "sh", "-c", lotusMinerCmd)
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-	err := cmd.Start()
+	_, err := cmd.CombinedOutput()
 	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = cmd.Wait()
-	if err != nil {
-		log.Println("waiting on lotus miner:", err)
+		log.Println(err.Error())
 	}
 }
 
 func publishDealsPeriodicallyCmd(ctx context.Context) {
-	var stdout, stderr bytes.Buffer
 	publishDealsCmd := "lotus-miner storage-deals pending-publish --publish-now"
 
 	for {
@@ -65,19 +45,15 @@ func publishDealsPeriodicallyCmd(ctx context.Context) {
 		}
 
 		cmd := exec.CommandContext(ctx, "sh", "-c", publishDealsCmd)
-		cmd.Stdout = &stdout
-		cmd.Stderr = &stderr
-		err := cmd.Start()
+		_, err := cmd.CombinedOutput()
 		if err != nil {
 			continue
 		}
 
-		cmd.Wait()
 	}
 }
 
 func setDefaultWalletCmd(ctx context.Context) {
-	var stdout, stderr bytes.Buffer
 	setDefaultWalletCmd := "lotus wallet list | grep t3 | awk '{print $1}' | xargs lotus wallet set-default"
 
 	for {
@@ -89,15 +65,7 @@ func setDefaultWalletCmd(ctx context.Context) {
 		}
 
 		cmd := exec.CommandContext(ctx, "sh", "-c", setDefaultWalletCmd)
-		cmd.Stdout = &stdout
-		cmd.Stderr = &stderr
-		err := cmd.Start()
-		if err != nil {
-			fmt.Println("error", err.Error())
-			continue
-		}
-
-		err = cmd.Wait()
+		_, err := cmd.CombinedOutput()
 		if err != nil {
 			continue
 		}
