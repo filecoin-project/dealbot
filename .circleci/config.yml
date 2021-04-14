@@ -12,10 +12,6 @@ commands:
   checkout-dealbot:
     steps:
       - checkout
-  install-deps:
-    steps:
-      - go/install-ssh
-      - go/install: {package: git}
   install-lotus:
     steps:
       - run: sudo apt-get update
@@ -37,7 +33,6 @@ jobs:
     executor: golang
     steps:
       - checkout-dealbot
-      - install-deps
       - install-lotus
       - test-dealbot
 
