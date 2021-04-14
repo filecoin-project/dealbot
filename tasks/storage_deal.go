@@ -3,9 +3,9 @@ package tasks
 import (
 	"context"
 	"crypto/rand"
+	"errors"
 	"fmt"
 	"io"
-	"math"
 	"os"
 	"path/filepath"
 
@@ -87,12 +87,6 @@ func MakeStorageDeal(ctx context.Context, config NodeConfig, node api.FullNode, 
 
 	log("imported deal file, got data cid", "datacid", importRes.Root)
 
-	// convert size from bytes to Gb
-	sizeGB := float64(task.Size) / float64(1<<30)
-	// pad by 5% and find next greatest power of 2
-	paddedPo2Estimate := uint64(math.Ceil(math.Log2(1.05 * sizeGB)))
-	dealPrice := big.Mul(price, big.NewInt(1<<paddedPo2Estimate))
-
 	// Prepare parameters for deal
 	params := &api.StartDealParams{
 		Data: &storagemarket.DataRef{
@@ -101,7 +95,7 @@ func MakeStorageDeal(ctx context.Context, config NodeConfig, node api.FullNode, 
 		},
 		Wallet:            config.WalletAddress,
 		Miner:             minerAddress,
-		EpochPrice:        dealPrice,
+		EpochPrice:        price,
 		MinBlocksDuration: 2880 * 180,
 		DealStartEpoch:    tipSet.Height() + abi.ChainEpoch(startOffset),
 		FastRetrieval:     task.FastRetrieval,
@@ -145,19 +139,23 @@ func MakeStorageDeal(ctx context.Context, config NodeConfig, node api.FullNode, 
 			storagemarket.StorageDealSlashed,
 			storagemarket.StorageDealRejecting,
 			storagemarket.StorageDealFailing,
-			storagemarket.StorageDealError,
+			storagemarket.StorageDealError:
 
-			// deal is on chain, exit successfully
-			storagemarket.StorageDealActive:
+			logStages(info, log)
+			return errors.New("storage deal failed")
 
-			return logStages(info, log)
+		// deal is on chain, exit successfully
+		case storagemarket.StorageDealActive:
+
+			logStages(info, log)
+			return nil
 		}
 	}
 
 	return nil
 }
 
-func logStages(info api.DealInfo, log UpdateStatus) error {
+func logStages(info api.DealInfo, log UpdateStatus) {
 	for _, stage := range info.DealStages.Stages {
 		log("Deal stage",
 			"cid", info.ProposalCid,
@@ -176,7 +174,6 @@ func logStages(info api.DealInfo, log UpdateStatus) error {
 			"verfied", info.Verified,
 		)
 	}
-	return nil
 }
 
 func minerAskPrice(ctx context.Context, api api.FullNode, tipSet *types.TipSet, addr address.Address) (abi.TokenAmount, error) {
