@@ -9,7 +9,6 @@ import (
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/lotus/api"
 	"github.com/urfave/cli/v2"
-	"golang.org/x/xerrors"
 )
 
 type NodeCloser func()
@@ -27,7 +26,7 @@ func SetupClientFromCLI(cctx *cli.Context) (tasks.NodeConfig, api.FullNode, Node
 	}
 
 	if err := setupLogging(cctx); err != nil {
-		return tasks.NodeConfig{}, nil, nil, xerrors.Errorf("setup logging: %w", err)
+		return tasks.NodeConfig{}, nil, nil, fmt.Errorf("setup logging: %w", err)
 	}
 
 	// start API to lotus node
