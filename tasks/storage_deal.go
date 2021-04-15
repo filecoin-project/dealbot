@@ -162,6 +162,7 @@ func MakeStorageDeal(ctx context.Context, config NodeConfig, node api.FullNode, 
 func logStages(info api.DealInfo, log UpdateStatus) {
 	if info.DealStages == nil {
 		log("Deal stages is nil")
+		return
 	}
 
 	for _, stage := range info.DealStages.Stages {
