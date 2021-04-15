@@ -5,8 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/filecoin-project/dealbot/controller/client"
+	"github.com/filecoin-project/dealbot/metrics"
 	"github.com/filecoin-project/dealbot/tasks"
 	"github.com/google/uuid"
 )
@@ -22,22 +24,27 @@ func (s *state) MarshalJSON() ([]byte, error) {
 	return json.Marshal(s.tasks)
 }
 
-func (s *state) Update(req *client.UpdateTaskRequest) error {
+func (s *state) Update(req *client.UpdateTaskRequest, recorder metrics.MetricsRecorder) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	for _, t := range s.tasks {
 		if t.UUID == req.UUID {
 			if t.Status == tasks.Available {
-				log.Infow("state update", "uuid", t.UUID, "status", req.Status, "worked_by", req.WorkedBy)
-
-				t.Status = req.Status
 				t.WorkedBy = req.WorkedBy
-
-				return nil
+				t.StartedAt = time.Now()
 			} else {
-				return errors.New("task already acquired")
+				if t.WorkedBy != req.WorkedBy {
+					return errors.New("task already acquired")
+				}
 			}
+			log.Infow("state update", "uuid", t.UUID, "status", req.Status, "worked_by", req.WorkedBy)
+
+			t.Status = req.Status
+			if err := recorder.ObserveTask(t); err != nil {
+				return err
+			}
+			return nil
 		}
 	}
 

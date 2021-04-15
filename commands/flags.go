@@ -68,6 +68,12 @@ var ControllerFlags = []cli.Flag{
 		Aliases: []string{"l"},
 		EnvVars: []string{"DEALBOT_LISTEN"},
 	}),
+	altsrc.NewStringFlag(&cli.StringFlag{
+		Name:    "metrics",
+		Usage:   "value of 'prometheus' or 'log'",
+		Aliases: []string{"l"},
+		EnvVars: []string{"DEALBOT_METRICS"},
+	}),
 }
 
 var AllFlags = append(DealFlags, append(SingleTaskFlags, append(DaemonFlags, ControllerFlags...)...)...)

@@ -7,6 +7,10 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/filecoin-project/dealbot/metrics"
+	metricslog "github.com/filecoin-project/dealbot/metrics/log"
+	"github.com/filecoin-project/dealbot/metrics/prometheus"
+
 	logging "github.com/ipfs/go-log/v2"
 	"github.com/urfave/cli/v2"
 
@@ -17,13 +21,29 @@ import (
 var log = logging.Logger("controller")
 
 type Controller struct {
-	server *http.Server
-	l      net.Listener
-	doneCh chan struct{}
+	server          *http.Server
+	l               net.Listener
+	doneCh          chan struct{}
+	metricsRecorder metrics.MetricsRecorder
 }
 
-func New(ctx *cli.Context) (srv *Controller, err error) {
-	srv = new(Controller)
+func New(ctx *cli.Context) (*Controller, error) {
+	var recorder metrics.MetricsRecorder
+	if ctx.String("metrics") == "prometheus" {
+		recorder = prometheus.NewPrometheusMetricsRecorder()
+	} else {
+		recorder = metricslog.NewLogMetricsRecorder(log)
+	}
+	l, err := net.Listen("tcp", ctx.String("listen"))
+	if err != nil {
+		return nil, err
+	}
+
+	return NewWithDependencies(l, recorder), nil
+}
+
+func NewWithDependencies(listener net.Listener, recorder metrics.MetricsRecorder) *Controller {
+	srv := new(Controller)
 
 	r := mux.NewRouter().StrictSlash(true)
 
@@ -38,6 +58,10 @@ func New(ctx *cli.Context) (srv *Controller, err error) {
 	r.HandleFunc("/tasks", srv.getTasksHandler).Methods("GET")
 	r.HandleFunc("/status", srv.reportStatusHandler).Methods("POST")
 	r.HandleFunc("/task", srv.updateTaskHandler).Methods("PUT")
+	metricsHandler := recorder.Handler()
+	if metricsHandler != nil {
+		r.Handle("/metrics", metricsHandler)
+	}
 	//r.HandleFunc("/task", srv.getTaskHandler).Methods("GET")
 
 	srv.doneCh = make(chan struct{})
@@ -47,12 +71,9 @@ func New(ctx *cli.Context) (srv *Controller, err error) {
 		ReadTimeout:  30 * time.Second,
 	}
 
-	srv.l, err = net.Listen("tcp", ctx.String("listen"))
-	if err != nil {
-		return nil, err
-	}
-
-	return srv, nil
+	srv.l = listener
+	srv.metricsRecorder = recorder
+	return srv
 }
 
 // Serve starts the server and blocks until the server is closed, either

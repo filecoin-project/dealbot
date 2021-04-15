@@ -1,6 +1,8 @@
 package tasks
 
 import (
+	"time"
+
 	"github.com/filecoin-project/go-address"
 	logging "github.com/ipfs/go-log/v2"
 )
@@ -14,10 +16,10 @@ type NodeConfig struct {
 }
 
 type Task struct {
-	UUID     string `json:"uuid"`
-	Status   Status `json:"status"`
-	WorkedBy string `json:"worked_by,omitempty"` // which dealbot works on that task
-
+	UUID          string         `json:"uuid"`
+	Status        Status         `json:"status"`
+	WorkedBy      string         `json:"worked_by,omitempty"`  // which dealbot works on that task
+	StartedAt     time.Time      `json:"started_at,omitempty"` // the time the task was assigned first assigned to the dealbot
 	RetrievalTask *RetrievalTask `json:"retrieval_task,omitempty"`
 	StorageTask   *StorageTask   `json:"storage_task,omitempty"`
 }

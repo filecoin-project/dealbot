@@ -48,7 +48,7 @@ type prometheusMetricsRecorder struct {
 	retrievalVec *prometheus.HistogramVec
 }
 
-// PrometheusMetricsRecord returns a recorder that is connected to prometheus
+// NewPrometheusMetricsRecorder returns a recorder that is connected to prometheus
 func NewPrometheusMetricsRecorder() metrics.MetricsRecorder {
 	return &prometheusMetricsRecorder{
 		storageVec: promauto.NewHistogramVec(prometheus.HistogramOpts{
@@ -72,19 +72,19 @@ func (pmr *prometheusMetricsRecorder) Handler() http.Handler {
 	return promhttp.Handler()
 }
 
-func (pmr *prometheusMetricsRecorder) ObserveTask(task tasks.Task) (metrics.TaskObserver, error) {
+func (pmr *prometheusMetricsRecorder) ObserveTask(task *tasks.Task) error {
+
 	if task.RetrievalTask != nil {
-		return pmr.toRetrievalTaskObserver(task)
+		return pmr.observeRetrievalTask(task)
 	}
 	if task.StorageTask != nil {
-		return pmr.toStorageTaskObserver(task)
+		return pmr.observeStorageTask(task)
 	}
-	return nil, fmt.Errorf("Cannot observe task: %s, both tasks are nil", task.UUID)
+	return fmt.Errorf("Cannot observe task: %s, both tasks are nil", task.UUID)
 }
 
-func (pmr *prometheusMetricsRecorder) toStorageTaskObserver(task tasks.Task) (*taskObserver, error) {
-	start := time.Now()
-	observer, err := pmr.storageVec.CurryWith(prometheus.Labels{
+func (pmr *prometheusMetricsRecorder) observeStorageTask(task *tasks.Task) error {
+	observer, err := pmr.storageVec.GetMetricWith(prometheus.Labels{
 		metrics.UUID:            task.UUID,
 		metrics.Miner:           task.StorageTask.Miner,
 		metrics.MaxPriceAttoFIL: strconv.FormatUint(task.StorageTask.MaxPriceAttoFIL, 10),
@@ -92,37 +92,26 @@ func (pmr *prometheusMetricsRecorder) toStorageTaskObserver(task tasks.Task) (*t
 		metrics.StartOffset:     strconv.FormatUint(task.StorageTask.StartOffset, 10),
 		metrics.FastRetrieval:   strconv.FormatBool(task.StorageTask.FastRetrieval),
 		metrics.Verified:        strconv.FormatBool(task.StorageTask.Verified),
+		metrics.Status:          tasks.StatusNames[task.Status],
 	})
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return &taskObserver{observer: observer, startTime: start}, nil
+	observer.Observe(float64(time.Since(task.StartedAt).Milliseconds()))
+	return nil
 }
 
-func (pmr *prometheusMetricsRecorder) toRetrievalTaskObserver(task tasks.Task) (*taskObserver, error) {
-	start := time.Now()
-	observer, err := pmr.retrievalVec.CurryWith(prometheus.Labels{
+func (pmr *prometheusMetricsRecorder) observeRetrievalTask(task *tasks.Task) error {
+	observer, err := pmr.retrievalVec.GetMetricWith(prometheus.Labels{
 		metrics.UUID:       task.UUID,
 		metrics.Miner:      task.RetrievalTask.Miner,
 		metrics.PayloadCID: task.RetrievalTask.PayloadCID,
 		metrics.CARExport:  strconv.FormatBool(task.RetrievalTask.CARExport),
+		metrics.Status:     tasks.StatusNames[task.Status],
 	})
-	if err != nil {
-		return nil, err
-	}
-	return &taskObserver{observer: observer, startTime: start}, nil
-}
-
-type taskObserver struct {
-	observer  prometheus.ObserverVec
-	startTime time.Time
-}
-
-func (to *taskObserver) RecordStatusUpdate(status tasks.Status) error {
-	observer, err := to.observer.GetMetricWith(prometheus.Labels{metrics.Status: tasks.StatusNames[status]})
 	if err != nil {
 		return err
 	}
-	observer.Observe(float64(time.Since(to.startTime).Milliseconds()))
+	observer.Observe(float64(time.Since(task.StartedAt).Milliseconds()))
 	return nil
 }

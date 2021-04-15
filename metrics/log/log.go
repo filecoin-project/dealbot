@@ -8,7 +8,6 @@ import (
 	"github.com/filecoin-project/dealbot/metrics"
 	"github.com/filecoin-project/dealbot/tasks"
 	logging "github.com/ipfs/go-log/v2"
-	"go.uber.org/zap"
 )
 
 type logRecorder struct {
@@ -24,43 +23,31 @@ func (lr *logRecorder) Handler() http.Handler {
 	return nil
 }
 
-func (lr *logRecorder) ObserveTask(task tasks.Task) (metrics.TaskObserver, error) {
+func (lr *logRecorder) ObserveTask(task *tasks.Task) error {
+	duration := time.Since(task.StartedAt).Milliseconds()
+
 	if task.RetrievalTask != nil {
-		return &taskObserver{
-			msg:       "retrieval task",
-			startTime: time.Now(),
-			log: lr.log.With(
-				metrics.UUID, task.UUID,
-				metrics.Miner, task.RetrievalTask.Miner,
-				metrics.PayloadCID, task.RetrievalTask.PayloadCID,
-				metrics.CARExport, task.RetrievalTask.CARExport),
-		}, nil
+		lr.log.Infow("retrieval task",
+			metrics.UUID, task.UUID,
+			metrics.Miner, task.RetrievalTask.Miner,
+			metrics.PayloadCID, task.RetrievalTask.PayloadCID,
+			metrics.CARExport, task.RetrievalTask.CARExport,
+			metrics.Status, tasks.StatusNames[task.Status],
+			"duration (ms)", duration)
+		return nil
 	}
 	if task.StorageTask != nil {
-		return &taskObserver{
-			msg:       "storage task",
-			startTime: time.Now(),
-			log: lr.log.With(
-				metrics.UUID, task.UUID,
-				metrics.Miner, task.StorageTask.Miner,
-				metrics.MaxPriceAttoFIL, task.StorageTask.MaxPriceAttoFIL,
-				metrics.Size, task.StorageTask.Size,
-				metrics.StartOffset, task.StorageTask.StartOffset,
-				metrics.FastRetrieval, task.StorageTask.FastRetrieval,
-				metrics.Verified, task.StorageTask.Verified),
-		}, nil
+		lr.log.Infow("storage task",
+			metrics.UUID, task.UUID,
+			metrics.Miner, task.StorageTask.Miner,
+			metrics.MaxPriceAttoFIL, task.StorageTask.MaxPriceAttoFIL,
+			metrics.Size, task.StorageTask.Size,
+			metrics.StartOffset, task.StorageTask.StartOffset,
+			metrics.FastRetrieval, task.StorageTask.FastRetrieval,
+			metrics.Verified, task.StorageTask.Verified,
+			metrics.Status, tasks.StatusNames[task.Status],
+			"duration (ms)", duration)
+		return nil
 	}
-	return nil, fmt.Errorf("Cannot observe task: %s, both tasks are nil", task.UUID)
-}
-
-type taskObserver struct {
-	startTime time.Time
-	msg       string
-	log       *zap.SugaredLogger
-}
-
-func (to *taskObserver) RecordStatusUpdate(status tasks.Status) error {
-	duration := time.Since(to.startTime).Milliseconds()
-	to.log.Infow(to.msg, "status", tasks.StatusNames[status], "duration (ms)", duration)
-	return nil
+	return fmt.Errorf("Cannot observe task: %s, both tasks are nil", task.UUID)
 }
