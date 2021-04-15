@@ -40,3 +40,10 @@ const (
 	Successful
 	Failed
 )
+
+var StatusNames = map[Status]string{
+	Available:  "Available",
+	InProgress: "InProgress",
+	Successful: "Successful",
+	Failed:     "Failed",
+}
