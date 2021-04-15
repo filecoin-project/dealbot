@@ -86,7 +86,7 @@ func NewAPIOpenerFromCLI(cctx *cli.Context) (*APIOpener, APICloser, error) {
 }
 
 func (o *APIOpener) Open(ctx context.Context) (api.FullNode, jsonrpc.ClientCloser, error) {
-	return client.NewFullNodeRPC(ctx, o.addr, o.headers)
+	return client.NewFullNodeRPCV1(ctx, o.addr, o.headers)
 }
 
 func apiURI(addr string) string {
