@@ -22,3 +22,6 @@ build/.*
 vector/data/*.json
 support/tools/bin
 
+# from devnet
+dev.gen
+localnet.json
