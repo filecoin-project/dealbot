@@ -42,7 +42,7 @@ var MakeStorageDealCmd = &cli.Command{
 		},
 		&cli.Int64Flag{
 			Name:    "start-offset",
-			Usage:   "epochs deal start will be offset from now [5760 (2 days)]",
+			Usage:   "epochs deal start will be offset from now [30760 (10 days)]",
 			EnvVars: []string{"DEALBOT_START_OFFSET"},
 			Value:   30760,
 		},
