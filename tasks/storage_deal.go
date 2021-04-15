@@ -77,7 +77,7 @@ func MakeStorageDeal(ctx context.Context, config NodeConfig, node api.FullNode, 
 
 	importRes, err := node.ClientImport(ctx, ref)
 	if err != nil {
-		return err
+		return fmt.Errorf("error importing file: %w", err)
 	}
 
 	startOffset := task.StartOffset
