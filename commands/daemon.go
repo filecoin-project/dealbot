@@ -5,21 +5,14 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/filecoin-project/dealbot/config"
 	"github.com/filecoin-project/dealbot/daemon"
 	"github.com/urfave/cli/v2"
 )
 
 var DaemonCmd = &cli.Command{
-	Name:  "daemon",
-	Usage: "Start a dealbot daemon, accepting tasks over RPC",
-	Flags: []cli.Flag{
-		&cli.StringFlag{
-			Name:  "configpath",
-			Usage: "path to config toml file",
-			Value: ".dealbot.env.toml",
-		},
-	},
+	Name:   "daemon",
+	Usage:  "Start a dealbot daemon, accepting tasks over RPC",
+	Flags:  DaemonFlags,
 	Action: daemonCommand,
 }
 
@@ -27,14 +20,7 @@ func daemonCommand(c *cli.Context) error {
 	ctx, cancel := context.WithCancel(ProcessContext())
 	defer cancel()
 
-	configpath := c.String("configpath")
-
-	cfg := &config.EnvConfig{}
-	if err := cfg.Load(configpath); err != nil {
-		return err
-	}
-
-	srv, err := daemon.New(ctx, cfg)
+	srv, err := daemon.New(ctx, c)
 	if err != nil {
 		return err
 	}

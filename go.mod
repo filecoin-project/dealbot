@@ -3,7 +3,6 @@ module github.com/filecoin-project/dealbot
 go 1.16
 
 require (
-	github.com/BurntSushi/toml v0.3.1
 	github.com/c2h5oh/datasize v0.0.0-20200825124411-48ed595a09d2
 	github.com/filecoin-project/go-address v0.0.5
 	github.com/filecoin-project/go-fil-markets v1.2.4

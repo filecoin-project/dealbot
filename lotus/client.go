@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/filecoin-project/dealbot/config"
 	"github.com/filecoin-project/dealbot/tasks"
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/lotus/api"
@@ -68,20 +67,20 @@ func SetupClientFromCLI(cctx *cli.Context) (tasks.NodeConfig, api.FullNode, Node
 	}, node, closer, nil
 }
 
-func SetupClient(ctx context.Context, cfg *config.EnvConfig) (tasks.NodeConfig, api.FullNode, NodeCloser, error) {
+func SetupClient(ctx context.Context, cliCtx *cli.Context) (tasks.NodeConfig, api.FullNode, NodeCloser, error) {
 	// read dir and assert it exists
-	dataDir := cfg.Daemon.DataDir
+	dataDir := cliCtx.String("data-dir")
 	if _, err := os.Stat(dataDir); os.IsNotExist(err) {
 		return tasks.NodeConfig{}, nil, nil, fmt.Errorf("data-dir does not exist: %s", dataDir)
 	}
 
-	nodeDataDir := cfg.Daemon.NodeDataDir
+	nodeDataDir := cliCtx.String("node-data-dir")
 	if nodeDataDir == "" {
 		nodeDataDir = dataDir
 	}
 
 	// start API to lotus node
-	opener, apiCloser, err := NewAPIOpener(cfg)
+	opener, apiCloser, err := NewAPIOpener(cliCtx)
 	if err != nil {
 		return tasks.NodeConfig{}, nil, nil, err
 	}
@@ -99,7 +98,7 @@ func SetupClient(ctx context.Context, cfg *config.EnvConfig) (tasks.NodeConfig, 
 
 	// read addresses and assert they are addresses
 	var walletAddress address.Address
-	wallet := cfg.Daemon.Wallet
+	wallet := cliCtx.String("wallet")
 	if wallet != "" {
 		log.Infow("using set wallet", wallet)
 		walletAddress, err = address.NewFromString(wallet)
