@@ -109,11 +109,15 @@ func MakeStorageDeal(ctx context.Context, config NodeConfig, node api.FullNode, 
 		return err
 	}
 
+	log("got proposal cid", "cid", proposalCid)
+
 	// track updates to deal
 	updates, err := node.ClientGetDealUpdates(ctx)
 	if err != nil {
 		return err
 	}
+
+	log("got deal updates channel")
 
 	lastState := storagemarket.StorageDealUnknown
 	for info := range updates {
@@ -156,6 +160,10 @@ func MakeStorageDeal(ctx context.Context, config NodeConfig, node api.FullNode, 
 }
 
 func logStages(info api.DealInfo, log UpdateStatus) {
+	if info.DealStages == nil {
+		log("Deal stages is nil")
+	}
+
 	for _, stage := range info.DealStages.Stages {
 		log("Deal stage",
 			"cid", info.ProposalCid,
