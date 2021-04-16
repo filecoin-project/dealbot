@@ -3,7 +3,6 @@
 my_dir="$(dirname "$0")"
 source "$my_dir/header.sh"
 
-export DEALBOT_DATA_DIRECTORY=$TEMPDIR
 export DEALBOT_MINER_ADDRESS=t01000
 
 dealbot storage-deal
