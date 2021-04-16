@@ -29,6 +29,11 @@ func New(ctx *cli.Context) *Client {
 
 	log.Infow("dealbot controller client initialized", "addr", endpoint)
 
+	return NewFromEndpoint(endpoint)
+}
+
+// NewFromEndpoint returns an API client at the given endpoint
+func NewFromEndpoint(endpoint string) *Client {
 	return &Client{
 		client:   &http.Client{},
 		endpoint: endpoint,
