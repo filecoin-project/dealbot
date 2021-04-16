@@ -92,7 +92,7 @@ func (pmr *prometheusMetricsRecorder) observeStorageTask(task *tasks.Task) error
 		metrics.StartOffset:     strconv.FormatUint(task.StorageTask.StartOffset, 10),
 		metrics.FastRetrieval:   strconv.FormatBool(task.StorageTask.FastRetrieval),
 		metrics.Verified:        strconv.FormatBool(task.StorageTask.Verified),
-		metrics.Status:          tasks.StatusNames[task.Status],
+		metrics.Status:          task.Status.String(),
 	})
 	if err != nil {
 		return err
@@ -107,7 +107,7 @@ func (pmr *prometheusMetricsRecorder) observeRetrievalTask(task *tasks.Task) err
 		metrics.Miner:      task.RetrievalTask.Miner,
 		metrics.PayloadCID: task.RetrievalTask.PayloadCID,
 		metrics.CARExport:  strconv.FormatBool(task.RetrievalTask.CARExport),
-		metrics.Status:     tasks.StatusNames[task.Status],
+		metrics.Status:     task.Status.String(),
 	})
 	if err != nil {
 		return err

@@ -32,7 +32,7 @@ func (lr *logRecorder) ObserveTask(task *tasks.Task) error {
 			metrics.Miner, task.RetrievalTask.Miner,
 			metrics.PayloadCID, task.RetrievalTask.PayloadCID,
 			metrics.CARExport, task.RetrievalTask.CARExport,
-			metrics.Status, tasks.StatusNames[task.Status],
+			metrics.Status, task.Status,
 			"duration (ms)", duration)
 		return nil
 	}
@@ -45,7 +45,7 @@ func (lr *logRecorder) ObserveTask(task *tasks.Task) error {
 			metrics.StartOffset, task.StorageTask.StartOffset,
 			metrics.FastRetrieval, task.StorageTask.FastRetrieval,
 			metrics.Verified, task.StorageTask.Verified,
-			metrics.Status, tasks.StatusNames[task.Status],
+			metrics.Status, task.Status,
 			"duration (ms)", duration)
 		return nil
 	}

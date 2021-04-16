@@ -43,9 +43,13 @@ const (
 	Failed
 )
 
-var StatusNames = map[Status]string{
+var statusNames = map[Status]string{
 	Available:  "Available",
 	InProgress: "InProgress",
 	Successful: "Successful",
 	Failed:     "Failed",
+}
+
+func (s Status) String() string {
+	return statusNames[s]
 }
