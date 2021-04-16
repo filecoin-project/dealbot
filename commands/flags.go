@@ -71,7 +71,7 @@ var ControllerFlags = []cli.Flag{
 	altsrc.NewStringFlag(&cli.StringFlag{
 		Name:    "metrics",
 		Usage:   "value of 'prometheus' or 'log'",
-		Aliases: []string{"l"},
+		Aliases: []string{"m"},
 		EnvVars: []string{"DEALBOT_METRICS"},
 	}),
 }
