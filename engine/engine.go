@@ -2,7 +2,6 @@ package engine
 
 import (
 	"context"
-	"net/http"
 	"time"
 
 	"github.com/filecoin-project/dealbot/controller/client"
@@ -100,13 +99,9 @@ func (e *Engine) worker(n int) {
 			WorkedBy: e.host,
 		}
 
-		_, status, err := e.client.UpdateTask(ctx, task.UUID, req)
+		task, err = e.client.UpdateTask(ctx, task.UUID, req)
 		if err != nil {
 			log.Warnw("update task returned error", "err", err)
-			continue
-		}
-		if status != http.StatusOK {
-			log.Warnw("status is different to 200", "status", status)
 			continue
 		}
 

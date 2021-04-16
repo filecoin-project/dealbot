@@ -17,14 +17,27 @@ var State *state
 
 type state struct {
 	tasks []*tasks.Task
-	mu    sync.Mutex
+	mu    sync.RWMutex
 }
 
 func (s *state) MarshalJSON() ([]byte, error) {
 	return json.Marshal(s.tasks)
 }
 
-func (s *state) Update(UUID string, req *client.UpdateTaskRequest, recorder metrics.MetricsRecorder) error {
+func (s *state) Get(UUID string) (*tasks.Task, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	for _, t := range s.tasks {
+		if t.UUID == UUID {
+			return t, nil
+		}
+	}
+
+	return nil, fmt.Errorf("cannot find task with uuid: %s", UUID)
+}
+
+func (s *state) Update(UUID string, req *client.UpdateTaskRequest, recorder metrics.MetricsRecorder) (*tasks.Task, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -35,20 +48,48 @@ func (s *state) Update(UUID string, req *client.UpdateTaskRequest, recorder metr
 				t.StartedAt = time.Now()
 			} else {
 				if t.WorkedBy != req.WorkedBy {
-					return errors.New("task already acquired")
+					return nil, errors.New("task already acquired")
 				}
 			}
 			log.Infow("state update", "uuid", t.UUID, "status", req.Status, "worked_by", req.WorkedBy)
 
 			t.Status = req.Status
 			if err := recorder.ObserveTask(t); err != nil {
-				return err
+				return nil, err
 			}
-			return nil
+			return t, nil
 		}
 	}
 
-	return fmt.Errorf("cannot find task with uuid: %s", UUID)
+	return nil, fmt.Errorf("cannot find task with uuid: %s", UUID)
+}
+
+func (s *state) NewStorageTask(storageTask *tasks.StorageTask) (*tasks.Task, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	task := &tasks.Task{
+		UUID:        uuid.New().String()[:8],
+		Status:      tasks.Available,
+		StorageTask: storageTask,
+	}
+
+	s.tasks = append(s.tasks, task)
+	return task, nil
+}
+
+func (s *state) NewRetrievalTask(retrievalTask *tasks.RetrievalTask) (*tasks.Task, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	task := &tasks.Task{
+		UUID:          uuid.New().String()[:8],
+		Status:        tasks.Available,
+		RetrievalTask: retrievalTask,
+	}
+
+	s.tasks = append(s.tasks, task)
+	return task, nil
 }
 
 func init() {

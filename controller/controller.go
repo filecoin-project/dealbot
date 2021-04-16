@@ -56,8 +56,11 @@ func NewWithDependencies(listener net.Listener, recorder metrics.MetricsRecorder
 	})
 
 	r.HandleFunc("/tasks", srv.getTasksHandler).Methods("GET")
+	r.HandleFunc("/tasks/storage", srv.newStorageTaskHandler).Methods("POST")
+	r.HandleFunc("/tasks/retrieval", srv.newRetrievalTaskHandler).Methods("POST")
 	r.HandleFunc("/status", srv.reportStatusHandler).Methods("POST")
 	r.HandleFunc("/tasks/{uuid}", srv.updateTaskHandler).Methods("PATCH")
+	r.HandleFunc("/tasks/{uuid}", srv.getTaskHandler).Methods("GET")
 	metricsHandler := recorder.Handler()
 	if metricsHandler != nil {
 		r.Handle("/metrics", metricsHandler)
