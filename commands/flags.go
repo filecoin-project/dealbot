@@ -74,6 +74,12 @@ var ControllerFlags = []cli.Flag{
 		Aliases: []string{"l"},
 		EnvVars: []string{"DEALBOT_METRICS"},
 	}),
+	altsrc.NewPathFlag(&cli.PathFlag{
+		Name:    "identity",
+		Usage:   "location of node identity for authenticating results",
+		Aliases: []string{"i"},
+		EnvVars: []string{"DEALBOT_IDENTITY_KEYPAIR"},
+	}),
 }
 
 var AllFlags = append(DealFlags, append(SingleTaskFlags, append(DaemonFlags, ControllerFlags...)...)...)

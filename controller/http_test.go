@@ -11,6 +11,7 @@ import (
 	"github.com/filecoin-project/dealbot/controller/client"
 	"github.com/filecoin-project/dealbot/metrics/testrecorder"
 	"github.com/filecoin-project/dealbot/tasks"
+	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/stretchr/testify/require"
 )
 
@@ -22,7 +23,8 @@ func TestControllerHTTPInterface(t *testing.T) {
 	recorder := testrecorder.NewTestMetricsRecorder()
 	listener, err := net.Listen("tcp", "localhost:3333")
 	require.NoError(t, err)
-	c := controller.NewWithDependencies(listener, recorder)
+	pr, _, _ := crypto.GenerateKeyPair(crypto.Ed25519, 0)
+	c := controller.NewWithDependencies(listener, recorder, pr)
 	serveErr := make(chan error, 1)
 	go func() {
 		err := c.Serve()

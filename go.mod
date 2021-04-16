@@ -14,6 +14,7 @@ require (
 	github.com/ipfs/go-cid v0.0.7
 	github.com/ipfs/go-log/v2 v2.1.2
 	github.com/lib/pq v1.9.0
+	github.com/libp2p/go-libp2p-core v0.7.0
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/multiformats/go-multiaddr v0.3.1
 	github.com/prometheus/client_golang v1.6.0

@@ -11,12 +11,13 @@ import (
 	"github.com/filecoin-project/dealbot/metrics"
 	"github.com/filecoin-project/dealbot/tasks"
 	"github.com/google/uuid"
+	"github.com/libp2p/go-libp2p-core/crypto"
 )
 
 var State *state
 
 type state struct {
-	tasks []*tasks.Task
+	tasks []*tasks.AuthenticatedTask
 	mu    sync.Mutex
 }
 
@@ -24,7 +25,7 @@ func (s *state) MarshalJSON() ([]byte, error) {
 	return json.Marshal(s.tasks)
 }
 
-func (s *state) Update(req *client.UpdateTaskRequest, recorder metrics.MetricsRecorder) error {
+func (s *state) Update(req *client.UpdateTaskRequest, key crypto.PrivKey, recorder metrics.MetricsRecorder) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -41,6 +42,11 @@ func (s *state) Update(req *client.UpdateTaskRequest, recorder metrics.MetricsRe
 			log.Infow("state update", "uuid", t.UUID, "status", req.Status, "worked_by", req.WorkedBy)
 
 			t.Status = req.Status
+			var err error
+			t.Signature, err = key.Sign(t.Bytes())
+			if err != nil {
+				return err
+			}
 			if err := recorder.ObserveTask(t); err != nil {
 				return err
 			}
@@ -53,45 +59,53 @@ func (s *state) Update(req *client.UpdateTaskRequest, recorder metrics.MetricsRe
 
 func init() {
 	State = &state{}
-	State.tasks = []*tasks.Task{
+	State.tasks = []*tasks.AuthenticatedTask{
 		{
-			UUID:   uuid.New().String()[:8],
-			Status: tasks.Available,
-			RetrievalTask: &tasks.RetrievalTask{
-				Miner:      "t01000",
-				PayloadCID: "bafk2bzacedli6qxp43sf54feczjd26jgeyfxv4ucwylujd3xo5s6cohcqbg36",
-				CARExport:  false,
-			},
+			tasks.Task{
+				UUID:   uuid.New().String()[:8],
+				Status: tasks.Available,
+				RetrievalTask: &tasks.RetrievalTask{
+					Miner:      "t01000",
+					PayloadCID: "bafk2bzacedli6qxp43sf54feczjd26jgeyfxv4ucwylujd3xo5s6cohcqbg36",
+					CARExport:  false,
+				},
+			}, []byte{},
 		},
 		{
-			UUID:   uuid.New().String()[:8],
-			Status: tasks.Available,
-			RetrievalTask: &tasks.RetrievalTask{
-				Miner:      "t01000",
-				PayloadCID: "bafk2bzacecettil4umy443e4ferok7jbxiqqseef7soa3ntelflf3zkvvndbg",
-				CARExport:  false,
-			},
+			tasks.Task{
+				UUID:   uuid.New().String()[:8],
+				Status: tasks.Available,
+				RetrievalTask: &tasks.RetrievalTask{
+					Miner:      "t01000",
+					PayloadCID: "bafk2bzacecettil4umy443e4ferok7jbxiqqseef7soa3ntelflf3zkvvndbg",
+					CARExport:  false,
+				},
+			}, []byte{},
 		},
 		{
-			UUID:   uuid.New().String()[:8],
-			Status: tasks.Available,
-			RetrievalTask: &tasks.RetrievalTask{
-				Miner:      "f0127896",
-				PayloadCID: "bafykbzacedikkmeotawrxqquthryw3cijaonobygdp7fb5bujhuos6wdkwomm",
-				CARExport:  false,
-			},
+			tasks.Task{
+				UUID:   uuid.New().String()[:8],
+				Status: tasks.Available,
+				RetrievalTask: &tasks.RetrievalTask{
+					Miner:      "f0127896",
+					PayloadCID: "bafykbzacedikkmeotawrxqquthryw3cijaonobygdp7fb5bujhuos6wdkwomm",
+					CARExport:  false,
+				},
+			}, []byte{},
 		},
 		{
-			UUID:   uuid.New().String()[:8],
-			Status: tasks.Available,
-			StorageTask: &tasks.StorageTask{
-				Miner:           "t01000",
-				MaxPriceAttoFIL: 100000000000000000, // 0.10 FIL
-				Size:            1024,               // 1kb
-				StartOffset:     0,
-				FastRetrieval:   true,
-				Verified:        false,
-			},
+			tasks.Task{
+				UUID:   uuid.New().String()[:8],
+				Status: tasks.Available,
+				StorageTask: &tasks.StorageTask{
+					Miner:           "t01000",
+					MaxPriceAttoFIL: 100000000000000000, // 0.10 FIL
+					Size:            1024,               // 1kb
+					StartOffset:     0,
+					FastRetrieval:   true,
+					Verified:        false,
+				},
+			}, []byte{},
 		},
 	}
 

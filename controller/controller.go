@@ -3,13 +3,16 @@ package controller
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"net"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/filecoin-project/dealbot/metrics"
 	metricslog "github.com/filecoin-project/dealbot/metrics/log"
 	"github.com/filecoin-project/dealbot/metrics/prometheus"
+	"github.com/libp2p/go-libp2p-core/crypto"
 
 	logging "github.com/ipfs/go-log/v2"
 	"github.com/urfave/cli/v2"
@@ -21,6 +24,7 @@ import (
 var log = logging.Logger("controller")
 
 type Controller struct {
+	key             crypto.PrivKey
 	server          *http.Server
 	l               net.Listener
 	doneCh          chan struct{}
@@ -39,11 +43,45 @@ func New(ctx *cli.Context) (*Controller, error) {
 		return nil, err
 	}
 
-	return NewWithDependencies(l, recorder), nil
+	var key crypto.PrivKey
+	identity := ctx.String("identity")
+	if !ctx.IsSet("identity") {
+		identity = ".dealbot.key"
+	}
+	if _, err := os.Stat(identity); os.IsNotExist(err) {
+		// make a new identity
+		pr, _, err := crypto.GenerateKeyPair(crypto.Ed25519, 0)
+		if err != nil {
+			return nil, err
+		}
+
+		// save it.
+		b, err := crypto.MarshalPrivateKey(pr)
+		if err != nil {
+			return nil, err
+		}
+		if err := ioutil.WriteFile(identity, b, 0666); err != nil {
+			return nil, err
+		}
+		key = pr
+	} else {
+		// load identity
+		bytes, err := ioutil.ReadFile(identity)
+		if err != nil {
+			return nil, err
+		}
+		key, err = crypto.UnmarshalPrivateKey(bytes)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return NewWithDependencies(l, recorder, key), nil
 }
 
-func NewWithDependencies(listener net.Listener, recorder metrics.MetricsRecorder) *Controller {
+func NewWithDependencies(listener net.Listener, recorder metrics.MetricsRecorder, key crypto.PrivKey) *Controller {
 	srv := new(Controller)
+	srv.key = key
 
 	r := mux.NewRouter().StrictSlash(true)
 
