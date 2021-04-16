@@ -96,12 +96,11 @@ func (e *Engine) worker(n int) {
 		}
 
 		req := &client.UpdateTaskRequest{
-			UUID:     task.UUID,
 			Status:   2,
 			WorkedBy: e.host,
 		}
 
-		_, status, err := e.client.UpdateTask(ctx, req)
+		_, status, err := e.client.UpdateTask(ctx, task.UUID, req)
 		if err != nil {
 			log.Warnw("update task returned error", "err", err)
 			continue

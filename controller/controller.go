@@ -57,7 +57,7 @@ func NewWithDependencies(listener net.Listener, recorder metrics.MetricsRecorder
 
 	r.HandleFunc("/tasks", srv.getTasksHandler).Methods("GET")
 	r.HandleFunc("/status", srv.reportStatusHandler).Methods("POST")
-	r.HandleFunc("/task", srv.updateTaskHandler).Methods("PUT")
+	r.HandleFunc("/tasks/{uuid}", srv.updateTaskHandler).Methods("PATCH")
 	metricsHandler := recorder.Handler()
 	if metricsHandler != nil {
 		r.Handle("/metrics", metricsHandler)

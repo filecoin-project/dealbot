@@ -63,14 +63,14 @@ func (c *Client) ListTasks(ctx context.Context) ([]*tasks.Task, error) {
 	return res, nil
 }
 
-func (c *Client) UpdateTask(ctx context.Context, r *UpdateTaskRequest) (io.ReadCloser, int, error) {
+func (c *Client) UpdateTask(ctx context.Context, UUID string, r *UpdateTaskRequest) (io.ReadCloser, int, error) {
 	var body bytes.Buffer
 	err := json.NewEncoder(&body).Encode(r)
 	if err != nil {
 		return nil, -1, err
 	}
 
-	return c.request(ctx, "PUT", "/task", bytes.NewReader(body.Bytes()))
+	return c.request(ctx, "PATCH", "/tasks/"+UUID, bytes.NewReader(body.Bytes()))
 }
 
 func (c *Client) request(ctx context.Context, method string, path string, body io.Reader, headers ...string) (io.ReadCloser, int, error) {

@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/gorilla/mux"
+
 	"github.com/filecoin-project/dealbot/controller/client"
 )
 
@@ -25,7 +27,8 @@ func (c *Controller) updateTaskHandler(w http.ResponseWriter, r *http.Request) {
 	defer logger.Debugw("request handled", "command", "update task")
 
 	w.Header().Set("Content-Type", "application/json")
-
+	vars := mux.Vars(r)
+	UUID := vars["uuid"]
 	var req *client.UpdateTaskRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
@@ -34,7 +37,7 @@ func (c *Controller) updateTaskHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = State.Update(req, c.metricsRecorder)
+	err = State.Update(UUID, req, c.metricsRecorder)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return

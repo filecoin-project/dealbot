@@ -24,12 +24,12 @@ func (s *state) MarshalJSON() ([]byte, error) {
 	return json.Marshal(s.tasks)
 }
 
-func (s *state) Update(req *client.UpdateTaskRequest, recorder metrics.MetricsRecorder) error {
+func (s *state) Update(UUID string, req *client.UpdateTaskRequest, recorder metrics.MetricsRecorder) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	for _, t := range s.tasks {
-		if t.UUID == req.UUID {
+		if t.UUID == UUID {
 			if t.Status == tasks.Available {
 				t.WorkedBy = req.WorkedBy
 				t.StartedAt = time.Now()
@@ -48,7 +48,7 @@ func (s *state) Update(req *client.UpdateTaskRequest, recorder metrics.MetricsRe
 		}
 	}
 
-	return fmt.Errorf("cannot find task with uuid: %s", req.UUID)
+	return fmt.Errorf("cannot find task with uuid: %s", UUID)
 }
 
 func init() {

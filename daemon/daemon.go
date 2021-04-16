@@ -52,6 +52,7 @@ func New(ctx context.Context, cliCtx *cli.Context) (srv *Daemon, err error) {
 	}
 
 	srv.l, err = net.Listen("tcp", cliCtx.String("listen"))
+	fmt.Println(err)
 	if err != nil {
 		return nil, err
 	}

@@ -36,8 +36,7 @@ func TestControllerHTTPInterface(t *testing.T) {
 	require.Len(t, currentTasks, 4)
 
 	// update a task
-	_, status, err := apiClient.UpdateTask(ctx, &client.UpdateTaskRequest{
-		UUID:     currentTasks[0].UUID,
+	_, status, err := apiClient.UpdateTask(ctx, currentTasks[0].UUID, &client.UpdateTaskRequest{
 		WorkedBy: "dealbot 1",
 		Status:   tasks.InProgress,
 	})
@@ -49,8 +48,7 @@ func TestControllerHTTPInterface(t *testing.T) {
 	require.Equal(t, "dealbot 1", currentTasks[0].WorkedBy)
 
 	// update but from the wrong dealbot
-	_, status, err = apiClient.UpdateTask(ctx, &client.UpdateTaskRequest{
-		UUID:     currentTasks[0].UUID,
+	_, status, err = apiClient.UpdateTask(ctx, currentTasks[0].UUID, &client.UpdateTaskRequest{
 		WorkedBy: "dealbot 2",
 		Status:   tasks.Successful,
 	})
@@ -64,8 +62,7 @@ func TestControllerHTTPInterface(t *testing.T) {
 	require.Equal(t, "dealbot 1", currentTasks[0].WorkedBy)
 
 	// update again
-	_, status, err = apiClient.UpdateTask(ctx, &client.UpdateTaskRequest{
-		UUID:     currentTasks[0].UUID,
+	_, status, err = apiClient.UpdateTask(ctx, currentTasks[0].UUID, &client.UpdateTaskRequest{
 		WorkedBy: "dealbot 1",
 		Status:   tasks.Successful,
 	})
@@ -77,8 +74,7 @@ func TestControllerHTTPInterface(t *testing.T) {
 	require.Equal(t, "dealbot 1", currentTasks[0].WorkedBy)
 
 	// update a different task
-	_, status, err = apiClient.UpdateTask(ctx, &client.UpdateTaskRequest{
-		UUID:     currentTasks[1].UUID,
+	_, status, err = apiClient.UpdateTask(ctx, currentTasks[1].UUID, &client.UpdateTaskRequest{
 		WorkedBy: "dealbot 2",
 		Status:   tasks.Successful,
 	})
