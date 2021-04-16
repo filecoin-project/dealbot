@@ -30,6 +30,7 @@ if [[ -z $FULLNODE_API_INFO ]]; then
 	# TODO: poll/wait for devnet to be ready
 	sleep 60
 
+	export DEALBOT_DATA_DIRECTORY=$TEMPDIR
 	export FULLNODE_API_INFO="$(cat $LOTUS_PATH/token):$(cat $LOTUS_PATH/api)"
 fi
 
