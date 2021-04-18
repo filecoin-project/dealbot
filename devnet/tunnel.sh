@@ -12,6 +12,5 @@ ssh -N -f -L 1234:localhost:1234 $ADDRESS
 # Also note that $LOTUS_PATH is only set for the non-root user.
 # We use awk instead of cat since the files have no trailing newlines.
 echo "Collecting lotus api address and token..."
-VARS=($(ssh -T $ADDRESS 'sudo awk 1 $LOTUS_PATH/api $LOTUS_PATH/token'))
-export LOTUS_API=${VARS[0]}
-export LOTUS_TOKEN=${VARS[1]}
+VARS=($(ssh -T $ADDRESS 'sudo awk 1 $LOTUS_PATH/token $LOTUS_PATH/api'))
+export FULLNODE_API_INFO="${VARS[0]}:${VARS[1]}"

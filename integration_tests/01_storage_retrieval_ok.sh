@@ -3,10 +3,10 @@
 my_dir="$(dirname "$0")"
 source "$my_dir/header.sh"
 
-DATADIR=$TEMPDIR
-MINER=t01000
+export DEALBOT_DATA_DIRECTORY=$TEMPDIR
+export DEALBOT_MINER_ADDRESS=t01000
 
-dealbot --api=$LOTUS_TOKEN:$LOTUS_API storage-deal --data-dir=$DATADIR --miner=$MINER
+dealbot storage-deal
 
 returnValue=$?
 if [[ $returnValue -ne 0 ]]; then
@@ -16,7 +16,7 @@ fi
 
 CID=$(lotus client local | tail -1 | awk '{print $2}')
 
-dealbot --api=$LOTUS_TOKEN:$LOTUS_API retrieval-deal --data-dir=$DATADIR --miner=$MINER --cid=$CID
+dealbot retrieval-deal --cid=$CID
 
 returnValue=$?
 if [[ $returnValue -ne 0 ]]; then

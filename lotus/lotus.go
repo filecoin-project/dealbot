@@ -15,7 +15,6 @@ import (
 	ma "github.com/multiformats/go-multiaddr"
 	manet "github.com/multiformats/go-multiaddr/net"
 	"github.com/urfave/cli/v2"
-	"golang.org/x/xerrors"
 )
 
 var log = logging.Logger("dealbot")
@@ -43,38 +42,38 @@ func NewAPIOpenerFromCLI(cctx *cli.Context) (*APIOpener, APICloser, error) {
 		repoPath := cctx.String("lotus-path")
 		p, err := homedir.Expand(repoPath)
 		if err != nil {
-			return nil, nil, xerrors.Errorf("expand home dir (%s): %w", repoPath, err)
+			return nil, nil, fmt.Errorf("expand home dir (%s): %w", repoPath, err)
 		}
 
 		r, err := repo.NewFS(p)
 		if err != nil {
-			return nil, nil, xerrors.Errorf("open repo at path: %s; %w", p, err)
+			return nil, nil, fmt.Errorf("open repo at path: %s; %w", p, err)
 		}
 
 		ma, err := r.APIEndpoint()
 		if err != nil {
-			return nil, nil, xerrors.Errorf("api endpoint: %w", err)
+			return nil, nil, fmt.Errorf("api endpoint: %w", err)
 		}
 
 		token, err := r.APIToken()
 		if err != nil {
-			return nil, nil, xerrors.Errorf("api token: %w", err)
+			return nil, nil, fmt.Errorf("api token: %w", err)
 		}
 
 		rawaddr = ma.String()
 		rawtoken = string(token)
 	} else {
-		return nil, nil, xerrors.Errorf("cannot connect to lotus api: missing --api or --repo flags")
+		return nil, nil, fmt.Errorf("cannot connect to lotus api: missing --api or --repo flags")
 	}
 
 	parsedAddr, err := ma.NewMultiaddr(rawaddr)
 	if err != nil {
-		return nil, nil, xerrors.Errorf("parse listen address: %w", err)
+		return nil, nil, fmt.Errorf("parse listen address: %w", err)
 	}
 
 	_, addr, err := manet.DialArgs(parsedAddr)
 	if err != nil {
-		return nil, nil, xerrors.Errorf("dial multiaddress: %w", err)
+		return nil, nil, fmt.Errorf("dial multiaddress: %w", err)
 	}
 
 	o := &APIOpener{
@@ -102,11 +101,11 @@ func apiHeaders(token string) http.Header {
 func setupLogging(cctx *cli.Context) error {
 	ll := cctx.String("log-level")
 	if err := logging.SetLogLevel("*", ll); err != nil {
-		return xerrors.Errorf("set log level: %w", err)
+		return fmt.Errorf("set log level: %w", err)
 	}
 
 	if err := logging.SetLogLevel("rpc", "error"); err != nil {
-		return xerrors.Errorf("set rpc log level: %w", err)
+		return fmt.Errorf("set rpc log level: %w", err)
 	}
 
 	llnamed := cctx.String("log-level-named")
@@ -117,10 +116,10 @@ func setupLogging(cctx *cli.Context) error {
 	for _, llname := range strings.Split(llnamed, ",") {
 		parts := strings.Split(llname, ":")
 		if len(parts) != 2 {
-			return xerrors.Errorf("invalid named log level format: %q", llname)
+			return fmt.Errorf("invalid named log level format: %q", llname)
 		}
 		if err := logging.SetLogLevel(parts[0], parts[1]); err != nil {
-			return xerrors.Errorf("set named log level %q to %q: %w", parts[0], parts[1], err)
+			return fmt.Errorf("set named log level %q to %q: %w", parts[0], parts[1], err)
 		}
 
 	}
@@ -142,12 +141,12 @@ func NewAPIOpener(ctx *cli.Context) (*APIOpener, APICloser, error) {
 
 	parsedAddr, err := ma.NewMultiaddr(rawaddr)
 	if err != nil {
-		return nil, nil, xerrors.Errorf("parse listen address: %w", err)
+		return nil, nil, fmt.Errorf("parse listen address: %w", err)
 	}
 
 	_, addr, err := manet.DialArgs(parsedAddr)
 	if err != nil {
-		return nil, nil, xerrors.Errorf("dial multiaddress: %w", err)
+		return nil, nil, fmt.Errorf("dial multiaddress: %w", err)
 	}
 
 	o := &APIOpener{
