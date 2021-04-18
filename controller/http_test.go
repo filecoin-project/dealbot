@@ -4,11 +4,13 @@ import (
 	"context"
 	"net"
 	"net/http"
+	"os"
 	"testing"
 	"time"
 
 	"github.com/filecoin-project/dealbot/controller"
 	"github.com/filecoin-project/dealbot/controller/client"
+	"github.com/filecoin-project/dealbot/controller/state"
 	"github.com/filecoin-project/dealbot/metrics/testrecorder"
 	"github.com/filecoin-project/dealbot/tasks"
 	"github.com/libp2p/go-libp2p-core/crypto"
@@ -153,7 +155,9 @@ func newHarness(t *testing.T, ctx context.Context) *harness {
 	listener, err := net.Listen("tcp", "localhost:3333")
 	require.NoError(t, err)
 	pr, _, _ := crypto.GenerateKeyPair(crypto.Ed25519, 0)
-	h.controller = controller.NewWithDependencies(listener, h.recorder, pr)
+	be, err := state.NewSql("sqlite", "test.sqlite", pr)
+	require.NoError(t, err)
+	h.controller = controller.NewWithDependencies(listener, h.recorder, be)
 	h.serveErr = make(chan error, 1)
 	go func() {
 		err := h.controller.Serve()
@@ -173,5 +177,8 @@ func (h *harness) Shutdown(t *testing.T) {
 		t.Fatalf("no return from serve call")
 	case err = <-h.serveErr:
 		require.EqualError(t, err, http.ErrServerClosed.Error())
+	}
+	if _, err := os.Stat("test.sqlite"); !os.IsNotExist(err) {
+		os.Remove("test.sqlite")
 	}
 }

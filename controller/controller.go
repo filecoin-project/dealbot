@@ -9,6 +9,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/filecoin-project/dealbot/controller/state"
 	"github.com/filecoin-project/dealbot/metrics"
 	metricslog "github.com/filecoin-project/dealbot/metrics/log"
 	"github.com/filecoin-project/dealbot/metrics/prometheus"
@@ -24,10 +25,10 @@ import (
 var log = logging.Logger("controller")
 
 type Controller struct {
-	key             crypto.PrivKey
 	server          *http.Server
 	l               net.Listener
 	doneCh          chan struct{}
+	db              state.State
 	metricsRecorder metrics.MetricsRecorder
 }
 
@@ -76,12 +77,17 @@ func New(ctx *cli.Context) (*Controller, error) {
 		}
 	}
 
-	return NewWithDependencies(l, recorder, key), nil
+	backend, err := state.NewSql(ctx.String("driver"), ctx.String("dbloc"), key)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewWithDependencies(l, recorder, backend), nil
 }
 
-func NewWithDependencies(listener net.Listener, recorder metrics.MetricsRecorder, key crypto.PrivKey) *Controller {
+func NewWithDependencies(listener net.Listener, recorder metrics.MetricsRecorder, backend state.State) *Controller {
 	srv := new(Controller)
-	srv.key = key
+	srv.db = backend
 
 	r := mux.NewRouter().StrictSlash(true)
 

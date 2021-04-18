@@ -80,6 +80,17 @@ var ControllerFlags = []cli.Flag{
 		Aliases: []string{"i"},
 		EnvVars: []string{"DEALBOT_IDENTITY_KEYPAIR"},
 	}),
+	altsrc.NewStringFlag(&cli.StringFlag{
+		Name:    "driver",
+		Usage:   "type of database backend to use",
+		EnvVars: []string{"DEALBOT_PERSISTENCE_DRIVER"},
+		Value:   "sqlite",
+	}),
+	altsrc.NewStringFlag(&cli.StringFlag{
+		Name:    "dbloc",
+		Usage:   "connection string for sql DB",
+		EnvVars: []string{"DEALBOT_PERSISTENCE_CONN"},
+	}),
 }
 
 var AllFlags = append(DealFlags, append(SingleTaskFlags, append(DaemonFlags, ControllerFlags...)...)...)
