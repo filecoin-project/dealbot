@@ -18,25 +18,38 @@ var State *state
 
 type state struct {
 	tasks []*tasks.AuthenticatedTask
-	mu    sync.Mutex
+	mu    sync.RWMutex
 }
 
 func (s *state) MarshalJSON() ([]byte, error) {
 	return json.Marshal(s.tasks)
 }
 
-func (s *state) Update(req *client.UpdateTaskRequest, key crypto.PrivKey, recorder metrics.MetricsRecorder) error {
+func (s *state) Get(UUID string) (*tasks.AuthenticatedTask, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	for _, t := range s.tasks {
+		if t.UUID == UUID {
+			return t, nil
+		}
+	}
+
+	return nil, fmt.Errorf("cannot find task with uuid: %s", UUID)
+}
+
+func (s *state) Update(UUID string, req *client.UpdateTaskRequest, key crypto.PrivKey, recorder metrics.MetricsRecorder) (*tasks.AuthenticatedTask, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	for _, t := range s.tasks {
-		if t.UUID == req.UUID {
+		if t.UUID == UUID {
 			if t.Status == tasks.Available {
 				t.WorkedBy = req.WorkedBy
 				t.StartedAt = time.Now()
 			} else {
 				if t.WorkedBy != req.WorkedBy {
-					return errors.New("task already acquired")
+					return nil, errors.New("task already acquired")
 				}
 			}
 			log.Infow("state update", "uuid", t.UUID, "status", req.Status, "worked_by", req.WorkedBy)
@@ -45,16 +58,50 @@ func (s *state) Update(req *client.UpdateTaskRequest, key crypto.PrivKey, record
 			var err error
 			t.Signature, err = key.Sign(t.Bytes())
 			if err != nil {
-				return err
+				return nil, err
 			}
 			if err := recorder.ObserveTask(t); err != nil {
-				return err
+				return nil, err
 			}
-			return nil
+			return t, nil
 		}
 	}
 
-	return fmt.Errorf("cannot find task with uuid: %s", req.UUID)
+	return nil, fmt.Errorf("cannot find task with uuid: %s", UUID)
+}
+
+func (s *state) NewStorageTask(storageTask *tasks.StorageTask) (*tasks.AuthenticatedTask, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	task := &tasks.AuthenticatedTask{
+		tasks.Task{
+			UUID:        uuid.New().String()[:8],
+			Status:      tasks.Available,
+			StorageTask: storageTask,
+		},
+		[]byte{},
+	}
+
+	s.tasks = append(s.tasks, task)
+	return task, nil
+}
+
+func (s *state) NewRetrievalTask(retrievalTask *tasks.RetrievalTask) (*tasks.AuthenticatedTask, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	task := &tasks.AuthenticatedTask{
+		tasks.Task{
+			UUID:          uuid.New().String()[:8],
+			Status:        tasks.Available,
+			RetrievalTask: retrievalTask,
+		},
+		[]byte{},
+	}
+
+	s.tasks = append(s.tasks, task)
+	return task, nil
 }
 
 func init() {
