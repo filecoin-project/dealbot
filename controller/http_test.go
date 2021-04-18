@@ -20,122 +20,111 @@ import (
 
 func TestControllerHTTPInterface(t *testing.T) {
 	ctx := context.Background()
-	testCases := map[string]struct {
-		runRequests  func(ctx context.Context, t *testing.T, apiClient *client.Client)
-		checkMetrics func(t *testing.T, currentTasks []*tasks.Task, recorder *testrecorder.TestMetricsRecorder)
-	}{
-		"updating tasks": {
-			runRequests: func(ctx context.Context, t *testing.T, apiClient *client.Client) {
-				currentTasks, err := apiClient.ListTasks(ctx)
-				require.NoError(t, err)
-				require.Len(t, currentTasks, 4)
+	testCases := map[string]func(ctx context.Context, t *testing.T, apiClient *client.Client, recorder *testrecorder.TestMetricsRecorder){
+		"updating tasks": func(ctx context.Context, t *testing.T, apiClient *client.Client, recorder *testrecorder.TestMetricsRecorder) {
+			currentTasks, err := apiClient.ListTasks(ctx)
+			require.NoError(t, err)
+			require.Len(t, currentTasks, 4)
 
-				// update a task
-				task, err := apiClient.UpdateTask(ctx, currentTasks[0].UUID, &client.UpdateTaskRequest{
-					WorkedBy: "dealbot 1",
-					Status:   tasks.InProgress,
-				})
-				require.Equal(t, tasks.InProgress, task.Status)
-				require.NoError(t, err)
-				currentTasks, err = apiClient.ListTasks(ctx)
-				require.NoError(t, err)
-				require.Equal(t, tasks.InProgress, currentTasks[0].Status)
-				require.Equal(t, "dealbot 1", currentTasks[0].WorkedBy)
+			taskUUID := currentTasks[0].UUID
 
-				// update but from the wrong dealbot
-				task, err = apiClient.UpdateTask(ctx, currentTasks[0].UUID, &client.UpdateTaskRequest{
-					WorkedBy: "dealbot 2",
-					Status:   tasks.Successful,
-				})
-				// request fails
-				require.EqualError(t, err, client.ErrRequestFailed{Code: http.StatusBadRequest}.Error())
-				require.Nil(t, task)
-				currentTasks, err = apiClient.ListTasks(ctx)
-				require.NoError(t, err)
-				// status should not change
-				require.Equal(t, tasks.InProgress, currentTasks[0].Status)
-				require.Equal(t, "dealbot 1", currentTasks[0].WorkedBy)
+			// update a task
+			task, err := apiClient.UpdateTask(ctx, taskUUID, &client.UpdateTaskRequest{
+				WorkedBy: "dealbot 1",
+				Status:   tasks.InProgress,
+			})
+			require.Equal(t, tasks.InProgress, task.Status)
+			require.NoError(t, err)
+			refetchTask, err := apiClient.GetTask(ctx, task.UUID)
+			require.NoError(t, err)
+			require.Equal(t, tasks.InProgress, refetchTask.Status)
+			require.Equal(t, "dealbot 1", refetchTask.WorkedBy)
 
-				// update again
-				task, err = apiClient.UpdateTask(ctx, currentTasks[0].UUID, &client.UpdateTaskRequest{
-					WorkedBy: "dealbot 1",
-					Status:   tasks.Successful,
-				})
-				require.NoError(t, err)
-				require.Equal(t, tasks.Successful, task.Status)
-				currentTasks, err = apiClient.ListTasks(ctx)
-				require.NoError(t, err)
-				require.Equal(t, tasks.Successful, currentTasks[0].Status)
-				require.Equal(t, "dealbot 1", currentTasks[0].WorkedBy)
+			// update but from the wrong dealbot
+			task, err = apiClient.UpdateTask(ctx, taskUUID, &client.UpdateTaskRequest{
+				WorkedBy: "dealbot 2",
+				Status:   tasks.Successful,
+			})
+			// request fails
+			require.EqualError(t, err, client.ErrRequestFailed{Code: http.StatusBadRequest}.Error())
+			require.Nil(t, task)
+			refetchTask, err = apiClient.GetTask(ctx, taskUUID)
+			require.NoError(t, err)
+			// status should not change
+			require.Equal(t, tasks.InProgress, refetchTask.Status)
+			require.Equal(t, "dealbot 1", refetchTask.WorkedBy)
 
-				// update a different task
-				task, err = apiClient.UpdateTask(ctx, currentTasks[1].UUID, &client.UpdateTaskRequest{
-					WorkedBy: "dealbot 2",
-					Status:   tasks.Successful,
-				})
-				require.NoError(t, err)
-				require.Equal(t, tasks.Successful, task.Status)
-				currentTasks, err = apiClient.ListTasks(ctx)
-				require.NoError(t, err)
-				require.Equal(t, tasks.Successful, currentTasks[1].Status)
-				require.Equal(t, "dealbot 2", currentTasks[1].WorkedBy)
-			},
-			checkMetrics: func(t *testing.T, currentTasks []*tasks.Task, recorder *testrecorder.TestMetricsRecorder) {
-				recorder.AssertExactObservedStatuses(t, currentTasks[0].UUID, tasks.InProgress, tasks.Successful)
-				recorder.AssertExactObservedStatuses(t, currentTasks[1].UUID, tasks.Successful)
-			},
+			// update again
+			task, err = apiClient.UpdateTask(ctx, taskUUID, &client.UpdateTaskRequest{
+				WorkedBy: "dealbot 1",
+				Status:   tasks.Successful,
+			})
+			require.NoError(t, err)
+			require.Equal(t, tasks.Successful, task.Status)
+			refetchTask, err = apiClient.GetTask(ctx, taskUUID)
+			require.NoError(t, err)
+			require.Equal(t, tasks.Successful, refetchTask.Status)
+			require.Equal(t, "dealbot 1", refetchTask.WorkedBy)
+
+			// update a different
+			taskUUID = currentTasks[1].UUID
+			task, err = apiClient.UpdateTask(ctx, currentTasks[1].UUID, &client.UpdateTaskRequest{
+				WorkedBy: "dealbot 2",
+				Status:   tasks.Successful,
+			})
+			require.NoError(t, err)
+			require.Equal(t, tasks.Successful, task.Status)
+			refetchTask, err = apiClient.GetTask(ctx, taskUUID)
+			require.NoError(t, err)
+			require.Equal(t, tasks.Successful, refetchTask.Status)
+			require.Equal(t, "dealbot 2", refetchTask.WorkedBy)
+
+			recorder.AssertExactObservedStatuses(t, currentTasks[0].UUID, tasks.InProgress, tasks.Successful)
+			recorder.AssertExactObservedStatuses(t, currentTasks[1].UUID, tasks.Successful)
 		},
-		"creating tasks": {
-			runRequests: func(ctx context.Context, t *testing.T, apiClient *client.Client) {
-				newStorageTask := &tasks.StorageTask{
-					Miner:           "t01000",
-					MaxPriceAttoFIL: 100000000000000000, // 0.10 FIL
-					Size:            2048,               // 1kb
-					StartOffset:     0,
-					FastRetrieval:   true,
-					Verified:        true,
-				}
-				task, err := apiClient.CreateStorageTask(ctx, newStorageTask)
-				require.NoError(t, err)
-				require.Equal(t, task.StorageTask, newStorageTask)
-				task, err = apiClient.GetTask(ctx, task.UUID)
-				require.NoError(t, err)
-				require.Equal(t, task.StorageTask, newStorageTask)
-				currentTasks, err := apiClient.ListTasks(ctx)
-				require.NoError(t, err)
-				require.Len(t, currentTasks, 5)
+		"creating tasks": func(ctx context.Context, t *testing.T, apiClient *client.Client, _ *testrecorder.TestMetricsRecorder) {
+			newStorageTask := &tasks.StorageTask{
+				Miner:           "t01000",
+				MaxPriceAttoFIL: 100000000000000000, // 0.10 FIL
+				Size:            2048,               // 1kb
+				StartOffset:     0,
+				FastRetrieval:   true,
+				Verified:        true,
+			}
+			task, err := apiClient.CreateStorageTask(ctx, newStorageTask)
+			require.NoError(t, err)
+			require.Equal(t, task.StorageTask, newStorageTask)
+			task, err = apiClient.GetTask(ctx, task.UUID)
+			require.NoError(t, err)
+			require.Equal(t, task.StorageTask, newStorageTask)
+			currentTasks, err := apiClient.ListTasks(ctx)
+			require.NoError(t, err)
+			require.Len(t, currentTasks, 5)
 
-				newRetrievalTask := &tasks.RetrievalTask{
-					Miner:      "f0127896",
-					PayloadCID: "bafykbzacedikkmeotawrxqquthryw3cijaonobygdp7fb5bujhuos6wdkwomm",
-					CARExport:  false,
-				}
-				task, err = apiClient.CreateRetrievalTask(ctx, newRetrievalTask)
-				require.NoError(t, err)
-				require.Equal(t, task.RetrievalTask, newRetrievalTask)
-				task, err = apiClient.GetTask(ctx, task.UUID)
-				require.NoError(t, err)
-				require.Equal(t, task.RetrievalTask, newRetrievalTask)
-				currentTasks, err = apiClient.ListTasks(ctx)
-				require.NoError(t, err)
-				require.Len(t, currentTasks, 6)
-			},
+			newRetrievalTask := &tasks.RetrievalTask{
+				Miner:      "f0127896",
+				PayloadCID: "bafykbzacedikkmeotawrxqquthryw3cijaonobygdp7fb5bujhuos6wdkwomm",
+				CARExport:  false,
+			}
+			task, err = apiClient.CreateRetrievalTask(ctx, newRetrievalTask)
+			require.NoError(t, err)
+			require.Equal(t, task.RetrievalTask, newRetrievalTask)
+			task, err = apiClient.GetTask(ctx, task.UUID)
+			require.NoError(t, err)
+			require.Equal(t, task.RetrievalTask, newRetrievalTask)
+			currentTasks, err = apiClient.ListTasks(ctx)
+			require.NoError(t, err)
+			require.Len(t, currentTasks, 6)
 		},
 	}
 
-	for testCase, data := range testCases {
+	for testCase, run := range testCases {
 		t.Run(testCase, func(t *testing.T) {
 			ctx, cancel := context.WithTimeout(ctx, time.Minute)
 			defer cancel()
 			h := newHarness(t, ctx)
-			if data.runRequests != nil {
-				data.runRequests(ctx, t, h.apiClient)
-			}
-			if data.checkMetrics != nil {
-				finalTasks, err := h.apiClient.ListTasks(ctx)
-				require.NoError(t, err)
-				data.checkMetrics(t, finalTasks, h.recorder)
-			}
+			run(ctx, t, h.apiClient, h.recorder)
+
 			h.Shutdown(t)
 		})
 	}

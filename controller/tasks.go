@@ -46,6 +46,7 @@ func (c *Controller) updateTaskHandler(w http.ResponseWriter, r *http.Request) {
 
 	task, err := c.db.Update(UUID, req, c.metricsRecorder)
 	if err != nil {
+		log.Errorw("UpdateTaskRequest db update", "err", err.Error())
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
