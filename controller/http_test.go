@@ -2,6 +2,7 @@ package controller_test
 
 import (
 	"context"
+	"io/ioutil"
 	"net"
 	"net/http"
 	"os"
@@ -145,17 +146,24 @@ type harness struct {
 	apiClient  *client.Client
 	recorder   *testrecorder.TestMetricsRecorder
 	controller *controller.Controller
+	dbloc      string
+	port       string
 	serveErr   chan error
 }
 
 func newHarness(t *testing.T, ctx context.Context) *harness {
 	h := &harness{ctx: ctx}
-	h.apiClient = client.NewFromEndpoint("http://localhost:3333")
 	h.recorder = testrecorder.NewTestMetricsRecorder()
-	listener, err := net.Listen("tcp", "localhost:3333")
+	listener, err := net.Listen("tcp", "localhost:0")
 	require.NoError(t, err)
+	_, p, err := net.SplitHostPort(listener.Addr().String())
+	require.NoError(t, err)
+	h.port = p
+	h.apiClient = client.NewFromEndpoint("http://localhost:" + p)
 	pr, _, _ := crypto.GenerateKeyPair(crypto.Ed25519, 0)
-	be, err := state.NewSql("sqlite", "test.sqlite", pr)
+	h.dbloc, err = ioutil.TempDir("", "dealbot_test_*")
+	require.NoError(t, err)
+	be, err := state.NewSql("sqlite", h.dbloc+"/tmp.sqlite", pr)
 	require.NoError(t, err)
 	h.controller = controller.NewWithDependencies(listener, h.recorder, be)
 	h.serveErr = make(chan error, 1)
@@ -178,7 +186,7 @@ func (h *harness) Shutdown(t *testing.T) {
 	case err = <-h.serveErr:
 		require.EqualError(t, err, http.ErrServerClosed.Error())
 	}
-	if _, err := os.Stat("test.sqlite"); !os.IsNotExist(err) {
-		os.Remove("test.sqlite")
+	if _, err := os.Stat(h.dbloc); !os.IsNotExist(err) {
+		os.RemoveAll(h.dbloc)
 	}
 }
