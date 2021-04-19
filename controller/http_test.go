@@ -1,14 +1,15 @@
-package controller_test
+package controller
 
 import (
 	"context"
 	"net"
 	"net/http"
+	"os"
 	"testing"
 	"time"
 
-	"github.com/filecoin-project/dealbot/controller"
 	"github.com/filecoin-project/dealbot/controller/client"
+	"github.com/filecoin-project/dealbot/controller/sqlitedb"
 	"github.com/filecoin-project/dealbot/metrics/testrecorder"
 	"github.com/filecoin-project/dealbot/tasks"
 	"github.com/stretchr/testify/require"
@@ -22,7 +23,14 @@ func TestControllerHTTPInterface(t *testing.T) {
 	recorder := testrecorder.NewTestMetricsRecorder()
 	listener, err := net.Listen("tcp", "localhost:3333")
 	require.NoError(t, err)
-	c := controller.NewWithDependencies(listener, recorder)
+
+	state, err := NewState(sqlitedb.New(testDBFile))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(testDBFile)
+
+	c := NewWithDependencies(listener, recorder, state)
 	serveErr := make(chan error, 1)
 	go func() {
 		err := c.Serve()

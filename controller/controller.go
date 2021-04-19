@@ -16,6 +16,17 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
+
+	//"github.com/filecoin-project/dealbot/controller/postgresdb"
+	//_ "github.com/lib/pq"
+	"github.com/filecoin-project/dealbot/controller/sqlitedb"
+	_ "github.com/mattn/go-sqlite3"
+)
+
+// File used for sqlite database
+const (
+	dbFile    = "state.db"
+	pgConnStr = ""
 )
 
 var log = logging.Logger("controller")
@@ -25,6 +36,7 @@ type Controller struct {
 	l               net.Listener
 	doneCh          chan struct{}
 	metricsRecorder metrics.MetricsRecorder
+	state           *state
 }
 
 func New(ctx *cli.Context) (*Controller, error) {
@@ -39,10 +51,19 @@ func New(ctx *cli.Context) (*Controller, error) {
 		return nil, err
 	}
 
-	return NewWithDependencies(l, recorder), nil
+	//pgConnStr := PostgresConfig{}.String()
+	//db := postgresdb.New(pgConnString)
+	db := sqlitedb.New(dbFile)
+
+	st, err := NewState(db)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewWithDependencies(l, recorder, st), nil
 }
 
-func NewWithDependencies(listener net.Listener, recorder metrics.MetricsRecorder) *Controller {
+func NewWithDependencies(listener net.Listener, recorder metrics.MetricsRecorder, st *state) *Controller {
 	srv := new(Controller)
 
 	r := mux.NewRouter().StrictSlash(true)
@@ -73,6 +94,7 @@ func NewWithDependencies(listener net.Listener, recorder metrics.MetricsRecorder
 
 	srv.l = listener
 	srv.metricsRecorder = recorder
+	srv.state = st
 	return srv
 }
 

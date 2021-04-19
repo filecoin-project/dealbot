@@ -15,7 +15,7 @@ func (c *Controller) getTasksHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	json.NewEncoder(w).Encode(State)
+	json.NewEncoder(w).Encode(c.state)
 }
 
 func (c *Controller) updateTaskHandler(w http.ResponseWriter, r *http.Request) {
@@ -34,12 +34,12 @@ func (c *Controller) updateTaskHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = State.Update(req, c.metricsRecorder)
+	err = c.state.Update(req, c.metricsRecorder)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(State)
+	json.NewEncoder(w).Encode(c.state)
 }
