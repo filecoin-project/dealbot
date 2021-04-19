@@ -24,7 +24,7 @@ func TestControllerHTTPInterface(t *testing.T) {
 	listener, err := net.Listen("tcp", "localhost:3333")
 	require.NoError(t, err)
 
-	state, err := NewState(sqlitedb.New(testDBFile))
+	state, err := NewState(ctx, sqlitedb.New(testDBFile))
 	if err != nil {
 		t.Fatal(err)
 	}

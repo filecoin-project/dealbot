@@ -15,15 +15,15 @@ import (
 )
 
 type state struct {
-	db *sql.DB
+	dbConn DBConnector
 }
 
-func NewState(ctx context.Context, db DBConnector) (*state, error) {
-	err := db.Connect()
+func NewState(ctx context.Context, dbConn DBConnector) (*state, error) {
+	err := dbConn.Connect()
 	if err != nil {
 		return nil, err
 	}
-	sqldb := db.SqlDB()
+	sqldb := dbConn.SqlDB()
 
 	_, err = sqldb.ExecContext(ctx, createTasksTable)
 	if err != nil {
@@ -31,7 +31,7 @@ func NewState(ctx context.Context, db DBConnector) (*state, error) {
 	}
 
 	s := &state{
-		db: sqldb,
+		dbConn: dbConn,
 	}
 
 	count, err := s.CountTasks(ctx)
@@ -51,14 +51,14 @@ func NewState(ctx context.Context, db DBConnector) (*state, error) {
 
 func (s *state) CountTasks(ctx context.Context) (int, error) {
 	var count int
-	if err := s.db.QueryRowContext(ctx, countTasksSql).Scan(&count); err != nil {
+	if err := s.db().QueryRowContext(ctx, countTasksSql).Scan(&count); err != nil {
 		return 0, err
 	}
 	return count, nil
 }
 
 func (s *state) MarshalJSON() ([]byte, error) {
-	rows, err := s.db.Query(getAllTasks)
+	rows, err := s.db().Query(getAllTasks)
 	if err != nil {
 		return nil, err
 	}
@@ -82,8 +82,14 @@ func (s *state) MarshalJSON() ([]byte, error) {
 }
 
 func (s *state) Update(ctx context.Context, req *client.UpdateTaskRequest, recorder metrics.MetricsRecorder) error {
+	// Check connection and reconnect if down
+	err := s.dbConn.Connect()
+	if err != nil {
+		return err
+	}
+
 	var data string
-	err := s.db.QueryRowContext(ctx, getTask, req.UUID).Scan(&data)
+	err = s.db().QueryRowContext(ctx, getTask, req.UUID).Scan(&data)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return fmt.Errorf("cannot find task with uuid: %s", req.UUID)
@@ -114,13 +120,17 @@ func (s *state) Update(ctx context.Context, req *client.UpdateTaskRequest, recor
 	return recorder.ObserveTask(&task)
 }
 
+func (s *state) db() *sql.DB {
+	return s.dbConn.SqlDB()
+}
+
 func (s *state) updateTask(ctx context.Context, task *tasks.Task) error {
 	data, err := json.Marshal(task)
 	if err != nil {
 		return err
 	}
 
-	_, err = s.db.ExecContext(ctx, updateTask, task.UUID, string(data), time.Now())
+	_, err = s.db().ExecContext(ctx, updateTask, task.UUID, string(data), time.Now())
 	return err
 }
 
@@ -130,7 +140,7 @@ func (s *state) saveTask(ctx context.Context, task *tasks.Task) error {
 		return err
 	}
 
-	_, err = s.db.ExecContext(ctx, insertTask, task.UUID, string(data), time.Now())
+	_, err = s.db().ExecContext(ctx, insertTask, task.UUID, string(data), time.Now())
 
 	return err
 }

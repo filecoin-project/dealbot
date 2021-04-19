@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"sync"
 
 	_ "github.com/lib/pq"
 )
@@ -12,6 +13,7 @@ import (
 type PostgresDB struct {
 	*sql.DB
 	dbConnStr string
+	mutex     sync.Mutex
 }
 
 // PostgresConfig contains config for postgres connection
@@ -58,6 +60,9 @@ func New(connString string) *PostgresDB {
 
 // Connect checks database connection and connects if not connected.
 func (db *PostgresDB) Connect() error {
+	db.Mutex.Lock()
+	defer db.Mutes.Unlock()
+
 	var err error
 	// If connection exists, ping to check it
 	if db.DB != nil {
@@ -80,5 +85,7 @@ func (db *PostgresDB) Connect() error {
 }
 
 func (db *PostgresDB) SqlDB() *sql.DB {
+	db.Mutex.Lock()
+	defer db.Mutes.Unlock()
 	return db.DB
 }
