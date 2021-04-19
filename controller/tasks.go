@@ -18,7 +18,7 @@ func (c *Controller) getTasksHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	tasks, err := c.db.GetAll()
+	tasks, err := c.db.GetAll(r.Context())
 	if err != nil {
 		log.Errorw("getTasks failed: backend", "err", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
@@ -34,8 +34,6 @@ func (c *Controller) updateTaskHandler(w http.ResponseWriter, r *http.Request) {
 	defer logger.Debugw("request handled", "command", "update task")
 
 	w.Header().Set("Content-Type", "application/json")
-	vars := mux.Vars(r)
-	UUID := vars["uuid"]
 	var req *client.UpdateTaskRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
@@ -44,7 +42,9 @@ func (c *Controller) updateTaskHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	task, err := c.db.Update(UUID, req, c.metricsRecorder)
+	vars := mux.Vars(r)
+	uuid := vars["uuid"]
+	task, err := c.db.Update(r.Context(), uuid, req, c.metricsRecorder)
 	if err != nil {
 		log.Errorw("UpdateTaskRequest db update", "err", err.Error())
 		w.WriteHeader(http.StatusBadRequest)
@@ -70,7 +70,7 @@ func (c *Controller) newStorageTaskHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	task, err := c.db.NewStorageTask(storageTask)
+	task, err := c.db.NewStorageTask(r.Context(), storageTask)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -101,7 +101,7 @@ func (c *Controller) newRetrievalTaskHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	task, err := c.db.NewRetrievalTask(retrievalTask)
+	task, err := c.db.NewRetrievalTask(r.Context(), retrievalTask)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -127,7 +127,7 @@ func (c *Controller) getTaskHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	UUID := vars["uuid"]
 
-	task, err := c.db.Get(UUID)
+	task, err := c.db.Get(r.Context(), UUID)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return

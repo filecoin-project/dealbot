@@ -71,14 +71,14 @@ func (c *Client) ListTasks(ctx context.Context) ([]*tasks.Task, error) {
 	return res, nil
 }
 
-func (c *Client) UpdateTask(ctx context.Context, UUID string, r *UpdateTaskRequest) (*tasks.Task, error) {
+func (c *Client) UpdateTask(ctx context.Context, uuid string, r *UpdateTaskRequest) (*tasks.Task, error) {
 	var body bytes.Buffer
 	err := json.NewEncoder(&body).Encode(r)
 	if err != nil {
 		return nil, err
 	}
 
-	resp, err := c.request(ctx, "PATCH", "/tasks/"+UUID, bytes.NewReader(body.Bytes()))
+	resp, err := c.request(ctx, "PATCH", "/tasks/"+uuid, bytes.NewReader(body.Bytes()))
 
 	if err != nil {
 		return nil, err
@@ -96,8 +96,8 @@ func (c *Client) UpdateTask(ctx context.Context, UUID string, r *UpdateTaskReque
 	return res, nil
 }
 
-func (c *Client) GetTask(ctx context.Context, UUID string) (*tasks.Task, error) {
-	resp, err := c.request(ctx, "GET", "/tasks/"+UUID, nil)
+func (c *Client) GetTask(ctx context.Context, uuid string) (*tasks.Task, error) {
+	resp, err := c.request(ctx, "GET", "/tasks/"+uuid, nil)
 	if err != nil {
 		return nil, err
 	}

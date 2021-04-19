@@ -33,8 +33,8 @@ func TestControllerHTTPInterface(t *testing.T) {
 				WorkedBy: "dealbot 1",
 				Status:   tasks.InProgress,
 			})
-			require.Equal(t, tasks.InProgress, task.Status)
 			require.NoError(t, err)
+			require.Equal(t, tasks.InProgress, task.Status)
 			refetchTask, err := apiClient.GetTask(ctx, task.UUID)
 			require.NoError(t, err)
 			require.Equal(t, tasks.InProgress, refetchTask.Status)
@@ -122,7 +122,7 @@ func TestControllerHTTPInterface(t *testing.T) {
 		t.Run(testCase, func(t *testing.T) {
 			ctx, cancel := context.WithTimeout(ctx, time.Minute)
 			defer cancel()
-			h := newHarness(t, ctx)
+			h := newHarness(ctx, t)
 			run(ctx, t, h.apiClient, h.recorder)
 
 			h.Shutdown(t)
@@ -140,7 +140,7 @@ type harness struct {
 	serveErr   chan error
 }
 
-func newHarness(t *testing.T, ctx context.Context) *harness {
+func newHarness(ctx context.Context, t *testing.T) *harness {
 	h := &harness{ctx: ctx}
 	h.recorder = testrecorder.NewTestMetricsRecorder()
 	listener, err := net.Listen("tcp", "localhost:0")
@@ -152,7 +152,7 @@ func newHarness(t *testing.T, ctx context.Context) *harness {
 	pr, _, _ := crypto.GenerateKeyPair(crypto.Ed25519, 0)
 	h.dbloc, err = ioutil.TempDir("", "dealbot_test_*")
 	require.NoError(t, err)
-	be, err := state.NewSql("sqlite", h.dbloc+"/tmp.sqlite", pr)
+	be, err := state.NewStateDB(ctx, "sqlite", h.dbloc+"/tmp.sqlite", pr)
 	require.NoError(t, err)
 	h.controller = controller.NewWithDependencies(listener, h.recorder, be)
 	h.serveErr = make(chan error, 1)
