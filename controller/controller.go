@@ -55,7 +55,7 @@ func New(ctx *cli.Context) (*Controller, error) {
 	//db := postgresdb.New(pgConnString)
 	db := sqlitedb.New(dbFile)
 
-	st, err := NewState(db)
+	st, err := NewState(ctx.Context, db)
 	if err != nil {
 		return nil, err
 	}

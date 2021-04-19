@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -17,14 +18,14 @@ type state struct {
 	db *sql.DB
 }
 
-func NewState(db DBConnector) (*state, error) {
+func NewState(ctx context.Context, db DBConnector) (*state, error) {
 	err := db.Connect()
 	if err != nil {
 		return nil, err
 	}
 	sqldb := db.SqlDB()
 
-	_, err = sqldb.Exec(createTasksTable)
+	_, err = sqldb.ExecContext(ctx, createTasksTable)
 	if err != nil {
 		return nil, err
 	}
@@ -33,13 +34,13 @@ func NewState(db DBConnector) (*state, error) {
 		db: sqldb,
 	}
 
-	count, err := s.CountTasks()
+	count, err := s.CountTasks(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	if count == 0 {
-		err = s.createInitialTasks()
+		err = s.createInitialTasks(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -48,9 +49,9 @@ func NewState(db DBConnector) (*state, error) {
 	return s, nil
 }
 
-func (s *state) CountTasks() (int, error) {
+func (s *state) CountTasks(ctx context.Context) (int, error) {
 	var count int
-	if err := s.db.QueryRow(countTasksSql).Scan(&count); err != nil {
+	if err := s.db.QueryRowContext(ctx, countTasksSql).Scan(&count); err != nil {
 		return 0, err
 	}
 	return count, nil
@@ -80,9 +81,9 @@ func (s *state) MarshalJSON() ([]byte, error) {
 	return json.Marshal(storedTasks)
 }
 
-func (s *state) Update(req *client.UpdateTaskRequest, recorder metrics.MetricsRecorder) error {
+func (s *state) Update(ctx context.Context, req *client.UpdateTaskRequest, recorder metrics.MetricsRecorder) error {
 	var data string
-	err := s.db.QueryRow(getTask, req.UUID).Scan(&data)
+	err := s.db.QueryRowContext(ctx, getTask, req.UUID).Scan(&data)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return fmt.Errorf("cannot find task with uuid: %s", req.UUID)
@@ -106,36 +107,36 @@ func (s *state) Update(req *client.UpdateTaskRequest, recorder metrics.MetricsRe
 
 	task.Status = req.Status
 
-	err = s.updateTask(&task)
+	err = s.updateTask(ctx, &task)
 	if err != nil {
 		return err
 	}
 	return recorder.ObserveTask(&task)
 }
 
-func (s *state) updateTask(task *tasks.Task) error {
+func (s *state) updateTask(ctx context.Context, task *tasks.Task) error {
 	data, err := json.Marshal(task)
 	if err != nil {
 		return err
 	}
 
-	_, err = s.db.Exec(updateTask, task.UUID, string(data), time.Now())
+	_, err = s.db.ExecContext(ctx, updateTask, task.UUID, string(data), time.Now())
 	return err
 }
 
-func (s *state) saveTask(task *tasks.Task) error {
+func (s *state) saveTask(ctx context.Context, task *tasks.Task) error {
 	data, err := json.Marshal(task)
 	if err != nil {
 		return err
 	}
 
-	_, err = s.db.Exec(insertTask, task.UUID, string(data), time.Now())
+	_, err = s.db.ExecContext(ctx, insertTask, task.UUID, string(data), time.Now())
 
 	return err
 }
 
-func (s *state) createInitialTasks() error {
-	err := s.saveTask(&tasks.Task{
+func (s *state) createInitialTasks(ctx context.Context) error {
+	err := s.saveTask(ctx, &tasks.Task{
 		UUID:   uuid.New().String()[:8],
 		Status: tasks.Available,
 		RetrievalTask: &tasks.RetrievalTask{
@@ -148,7 +149,7 @@ func (s *state) createInitialTasks() error {
 		return err
 	}
 
-	err = s.saveTask(&tasks.Task{
+	err = s.saveTask(ctx, &tasks.Task{
 		UUID:   uuid.New().String()[:8],
 		Status: tasks.Available,
 		RetrievalTask: &tasks.RetrievalTask{
@@ -161,7 +162,7 @@ func (s *state) createInitialTasks() error {
 		return err
 	}
 
-	err = s.saveTask(&tasks.Task{
+	err = s.saveTask(ctx, &tasks.Task{
 		UUID:   uuid.New().String()[:8],
 		Status: tasks.Available,
 		RetrievalTask: &tasks.RetrievalTask{
@@ -174,7 +175,7 @@ func (s *state) createInitialTasks() error {
 		return err
 	}
 
-	return s.saveTask(&tasks.Task{
+	return s.saveTask(ctx, &tasks.Task{
 		UUID:   uuid.New().String()[:8],
 		Status: tasks.Available,
 		StorageTask: &tasks.StorageTask{

@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"context"
 	"os"
 	"testing"
 
@@ -12,13 +13,16 @@ import (
 const testDBFile = "teststate.db"
 
 func TestLoadTask(t *testing.T) {
-	state, err := NewState(sqlitedb.New(testDBFile))
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	state, err := NewState(ctx, sqlitedb.New(testDBFile))
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer os.Remove(testDBFile)
 
-	count, err := state.CountTasks()
+	count, err := state.CountTasks(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -27,7 +31,7 @@ func TestLoadTask(t *testing.T) {
 	}
 	t.Log("got", count, "tasks")
 
-	state.saveTask(&tasks.Task{
+	state.saveTask(ctx, &tasks.Task{
 		UUID:   uuid.New().String()[:8],
 		Status: tasks.Available,
 		RetrievalTask: &tasks.RetrievalTask{
@@ -38,7 +42,7 @@ func TestLoadTask(t *testing.T) {
 	})
 
 	oldCount := count
-	count, err = state.CountTasks()
+	count, err = state.CountTasks(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}

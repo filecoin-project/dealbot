@@ -34,7 +34,7 @@ func (c *Controller) updateTaskHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = c.state.Update(req, c.metricsRecorder)
+	err = c.state.Update(r.Context(), req, c.metricsRecorder)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
