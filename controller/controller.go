@@ -61,7 +61,7 @@ func New(ctx *cli.Context) (*Controller, error) {
 		if err != nil {
 			return nil, err
 		}
-		if err := ioutil.WriteFile(identity, b, 0666); err != nil {
+		if err := ioutil.WriteFile(identity, b, 0600); err != nil {
 			return nil, err
 		}
 		key = pr
