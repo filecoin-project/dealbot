@@ -1,7 +1,7 @@
 package state
 
 const (
-	createTasksTableSql = `
+	createTasksTableSQL = `
 		CREATE TABLE IF NOT EXISTS tasks (
 			uuid text,
 			data text NOT NULL CHECK (data != ''),
@@ -10,24 +10,24 @@ const (
 		)
 	`
 
-	countTasksSql = `
+	countTasksSQL = `
 		SELECT COUNT(1) FROM tasks
 	`
 
-	getAllTasksSql = `
+	getAllTasksSQL = `
 		SELECT data FROM tasks ORDER BY updated_at DESC
 	`
 
-	getLatestTasksSql = `
+	getLatestTasksSQL = `
 		SELECT data FROM tasks t1
 		WHERE ts=(SELECT MAX(ts) FROM tasks t2 WHERE t1.uuid = t2.uuid)
 	`
 
-	getTaskSql = `
+	getTaskSQL = `
 		SELECT data FROM tasks WHERE uuid = $1 ORDER BY ts DESC limit 1
 	`
 
-	insertTaskSql = `
+	insertTaskSQL = `
 		INSERT INTO tasks (uuid, data, ts) VALUES($1, $2, $3)
 	`
 )

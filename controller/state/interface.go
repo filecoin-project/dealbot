@@ -8,6 +8,7 @@ import (
 	"github.com/filecoin-project/dealbot/tasks"
 )
 
+// State provides an interface for presistence.
 type State interface {
 	Get(ctx context.Context, uuid string) (*tasks.AuthenticatedTask, error)
 	GetAll(ctx context.Context) ([]*tasks.AuthenticatedTask, error)

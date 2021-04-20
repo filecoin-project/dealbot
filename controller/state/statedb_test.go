@@ -21,10 +21,11 @@ func TestLoadTask(t *testing.T) {
 	}
 	defer os.RemoveAll(tmpDir)
 
-	state, err := NewStateDB(ctx, "sqlite", filepath.Join(tmpDir, "teststate.db"), nil)
+	stateInterface, err := NewStateDB(ctx, "sqlite", filepath.Join(tmpDir, "teststate.db"), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
+	state := stateInterface.(*stateDB)
 
 	count, err := state.countTasks(ctx)
 	if err != nil {
@@ -36,7 +37,7 @@ func TestLoadTask(t *testing.T) {
 	t.Log("got", count, "tasks")
 
 	state.saveTask(ctx, &tasks.AuthenticatedTask{
-		tasks.Task{
+		Task: tasks.Task{
 			UUID:   uuid.New().String()[:8],
 			Status: tasks.Available,
 			RetrievalTask: &tasks.RetrievalTask{
@@ -45,7 +46,7 @@ func TestLoadTask(t *testing.T) {
 				CARExport:  false,
 			},
 		},
-		[]byte{},
+		Signature: []byte{},
 	})
 
 	oldCount := count

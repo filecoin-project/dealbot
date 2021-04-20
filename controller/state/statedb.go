@@ -27,7 +27,8 @@ type stateDB struct {
 	crypto.PrivKey
 }
 
-func NewStateDB(ctx context.Context, driver, conn string, identity crypto.PrivKey) (*stateDB, error) {
+// NewStateDB creates a state instance with a given driver and identity
+func NewStateDB(ctx context.Context, driver, conn string, identity crypto.PrivKey) (State, error) {
 	var dbConn DBConnector
 	switch driver {
 	case "postgres":
@@ -49,7 +50,7 @@ func NewStateDB(ctx context.Context, driver, conn string, identity crypto.PrivKe
 	db := dbConn.SqlDB()
 
 	// Create state tablespace if it does not exist
-	_, err = db.ExecContext(ctx, createTasksTableSql)
+	_, err = db.ExecContext(ctx, createTasksTableSQL)
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +81,7 @@ func (s *stateDB) db() *sql.DB {
 
 func (s *stateDB) createInitialTasks(ctx context.Context) error {
 	err := s.saveTask(ctx, &tasks.AuthenticatedTask{
-		tasks.Task{
+		Task: tasks.Task{
 			UUID:   uuid.New().String()[:8],
 			Status: tasks.Available,
 			RetrievalTask: &tasks.RetrievalTask{
@@ -89,14 +90,14 @@ func (s *stateDB) createInitialTasks(ctx context.Context) error {
 				CARExport:  false,
 			},
 		},
-		[]byte{},
+		Signature: []byte{},
 	})
 	if err != nil {
 		return err
 	}
 
 	err = s.saveTask(ctx, &tasks.AuthenticatedTask{
-		tasks.Task{
+		Task: tasks.Task{
 			UUID:   uuid.New().String()[:8],
 			Status: tasks.Available,
 			RetrievalTask: &tasks.RetrievalTask{
@@ -105,14 +106,14 @@ func (s *stateDB) createInitialTasks(ctx context.Context) error {
 				CARExport:  false,
 			},
 		},
-		[]byte{},
+		Signature: []byte{},
 	})
 	if err != nil {
 		return err
 	}
 
 	err = s.saveTask(ctx, &tasks.AuthenticatedTask{
-		tasks.Task{
+		Task: tasks.Task{
 			UUID:   uuid.New().String()[:8],
 			Status: tasks.Available,
 			RetrievalTask: &tasks.RetrievalTask{
@@ -121,14 +122,14 @@ func (s *stateDB) createInitialTasks(ctx context.Context) error {
 				CARExport:  false,
 			},
 		},
-		[]byte{},
+		Signature: []byte{},
 	})
 	if err != nil {
 		return err
 	}
 
 	return s.saveTask(ctx, &tasks.AuthenticatedTask{
-		tasks.Task{
+		Task: tasks.Task{
 			UUID:   uuid.New().String()[:8],
 			Status: tasks.Available,
 			StorageTask: &tasks.StorageTask{
@@ -140,14 +141,14 @@ func (s *stateDB) createInitialTasks(ctx context.Context) error {
 				Verified:        false,
 			},
 		},
-		[]byte{},
+		Signature: []byte{},
 	})
 }
 
 // Get queries the DB for the task identified by UUID
 func (s *stateDB) Get(ctx context.Context, uuid string) (*tasks.AuthenticatedTask, error) {
 	var serialized string
-	err := s.db().QueryRowContext(ctx, getTaskSql, uuid).Scan(&serialized)
+	err := s.db().QueryRowContext(ctx, getTaskSQL, uuid).Scan(&serialized)
 	if err != nil {
 		return nil, err
 	}
@@ -161,7 +162,7 @@ func (s *stateDB) Get(ctx context.Context, uuid string) (*tasks.AuthenticatedTas
 
 // GetAll queries all tasks from the DB
 func (s *stateDB) GetAll(ctx context.Context) ([]*tasks.AuthenticatedTask, error) {
-	rows, err := s.db().QueryContext(ctx, getLatestTasksSql)
+	rows, err := s.db().QueryContext(ctx, getLatestTasksSQL)
 	if err != nil {
 		return nil, err
 	}
@@ -230,14 +231,14 @@ func (s *stateDB) saveTask(ctx context.Context, task *tasks.AuthenticatedTask) e
 	}
 
 	// Not every db driver may support getting rows affected, so ignore results.
-	_, err = s.db().ExecContext(ctx, insertTaskSql, task.UUID, data, time.Now())
+	_, err = s.db().ExecContext(ctx, insertTaskSQL, task.UUID, data, time.Now())
 
 	return err
 }
 
 func (s *stateDB) countTasks(ctx context.Context) (int, error) {
 	var count int
-	if err := s.db().QueryRowContext(ctx, countTasksSql).Scan(&count); err != nil {
+	if err := s.db().QueryRowContext(ctx, countTasksSQL).Scan(&count); err != nil {
 		return 0, err
 	}
 	return count, nil
@@ -245,12 +246,12 @@ func (s *stateDB) countTasks(ctx context.Context) (int, error) {
 
 func (s *stateDB) NewStorageTask(ctx context.Context, storageTask *tasks.StorageTask) (*tasks.AuthenticatedTask, error) {
 	task := &tasks.AuthenticatedTask{
-		tasks.Task{
+		Task: tasks.Task{
 			UUID:        uuid.New().String()[:8],
 			Status:      tasks.Available,
 			StorageTask: storageTask,
 		},
-		[]byte{},
+		Signature: []byte{},
 	}
 	var err error
 	task.Signature, err = s.PrivKey.Sign(task.Bytes())
@@ -268,12 +269,12 @@ func (s *stateDB) NewStorageTask(ctx context.Context, storageTask *tasks.Storage
 
 func (s *stateDB) NewRetrievalTask(ctx context.Context, retrievalTask *tasks.RetrievalTask) (*tasks.AuthenticatedTask, error) {
 	task := &tasks.AuthenticatedTask{
-		tasks.Task{
+		Task: tasks.Task{
 			UUID:          uuid.New().String()[:8],
 			Status:        tasks.Available,
 			RetrievalTask: retrievalTask,
 		},
-		[]byte{},
+		Signature: []byte{},
 	}
 	var err error
 	task.Signature, err = s.PrivKey.Sign(task.Bytes())
