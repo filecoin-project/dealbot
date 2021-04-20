@@ -21,5 +21,6 @@ export DEALBOT_DATA_DIRECTORY=$LOCAL_SSHFS
 # Also note that $LOTUS_PATH is only set for the non-root user.
 # We use awk instead of cat since the files have no trailing newlines.
 echo "Collecting lotus api address and token..."
-VARS=($(ssh -T $ADDRESS 'sudo awk 1 $LOTUS_PATH/token $LOTUS_PATH/api'))
-export FULLNODE_API_INFO="${VARS[0]}:${VARS[1]}"
+API=$(ssh -T $ADDRESS 'sudo awk 1 $LOTUS_PATH/api')
+TOKEN=$(ssh -T $ADDRESS 'sudo awk 1 $LOTUS_PATH/token')
+export FULLNODE_API_INFO="${TOKEN}:${API}"
