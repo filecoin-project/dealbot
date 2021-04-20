@@ -72,13 +72,16 @@ func (c *Controller) newStorageTaskHandler(w http.ResponseWriter, r *http.Reques
 
 	task, err := c.db.NewStorageTask(r.Context(), storageTask)
 	if err != nil {
+		log.Errorw("StorageTask new task", "err", err.Error())
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	taskURL, err := r.URL.Parse("/tasks/" + task.UUID)
 	if err != nil {
+		log.Errorw("StorageTask parse URL", "err", err.Error())
 		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
 
 	w.Header().Set("Location", taskURL.String())
@@ -96,20 +99,23 @@ func (c *Controller) newRetrievalTaskHandler(w http.ResponseWriter, r *http.Requ
 	var retrievalTask *tasks.RetrievalTask
 	err := json.NewDecoder(r.Body).Decode(&retrievalTask)
 	if err != nil {
-		log.Errorw("StorageTask json decode", "err", err.Error())
+		log.Errorw("RetrievalTask json decode", "err", err.Error())
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	task, err := c.db.NewRetrievalTask(r.Context(), retrievalTask)
 	if err != nil {
+		log.Errorw("RetrievalTask new task", "err", err.Error())
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	taskURL, err := r.URL.Parse("/tasks/" + task.UUID)
 	if err != nil {
+		log.Errorw("RetrievalTask parse URL", "err", err.Error())
 		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
 
 	w.Header().Set("Location", taskURL.String())
@@ -129,6 +135,7 @@ func (c *Controller) getTaskHandler(w http.ResponseWriter, r *http.Request) {
 
 	task, err := c.db.Get(r.Context(), UUID)
 	if err != nil {
+		log.Errorw("get task DB error", "err", err.Error())
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
