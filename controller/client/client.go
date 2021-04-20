@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/filecoin-project/dealbot/tasks"
 	"github.com/urfave/cli/v2"
@@ -43,7 +44,11 @@ func New(ctx *cli.Context) *Client {
 // NewFromEndpoint returns an API client at the given endpoint
 func NewFromEndpoint(endpoint string) *Client {
 	return &Client{
-		client:   &http.Client{},
+		client: &http.Client{
+			// As a fallback, never take more than a minute.
+			// Most client API calls should use a context.
+			Timeout: time.Minute,
+		},
 		endpoint: endpoint,
 	}
 }
@@ -78,8 +83,7 @@ func (c *Client) UpdateTask(ctx context.Context, uuid string, r *UpdateTaskReque
 		return nil, err
 	}
 
-	resp, err := c.request(ctx, "PATCH", "/tasks/"+uuid, bytes.NewReader(body.Bytes()))
-
+	resp, err := c.request(ctx, "PATCH", "/tasks/"+uuid, &body)
 	if err != nil {
 		return nil, err
 	}
@@ -121,8 +125,7 @@ func (c *Client) CreateStorageTask(ctx context.Context, storageTask *tasks.Stora
 		return nil, err
 	}
 
-	resp, err := c.request(ctx, "POST", "/tasks/storage", bytes.NewReader(body.Bytes()))
-
+	resp, err := c.request(ctx, "POST", "/tasks/storage", &body)
 	if err != nil {
 		return nil, err
 	}
@@ -146,8 +149,7 @@ func (c *Client) CreateRetrievalTask(ctx context.Context, retrievalTask *tasks.R
 		return nil, err
 	}
 
-	resp, err := c.request(ctx, "POST", "/tasks/retrieval", bytes.NewReader(body.Bytes()))
-
+	resp, err := c.request(ctx, "POST", "/tasks/retrieval", &body)
 	if err != nil {
 		return nil, err
 	}
@@ -168,15 +170,14 @@ func (c *Client) request(ctx context.Context, method string, path string, body i
 	if len(headers)%2 != 0 {
 		return nil, fmt.Errorf("headers must be tuples: key1, value1, key2, value2")
 	}
-	req, err := http.NewRequest(method, c.endpoint+path, body)
-	req = req.WithContext(ctx)
+	req, err := http.NewRequestWithContext(ctx, method, c.endpoint+path, body)
+	if err != nil {
+		return nil, err
+	}
 
 	for i := 0; i < len(headers); i = i + 2 {
 		req.Header.Add(headers[i], headers[i+1])
 	}
 
-	if err != nil {
-		return nil, err
-	}
 	return c.client.Do(req)
 }
