@@ -1,6 +1,7 @@
 package tasks
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/filecoin-project/go-address"
@@ -22,6 +23,19 @@ type Task struct {
 	StartedAt     time.Time      `json:"started_at,omitempty"` // the time the task was assigned first assigned to the dealbot
 	RetrievalTask *RetrievalTask `json:"retrieval_task,omitempty"`
 	StorageTask   *StorageTask   `json:"storage_task,omitempty"`
+}
+
+func (t Task) Bytes() []byte {
+	b, err := json.Marshal(&t)
+	if err != nil {
+		return []byte{}
+	}
+	return b
+}
+
+type AuthenticatedTask struct {
+	Task
+	Signature []byte
 }
 
 func (t *Task) Log(log *logging.ZapEventLogger) {

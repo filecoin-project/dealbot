@@ -3,13 +3,17 @@ package controller
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"net"
 	"net/http"
+	"os"
 	"time"
 
+	"github.com/filecoin-project/dealbot/controller/state"
 	"github.com/filecoin-project/dealbot/metrics"
 	metricslog "github.com/filecoin-project/dealbot/metrics/log"
 	"github.com/filecoin-project/dealbot/metrics/prometheus"
+	"github.com/libp2p/go-libp2p-core/crypto"
 
 	logging "github.com/ipfs/go-log/v2"
 	"github.com/urfave/cli/v2"
@@ -24,6 +28,7 @@ type Controller struct {
 	server          *http.Server
 	l               net.Listener
 	doneCh          chan struct{}
+	db              state.State
 	metricsRecorder metrics.MetricsRecorder
 }
 
@@ -39,11 +44,50 @@ func New(ctx *cli.Context) (*Controller, error) {
 		return nil, err
 	}
 
-	return NewWithDependencies(l, recorder), nil
+	var key crypto.PrivKey
+	identity := ctx.String("identity")
+	if !ctx.IsSet("identity") {
+		identity = ".dealbot.key"
+	}
+	if _, err := os.Stat(identity); os.IsNotExist(err) {
+		// make a new identity
+		pr, _, err := crypto.GenerateKeyPair(crypto.Ed25519, 0)
+		if err != nil {
+			return nil, err
+		}
+
+		// save it.
+		b, err := crypto.MarshalPrivateKey(pr)
+		if err != nil {
+			return nil, err
+		}
+		if err := ioutil.WriteFile(identity, b, 0600); err != nil {
+			return nil, err
+		}
+		key = pr
+	} else {
+		// load identity
+		bytes, err := ioutil.ReadFile(identity)
+		if err != nil {
+			return nil, err
+		}
+		key, err = crypto.UnmarshalPrivateKey(bytes)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	backend, err := state.NewStateDB(ctx.Context, ctx.String("driver"), ctx.String("dbloc"), key)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewWithDependencies(l, recorder, backend), nil
 }
 
-func NewWithDependencies(listener net.Listener, recorder metrics.MetricsRecorder) *Controller {
+func NewWithDependencies(listener net.Listener, recorder metrics.MetricsRecorder, backend state.State) *Controller {
 	srv := new(Controller)
+	srv.db = backend
 
 	r := mux.NewRouter().StrictSlash(true)
 
@@ -56,8 +100,11 @@ func NewWithDependencies(listener net.Listener, recorder metrics.MetricsRecorder
 	})
 
 	r.HandleFunc("/tasks", srv.getTasksHandler).Methods("GET")
+	r.HandleFunc("/tasks/storage", srv.newStorageTaskHandler).Methods("POST")
+	r.HandleFunc("/tasks/retrieval", srv.newRetrievalTaskHandler).Methods("POST")
 	r.HandleFunc("/status", srv.reportStatusHandler).Methods("POST")
-	r.HandleFunc("/task", srv.updateTaskHandler).Methods("PUT")
+	r.HandleFunc("/tasks/{uuid}", srv.updateTaskHandler).Methods("PATCH")
+	r.HandleFunc("/tasks/{uuid}", srv.getTaskHandler).Methods("GET")
 	metricsHandler := recorder.Handler()
 	if metricsHandler != nil {
 		r.Handle("/metrics", metricsHandler)

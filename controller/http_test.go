@@ -2,102 +2,180 @@ package controller_test
 
 import (
 	"context"
+	"io/ioutil"
 	"net"
 	"net/http"
+	"os"
 	"testing"
 	"time"
 
 	"github.com/filecoin-project/dealbot/controller"
 	"github.com/filecoin-project/dealbot/controller/client"
+	"github.com/filecoin-project/dealbot/controller/state"
 	"github.com/filecoin-project/dealbot/metrics/testrecorder"
 	"github.com/filecoin-project/dealbot/tasks"
+	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/stretchr/testify/require"
 )
 
 func TestControllerHTTPInterface(t *testing.T) {
 	ctx := context.Background()
-	ctx, cancel := context.WithTimeout(ctx, time.Minute)
-	defer cancel()
-	apiClient := client.NewFromEndpoint("http://localhost:3333")
-	recorder := testrecorder.NewTestMetricsRecorder()
-	listener, err := net.Listen("tcp", "localhost:3333")
-	require.NoError(t, err)
-	c := controller.NewWithDependencies(listener, recorder)
-	serveErr := make(chan error, 1)
-	go func() {
-		err := c.Serve()
-		select {
-		case <-ctx.Done():
-		case serveErr <- err:
-		}
-	}()
-	currentTasks, err := apiClient.ListTasks(ctx)
-	require.NoError(t, err)
-	require.Len(t, currentTasks, 4)
+	testCases := map[string]func(ctx context.Context, t *testing.T, apiClient *client.Client, recorder *testrecorder.TestMetricsRecorder){
+		"updating tasks": func(ctx context.Context, t *testing.T, apiClient *client.Client, recorder *testrecorder.TestMetricsRecorder) {
+			currentTasks, err := apiClient.ListTasks(ctx)
+			require.NoError(t, err)
+			require.Len(t, currentTasks, 4)
 
-	// update a task
-	_, status, err := apiClient.UpdateTask(ctx, &client.UpdateTaskRequest{
-		UUID:     currentTasks[0].UUID,
-		WorkedBy: "dealbot 1",
-		Status:   tasks.InProgress,
-	})
-	require.NoError(t, err)
-	require.Equal(t, http.StatusOK, status)
-	currentTasks, err = apiClient.ListTasks(ctx)
-	require.NoError(t, err)
-	require.Equal(t, tasks.InProgress, currentTasks[0].Status)
-	require.Equal(t, "dealbot 1", currentTasks[0].WorkedBy)
+			taskUUID := currentTasks[0].UUID
 
-	// update but from the wrong dealbot
-	_, status, err = apiClient.UpdateTask(ctx, &client.UpdateTaskRequest{
-		UUID:     currentTasks[0].UUID,
-		WorkedBy: "dealbot 2",
-		Status:   tasks.Successful,
-	})
-	require.NoError(t, err)
-	// request fails
-	require.Equal(t, http.StatusBadRequest, status)
-	currentTasks, err = apiClient.ListTasks(ctx)
-	require.NoError(t, err)
-	// status should not change
-	require.Equal(t, tasks.InProgress, currentTasks[0].Status)
-	require.Equal(t, "dealbot 1", currentTasks[0].WorkedBy)
+			// update a task
+			task, err := apiClient.UpdateTask(ctx, taskUUID, &client.UpdateTaskRequest{
+				WorkedBy: "dealbot 1",
+				Status:   tasks.InProgress,
+			})
+			require.NoError(t, err)
+			require.Equal(t, tasks.InProgress, task.Status)
+			refetchTask, err := apiClient.GetTask(ctx, task.UUID)
+			require.NoError(t, err)
+			require.Equal(t, tasks.InProgress, refetchTask.Status)
+			require.Equal(t, "dealbot 1", refetchTask.WorkedBy)
 
-	// update again
-	_, status, err = apiClient.UpdateTask(ctx, &client.UpdateTaskRequest{
-		UUID:     currentTasks[0].UUID,
-		WorkedBy: "dealbot 1",
-		Status:   tasks.Successful,
-	})
-	require.NoError(t, err)
-	require.Equal(t, http.StatusOK, status)
-	currentTasks, err = apiClient.ListTasks(ctx)
-	require.NoError(t, err)
-	require.Equal(t, tasks.Successful, currentTasks[0].Status)
-	require.Equal(t, "dealbot 1", currentTasks[0].WorkedBy)
+			// update but from the wrong dealbot
+			task, err = apiClient.UpdateTask(ctx, taskUUID, &client.UpdateTaskRequest{
+				WorkedBy: "dealbot 2",
+				Status:   tasks.Successful,
+			})
+			// request fails
+			require.EqualError(t, err, client.ErrRequestFailed{Code: http.StatusBadRequest}.Error())
+			require.Nil(t, task)
+			refetchTask, err = apiClient.GetTask(ctx, taskUUID)
+			require.NoError(t, err)
+			// status should not change
+			require.Equal(t, tasks.InProgress, refetchTask.Status)
+			require.Equal(t, "dealbot 1", refetchTask.WorkedBy)
 
-	// update a different task
-	_, status, err = apiClient.UpdateTask(ctx, &client.UpdateTaskRequest{
-		UUID:     currentTasks[1].UUID,
-		WorkedBy: "dealbot 2",
-		Status:   tasks.Successful,
-	})
-	require.NoError(t, err)
-	require.Equal(t, http.StatusOK, status)
-	currentTasks, err = apiClient.ListTasks(ctx)
-	require.NoError(t, err)
-	require.Equal(t, tasks.Successful, currentTasks[1].Status)
-	require.Equal(t, "dealbot 2", currentTasks[1].WorkedBy)
+			// update again
+			task, err = apiClient.UpdateTask(ctx, taskUUID, &client.UpdateTaskRequest{
+				WorkedBy: "dealbot 1",
+				Status:   tasks.Successful,
+			})
+			require.NoError(t, err)
+			require.Equal(t, tasks.Successful, task.Status)
+			refetchTask, err = apiClient.GetTask(ctx, taskUUID)
+			require.NoError(t, err)
+			require.Equal(t, tasks.Successful, refetchTask.Status)
+			require.Equal(t, "dealbot 1", refetchTask.WorkedBy)
 
-	err = c.Shutdown(ctx)
-	require.NoError(t, err)
-	select {
-	case <-ctx.Done():
-		t.Fatalf("no return from serve call")
-	case err = <-serveErr:
-		require.EqualError(t, err, http.ErrServerClosed.Error())
+			// update a different
+			taskUUID = currentTasks[1].UUID
+			task, err = apiClient.UpdateTask(ctx, currentTasks[1].UUID, &client.UpdateTaskRequest{
+				WorkedBy: "dealbot 2",
+				Status:   tasks.Successful,
+			})
+			require.NoError(t, err)
+			require.Equal(t, tasks.Successful, task.Status)
+			refetchTask, err = apiClient.GetTask(ctx, taskUUID)
+			require.NoError(t, err)
+			require.Equal(t, tasks.Successful, refetchTask.Status)
+			require.Equal(t, "dealbot 2", refetchTask.WorkedBy)
+
+			recorder.AssertExactObservedStatuses(t, currentTasks[0].UUID, tasks.InProgress, tasks.Successful)
+			recorder.AssertExactObservedStatuses(t, currentTasks[1].UUID, tasks.Successful)
+		},
+		"creating tasks": func(ctx context.Context, t *testing.T, apiClient *client.Client, _ *testrecorder.TestMetricsRecorder) {
+			newStorageTask := &tasks.StorageTask{
+				Miner:           "t01000",
+				MaxPriceAttoFIL: 100000000000000000, // 0.10 FIL
+				Size:            2048,               // 1kb
+				StartOffset:     0,
+				FastRetrieval:   true,
+				Verified:        true,
+			}
+			task, err := apiClient.CreateStorageTask(ctx, newStorageTask)
+			require.NoError(t, err)
+			require.Equal(t, task.StorageTask, newStorageTask)
+			task, err = apiClient.GetTask(ctx, task.UUID)
+			require.NoError(t, err)
+			require.Equal(t, task.StorageTask, newStorageTask)
+			currentTasks, err := apiClient.ListTasks(ctx)
+			require.NoError(t, err)
+			require.Len(t, currentTasks, 5)
+
+			newRetrievalTask := &tasks.RetrievalTask{
+				Miner:      "f0127896",
+				PayloadCID: "bafykbzacedikkmeotawrxqquthryw3cijaonobygdp7fb5bujhuos6wdkwomm",
+				CARExport:  false,
+			}
+			task, err = apiClient.CreateRetrievalTask(ctx, newRetrievalTask)
+			require.NoError(t, err)
+			require.Equal(t, task.RetrievalTask, newRetrievalTask)
+			task, err = apiClient.GetTask(ctx, task.UUID)
+			require.NoError(t, err)
+			require.Equal(t, task.RetrievalTask, newRetrievalTask)
+			currentTasks, err = apiClient.ListTasks(ctx)
+			require.NoError(t, err)
+			require.Len(t, currentTasks, 6)
+		},
 	}
 
-	recorder.AssertExactObservedStatuses(t, currentTasks[0].UUID, tasks.InProgress, tasks.Successful)
-	recorder.AssertExactObservedStatuses(t, currentTasks[1].UUID, tasks.Successful)
+	for testCase, run := range testCases {
+		t.Run(testCase, func(t *testing.T) {
+			ctx, cancel := context.WithTimeout(ctx, time.Minute)
+			defer cancel()
+			h := newHarness(ctx, t)
+			run(ctx, t, h.apiClient, h.recorder)
+
+			h.Shutdown(t)
+		})
+	}
+}
+
+type harness struct {
+	ctx        context.Context
+	apiClient  *client.Client
+	recorder   *testrecorder.TestMetricsRecorder
+	controller *controller.Controller
+	dbloc      string
+	port       string
+	serveErr   chan error
+}
+
+func newHarness(ctx context.Context, t *testing.T) *harness {
+	h := &harness{ctx: ctx}
+	h.recorder = testrecorder.NewTestMetricsRecorder()
+	listener, err := net.Listen("tcp", "localhost:0")
+	require.NoError(t, err)
+	_, p, err := net.SplitHostPort(listener.Addr().String())
+	require.NoError(t, err)
+	h.port = p
+	h.apiClient = client.NewFromEndpoint("http://localhost:" + p)
+	pr, _, _ := crypto.GenerateKeyPair(crypto.Ed25519, 0)
+	h.dbloc, err = ioutil.TempDir("", "dealbot_test_*")
+	require.NoError(t, err)
+	be, err := state.NewStateDB(ctx, "sqlite", h.dbloc+"/tmp.sqlite", pr)
+	require.NoError(t, err)
+	h.controller = controller.NewWithDependencies(listener, h.recorder, be)
+	h.serveErr = make(chan error, 1)
+	go func() {
+		err := h.controller.Serve()
+		select {
+		case <-ctx.Done():
+		case h.serveErr <- err:
+		}
+	}()
+	return h
+}
+
+func (h *harness) Shutdown(t *testing.T) {
+	err := h.controller.Shutdown(h.ctx)
+	require.NoError(t, err)
+	select {
+	case <-h.ctx.Done():
+		t.Fatalf("no return from serve call")
+	case err = <-h.serveErr:
+		require.EqualError(t, err, http.ErrServerClosed.Error())
+	}
+	if _, err := os.Stat(h.dbloc); !os.IsNotExist(err) {
+		os.RemoveAll(h.dbloc)
+	}
 }
