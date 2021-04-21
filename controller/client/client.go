@@ -76,6 +76,22 @@ func (c *Client) ListTasks(ctx context.Context) ([]*tasks.Task, error) {
 	return res, nil
 }
 
+func (c *Client) PopTask(ctx context.Context) (*tasks.Task, error) {
+	resp, err := c.request(ctx, "GET", "/pop-task", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var res *tasks.Task
+	err = json.NewDecoder(resp.Body).Decode(&res)
+	if err != nil {
+		return nil, err
+	}
+
+	// Note that if there's no task available, res will be nil.
+	return res, nil
+}
+
 func (c *Client) UpdateTask(ctx context.Context, uuid string, r *UpdateTaskRequest) (*tasks.Task, error) {
 	var body bytes.Buffer
 	err := json.NewEncoder(&body).Encode(r)

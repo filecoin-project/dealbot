@@ -68,40 +68,18 @@ func (e *Engine) worker(n int) {
 		// add delay to avoid querying the controller many times if there are no available tasks
 		time.Sleep(5 * time.Second)
 
-		// fetch tasks
+		// pop a task
 		ctx := context.Background()
-		alltasks, err := e.client.ListTasks(ctx)
+		task, err := e.client.PopTask(ctx)
 		if err != nil {
-			log.Warnw("list tasks returned error", "err", err)
+			log.Warnw("pop-task returned error", "err", err)
 			continue
-		}
-
-		// log tasks
-		for _, t := range alltasks {
-			t.Log(log)
-		}
-
-		// pick first available task
-		var task *tasks.Task
-		for _, t := range alltasks {
-			if t.Status != tasks.Available {
-				continue
-			}
-			task = t
-			break
 		}
 		if task == nil {
 			continue // no task available
 		}
-
-		req := &client.UpdateTaskRequest{
-			Status:   2,
-			WorkedBy: e.host,
-		}
-
-		task, err = e.client.UpdateTask(ctx, task.UUID, req)
-		if err != nil {
-			log.Warnw("update task returned error", "err", err)
+		if task.Status != tasks.Available {
+			log.Warnw("pop-task returned a non-available task", "err", err)
 			continue
 		}
 
