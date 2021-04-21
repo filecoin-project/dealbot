@@ -21,7 +21,7 @@ import (
 func TestControllerHTTPInterface(t *testing.T) {
 	ctx := context.Background()
 	testCases := map[string]func(ctx context.Context, t *testing.T, apiClient *client.Client, recorder *testrecorder.TestMetricsRecorder){
-		"updating tasks": func(ctx context.Context, t *testing.T, apiClient *client.Client, recorder *testrecorder.TestMetricsRecorder) {
+		"list and update tasks": func(ctx context.Context, t *testing.T, apiClient *client.Client, recorder *testrecorder.TestMetricsRecorder) {
 			currentTasks, err := apiClient.ListTasks(ctx)
 			require.NoError(t, err)
 			require.Len(t, currentTasks, 4)
@@ -81,6 +81,37 @@ func TestControllerHTTPInterface(t *testing.T) {
 
 			recorder.AssertExactObservedStatuses(t, currentTasks[0].UUID, tasks.InProgress, tasks.Successful)
 			recorder.AssertExactObservedStatuses(t, currentTasks[1].UUID, tasks.Successful)
+		},
+		"pop a task": func(ctx context.Context, t *testing.T, apiClient *client.Client, recorder *testrecorder.TestMetricsRecorder) {
+			task, err := apiClient.PopTask(ctx)
+			require.NoError(t, err)
+			require.Equal(t, tasks.Available, task.Status)
+
+			// update a task
+			updatedTask, err := apiClient.UpdateTask(ctx, task.UUID, &client.UpdateTaskRequest{
+				WorkedBy: "dealbot 1",
+				Status:   tasks.InProgress,
+			})
+			require.NoError(t, err)
+			require.Equal(t, tasks.InProgress, updatedTask.Status)
+			refetchTask, err := apiClient.GetTask(ctx, task.UUID)
+			require.NoError(t, err)
+			require.Equal(t, tasks.InProgress, refetchTask.Status)
+			require.Equal(t, "dealbot 1", refetchTask.WorkedBy)
+
+			// when no tasks are available, pop-task should return nil
+			allTasks, err := apiClient.ListTasks(ctx)
+			require.NoError(t, err)
+			for _, task := range allTasks {
+				_, err := apiClient.UpdateTask(ctx, task.UUID, &client.UpdateTaskRequest{
+					WorkedBy: "dealbot 1",
+					Status:   tasks.InProgress,
+				})
+				require.NoError(t, err)
+			}
+			noTask, err := apiClient.PopTask(ctx)
+			require.NoError(t, err)
+			require.Nil(t, noTask)
 		},
 		"creating tasks": func(ctx context.Context, t *testing.T, apiClient *client.Client, _ *testrecorder.TestMetricsRecorder) {
 			newStorageTask := &tasks.StorageTask{

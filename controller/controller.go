@@ -99,6 +99,7 @@ func NewWithDependencies(listener net.Listener, recorder metrics.MetricsRecorder
 		})
 	})
 
+	r.HandleFunc("/pop-task", srv.popTaskHandler).Methods("GET")
 	r.HandleFunc("/tasks", srv.getTasksHandler).Methods("GET")
 	r.HandleFunc("/tasks/storage", srv.newStorageTaskHandler).Methods("POST")
 	r.HandleFunc("/tasks/retrieval", srv.newRetrievalTaskHandler).Methods("POST")
