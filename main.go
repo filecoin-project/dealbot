@@ -79,8 +79,11 @@ func main() {
 		Commands: []*cli.Command{
 			commands.MakeStorageDealCmd,
 			commands.MakeRetrievalDealCmd,
+			commands.MockCmd,
 			commands.DaemonCmd,
 			commands.ControllerCmd,
+			commands.QueueRetrievalCmd,
+			commands.QueueStorageCmd,
 		},
 		Before: altsrc.InitInputSourceWithContext(append(appFlags, commands.AllFlags...), altsrc.NewYamlSourceFromFlagFunc("config")),
 	}
