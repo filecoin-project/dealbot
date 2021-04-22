@@ -60,89 +60,11 @@ func NewStateDB(ctx context.Context, driver, conn string, identity crypto.PrivKe
 		PrivKey: identity,
 	}
 
-	count, err := st.countTasks(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	if count == 0 {
-		err = st.createInitialTasks(ctx)
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	return st, nil
 }
 
 func (s *stateDB) db() *sql.DB {
 	return s.dbconn.SqlDB()
-}
-
-func (s *stateDB) createInitialTasks(ctx context.Context) error {
-	err := s.saveTask(ctx, &tasks.AuthenticatedTask{
-		Task: tasks.Task{
-			UUID:   uuid.New().String()[:8],
-			Status: tasks.Available,
-			RetrievalTask: &tasks.RetrievalTask{
-				Miner:      "t01000",
-				PayloadCID: "bafk2bzacedli6qxp43sf54feczjd26jgeyfxv4ucwylujd3xo5s6cohcqbg36",
-				CARExport:  false,
-			},
-		},
-		Signature: []byte{},
-	})
-	if err != nil {
-		return err
-	}
-
-	err = s.saveTask(ctx, &tasks.AuthenticatedTask{
-		Task: tasks.Task{
-			UUID:   uuid.New().String()[:8],
-			Status: tasks.Available,
-			RetrievalTask: &tasks.RetrievalTask{
-				Miner:      "t01000",
-				PayloadCID: "bafk2bzacecettil4umy443e4ferok7jbxiqqseef7soa3ntelflf3zkvvndbg",
-				CARExport:  false,
-			},
-		},
-		Signature: []byte{},
-	})
-	if err != nil {
-		return err
-	}
-
-	err = s.saveTask(ctx, &tasks.AuthenticatedTask{
-		Task: tasks.Task{
-			UUID:   uuid.New().String()[:8],
-			Status: tasks.Available,
-			RetrievalTask: &tasks.RetrievalTask{
-				Miner:      "f0127896",
-				PayloadCID: "bafykbzacedikkmeotawrxqquthryw3cijaonobygdp7fb5bujhuos6wdkwomm",
-				CARExport:  false,
-			},
-		},
-		Signature: []byte{},
-	})
-	if err != nil {
-		return err
-	}
-
-	return s.saveTask(ctx, &tasks.AuthenticatedTask{
-		Task: tasks.Task{
-			UUID:   uuid.New().String()[:8],
-			Status: tasks.Available,
-			StorageTask: &tasks.StorageTask{
-				Miner:           "t01000",
-				MaxPriceAttoFIL: 100000000000000000, // 0.10 FIL
-				Size:            1024,               // 1kb
-				StartOffset:     0,
-				FastRetrieval:   true,
-				Verified:        false,
-			},
-		},
-		Signature: []byte{},
-	})
 }
 
 // Get queries the DB for the task identified by UUID
