@@ -157,6 +157,22 @@ var MockFlags = []cli.Flag{
 	}),
 }
 
+var MockTaskFlags = []cli.Flag{
+	altsrc.NewIntFlag(&cli.IntFlag{
+		Name:    "count",
+		Usage:   "number of mock tasks to generate",
+		Aliases: []string{"c"},
+		EnvVars: []string{"MOCK_DEALBOT_TASK_COUNT"},
+		Value:   100,
+	}),
+	altsrc.NewIntFlag(&cli.IntFlag{
+		Name:    "retrievals",
+		Usage:   "number of mock tasks to should be retrievals",
+		Aliases: []string{"r"},
+		EnvVars: []string{"MOCK_DEALBOT_RETRIEVAL_COUNT"},
+		Value:   0,
+	}),
+}
 var ControllerFlags = []cli.Flag{
 	altsrc.NewStringFlag(&cli.StringFlag{
 		Name:    "listen",

@@ -80,6 +80,7 @@ func main() {
 			commands.MakeStorageDealCmd,
 			commands.MakeRetrievalDealCmd,
 			commands.MockCmd,
+			commands.MockTasksCmd,
 			commands.DaemonCmd,
 			commands.ControllerCmd,
 			commands.QueueRetrievalCmd,
