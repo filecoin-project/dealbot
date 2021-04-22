@@ -14,7 +14,7 @@ services:
       - "8764:8764"
     depends_on: 
       - db
-  dealbot:
+  mockbot:
     build: .
     command: ["mock", "--endpoint", "http://controller:8764"]
     depends_on: 
