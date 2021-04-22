@@ -8,14 +8,14 @@ services:
       POSTGRES_USER: admin
       POSTGRES_DB: dealbot
   controller:
-    build: .
+    build: ..
     command: ["controller", "--listen", ":8764", "--metrics", "prometheus", "--driver", "postgres", "--dbloc", "postgresql://admin:dealbot-admin@db:5432/dealbot?sslmode=disable"]
     ports:
       - "8764:8764"
     depends_on: 
       - db
   mockbot:
-    build: .
+    build: ..
     command: ["mock", "--endpoint", "http://controller:8764"]
     depends_on: 
       - controller
@@ -31,6 +31,6 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      - "./devnet/prometheus.yml:/etc/prometheus/prometheus.yml"
+      - "./prometheus.yml:/etc/prometheus/prometheus.yml"
     depends_on: 
       - controller
