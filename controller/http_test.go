@@ -2,6 +2,7 @@ package controller_test
 
 import (
 	"context"
+	"encoding/json"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -186,6 +187,7 @@ func newHarness(ctx context.Context, t *testing.T) *harness {
 	be, err := state.NewStateDB(ctx, "sqlite", h.dbloc+"/tmp.sqlite", pr)
 	require.NoError(t, err)
 	h.controller = controller.NewWithDependencies(listener, h.recorder, be)
+
 	h.serveErr = make(chan error, 1)
 	go func() {
 		err := h.controller.Serve()
@@ -194,6 +196,30 @@ func newHarness(ctx context.Context, t *testing.T) *harness {
 		case h.serveErr <- err:
 		}
 	}()
+
+	// populate test tasks
+	sampleTaskFile, err := os.Open("../devnet/sample_tasks.json")
+	require.NoError(t, err)
+	defer sampleTaskFile.Close()
+	sampleTasks, err := ioutil.ReadAll(sampleTaskFile)
+	require.NoError(t, err)
+	byTask := make([]json.RawMessage, 0)
+	require.NoError(t, json.Unmarshal(sampleTasks, &byTask))
+	for _, task := range byTask {
+		rt := tasks.RetrievalTask{}
+		if err := json.Unmarshal(task, &rt); err != nil {
+			st := tasks.StorageTask{}
+			if err := json.Unmarshal(task, &st); err != nil {
+				t.Fatalf("could not decode sample task as either storage or retrieval %s: %s", task, err)
+			}
+			_, err := h.apiClient.CreateStorageTask(context.Background(), &st)
+			require.NoError(t, err)
+		} else {
+			_, err := h.apiClient.CreateRetrievalTask(context.Background(), &rt)
+			require.NoError(t, err)
+		}
+	}
+
 	return h
 }
 
