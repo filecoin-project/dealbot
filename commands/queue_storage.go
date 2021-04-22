@@ -4,29 +4,26 @@ import (
 	"fmt"
 
 	"github.com/c2h5oh/datasize"
-	"github.com/filecoin-project/dealbot/lotus"
+	"github.com/filecoin-project/dealbot/controller/client"
 	"github.com/filecoin-project/dealbot/tasks"
 	"github.com/urfave/cli/v2"
 )
 
-var MakeStorageDealCmd = &cli.Command{
-	Name:   "storage-deal",
-	Usage:  "Make storage deals with provided miners.",
-	Flags:  append(SingleTaskFlags, StorageFlags...),
-	Action: makeStorageDeal,
+// QueueStorageCmd queues a storage deal with the controller (as opposed to executing directly with lotus)
+var QueueStorageCmd = &cli.Command{
+	Name:   "queue-storage",
+	Usage:  "Queue storage deal in the controller",
+	Flags:  append(EndpointFlags, StorageFlags...),
+	Action: queueStorageDeal,
 }
 
-func makeStorageDeal(cctx *cli.Context) error {
-	nodeConfig, node, closer, err := lotus.SetupClientFromCLI(cctx)
-	if err != nil {
-		return err
-	}
-	defer closer()
+func queueStorageDeal(cctx *cli.Context) error {
+	client := client.New(cctx)
 
 	// Read size parameter and interpret as file size (pre-piece padding)
 	sizeHuman := cctx.String("size")
 	var size datasize.ByteSize
-	err = size.UnmarshalText([]byte(sizeHuman))
+	err := size.UnmarshalText([]byte(sizeHuman))
 	if err != nil {
 		return fmt.Errorf("size is not a recognizable byte size: %s, %s", sizeHuman, err)
 	}
@@ -47,7 +44,13 @@ func makeStorageDeal(cctx *cli.Context) error {
 		Verified:        verified,
 	}
 
-	return tasks.MakeStorageDeal(cctx.Context, nodeConfig, node, task, func(msg string, keysAndValues ...interface{}) {
-		log.Infow(msg, keysAndValues...)
-	})
+	t, err := client.CreateStorageTask(cctx.Context, &task)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	log.Infof("queued storage deal with UUID: %s", t.UUID)
+
+	return nil
 }

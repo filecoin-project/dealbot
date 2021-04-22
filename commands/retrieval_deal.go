@@ -9,15 +9,9 @@ import (
 )
 
 var MakeRetrievalDealCmd = &cli.Command{
-	Name:  "retrieval-deal",
-	Usage: "Make retrieval deals with provided miners.",
-	Flags: append(SingleTaskFlags, []cli.Flag{
-		&cli.StringFlag{
-			Name:  "cid",
-			Usage: "payload cid to fetch from miner",
-			Value: "bafykbzacedikkmeotawrxqquthryw3cijaonobygdp7fb5bujhuos6wdkwomm",
-		},
-	}...),
+	Name:   "retrieval-deal",
+	Usage:  "Make retrieval deals with provided miners.",
+	Flags:  append(SingleTaskFlags, RetrievalFlags...),
 	Action: makeRetrievalDeal,
 }
 
