@@ -31,8 +31,8 @@ func TestLoadTask(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if count != 4 {
-		t.Fatalf("expected 4 tasks, got %d", count)
+	if count != 0 {
+		t.Fatalf("expected 0 tasks, got %d", count)
 	}
 	t.Log("got", count, "tasks")
 
