@@ -84,17 +84,11 @@ func TestControllerHTTPInterface(t *testing.T) {
 			recorder.AssertExactObservedStatuses(t, currentTasks[1].UUID, tasks.Successful)
 		},
 		"pop a task": func(ctx context.Context, t *testing.T, apiClient *client.Client, recorder *testrecorder.TestMetricsRecorder) {
-			task, err := apiClient.PopTask(ctx)
+			task, err := apiClient.PopTask(ctx, &client.PopTaskRequest{WorkedBy: "dealbot 1"})
 			require.NoError(t, err)
-			require.Equal(t, tasks.Available, task.Status)
+			require.Equal(t, tasks.InProgress, task.Status)
 
-			// update a task
-			updatedTask, err := apiClient.UpdateTask(ctx, task.UUID, &client.UpdateTaskRequest{
-				WorkedBy: "dealbot 1",
-				Status:   tasks.InProgress,
-			})
-			require.NoError(t, err)
-			require.Equal(t, tasks.InProgress, updatedTask.Status)
+			// check task updated
 			refetchTask, err := apiClient.GetTask(ctx, task.UUID)
 			require.NoError(t, err)
 			require.Equal(t, tasks.InProgress, refetchTask.Status)
@@ -110,7 +104,7 @@ func TestControllerHTTPInterface(t *testing.T) {
 				})
 				require.NoError(t, err)
 			}
-			noTask, err := apiClient.PopTask(ctx)
+			noTask, err := apiClient.PopTask(ctx, &client.PopTaskRequest{WorkedBy: "dealbot 1"})
 			require.NoError(t, err)
 			require.Nil(t, noTask)
 		},
