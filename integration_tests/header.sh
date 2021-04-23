@@ -3,7 +3,6 @@
 my_dir="$(dirname "$0")"
 
 #set -o errexit ... re-enable when we fix the storage deal bug on Lotus side
-set -x
 
 # go install dealbot and devnet
 pushd $my_dir/../
