@@ -47,7 +47,7 @@ func GenerateMockTasks(ctx context.Context, cliCtx *cli.Context) error {
 }
 
 func generateRandomMiner() string {
-	minerNumer := rand.Intn(40000)
+	minerNumer := rand.Intn(10)
 	return fmt.Sprintf("f%d", minerNumer)
 }
 

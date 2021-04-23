@@ -10,6 +10,10 @@ import (
 	"github.com/filecoin-project/dealbot/tasks"
 )
 
+func enableCors(w *http.ResponseWriter) {
+	(*w).Header().Set("Access-Control-Allow-Origin", "*")
+}
+
 func (c *Controller) getTasksHandler(w http.ResponseWriter, r *http.Request) {
 	logger := log.With("req_id", r.Header.Get("X-Request-ID"))
 
@@ -17,6 +21,8 @@ func (c *Controller) getTasksHandler(w http.ResponseWriter, r *http.Request) {
 	defer logger.Debugw("request handled", "command", "list tasks")
 
 	w.Header().Set("Content-Type", "application/json")
+
+	enableCors(&w)
 
 	tasks, err := c.db.GetAll(r.Context())
 	if err != nil {
