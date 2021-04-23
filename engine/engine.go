@@ -70,7 +70,7 @@ func (e *Engine) worker(n int) {
 
 		// pop a task
 		ctx := context.Background()
-		task, err := e.client.PopTask(ctx)
+		task, err := e.client.PopTask(ctx, &client.PopTaskRequest{WorkedBy: e.host})
 		if err != nil {
 			log.Warnw("pop-task returned error", "err", err)
 			continue
@@ -78,8 +78,8 @@ func (e *Engine) worker(n int) {
 		if task == nil {
 			continue // no task available
 		}
-		if task.Status != tasks.Available {
-			log.Warnw("pop-task returned a non-available task", "err", err)
+		if task.WorkedBy != e.host {
+			log.Warnw("pop-task returned task that is not for this host", "err", err)
 			continue
 		}
 

@@ -59,7 +59,7 @@ func (md *MockDaemon) worker(n int) {
 
 		// pop a task
 		ctx := context.Background()
-		task, err := md.client.PopTask(ctx)
+		task, err := md.client.PopTask(ctx, &client.PopTaskRequest{WorkedBy: md.host})
 		if err != nil {
 			log.Warnw("pop-task returned error", "err", err)
 			continue
@@ -69,7 +69,7 @@ func (md *MockDaemon) worker(n int) {
 			continue // no task available
 		}
 
-		if task.Status != tasks.Available {
+		if task.WorkedBy != md.host {
 			log.Warnw("pop-task returned a non-available task", "err", err)
 			continue
 		}

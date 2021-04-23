@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/filecoin-project/dealbot/controller/state"
@@ -30,6 +31,7 @@ type Controller struct {
 	doneCh          chan struct{}
 	db              state.State
 	metricsRecorder metrics.MetricsRecorder
+	popTaskLk       sync.Mutex
 }
 
 func New(ctx *cli.Context) (*Controller, error) {
@@ -99,7 +101,7 @@ func NewWithDependencies(listener net.Listener, recorder metrics.MetricsRecorder
 		})
 	})
 
-	r.HandleFunc("/pop-task", srv.popTaskHandler).Methods("GET")
+	r.HandleFunc("/pop-task", srv.popTaskHandler).Methods("POST")
 	r.HandleFunc("/tasks", srv.getTasksHandler).Methods("GET")
 	r.HandleFunc("/tasks/storage", srv.newStorageTaskHandler).Methods("POST")
 	r.HandleFunc("/tasks/retrieval", srv.newRetrievalTaskHandler).Methods("POST")
