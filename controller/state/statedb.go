@@ -78,14 +78,14 @@ func (s *stateDB) db() *sql.DB {
 }
 
 // Get returns a specific task identified by ID
-func (s *stateDB) Get(ctx context.Context, taskID string) (*tasks.AuthenticatedTask, error) {
+func (s *stateDB) Get(ctx context.Context, taskID string) (*tasks.Task, error) {
 	var serialized string
 	err := s.db().QueryRowContext(ctx, getTaskSQL, taskID).Scan(&serialized)
 	if err != nil {
 		return nil, err
 	}
 
-	var task tasks.AuthenticatedTask
+	var task tasks.Task
 	if err := json.Unmarshal([]byte(serialized), &task); err != nil {
 		return nil, err
 	}
@@ -93,20 +93,20 @@ func (s *stateDB) Get(ctx context.Context, taskID string) (*tasks.AuthenticatedT
 }
 
 // GetAll queries all tasks from the DB
-func (s *stateDB) GetAll(ctx context.Context) ([]*tasks.AuthenticatedTask, error) {
+func (s *stateDB) GetAll(ctx context.Context) ([]*tasks.Task, error) {
 	rows, err := s.db().QueryContext(ctx, getAllTasksSQL)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var tasklist []*tasks.AuthenticatedTask
+	var tasklist []*tasks.Task
 	for rows.Next() {
 		var serialized string
 		if err = rows.Scan(&serialized); err != nil {
 			return nil, err
 		}
-		var task tasks.AuthenticatedTask
+		var task tasks.Task
 		if err = json.Unmarshal([]byte(serialized), &task); err != nil {
 			return nil, err
 		}
@@ -121,11 +121,11 @@ func (s *stateDB) GetAll(ctx context.Context) ([]*tasks.AuthenticatedTask, error
 // is nil.
 //
 // TODO: There should be a limit to the age of the task to assign.
-func (s *stateDB) AssignTask(ctx context.Context, req client.UpdateTaskRequest) (*tasks.AuthenticatedTask, error) {
-	var assigned *tasks.AuthenticatedTask
+func (s *stateDB) AssignTask(ctx context.Context, req client.UpdateTaskRequest) (*tasks.Task, error) {
+	var assigned *tasks.Task
 	err := s.transact(ctx, 13, func(tx *sql.Tx) error {
 		var taskID, serialized string
-		var task tasks.AuthenticatedTask
+		var task tasks.Task
 		err := tx.QueryRowContext(ctx, oldestAvailableTaskSQL).Scan(&taskID, &serialized)
 		if err != nil {
 			if err == sql.ErrNoRows {
@@ -181,8 +181,8 @@ func (s *stateDB) AssignTask(ctx context.Context, req client.UpdateTaskRequest) 
 	return assigned, nil
 }
 
-func (s *stateDB) Update(ctx context.Context, taskID string, req client.UpdateTaskRequest) (*tasks.AuthenticatedTask, error) {
-	var task tasks.AuthenticatedTask
+func (s *stateDB) Update(ctx context.Context, taskID string, req client.UpdateTaskRequest) (*tasks.Task, error) {
+	var task tasks.Task
 	err := s.transact(ctx, 3, func(tx *sql.Tx) error {
 		var serialized string
 		err := tx.QueryRowContext(ctx, getTaskSQL, taskID).Scan(&serialized)
@@ -234,14 +234,11 @@ func (s *stateDB) Update(ctx context.Context, taskID string, req client.UpdateTa
 	return &task, nil
 }
 
-func (s *stateDB) NewStorageTask(ctx context.Context, storageTask *tasks.StorageTask) (*tasks.AuthenticatedTask, error) {
-	task := &tasks.AuthenticatedTask{
-		Task: tasks.Task{
-			UUID:        uuid.New().String()[:8],
-			Status:      tasks.Available,
-			StorageTask: storageTask,
-		},
-		Signature: []byte{},
+func (s *stateDB) NewStorageTask(ctx context.Context, storageTask *tasks.StorageTask) (*tasks.Task, error) {
+	task := &tasks.Task{
+		UUID:        uuid.New().String()[:8],
+		Status:      tasks.Available,
+		StorageTask: storageTask,
 	}
 	err := task.Sign(s.PrivKey)
 	if err != nil {
@@ -256,14 +253,11 @@ func (s *stateDB) NewStorageTask(ctx context.Context, storageTask *tasks.Storage
 	return task, nil
 }
 
-func (s *stateDB) NewRetrievalTask(ctx context.Context, retrievalTask *tasks.RetrievalTask) (*tasks.AuthenticatedTask, error) {
-	task := &tasks.AuthenticatedTask{
-		Task: tasks.Task{
-			UUID:          uuid.New().String()[:8],
-			Status:        tasks.Available,
-			RetrievalTask: retrievalTask,
-		},
-		Signature: []byte{},
+func (s *stateDB) NewRetrievalTask(ctx context.Context, retrievalTask *tasks.RetrievalTask) (*tasks.Task, error) {
+	task := &tasks.Task{
+		UUID:          uuid.New().String()[:8],
+		Status:        tasks.Available,
+		RetrievalTask: retrievalTask,
 	}
 	err := task.Sign(s.PrivKey)
 	if err != nil {
@@ -298,68 +292,56 @@ func (s *stateDB) TaskHistory(ctx context.Context, taskID string) ([]tasks.TaskE
 }
 
 func (s *stateDB) createInitialTasks(ctx context.Context) error {
-	err := s.saveTask(ctx, &tasks.AuthenticatedTask{
-		Task: tasks.Task{
-			UUID:   uuid.New().String()[:8],
-			Status: tasks.Available,
-			RetrievalTask: &tasks.RetrievalTask{
-				Miner:      "t01000",
-				PayloadCID: "bafk2bzacedli6qxp43sf54feczjd26jgeyfxv4ucwylujd3xo5s6cohcqbg36",
-				CARExport:  false,
-			},
+	err := s.saveTask(ctx, &tasks.Task{
+		UUID:   uuid.New().String()[:8],
+		Status: tasks.Available,
+		RetrievalTask: &tasks.RetrievalTask{
+			Miner:      "t01000",
+			PayloadCID: "bafk2bzacedli6qxp43sf54feczjd26jgeyfxv4ucwylujd3xo5s6cohcqbg36",
+			CARExport:  false,
 		},
-		Signature: []byte{},
 	})
 	if err != nil {
 		return err
 	}
 
-	err = s.saveTask(ctx, &tasks.AuthenticatedTask{
-		Task: tasks.Task{
-			UUID:   uuid.New().String()[:8],
-			Status: tasks.Available,
-			RetrievalTask: &tasks.RetrievalTask{
-				Miner:      "t01000",
-				PayloadCID: "bafk2bzacecettil4umy443e4ferok7jbxiqqseef7soa3ntelflf3zkvvndbg",
-				CARExport:  false,
-			},
+	err = s.saveTask(ctx, &tasks.Task{
+		UUID:   uuid.New().String()[:8],
+		Status: tasks.Available,
+		RetrievalTask: &tasks.RetrievalTask{
+			Miner:      "t01000",
+			PayloadCID: "bafk2bzacecettil4umy443e4ferok7jbxiqqseef7soa3ntelflf3zkvvndbg",
+			CARExport:  false,
 		},
-		Signature: []byte{},
 	})
 	if err != nil {
 		return err
 	}
 
-	err = s.saveTask(ctx, &tasks.AuthenticatedTask{
-		Task: tasks.Task{
-			UUID:   uuid.New().String()[:8],
-			Status: tasks.Available,
-			RetrievalTask: &tasks.RetrievalTask{
-				Miner:      "f0127896",
-				PayloadCID: "bafykbzacedikkmeotawrxqquthryw3cijaonobygdp7fb5bujhuos6wdkwomm",
-				CARExport:  false,
-			},
+	err = s.saveTask(ctx, &tasks.Task{
+		UUID:   uuid.New().String()[:8],
+		Status: tasks.Available,
+		RetrievalTask: &tasks.RetrievalTask{
+			Miner:      "f0127896",
+			PayloadCID: "bafykbzacedikkmeotawrxqquthryw3cijaonobygdp7fb5bujhuos6wdkwomm",
+			CARExport:  false,
 		},
-		Signature: []byte{},
 	})
 	if err != nil {
 		return err
 	}
 
-	return s.saveTask(ctx, &tasks.AuthenticatedTask{
-		Task: tasks.Task{
-			UUID:   uuid.New().String()[:8],
-			Status: tasks.Available,
-			StorageTask: &tasks.StorageTask{
-				Miner:           "t01000",
-				MaxPriceAttoFIL: 100000000000000000, // 0.10 FIL
-				Size:            1024,               // 1kb
-				StartOffset:     0,
-				FastRetrieval:   true,
-				Verified:        false,
-			},
+	return s.saveTask(ctx, &tasks.Task{
+		UUID:   uuid.New().String()[:8],
+		Status: tasks.Available,
+		StorageTask: &tasks.StorageTask{
+			Miner:           "t01000",
+			MaxPriceAttoFIL: 100000000000000000, // 0.10 FIL
+			Size:            1024,               // 1kb
+			StartOffset:     0,
+			FastRetrieval:   true,
+			Verified:        false,
 		},
-		Signature: []byte{},
 	})
 }
 
@@ -395,7 +377,7 @@ func (s *stateDB) transact(ctx context.Context, retries int, f func(*sql.Tx) err
 }
 
 // createTask inserts a new task and new task status into the database
-func (s *stateDB) saveTask(ctx context.Context, task *tasks.AuthenticatedTask) error {
+func (s *stateDB) saveTask(ctx context.Context, task *tasks.Task) error {
 	data, err := json.Marshal(task)
 	if err != nil {
 		return err

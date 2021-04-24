@@ -41,17 +41,14 @@ func TestLoadTask(t *testing.T) {
 		t.Fatalf("expected 0 tasks, got %d", count)
 	}
 
-	err = state.saveTask(ctx, &tasks.AuthenticatedTask{
-		Task: tasks.Task{
-			UUID:   uuid.New().String()[:8],
-			Status: tasks.Available,
-			RetrievalTask: &tasks.RetrievalTask{
-				Miner:      "t01000",
-				PayloadCID: "bafk2bzacedli6qxp43sf54feczjd26jgeyfxv4ucwylujd3xo5s6cohcqbg36",
-				CARExport:  false,
-			},
+	err = state.saveTask(ctx, &tasks.Task{
+		UUID:   uuid.New().String()[:8],
+		Status: tasks.Available,
+		RetrievalTask: &tasks.RetrievalTask{
+			Miner:      "t01000",
+			PayloadCID: "bafk2bzacedli6qxp43sf54feczjd26jgeyfxv4ucwylujd3xo5s6cohcqbg36",
+			CARExport:  false,
 		},
-		Signature: []byte{},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -91,17 +88,14 @@ func TestAssignTask(t *testing.T) {
 		t.Fatal("returned wrong type")
 	}
 
-	task := &tasks.AuthenticatedTask{
-		Task: tasks.Task{
-			UUID:   uuid.New().String()[:8],
-			Status: tasks.Available,
-			RetrievalTask: &tasks.RetrievalTask{
-				Miner:      "t01000",
-				PayloadCID: "bafk2bzacedli6qxp43sf54feczjd26jgeyfxv4ucwylujd3xo5s6cohcqbg36",
-				CARExport:  false,
-			},
+	task := &tasks.Task{
+		UUID:   uuid.New().String()[:8],
+		Status: tasks.Available,
+		RetrievalTask: &tasks.RetrievalTask{
+			Miner:      "t01000",
+			PayloadCID: "bafk2bzacedli6qxp43sf54feczjd26jgeyfxv4ucwylujd3xo5s6cohcqbg36",
+			CARExport:  false,
 		},
-		Signature: []byte{},
 	}
 	err = state.saveTask(ctx, task)
 	if err != nil {
@@ -195,7 +189,7 @@ func TestAssignConcurrentTask(t *testing.T) {
 	}
 
 	release := make(chan struct{})
-	assigned := make([]*tasks.AuthenticatedTask, taskCount)
+	assigned := make([]*tasks.Task, taskCount)
 	errChan := make(chan error)
 	for i := 0; i < taskCount; i++ {
 		go func(n int) {
