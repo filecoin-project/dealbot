@@ -6,6 +6,7 @@ import (
 
 	"github.com/filecoin-project/go-address"
 	logging "github.com/ipfs/go-log/v2"
+	"github.com/libp2p/go-libp2p-core/crypto"
 )
 
 type UpdateStatus func(msg string, keysAndValues ...interface{})
@@ -25,6 +26,11 @@ type Task struct {
 	StorageTask   *StorageTask   `json:"storage_task,omitempty"`
 }
 
+type TaskEvent struct {
+	Status Status
+	At     time.Time
+}
+
 func (t Task) Bytes() []byte {
 	b, err := json.Marshal(&t)
 	if err != nil {
@@ -36,6 +42,12 @@ func (t Task) Bytes() []byte {
 type AuthenticatedTask struct {
 	Task
 	Signature []byte
+}
+
+func (t *AuthenticatedTask) Sign(privKey crypto.PrivKey) error {
+	var err error
+	t.Signature, err = privKey.Sign(t.Bytes())
+	return err
 }
 
 func (t *Task) Log(log *logging.ZapEventLogger) {
