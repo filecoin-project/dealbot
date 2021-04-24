@@ -5,8 +5,7 @@ import (
 	"fmt"
 
 	// include sqlite driver
-	//_ "modernc.org/sqlite"
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 )
 
 // PostgresDB is a sql.DB with reconnect functionality.
@@ -26,7 +25,7 @@ func (db *SqliteDB) Connect() error {
 	if db.DB == nil {
 		// Need to connect to database
 		var err error
-		if db.DB, err = sql.Open("sqlite3", db.dbFile); err != nil {
+		if db.DB, err = sql.Open("sqlite", db.dbFile); err != nil {
 			return fmt.Errorf("cannot open database: %s", err)
 		}
 	}

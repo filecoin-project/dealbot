@@ -84,12 +84,13 @@ func TestControllerHTTPInterface(t *testing.T) {
 			recorder.AssertExactObservedStatuses(t, currentTasks[1].UUID, tasks.Successful)
 		},
 		"pop a task": func(ctx context.Context, t *testing.T, apiClient *client.Client, recorder *testrecorder.TestMetricsRecorder) {
-			task, err := apiClient.PopTask(ctx, &client.PopTaskRequest{WorkedBy: "dealbot 1"})
+			updatedTask, err := apiClient.PopTask(ctx, &client.UpdateTaskRequest{
+				WorkedBy: "dealbot 1",
+				Status:   tasks.InProgress,
+			})
 			require.NoError(t, err)
-			require.Equal(t, tasks.InProgress, task.Status)
-
-			// check task updated
-			refetchTask, err := apiClient.GetTask(ctx, task.UUID)
+			require.Equal(t, tasks.InProgress, updatedTask.Status)
+			refetchTask, err := apiClient.GetTask(ctx, updatedTask.UUID)
 			require.NoError(t, err)
 			require.Equal(t, tasks.InProgress, refetchTask.Status)
 			require.Equal(t, "dealbot 1", refetchTask.WorkedBy)
@@ -97,14 +98,17 @@ func TestControllerHTTPInterface(t *testing.T) {
 			// when no tasks are available, pop-task should return nil
 			allTasks, err := apiClient.ListTasks(ctx)
 			require.NoError(t, err)
-			for _, task := range allTasks {
-				_, err := apiClient.UpdateTask(ctx, task.UUID, &client.UpdateTaskRequest{
+			for _ = range allTasks {
+				_, err := apiClient.PopTask(ctx, &client.UpdateTaskRequest{
 					WorkedBy: "dealbot 1",
 					Status:   tasks.InProgress,
 				})
 				require.NoError(t, err)
 			}
-			noTask, err := apiClient.PopTask(ctx, &client.PopTaskRequest{WorkedBy: "dealbot 1"})
+			noTask, err := apiClient.PopTask(ctx, &client.UpdateTaskRequest{
+				WorkedBy: "dealbot 1",
+				Status:   tasks.InProgress,
+			})
 			require.NoError(t, err)
 			require.Nil(t, noTask)
 		},
@@ -178,7 +182,7 @@ func newHarness(ctx context.Context, t *testing.T) *harness {
 	pr, _, _ := crypto.GenerateKeyPair(crypto.Ed25519, 0)
 	h.dbloc, err = ioutil.TempDir("", "dealbot_test_*")
 	require.NoError(t, err)
-	be, err := state.NewStateDB(ctx, "sqlite", h.dbloc+"/tmp.sqlite", pr)
+	be, err := state.NewStateDB(ctx, "sqlite", h.dbloc+"/tmp.sqlite", pr, h.recorder)
 	require.NoError(t, err)
 	h.controller = controller.NewWithDependencies(listener, h.recorder, be)
 
