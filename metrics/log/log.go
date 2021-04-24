@@ -23,7 +23,7 @@ func (lr *logRecorder) Handler() http.Handler {
 	return nil
 }
 
-func (lr *logRecorder) ObserveTask(task *tasks.AuthenticatedTask) error {
+func (lr *logRecorder) ObserveTask(task *tasks.Task) error {
 	duration := time.Since(task.StartedAt).Milliseconds()
 
 	if task.RetrievalTask != nil {
