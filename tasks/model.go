@@ -58,7 +58,7 @@ func (t *Task) VerifySignature(privKey crypto.PrivKey) error {
 	}
 	t.Signature = toCheck
 	if !bytes.Equal(toCheck, refSig) {
-		return errors.New("signraute mismatch")
+		return errors.New("signature mismatch")
 	}
 	return nil
 }
