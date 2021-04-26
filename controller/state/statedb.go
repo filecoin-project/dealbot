@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/filecoin-project/dealbot/controller/client"
@@ -25,10 +26,12 @@ var log = logging.Logger("controller-state")
 type stateDB struct {
 	dbconn DBConnector
 	crypto.PrivKey
+	recorder metrics.MetricsRecorder
+	txlock   sync.Mutex
 }
 
 // NewStateDB creates a state instance with a given driver and identity
-func NewStateDB(ctx context.Context, driver, conn string, identity crypto.PrivKey) (State, error) {
+func NewStateDB(ctx context.Context, driver, conn string, identity crypto.PrivKey, recorder metrics.MetricsRecorder) (State, error) {
 	var dbConn DBConnector
 	switch driver {
 	case "postgres":
@@ -52,12 +55,19 @@ func NewStateDB(ctx context.Context, driver, conn string, identity crypto.PrivKe
 	// Create state tablespace if it does not exist
 	_, err = db.ExecContext(ctx, createTasksTableSQL)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("could not create tasks table: %w", err)
+	}
+
+	// Create status ledger tablespace if it does not exist
+	_, err = db.ExecContext(ctx, createStatusLedgerSQL)
+	if err != nil {
+		return nil, fmt.Errorf("could not create task_status_ledger table: %w", err)
 	}
 
 	st := &stateDB{
-		dbconn:  dbConn,
-		PrivKey: identity,
+		dbconn:   dbConn,
+		PrivKey:  identity,
+		recorder: recorder,
 	}
 
 	return st, nil
@@ -67,15 +77,15 @@ func (s *stateDB) db() *sql.DB {
 	return s.dbconn.SqlDB()
 }
 
-// Get queries the DB for the task identified by UUID
-func (s *stateDB) Get(ctx context.Context, uuid string) (*tasks.AuthenticatedTask, error) {
+// Get returns a specific task identified by ID
+func (s *stateDB) Get(ctx context.Context, taskID string) (*tasks.Task, error) {
 	var serialized string
-	err := s.db().QueryRowContext(ctx, getTaskSQL, uuid).Scan(&serialized)
+	err := s.db().QueryRowContext(ctx, getTaskSQL, taskID).Scan(&serialized)
 	if err != nil {
 		return nil, err
 	}
 
-	var task tasks.AuthenticatedTask
+	var task tasks.Task
 	if err := json.Unmarshal([]byte(serialized), &task); err != nil {
 		return nil, err
 	}
@@ -83,20 +93,20 @@ func (s *stateDB) Get(ctx context.Context, uuid string) (*tasks.AuthenticatedTas
 }
 
 // GetAll queries all tasks from the DB
-func (s *stateDB) GetAll(ctx context.Context) ([]*tasks.AuthenticatedTask, error) {
-	rows, err := s.db().QueryContext(ctx, getLatestTasksSQL)
+func (s *stateDB) GetAll(ctx context.Context) ([]*tasks.Task, error) {
+	rows, err := s.db().QueryContext(ctx, getAllTasksSQL)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var tasklist []*tasks.AuthenticatedTask
+	var tasklist []*tasks.Task
 	for rows.Next() {
 		var serialized string
 		if err = rows.Scan(&serialized); err != nil {
 			return nil, err
 		}
-		var task tasks.AuthenticatedTask
+		var task tasks.Task
 		if err = json.Unmarshal([]byte(serialized), &task); err != nil {
 			return nil, err
 		}
@@ -106,108 +116,291 @@ func (s *stateDB) GetAll(ctx context.Context) ([]*tasks.AuthenticatedTask, error
 
 }
 
-func (s *stateDB) Update(ctx context.Context, uuid string, req *client.UpdateTaskRequest, recorder metrics.MetricsRecorder) (*tasks.AuthenticatedTask, error) {
-	// Check connection and reconnect if down
-	err := s.dbconn.Connect()
+// AssignTask finds the oldest available (unassigned) task and
+// assigns it to req.WorkedBy. If there are no available tasks, the task returned
+// is nil.
+//
+// TODO: There should be a limit to the age of the task to assign.
+func (s *stateDB) AssignTask(ctx context.Context, req client.UpdateTaskRequest) (*tasks.Task, error) {
+	var assigned *tasks.Task
+	err := s.transact(ctx, 13, func(tx *sql.Tx) error {
+		var taskID, serialized string
+		var task tasks.Task
+		err := tx.QueryRowContext(ctx, oldestAvailableTaskSQL).Scan(&taskID, &serialized)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				// There are no available tasks
+				return nil
+			}
+			return err
+		}
+
+		if err = json.Unmarshal([]byte(serialized), &task); err != nil {
+			return err
+		}
+
+		now := time.Now()
+		task.WorkedBy = req.WorkedBy
+		task.StartedAt = now
+		task.Status = req.Status
+
+		err = task.Sign(s.PrivKey)
+		if err != nil {
+			return err
+		}
+
+		data, err := json.Marshal(task)
+		if err != nil {
+			return err
+		}
+
+		// Assign task to worker
+		_, err = tx.ExecContext(ctx, assignTaskSQL, taskID, data, req.WorkedBy)
+		if err != nil {
+			return err
+		}
+
+		// Set new status for task
+		_, err = tx.ExecContext(ctx, setTaskStatusSQL, taskID, req.Status, now)
+		if err != nil {
+			return err
+		}
+
+		assigned = &task
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	latest, err := s.Get(ctx, uuid)
+	if s.recorder != nil && assigned != nil {
+		if err = s.recorder.ObserveTask(assigned); err != nil {
+			return nil, err
+		}
+	}
+	return assigned, nil
+}
+
+func (s *stateDB) Update(ctx context.Context, taskID string, req client.UpdateTaskRequest) (*tasks.Task, error) {
+	var task tasks.Task
+	err := s.transact(ctx, 3, func(tx *sql.Tx) error {
+		var serialized string
+		err := tx.QueryRowContext(ctx, getTaskSQL, taskID).Scan(&serialized)
+		if err != nil {
+			return err
+		}
+
+		if err := json.Unmarshal([]byte(serialized), &task); err != nil {
+			return err
+		}
+
+		if task.WorkedBy == "" {
+			task.WorkedBy = req.WorkedBy
+			task.StartedAt = time.Now()
+		} else if req.WorkedBy != task.WorkedBy {
+			return errors.New("task already acquired")
+		}
+
+		task.Status = req.Status
+		err = task.Sign(s.PrivKey)
+		if err != nil {
+			return err
+		}
+
+		data, err := json.Marshal(task)
+		if err != nil {
+			return err
+		}
+
+		// save the update back to DB
+		_, err = tx.ExecContext(ctx, updateTaskDataSQL, taskID, data)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
 	if err != nil {
 		return nil, err
 	}
 
-	if latest.Status == tasks.Available {
-		latest.WorkedBy = req.WorkedBy
-		latest.StartedAt = time.Now()
-	} else if latest.WorkedBy != req.WorkedBy {
-		return nil, errors.New("task already acquired")
+	if s.recorder != nil {
+		if err = s.recorder.ObserveTask(&task); err != nil {
+			return nil, err
+		}
 	}
-	log.Infow("state update", "uuid", latest.UUID, "status", req.Status, "worked_by", req.WorkedBy)
 
-	latest.Status = req.Status
-	latest.Signature, err = s.PrivKey.Sign(latest.Bytes())
+	return &task, nil
+}
+
+func (s *stateDB) NewStorageTask(ctx context.Context, storageTask *tasks.StorageTask) (*tasks.Task, error) {
+	task := &tasks.Task{
+		UUID:        uuid.New().String()[:8],
+		Status:      tasks.Available,
+		StorageTask: storageTask,
+	}
+	err := task.Sign(s.PrivKey)
 	if err != nil {
 		return nil, err
 	}
 
 	// save the update back to DB
-	if err := s.saveTask(ctx, latest); err != nil {
+	if err = s.saveTask(ctx, task); err != nil {
 		return nil, err
 	}
 
-	if err := recorder.ObserveTask(latest); err != nil {
-		return nil, err
-	}
-
-	return latest, nil
-
+	return task, nil
 }
 
-// save inserts a new task into the database
-func (s *stateDB) saveTask(ctx context.Context, task *tasks.AuthenticatedTask) error {
+func (s *stateDB) NewRetrievalTask(ctx context.Context, retrievalTask *tasks.RetrievalTask) (*tasks.Task, error) {
+	task := &tasks.Task{
+		UUID:          uuid.New().String()[:8],
+		Status:        tasks.Available,
+		RetrievalTask: retrievalTask,
+	}
+	err := task.Sign(s.PrivKey)
+	if err != nil {
+		return nil, err
+	}
+
+	// save the update back to DB
+	if err = s.saveTask(ctx, task); err != nil {
+		return nil, err
+	}
+
+	return task, nil
+}
+
+func (s *stateDB) TaskHistory(ctx context.Context, taskID string) ([]tasks.TaskEvent, error) {
+	rows, err := s.db().QueryContext(ctx, taskHistorySQL, taskID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var history []tasks.TaskEvent
+	for rows.Next() {
+		var status int
+		var ts time.Time
+		if err = rows.Scan(&status, &ts); err != nil {
+			return nil, err
+		}
+		history = append(history, tasks.TaskEvent{tasks.Status(status), ts})
+	}
+	return history, nil
+}
+
+func (s *stateDB) createInitialTasks(ctx context.Context) error {
+	err := s.saveTask(ctx, &tasks.Task{
+		UUID:   uuid.New().String()[:8],
+		Status: tasks.Available,
+		RetrievalTask: &tasks.RetrievalTask{
+			Miner:      "t01000",
+			PayloadCID: "bafk2bzacedli6qxp43sf54feczjd26jgeyfxv4ucwylujd3xo5s6cohcqbg36",
+			CARExport:  false,
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	err = s.saveTask(ctx, &tasks.Task{
+		UUID:   uuid.New().String()[:8],
+		Status: tasks.Available,
+		RetrievalTask: &tasks.RetrievalTask{
+			Miner:      "t01000",
+			PayloadCID: "bafk2bzacecettil4umy443e4ferok7jbxiqqseef7soa3ntelflf3zkvvndbg",
+			CARExport:  false,
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	err = s.saveTask(ctx, &tasks.Task{
+		UUID:   uuid.New().String()[:8],
+		Status: tasks.Available,
+		RetrievalTask: &tasks.RetrievalTask{
+			Miner:      "f0127896",
+			PayloadCID: "bafykbzacedikkmeotawrxqquthryw3cijaonobygdp7fb5bujhuos6wdkwomm",
+			CARExport:  false,
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	return s.saveTask(ctx, &tasks.Task{
+		UUID:   uuid.New().String()[:8],
+		Status: tasks.Available,
+		StorageTask: &tasks.StorageTask{
+			Miner:           "t01000",
+			MaxPriceAttoFIL: 100000000000000000, // 0.10 FIL
+			Size:            1024,               // 1kb
+			StartOffset:     0,
+			FastRetrieval:   true,
+			Verified:        false,
+		},
+	})
+}
+
+func (s *stateDB) transact(ctx context.Context, retries int, f func(*sql.Tx) error) (err error) {
+	// Check connection and reconnect if down
+	err = s.dbconn.Connect()
+	if err != nil {
+		return
+	}
+
+	s.txlock.Lock()
+	defer s.txlock.Unlock()
+
+	var tx *sql.Tx
+	if tx, err = s.db().BeginTx(ctx, nil); err != nil {
+		return
+	}
+
+	defer func() {
+		if p := recover(); p != nil {
+			tx.Rollback()
+			panic(p)
+		}
+		if err != nil {
+			tx.Rollback()
+		} else {
+			err = tx.Commit()
+		}
+	}()
+
+	err = f(tx)
+	return
+}
+
+// createTask inserts a new task and new task status into the database
+func (s *stateDB) saveTask(ctx context.Context, task *tasks.Task) error {
 	data, err := json.Marshal(task)
 	if err != nil {
 		return err
 	}
 
-	// Not every db driver may support getting rows affected, so ignore results.
-	_, err = s.db().ExecContext(ctx, insertTaskSQL, task.UUID, data, time.Now())
+	return s.transact(ctx, 0, func(tx *sql.Tx) error {
+		now := time.Now()
+		if _, err := tx.ExecContext(ctx, createTaskSQL, task.UUID, data, now); err != nil {
+			return err
+		}
 
-	return err
+		if _, err := tx.ExecContext(ctx, setTaskStatusSQL, task.UUID, tasks.Available, now); err != nil {
+			return err
+		}
+		return nil
+	})
 }
 
+// countTasks retrieves the total number of tasks
 func (s *stateDB) countTasks(ctx context.Context) (int, error) {
 	var count int
-	if err := s.db().QueryRowContext(ctx, countTasksSQL).Scan(&count); err != nil {
+	if err := s.db().QueryRowContext(ctx, countAllTasksSQL).Scan(&count); err != nil {
 		return 0, err
 	}
 	return count, nil
-}
-
-func (s *stateDB) NewStorageTask(ctx context.Context, storageTask *tasks.StorageTask) (*tasks.AuthenticatedTask, error) {
-	task := &tasks.AuthenticatedTask{
-		Task: tasks.Task{
-			UUID:        uuid.New().String()[:8],
-			Status:      tasks.Available,
-			StorageTask: storageTask,
-		},
-		Signature: []byte{},
-	}
-	var err error
-	task.Signature, err = s.PrivKey.Sign(task.Bytes())
-	if err != nil {
-		return nil, err
-	}
-
-	// save the update back to DB
-	if err = s.saveTask(ctx, task); err != nil {
-		return nil, err
-	}
-
-	return task, nil
-}
-
-func (s *stateDB) NewRetrievalTask(ctx context.Context, retrievalTask *tasks.RetrievalTask) (*tasks.AuthenticatedTask, error) {
-	task := &tasks.AuthenticatedTask{
-		Task: tasks.Task{
-			UUID:          uuid.New().String()[:8],
-			Status:        tasks.Available,
-			RetrievalTask: retrievalTask,
-		},
-		Signature: []byte{},
-	}
-	var err error
-	task.Signature, err = s.PrivKey.Sign(task.Bytes())
-	if err != nil {
-		return nil, err
-	}
-
-	// save the update back to DB
-	if err = s.saveTask(ctx, task); err != nil {
-		return nil, err
-	}
-
-	return task, nil
 }

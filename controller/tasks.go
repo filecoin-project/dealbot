@@ -1,7 +1,9 @@
 package controller
 
 import (
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -44,40 +46,22 @@ func (c *Controller) popTaskHandler(w http.ResponseWriter, r *http.Request) {
 	defer logger.Debugw("request handled", "command", "pop task")
 
 	w.Header().Set("Content-Type", "application/json")
-	var req *client.PopTaskRequest
+	var req client.UpdateTaskRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
-		log.Errorw("PopTaskRequest json decode", "err", err.Error())
+		log.Errorw("UpdateTaskRequest json decode", "err", err.Error())
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	allTasks, err := c.db.GetAll(r.Context())
+	task, err := c.db.AssignTask(r.Context(), req)
 	if err != nil {
-		log.Errorw("getTasks failed: backend", "err", err.Error())
+		log.Errorw("popTask failed: backend", "err", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	var firstAvailable *tasks.AuthenticatedTask
-	for _, task := range allTasks {
-		if task.Status == tasks.Available {
-			firstAvailable = task
-			break
-		}
-	}
-	if firstAvailable != nil {
-		firstAvailable, err = c.db.Update(r.Context(), firstAvailable.UUID, &client.UpdateTaskRequest{
-			WorkedBy: req.WorkedBy,
-			Status:   tasks.InProgress,
-		}, c.metricsRecorder)
-		if err != nil {
-			log.Errorw("UpdateTaskRequest db update", "err", err.Error())
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-	}
 	// If none are available, we return a JSON "null".
-	json.NewEncoder(w).Encode(firstAvailable)
+	json.NewEncoder(w).Encode(task)
 }
 
 func (c *Controller) updateTaskHandler(w http.ResponseWriter, r *http.Request) {
@@ -87,7 +71,7 @@ func (c *Controller) updateTaskHandler(w http.ResponseWriter, r *http.Request) {
 	defer logger.Debugw("request handled", "command", "update task")
 
 	w.Header().Set("Content-Type", "application/json")
-	var req *client.UpdateTaskRequest
+	var req client.UpdateTaskRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		log.Errorw("UpdateTaskRequest json decode", "err", err.Error())
@@ -97,10 +81,14 @@ func (c *Controller) updateTaskHandler(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 	uuid := vars["uuid"]
-	task, err := c.db.Update(r.Context(), uuid, req, c.metricsRecorder)
+	task, err := c.db.Update(r.Context(), uuid, req)
 	if err != nil {
 		log.Errorw("UpdateTaskRequest db update", "err", err.Error())
-		w.WriteHeader(http.StatusBadRequest)
+		if errors.Is(err, sql.ErrNoRows) {
+			w.WriteHeader(http.StatusNotFound)
+		} else {
+			w.WriteHeader(http.StatusBadRequest)
+		}
 		return
 	}
 
