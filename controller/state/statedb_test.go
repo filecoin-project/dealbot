@@ -2,6 +2,7 @@ package state
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -13,6 +14,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/libp2p/go-libp2p-core/crypto"
 )
+
+const jsonTestDeals = "../../devnet/sample_tasks.json"
 
 func TestLoadTask(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
@@ -86,6 +89,11 @@ func TestAssignTask(t *testing.T) {
 	state, ok := stateInterface.(*stateDB)
 	if !ok {
 		t.Fatal("returned wrong type")
+	}
+
+	err = populateTestTasks(ctx, jsonTestDeals, stateInterface)
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	task := &tasks.Task{
@@ -183,6 +191,11 @@ func TestAssignConcurrentTask(t *testing.T) {
 		t.Fatal("returned wrong type")
 	}
 
+	err = populateTestTasks(ctx, jsonTestDeals, stateInterface)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	taskCount, err := state.countTasks(ctx)
 	if err != nil {
 		t.Fatalf("failed to count tasks: %s", err)
@@ -191,6 +204,7 @@ func TestAssignConcurrentTask(t *testing.T) {
 	release := make(chan struct{})
 	assigned := make([]*tasks.Task, taskCount)
 	errChan := make(chan error)
+	t.Log("concurrently assigning", taskCount, "tasks")
 	for i := 0; i < taskCount; i++ {
 		go func(n int) {
 			worker := fmt.Sprintf("worker-%d", n)
@@ -239,6 +253,39 @@ func TestAssignConcurrentTask(t *testing.T) {
 			t.Error("wrong status for 2nd history")
 		}
 	}
+}
+
+func populateTestTasks(ctx context.Context, jsonTests string, state State) error {
+	sampleTaskFile, err := os.Open(jsonTestDeals)
+	if err != nil {
+		return err
+	}
+	defer sampleTaskFile.Close()
+	sampleTasks, err := ioutil.ReadAll(sampleTaskFile)
+	if err != nil {
+		return err
+	}
+	byTask := make([]json.RawMessage, 0)
+	if err = json.Unmarshal(sampleTasks, &byTask); err != nil {
+		return err
+	}
+	for _, task := range byTask {
+		rt := tasks.RetrievalTask{}
+		if err = json.Unmarshal(task, &rt); err != nil {
+			st := tasks.StorageTask{}
+			if err = json.Unmarshal(task, &st); err != nil {
+				return fmt.Errorf("could not decode sample task as either storage or retrieval %s: %w", task, err)
+			}
+			if _, err = state.NewStorageTask(ctx, &st); err != nil {
+				return err
+			}
+		} else {
+			if _, err = state.NewRetrievalTask(ctx, &rt); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func makeKey() (crypto.PrivKey, error) {

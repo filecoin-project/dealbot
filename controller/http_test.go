@@ -3,6 +3,7 @@ package controller_test
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -18,6 +19,8 @@ import (
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/stretchr/testify/require"
 )
+
+const jsonTestDeals = "../devnet/sample_tasks.json"
 
 func TestControllerHTTPInterface(t *testing.T) {
 	ctx := context.Background()
@@ -196,29 +199,42 @@ func newHarness(ctx context.Context, t *testing.T) *harness {
 	}()
 
 	// populate test tasks
-	sampleTaskFile, err := os.Open("../devnet/sample_tasks.json")
-	require.NoError(t, err)
-	defer sampleTaskFile.Close()
-	sampleTasks, err := ioutil.ReadAll(sampleTaskFile)
-	require.NoError(t, err)
-	byTask := make([]json.RawMessage, 0)
-	require.NoError(t, json.Unmarshal(sampleTasks, &byTask))
-	for _, task := range byTask {
-		rt := tasks.RetrievalTask{}
-		if err := json.Unmarshal(task, &rt); err != nil {
-			st := tasks.StorageTask{}
-			if err := json.Unmarshal(task, &st); err != nil {
-				t.Fatalf("could not decode sample task as either storage or retrieval %s: %s", task, err)
-			}
-			_, err := h.apiClient.CreateStorageTask(context.Background(), &st)
-			require.NoError(t, err)
-		} else {
-			_, err := h.apiClient.CreateRetrievalTask(context.Background(), &rt)
-			require.NoError(t, err)
-		}
-	}
+	require.NoError(t, populateTestTasks(ctx, jsonTestDeals, h.apiClient))
 
 	return h
+}
+
+func populateTestTasks(ctx context.Context, jsonTests string, apiClient *client.Client) error {
+	sampleTaskFile, err := os.Open(jsonTestDeals)
+	if err != nil {
+		return err
+	}
+	defer sampleTaskFile.Close()
+	sampleTasks, err := ioutil.ReadAll(sampleTaskFile)
+	if err != nil {
+		return err
+	}
+	byTask := make([]json.RawMessage, 0)
+	if err = json.Unmarshal(sampleTasks, &byTask); err != nil {
+		return err
+	}
+	for _, task := range byTask {
+		rt := tasks.RetrievalTask{}
+		if err = json.Unmarshal(task, &rt); err != nil {
+			st := tasks.StorageTask{}
+			if err = json.Unmarshal(task, &st); err != nil {
+				return fmt.Errorf("could not decode sample task as either storage or retrieval %s: %w", task, err)
+			}
+			if _, err = apiClient.CreateStorageTask(ctx, &st); err != nil {
+				return err
+			}
+		} else {
+			if _, err = apiClient.CreateRetrievalTask(ctx, &rt); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func (h *harness) Shutdown(t *testing.T) {

@@ -1,9 +1,7 @@
 package tasks
 
 import (
-	"bytes"
 	"encoding/json"
-	"errors"
 	"time"
 
 	"github.com/filecoin-project/go-address"
@@ -48,19 +46,6 @@ func (t *Task) Sign(privKey crypto.PrivKey) error {
 	t.Signature = nil
 	t.Signature, err = privKey.Sign(t.Bytes())
 	return err
-}
-
-func (t *Task) VerifySignature(privKey crypto.PrivKey) error {
-	toCheck := t.Signature
-	refSig, err := privKey.Sign(t.Bytes())
-	if err != nil {
-		return err
-	}
-	t.Signature = toCheck
-	if !bytes.Equal(toCheck, refSig) {
-		return errors.New("signature mismatch")
-	}
-	return nil
 }
 
 func (t *Task) Log(log *logging.ZapEventLogger) {
