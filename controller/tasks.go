@@ -46,7 +46,7 @@ func (c *Controller) popTaskHandler(w http.ResponseWriter, r *http.Request) {
 	defer logger.Debugw("request handled", "command", "pop task")
 
 	w.Header().Set("Content-Type", "application/json")
-	var req client.UpdateTaskRequest
+	var req client.PopTaskRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		log.Errorw("UpdateTaskRequest json decode", "err", err.Error())

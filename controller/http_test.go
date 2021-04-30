@@ -30,13 +30,12 @@ func TestControllerHTTPInterface(t *testing.T) {
 			require.NoError(t, err)
 			require.Len(t, currentTasks, 4)
 
-			taskUUID := currentTasks[0].UUID
-
 			// update a task
-			task, err := apiClient.UpdateTask(ctx, taskUUID, &client.UpdateTaskRequest{
+			task, err := apiClient.PopTask(ctx, &client.PopTaskRequest{
 				WorkedBy: "dealbot 1",
 				Status:   tasks.InProgress,
 			})
+			taskUUID := task.UUID
 			require.NoError(t, err)
 			require.Equal(t, tasks.InProgress, task.Status)
 			refetchTask, err := apiClient.GetTask(ctx, task.UUID)
@@ -71,11 +70,11 @@ func TestControllerHTTPInterface(t *testing.T) {
 			require.Equal(t, "dealbot 1", refetchTask.WorkedBy)
 
 			// update a different
-			taskUUID = currentTasks[1].UUID
-			task, err = apiClient.UpdateTask(ctx, currentTasks[1].UUID, &client.UpdateTaskRequest{
+			task, err = apiClient.PopTask(ctx, &client.PopTaskRequest{
 				WorkedBy: "dealbot 2",
 				Status:   tasks.Successful,
 			})
+			taskUUID = task.UUID
 			require.NoError(t, err)
 			require.Equal(t, tasks.Successful, task.Status)
 			refetchTask, err = apiClient.GetTask(ctx, taskUUID)
@@ -87,7 +86,7 @@ func TestControllerHTTPInterface(t *testing.T) {
 			recorder.AssertExactObservedStatuses(t, currentTasks[1].UUID, tasks.Successful)
 		},
 		"pop a task": func(ctx context.Context, t *testing.T, apiClient *client.Client, recorder *testrecorder.TestMetricsRecorder) {
-			updatedTask, err := apiClient.PopTask(ctx, &client.UpdateTaskRequest{
+			updatedTask, err := apiClient.PopTask(ctx, &client.PopTaskRequest{
 				WorkedBy: "dealbot 1",
 				Status:   tasks.InProgress,
 			})
@@ -101,14 +100,14 @@ func TestControllerHTTPInterface(t *testing.T) {
 			// when no tasks are available, pop-task should return nil
 			allTasks, err := apiClient.ListTasks(ctx)
 			require.NoError(t, err)
-			for _ = range allTasks {
-				_, err := apiClient.PopTask(ctx, &client.UpdateTaskRequest{
+			for range allTasks {
+				_, err := apiClient.PopTask(ctx, &client.PopTaskRequest{
 					WorkedBy: "dealbot 1",
 					Status:   tasks.InProgress,
 				})
 				require.NoError(t, err)
 			}
-			noTask, err := apiClient.PopTask(ctx, &client.UpdateTaskRequest{
+			noTask, err := apiClient.PopTask(ctx, &client.PopTaskRequest{
 				WorkedBy: "dealbot 1",
 				Status:   tasks.InProgress,
 			})
