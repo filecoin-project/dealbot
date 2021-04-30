@@ -15,8 +15,15 @@ import (
 	logging "github.com/ipfs/go-log/v2"
 	crypto "github.com/libp2p/go-libp2p-crypto"
 
+	// DB interfaces
 	"github.com/filecoin-project/dealbot/controller/state/postgresdb"
 	"github.com/filecoin-project/dealbot/controller/state/sqlitedb"
+
+	// DB migrations
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/database/postgres"
+	"github.com/golang-migrate/migrate/v4/database/sqlite"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
 var log = logging.Logger("controller-state")
@@ -38,17 +45,51 @@ type stateDB struct {
 	txlock   sync.Mutex
 }
 
+func migratePostgres(db *sql.DB) error {
+	driver, err := postgres.WithInstance(db, &postgres.Config{})
+	if err != nil {
+		return err
+	}
+	m, err := migrate.NewWithDatabaseInstance(
+		"file://./migrations",
+		"postgres", driver)
+	if err != nil {
+		return err
+	}
+	//return m.Steps(2) // Migrate 2 versions up at mose
+	return m.Up()
+}
+
+func migrateSqlite(db *sql.DB) error {
+	driver, err := sqlite.WithInstance(db, &sqlite.Config{NoTxWrap: true})
+	if err != nil {
+		return err
+	}
+	m, err := migrate.NewWithDatabaseInstance(
+		"file://./migrations",
+		"sqlite", driver)
+	if err != nil {
+		return err
+	}
+	//return m.Steps(2) // Migrate 2 versions up at mose
+	return m.Up()
+}
+
 // NewStateDB creates a state instance with a given driver and identity
 func NewStateDB(ctx context.Context, driver, conn string, identity crypto.PrivKey, recorder metrics.MetricsRecorder) (State, error) {
 	var dbConn DBConnector
+	var migrateFunc func(*sql.DB) error
+
 	switch driver {
 	case "postgres":
 		if conn == "" {
 			conn = postgresdb.PostgresConfig{}.String()
 		}
 		dbConn = postgresdb.New(conn)
+		migrateFunc = migratePostgres
 	case "sqlite":
 		dbConn = sqlitedb.New(conn)
+		migrateFunc = migrateSqlite
 	default:
 		return nil, fmt.Errorf("database driver %q is not supported", driver)
 	}
@@ -60,16 +101,9 @@ func NewStateDB(ctx context.Context, driver, conn string, identity crypto.PrivKe
 	}
 	db := dbConn.SqlDB()
 
-	// Create state tablespace if it does not exist
-	_, err = db.ExecContext(ctx, createTasksTableSQL)
-	if err != nil {
-		return nil, fmt.Errorf("could not create tasks table: %w", err)
-	}
-
-	// Create status ledger tablespace if it does not exist
-	_, err = db.ExecContext(ctx, createStatusLedgerSQL)
-	if err != nil {
-		return nil, fmt.Errorf("could not create task_status_ledger table: %w", err)
+	// Apply DB schema migrations
+	if err = migrateFunc(db); err != nil {
+		return nil, fmt.Errorf("%s database migration failed: %w", driver, err)
 	}
 
 	st := &stateDB{
