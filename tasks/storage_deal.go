@@ -239,9 +239,11 @@ func (de *storageDealExecutor) executeAndMonitorDeal(updateStage UpdateStage) er
 			continue
 		}
 		stage := info.DealStages.GetStage(storagemarket.DealStates[info.State])
-		err = updateStage(storagemarket.DealStates[info.State], toStageData(stage))
-		if err != nil {
-			return err
+		if stage != nil {
+			err = updateStage(storagemarket.DealStates[info.State], toStageData(stage))
+			if err != nil {
+				return err
+			}
 		}
 		if info.State != lastState {
 			de.log("Deal status",
