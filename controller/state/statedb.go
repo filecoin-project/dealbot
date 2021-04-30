@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -21,6 +20,15 @@ import (
 )
 
 var log = logging.Logger("controller-state")
+
+type errorString string
+
+func (e errorString) Error() string {
+	return string(e)
+}
+
+const ErrNotAssigned = errorString("tasks must be acquired through pop task")
+const ErrWrongWorker = errorString("task already acquired by other worker")
 
 // stateDB is a persisted implementation of the State interface
 type stateDB struct {
@@ -121,7 +129,7 @@ func (s *stateDB) GetAll(ctx context.Context) ([]*tasks.Task, error) {
 // is nil.
 //
 // TODO: There should be a limit to the age of the task to assign.
-func (s *stateDB) AssignTask(ctx context.Context, req client.UpdateTaskRequest) (*tasks.Task, error) {
+func (s *stateDB) AssignTask(ctx context.Context, req client.PopTaskRequest) (*tasks.Task, error) {
 	var assigned *tasks.Task
 	err := s.transact(ctx, 13, func(tx *sql.Tx) error {
 		var taskID, serialized string
@@ -195,13 +203,14 @@ func (s *stateDB) Update(ctx context.Context, taskID string, req client.UpdateTa
 		}
 
 		if task.WorkedBy == "" {
-			task.WorkedBy = req.WorkedBy
-			task.StartedAt = time.Now()
+			return ErrNotAssigned
 		} else if req.WorkedBy != task.WorkedBy {
-			return errors.New("task already acquired")
+			return ErrWrongWorker
 		}
 
 		task.Status = req.Status
+		task.Stage = req.Stage
+		task.CurrentStageDetails = req.CurrentStageDetails
 		err = task.Sign(s.PrivKey)
 		if err != nil {
 			return err
@@ -218,6 +227,8 @@ func (s *stateDB) Update(ctx context.Context, taskID string, req client.UpdateTa
 			return err
 		}
 
+		// publish a task event update as neccesary
+		_, err = tx.ExecContext(ctx, upsertTaskStatusSQL, taskID, task.Status, task.Stage, time.Now())
 		return nil
 	})
 
@@ -283,10 +294,11 @@ func (s *stateDB) TaskHistory(ctx context.Context, taskID string) ([]tasks.TaskE
 	for rows.Next() {
 		var status int
 		var ts time.Time
-		if err = rows.Scan(&status, &ts); err != nil {
+		var stage string
+		if err = rows.Scan(&status, &stage, &ts); err != nil {
 			return nil, err
 		}
-		history = append(history, tasks.TaskEvent{tasks.Status(status), ts})
+		history = append(history, tasks.TaskEvent{tasks.Status(status), stage, ts})
 	}
 	return history, nil
 }

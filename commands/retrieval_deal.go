@@ -29,7 +29,7 @@ func makeRetrievalDeal(cctx *cli.Context) error {
 
 	log.Infof("remote version: %s", v.Version)
 
-	carExport := true
+	carExport := false
 	payloadCid := cctx.String("cid")
 
 	log.Infof("retrieving cid: %s", payloadCid)
@@ -43,14 +43,16 @@ func makeRetrievalDeal(cctx *cli.Context) error {
 		CARExport:  carExport,
 	}
 
-	err = tasks.MakeRetrievalDeal(cctx.Context, nodeConfig, node, task, func(msg string, keysAndValues ...interface{}) {
-		log.Infow(msg, keysAndValues...)
-	})
+	err = tasks.MakeRetrievalDeal(cctx.Context, nodeConfig, node, task, emptyUpdateStage, log.Infow)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	log.Info("successfully retrieved")
 
+	return nil
+}
+
+func emptyUpdateStage(string, *tasks.StageDetails) error {
 	return nil
 }

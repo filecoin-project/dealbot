@@ -70,7 +70,7 @@ func (e *Engine) worker(n int) {
 
 		// pop a task
 		ctx := context.Background()
-		task, err := e.client.PopTask(ctx, &client.UpdateTaskRequest{Status: tasks.Available, WorkedBy: e.host})
+		task, err := e.client.PopTask(ctx, &client.PopTaskRequest{Status: tasks.Available, WorkedBy: e.host})
 		if err != nil {
 			log.Warnw("pop-task returned error", "err", err)
 			continue
@@ -85,30 +85,45 @@ func (e *Engine) worker(n int) {
 
 		log.Infow("successfully acquired task", "uuid", task.UUID)
 
+		finalStatus := tasks.Successful
+		updateStage := func(stage string, stageDetails *tasks.StageDetails) error {
+			task, err = e.client.UpdateTask(ctx, task.UUID, &client.UpdateTaskRequest{
+				Status:              tasks.InProgress,
+				Stage:               stage,
+				CurrentStageDetails: stageDetails,
+				WorkedBy:            e.host,
+			})
+			return err
+		}
 		if task.RetrievalTask != nil {
 			ctx := context.TODO()
-			err = tasks.MakeRetrievalDeal(ctx, e.nodeConfig, e.node, *task.RetrievalTask, func(msg string, keysAndValues ...interface{}) {
-				log.Infow(msg, keysAndValues...)
-			})
+			err = tasks.MakeRetrievalDeal(ctx, e.nodeConfig, e.node, *task.RetrievalTask, updateStage, log.Infow)
 			if err != nil {
+				finalStatus = tasks.Failed
 				log.Errorw("retrieval task returned error", "err", err)
-				continue
+			} else {
+				log.Info("successfully retrieved data")
 			}
-
-			log.Info("successfully retrieved data")
 		}
 
 		if task.StorageTask != nil {
 			ctx := context.TODO()
-			err = tasks.MakeStorageDeal(ctx, e.nodeConfig, e.node, *task.StorageTask, func(msg string, keysAndValues ...interface{}) {
-				log.Infow(msg, keysAndValues...)
-			})
+			err = tasks.MakeStorageDeal(ctx, e.nodeConfig, e.node, *task.StorageTask, updateStage, log.Infow)
 			if err != nil {
+				finalStatus = tasks.Failed
 				log.Errorw("storage task returned error", "err", err)
-				continue
+			} else {
+				log.Info("successfully stored data")
 			}
-
-			log.Info("successfully stored data")
+		}
+		_, err = e.client.UpdateTask(ctx, task.UUID, &client.UpdateTaskRequest{
+			Status:              finalStatus,
+			Stage:               task.Stage,
+			CurrentStageDetails: task.CurrentStageDetails,
+			WorkedBy:            e.host,
+		})
+		if err != nil {
+			log.Error("Error updating final status")
 		}
 	}
 }

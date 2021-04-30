@@ -24,7 +24,7 @@ func GenerateMockTasks(ctx context.Context, cliCtx *cli.Context) error {
 		_, err := client.CreateRetrievalTask(ctx, &tasks.RetrievalTask{
 			Miner:      generateRandomMiner(),
 			PayloadCID: generateRandomCID(),
-			CARExport:  true,
+			CARExport:  false,
 		})
 		if err != nil {
 			return err

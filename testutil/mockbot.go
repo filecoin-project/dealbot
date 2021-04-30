@@ -59,7 +59,7 @@ func (md *MockDaemon) worker(n int) {
 
 		// pop a task
 		ctx := context.Background()
-		task, err := md.client.PopTask(ctx, &client.UpdateTaskRequest{Status: tasks.InProgress, WorkedBy: md.host})
+		task, err := md.client.PopTask(ctx, &client.PopTaskRequest{Status: tasks.InProgress, WorkedBy: md.host})
 		if err != nil {
 			log.Warnw("pop-task returned error", "err", err)
 			continue

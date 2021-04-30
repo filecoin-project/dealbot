@@ -16,7 +16,7 @@ var QueueRetrievalCmd = &cli.Command{
 
 func queueRetrievalDeal(cctx *cli.Context) error {
 	client := client.New(cctx)
-	carExport := true
+	carExport := false
 	payloadCid := cctx.String("cid")
 
 	log.Infof("retrieving cid: %s", payloadCid)

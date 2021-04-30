@@ -15,10 +15,12 @@ const (
 		CREATE TABLE IF NOT EXISTS task_status_ledger (
 			uuid varchar(36) NOT NULL,
 			status int,
+			stage string,
 			ts timestamp NOT NULL,
 			PRIMARY KEY(uuid, ts)
 			CONSTRAINT fk_status_ledger_uuid FOREIGN KEY (uuid) REFERENCES tasks
-		)
+		);
+		CREATE UNIQUE INDEX idx_task_status_ledger_by_stage ON task_status_ledger (uuid, status, stage);
 	`
 
 	assignTaskSQL = `
@@ -31,7 +33,11 @@ const (
 	`
 
 	setTaskStatusSQL = `
-		INSERT INTO task_status_ledger (uuid, status, ts) VALUES($1, $2, $3)
+		INSERT INTO task_status_ledger (uuid, status, stage, ts) VALUES($1, $2, '', $3)
+	`
+
+	upsertTaskStatusSQL = `
+		INSERT INTO task_status_ledger (uuid, status, stage, ts) VALUES($1, $2, $3, $4)
 	`
 
 	updateTaskDataSQL = `
@@ -51,7 +57,7 @@ const (
 	`
 
 	currentTaskStatusSQL = `
-		SELECT status FROM task_status_ledger WHERE uuid = $1 ORDER BY ts DESC limit 1
+		SELECT status, stage FROM task_status_ledger WHERE uuid = $1 ORDER BY ts DESC limit 1
 	`
 
 	oldestAvailableTaskSQL = `
@@ -62,6 +68,6 @@ const (
 	`
 
 	taskHistorySQL = `
-		SELECT status, ts FROM task_status_ledger WHERE uuid = $1 ORDER BY ts
+		SELECT status, stage, ts FROM task_status_ledger WHERE uuid = $1 ORDER BY ts
 	`
 )

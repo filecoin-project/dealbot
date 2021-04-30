@@ -76,7 +76,7 @@ func (c *Client) ListTasks(ctx context.Context) ([]*tasks.Task, error) {
 	return res, nil
 }
 
-func (c *Client) PopTask(ctx context.Context, r *UpdateTaskRequest) (*tasks.Task, error) {
+func (c *Client) PopTask(ctx context.Context, r *PopTaskRequest) (*tasks.Task, error) {
 	var body bytes.Buffer
 	err := json.NewEncoder(&body).Encode(r)
 	if err != nil {
