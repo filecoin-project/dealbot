@@ -86,22 +86,18 @@ func (e *Engine) worker(n int) {
 		log.Infow("successfully acquired task", "uuid", task.UUID)
 
 		finalStatus := tasks.Successful
-
+		updateStage := func(stage string, stageDetails *tasks.StageDetails) error {
+			task, err = e.client.UpdateTask(ctx, task.UUID, &client.UpdateTaskRequest{
+				Status:              tasks.InProgress,
+				Stage:               stage,
+				CurrentStageDetails: stageDetails,
+				WorkedBy:            e.host,
+			})
+			return err
+		}
 		if task.RetrievalTask != nil {
 			ctx := context.TODO()
-			err = tasks.MakeRetrievalDeal(ctx, e.nodeConfig, e.node, *task.RetrievalTask,
-				func(stageName string, stageData *tasks.StageData) error {
-					task, err = e.client.UpdateTask(ctx, task.UUID, &client.UpdateTaskRequest{
-						Status:    tasks.InProgress,
-						StageName: stageName,
-						StageData: stageData,
-						WorkedBy:  e.host,
-					})
-					return err
-				},
-				func(msg string, keysAndValues ...interface{}) {
-					log.Infow(msg, keysAndValues...)
-				})
+			err = tasks.MakeRetrievalDeal(ctx, e.nodeConfig, e.node, *task.RetrievalTask, updateStage, log.Infow)
 			if err != nil {
 				finalStatus = tasks.Failed
 				log.Errorw("retrieval task returned error", "err", err)
@@ -112,19 +108,7 @@ func (e *Engine) worker(n int) {
 
 		if task.StorageTask != nil {
 			ctx := context.TODO()
-			err = tasks.MakeStorageDeal(ctx, e.nodeConfig, e.node, *task.StorageTask,
-				func(stageName string, stageData *tasks.StageData) error {
-					task, err = e.client.UpdateTask(ctx, task.UUID, &client.UpdateTaskRequest{
-						Status:    tasks.InProgress,
-						StageName: stageName,
-						StageData: stageData,
-						WorkedBy:  e.host,
-					})
-					return err
-				},
-				func(msg string, keysAndValues ...interface{}) {
-					log.Infow(msg, keysAndValues...)
-				})
+			err = tasks.MakeStorageDeal(ctx, e.nodeConfig, e.node, *task.StorageTask, updateStage, log.Infow)
 			if err != nil {
 				finalStatus = tasks.Failed
 				log.Errorw("storage task returned error", "err", err)
@@ -133,10 +117,10 @@ func (e *Engine) worker(n int) {
 			}
 		}
 		_, err = e.client.UpdateTask(ctx, task.UUID, &client.UpdateTaskRequest{
-			Status:    finalStatus,
-			StageName: task.StageName,
-			StageData: task.StageData,
-			WorkedBy:  e.host,
+			Status:              finalStatus,
+			Stage:               task.Stage,
+			CurrentStageDetails: task.CurrentStageDetails,
+			WorkedBy:            e.host,
 		})
 		if err != nil {
 			log.Error("Error updating final status")

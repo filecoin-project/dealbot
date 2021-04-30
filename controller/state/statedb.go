@@ -209,8 +209,8 @@ func (s *stateDB) Update(ctx context.Context, taskID string, req client.UpdateTa
 		}
 
 		task.Status = req.Status
-		task.StageName = req.StageName
-		task.StageData = req.StageData
+		task.Stage = req.Stage
+		task.CurrentStageDetails = req.CurrentStageDetails
 		err = task.Sign(s.PrivKey)
 		if err != nil {
 			return err
@@ -228,7 +228,7 @@ func (s *stateDB) Update(ctx context.Context, taskID string, req client.UpdateTa
 		}
 
 		// publish a task event update as neccesary
-		_, err = tx.ExecContext(ctx, upsertTaskStatusSQL, taskID, task.Status, task.StageName, time.Now())
+		_, err = tx.ExecContext(ctx, upsertTaskStatusSQL, taskID, task.Status, task.Stage, time.Now())
 		return nil
 	})
 
@@ -294,11 +294,11 @@ func (s *stateDB) TaskHistory(ctx context.Context, taskID string) ([]tasks.TaskE
 	for rows.Next() {
 		var status int
 		var ts time.Time
-		var stageName string
-		if err = rows.Scan(&status, &stageName, &ts); err != nil {
+		var stage string
+		if err = rows.Scan(&status, &stage, &ts); err != nil {
 			return nil, err
 		}
-		history = append(history, tasks.TaskEvent{tasks.Status(status), stageName, ts})
+		history = append(history, tasks.TaskEvent{tasks.Status(status), stage, ts})
 	}
 	return history, nil
 }

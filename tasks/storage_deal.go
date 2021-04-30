@@ -240,7 +240,7 @@ func (de *storageDealExecutor) executeAndMonitorDeal(updateStage UpdateStage) er
 		}
 		stage := info.DealStages.GetStage(storagemarket.DealStates[info.State])
 		if stage != nil {
-			err = updateStage(storagemarket.DealStates[info.State], toStageData(stage))
+			err = updateStage(storagemarket.DealStates[info.State], toStageDetails(stage))
 			if err != nil {
 				return err
 			}
@@ -280,7 +280,7 @@ func (de *storageDealExecutor) executeAndMonitorDeal(updateStage UpdateStage) er
 	return nil
 }
 
-func toStageData(stage *storagemarket.DealStage) *StageData {
+func toStageDetails(stage *storagemarket.DealStage) *StageDetails {
 	logs := make([]*Log, 0, len(stage.Logs))
 	for _, log := range stage.Logs {
 		logs = append(logs, &Log{
@@ -288,7 +288,7 @@ func toStageData(stage *storagemarket.DealStage) *StageData {
 			UpdatedAt: log.UpdatedTime.Time(),
 		})
 	}
-	return &StageData{
+	return &StageDetails{
 		Description:      stage.Description,
 		ExpectedDuration: stage.ExpectedDuration,
 		UpdatedAt:        stage.UpdatedTime.Time(),

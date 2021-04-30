@@ -60,16 +60,16 @@ func (de *retrievalDealExecutor) queryOffer() error {
 		return err
 	}
 
-	offer, err := de.node.ClientMinerQueryOffer(de.ctx, de.minerAddress, payloadCid, nil)
+	de.offer, err = de.node.ClientMinerQueryOffer(de.ctx, de.minerAddress, payloadCid, nil)
 	if err != nil {
 		return err
 	}
 
-	if offer.Err != "" {
-		return fmt.Errorf("got error in offer: %s", offer.Err)
+	if de.offer.Err != "" {
+		return fmt.Errorf("got error in offer: %s", de.offer.Err)
 	}
 
-	de.log("got query offer", "root", offer.Root, "piece", offer.Piece, "size", offer.Size, "minprice", offer.MinPrice, "unseal_price", offer.UnsealPrice)
+	de.log("got query offer", "root", de.offer.Root, "piece", de.offer.Piece, "size", de.offer.Size, "minprice", de.offer.MinPrice, "unseal_price", de.offer.UnsealPrice)
 	return nil
 }
 
@@ -155,9 +155,9 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(updateStage UpdateStage) 
 				return err
 			}
 
-			//if carExport {
-			//rdata = ExtractCarData(ctx, rdata, rpath)
-			//}
+			if de.task.CARExport {
+				return errors.New("car export not implemented")
+			}
 			return nil
 		}
 	}

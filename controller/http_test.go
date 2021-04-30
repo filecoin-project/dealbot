@@ -98,21 +98,16 @@ func TestControllerHTTPInterface(t *testing.T) {
 			require.Equal(t, "dealbot 1", refetchTask.WorkedBy)
 
 			// when no tasks are available, pop-task should return nil
-			allTasks, err := apiClient.ListTasks(ctx)
-			require.NoError(t, err)
-			for range allTasks {
-				_, err := apiClient.PopTask(ctx, &client.PopTaskRequest{
+			for {
+				task, err := apiClient.PopTask(ctx, &client.PopTaskRequest{
 					WorkedBy: "dealbot 1",
 					Status:   tasks.InProgress,
 				})
 				require.NoError(t, err)
+				if task == nil {
+					break
+				}
 			}
-			noTask, err := apiClient.PopTask(ctx, &client.PopTaskRequest{
-				WorkedBy: "dealbot 1",
-				Status:   tasks.InProgress,
-			})
-			require.NoError(t, err)
-			require.Nil(t, noTask)
 		},
 		"creating tasks": func(ctx context.Context, t *testing.T, apiClient *client.Client, _ *testrecorder.TestMetricsRecorder) {
 			newStorageTask := &tasks.StorageTask{

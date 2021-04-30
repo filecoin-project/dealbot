@@ -244,9 +244,9 @@ func TestUpdateTasks(t *testing.T) {
 
 	// add a stage name to the last in progress task
 	_, err = state.Update(ctx, inProgressTasks[2].UUID, client.UpdateTaskRequest{
-		Status:    tasks.InProgress,
-		StageName: "Stuff",
-		StageData: &tasks.StageData{
+		Status: tasks.InProgress,
+		Stage:  "Stuff",
+		CurrentStageDetails: &tasks.StageDetails{
 			Description:      "Doing Stuff",
 			ExpectedDuration: "A good long while",
 		},
@@ -255,18 +255,18 @@ func TestUpdateTasks(t *testing.T) {
 	require.NoError(t, err)
 
 	type statusHistory struct {
-		status    tasks.Status
-		stageName string
+		status tasks.Status
+		stage  string
 	}
 
 	testCases := map[string]struct {
-		uuid                string
-		updateTaskRequest   client.UpdateTaskRequest
-		expectedStatus      tasks.Status
-		expectedStageName   string
-		expectedStageData   *tasks.StageData
-		expectedTaskHistory []statusHistory
-		expectedError       error
+		uuid                 string
+		updateTaskRequest    client.UpdateTaskRequest
+		expectedStatus       tasks.Status
+		expectedStage        string
+		expectedStageDetails *tasks.StageDetails
+		expectedTaskHistory  []statusHistory
+		expectedError        error
 	}{
 		"attempting to work on unassigned task": {
 			uuid: unassignedTask.UUID,
@@ -300,16 +300,16 @@ func TestUpdateTasks(t *testing.T) {
 		"update stage": {
 			uuid: inProgressTasks[1].UUID,
 			updateTaskRequest: client.UpdateTaskRequest{
-				Status:    tasks.InProgress,
-				StageName: "Stuff",
-				StageData: &tasks.StageData{
+				Status: tasks.InProgress,
+				Stage:  "Stuff",
+				CurrentStageDetails: &tasks.StageDetails{
 					Description:      "Doing Stuff",
 					ExpectedDuration: "A good long while",
 				},
 				WorkedBy: inProgressTasks[1].WorkedBy,
 			},
-			expectedStageName: "Stuff",
-			expectedStageData: &tasks.StageData{
+			expectedStage: "Stuff",
+			expectedStageDetails: &tasks.StageDetails{
 				Description:      "Doing Stuff",
 				ExpectedDuration: "A good long while",
 			},
@@ -323,9 +323,9 @@ func TestUpdateTasks(t *testing.T) {
 		"update stage data within stage": {
 			uuid: inProgressTasks[2].UUID,
 			updateTaskRequest: client.UpdateTaskRequest{
-				Status:    tasks.InProgress,
-				StageName: "Stuff",
-				StageData: &tasks.StageData{
+				Status: tasks.InProgress,
+				Stage:  "Stuff",
+				CurrentStageDetails: &tasks.StageDetails{
 					Description:      "Doing Stuff",
 					ExpectedDuration: "A good long while",
 					Logs: []*tasks.Log{
@@ -336,8 +336,8 @@ func TestUpdateTasks(t *testing.T) {
 				},
 				WorkedBy: inProgressTasks[2].WorkedBy,
 			},
-			expectedStageName: "Stuff",
-			expectedStageData: &tasks.StageData{
+			expectedStage: "Stuff",
+			expectedStageDetails: &tasks.StageDetails{
 				Description:      "Doing Stuff",
 				ExpectedDuration: "A good long while",
 				Logs: []*tasks.Log{
@@ -366,16 +366,16 @@ func TestUpdateTasks(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 				require.Equal(t, data.expectedStatus, task.Status)
-				require.Equal(t, data.expectedStageName, task.StageName)
-				require.Equal(t, data.expectedStageData, task.StageData)
+				require.Equal(t, data.expectedStage, task.Stage)
+				require.Equal(t, data.expectedStageDetails, task.CurrentStageDetails)
 				taskEvents, err := state.TaskHistory(ctx, data.uuid)
 				require.NoError(t, err)
 				history := make([]statusHistory, 0, len(taskEvents))
 				for _, te := range taskEvents {
-					history = append(history, statusHistory{te.Status, te.StageName})
+					history = append(history, statusHistory{te.Status, te.Stage})
 				}
 				require.Equal(t, data.expectedTaskHistory, history)
-				require.Equal(t, data.expectedStageName, taskEvents[len(taskEvents)-1].StageName)
+				require.Equal(t, data.expectedStage, taskEvents[len(taskEvents)-1].Stage)
 			}
 		})
 	}
