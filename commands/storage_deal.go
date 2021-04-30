@@ -47,7 +47,9 @@ func makeStorageDeal(cctx *cli.Context) error {
 		Verified:        verified,
 	}
 
-	return tasks.MakeStorageDeal(cctx.Context, nodeConfig, node, task, func(msg string, keysAndValues ...interface{}) {
+	return tasks.MakeStorageDeal(cctx.Context, nodeConfig, node, task, func(string, *tasks.StageData) error {
+		return nil
+	}, func(msg string, keysAndValues ...interface{}) {
 		log.Infow(msg, keysAndValues...)
 	})
 }

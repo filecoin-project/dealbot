@@ -43,9 +43,13 @@ func makeRetrievalDeal(cctx *cli.Context) error {
 		CARExport:  carExport,
 	}
 
-	err = tasks.MakeRetrievalDeal(cctx.Context, nodeConfig, node, task, func(msg string, keysAndValues ...interface{}) {
-		log.Infow(msg, keysAndValues...)
-	})
+	err = tasks.MakeRetrievalDeal(cctx.Context, nodeConfig, node, task,
+		func(string, *tasks.StageData) error {
+			return nil
+		},
+		func(msg string, keysAndValues ...interface{}) {
+			log.Infow(msg, keysAndValues...)
+		})
 	if err != nil {
 		log.Fatal(err)
 	}

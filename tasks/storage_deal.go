@@ -14,8 +14,11 @@ import (
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/big"
 	"github.com/filecoin-project/lotus/api"
+	"github.com/filecoin-project/lotus/chain/actors/builtin/miner"
 	"github.com/filecoin-project/lotus/chain/types"
 	"github.com/google/uuid"
+	peer "github.com/libp2p/go-libp2p-core/peer"
+	"github.com/multiformats/go-multiaddr"
 )
 
 type StorageTask struct {
@@ -30,102 +33,218 @@ type StorageTask struct {
 const maxPriceDefault = 5e16
 const startOffsetDefault = 30760
 
-func MakeStorageDeal(ctx context.Context, config NodeConfig, node api.FullNode, task StorageTask, log UpdateStatus) error {
-	// get chain head for chain queries and to get height
-	tipSet, err := node.ChainHead(ctx)
+func MakeStorageDeal(ctx context.Context, config NodeConfig, node api.FullNode, task StorageTask, updateStage UpdateStage, log LogStatus) error {
+	de := &storageDealExecutor{
+		dealExecutor: dealExecutor{
+			ctx:    ctx,
+			config: config,
+			node:   node,
+			miner:  task.Miner,
+			log:    log,
+		},
+		task: task,
+	}
+	err := executeStage("MinerOnline", updateStage, []step{
+		{de.getTipSet, "Tipset successfully fetched"},
+		{de.getMinerInfo, "Miner Info successfully fetched"},
+		{de.getPeerAddr, "Miner address validated"},
+		{de.netConnect, "Connected to miner"},
+	})
 	if err != nil {
 		return err
 	}
+	err = executeStage("QueryAsk", updateStage, []step{
+		{de.queryAsk, "Successfully queried ask from miner"},
+	})
+	if err != nil {
+		return err
+	}
+	err = executeStage("CheckPrice", updateStage, []step{
+		{de.checkPrice, "Deal Price Validated"},
+	})
+	if err != nil {
+		return err
+	}
+	err = executeStage("ClientImport", updateStage, []step{
+		{de.generateFile, "Data file generated"},
+		{de.importFile, "Data file imported to Lotus"},
+	})
+	if err != nil {
+		return err
+	}
+	return de.executeAndMonitorDeal(updateStage)
+}
 
+type dealExecutor struct {
+	ctx          context.Context
+	config       NodeConfig
+	node         api.FullNode
+	miner        string
+	log          LogStatus
+	tipSet       *types.TipSet
+	minerAddress address.Address
+	minerInfo    miner.MinerInfo
+	pi           peer.AddrInfo
+}
+
+type storageDealExecutor struct {
+	dealExecutor
+	task      StorageTask
+	price     big.Int
+	fileName  string
+	importRes *api.ImportRes
+}
+
+func (de *dealExecutor) getTipSet() (err error) {
+	de.tipSet, err = de.node.ChainHead(de.ctx)
+	return err
+}
+
+func (de *dealExecutor) getMinerInfo() (err error) {
 	// retrieve and validate miner price
-	minerAddress, err := address.NewFromString(task.Miner)
-	if err != nil {
-		return err
-	}
-	price, err := minerAskPrice(ctx, node, tipSet, minerAddress)
+	de.minerAddress, err = address.NewFromString(de.miner)
 	if err != nil {
 		return err
 	}
 
-	maxPrice := abi.NewTokenAmount(int64(task.MaxPriceAttoFIL))
-	if task.MaxPriceAttoFIL == 0 {
+	de.minerInfo, err = de.node.StateMinerInfo(de.ctx, de.minerAddress, de.tipSet.Key())
+	return err
+}
+
+func (de *dealExecutor) getPeerAddr() error {
+	if de.minerInfo.PeerId == nil {
+		return fmt.Errorf("no PeerID for miner")
+	}
+	multiaddrs := make([]multiaddr.Multiaddr, 0, len(de.minerInfo.Multiaddrs))
+	for i, a := range de.minerInfo.Multiaddrs {
+		maddr, err := multiaddr.NewMultiaddrBytes(a)
+		if err != nil {
+			de.log("parsing multiaddr", "index", i, "address", a, "error", err)
+			continue
+		}
+		multiaddrs = append(multiaddrs, maddr)
+	}
+
+	de.pi = peer.AddrInfo{
+		ID:    *de.minerInfo.PeerId,
+		Addrs: multiaddrs,
+	}
+	return nil
+}
+
+func (de *dealExecutor) netConnect() error {
+	return de.node.NetConnect(de.ctx, de.pi)
+}
+
+func (de *storageDealExecutor) queryAsk() (err error) {
+	ask, err := de.node.ClientQueryAsk(de.ctx, *de.minerInfo.PeerId, de.minerAddress)
+	if err != nil {
+		return err
+	}
+
+	if de.task.Verified {
+		de.price = ask.VerifiedPrice
+	} else {
+		de.price = ask.Price
+	}
+	return
+}
+
+func (de *storageDealExecutor) checkPrice() error {
+	maxPrice := abi.NewTokenAmount(int64(de.task.MaxPriceAttoFIL))
+	if de.task.MaxPriceAttoFIL == 0 {
 		maxPrice = abi.NewTokenAmount(maxPriceDefault)
 	}
-	if price.GreaterThan(maxPrice) {
-		return fmt.Errorf("miner ask price (%v) exceeds max price (%v)", price, maxPrice)
+	if de.price.GreaterThan(maxPrice) {
+		return fmt.Errorf("miner ask price (%v) exceeds max price (%v)", de.price, maxPrice)
 	}
+	return nil
+}
 
-	fileName := uuid.New().String()
-	filePath := filepath.Join(config.DataDir, fileName)
+func (de *storageDealExecutor) generateFile() error {
+	de.fileName = uuid.New().String()
+	filePath := filepath.Join(de.config.DataDir, de.fileName)
 	file, err := os.Create(filePath)
 	if err != nil {
 		return fmt.Errorf("failed to create file: %w", err)
 	}
 	defer file.Close()
 
-	log("creating deal file", "name", fileName, "size", task.Size, "path", filePath)
-	_, err = io.CopyN(file, rand.Reader, int64(task.Size))
+	de.log("creating deal file", "name", de.fileName, "size", de.task.Size, "path", filePath)
+	_, err = io.CopyN(file, rand.Reader, int64(de.task.Size))
 	if err != nil {
-		return fmt.Errorf("error creating random file for deal: %s, %v", fileName, err)
+		return fmt.Errorf("error creating random file for deal: %s, %v", de.fileName, err)
 	}
+	return nil
+}
 
+func (de *storageDealExecutor) importFile() (err error) {
 	// import the file into the lotus node
 	ref := api.FileRef{
-		Path:  filepath.Join(config.NodeDataDir, fileName),
+		Path:  filepath.Join(de.config.NodeDataDir, de.fileName),
 		IsCAR: false,
 	}
 
-	importRes, err := node.ClientImport(ctx, ref)
+	de.importRes, err = de.node.ClientImport(de.ctx, ref)
 	if err != nil {
 		return fmt.Errorf("error importing file: %w", err)
 	}
+	return nil
+}
 
-	startOffset := task.StartOffset
+func (de *storageDealExecutor) executeAndMonitorDeal(updateStage UpdateStage) error {
+
+	startOffset := de.task.StartOffset
 	if startOffset == 0 {
 		startOffset = startOffsetDefault
 	}
 
-	log("imported deal file, got data cid", "datacid", importRes.Root)
+	de.log("imported deal file, got data cid", "datacid", de.importRes.Root)
 
 	// Prepare parameters for deal
 	params := &api.StartDealParams{
 		Data: &storagemarket.DataRef{
 			TransferType: storagemarket.TTGraphsync,
-			Root:         importRes.Root,
+			Root:         de.importRes.Root,
 		},
-		Wallet:            config.WalletAddress,
-		Miner:             minerAddress,
-		EpochPrice:        price,
+		Wallet:            de.config.WalletAddress,
+		Miner:             de.minerAddress,
+		EpochPrice:        de.price,
 		MinBlocksDuration: 2880 * 180,
-		DealStartEpoch:    tipSet.Height() + abi.ChainEpoch(startOffset),
-		FastRetrieval:     task.FastRetrieval,
-		VerifiedDeal:      task.Verified,
+		DealStartEpoch:    de.tipSet.Height() + abi.ChainEpoch(startOffset),
+		FastRetrieval:     de.task.FastRetrieval,
+		VerifiedDeal:      de.task.Verified,
 	}
 	_ = params
 
 	// start deal process
-	proposalCid, err := node.ClientStartDeal(ctx, params)
+	proposalCid, err := de.node.ClientStartDeal(de.ctx, params)
 	if err != nil {
 		return err
 	}
 
-	log("got proposal cid", "cid", proposalCid)
+	de.log("got proposal cid", "cid", proposalCid)
 
 	// track updates to deal
-	updates, err := node.ClientGetDealUpdates(ctx)
+	updates, err := de.node.ClientGetDealUpdates(de.ctx)
 	if err != nil {
 		return err
 	}
 
-	log("got deal updates channel")
+	de.log("got deal updates channel")
 
 	lastState := storagemarket.StorageDealUnknown
 	for info := range updates {
 		if !proposalCid.Equals(info.ProposalCid) {
 			continue
 		}
+		stage := info.DealStages.GetStage(storagemarket.DealStates[info.State])
+		err = updateStage(storagemarket.DealStates[info.State], toStageData(stage))
+		if err != nil {
+			return err
+		}
 		if info.State != lastState {
-			log("Deal status",
+			de.log("Deal status",
 				"cid", info.ProposalCid,
 				"piece", info.PieceCID,
 				"state", storagemarket.DealStates[info.State],
@@ -145,13 +264,13 @@ func MakeStorageDeal(ctx context.Context, config NodeConfig, node api.FullNode, 
 			storagemarket.StorageDealFailing,
 			storagemarket.StorageDealError:
 
-			logStages(info, log)
+			logStages(info, de.log)
 			return errors.New("storage deal failed")
 
 		// deal is on chain, exit successfully
 		case storagemarket.StorageDealActive:
 
-			logStages(info, log)
+			logStages(info, de.log)
 			return nil
 		}
 	}
@@ -159,7 +278,23 @@ func MakeStorageDeal(ctx context.Context, config NodeConfig, node api.FullNode, 
 	return nil
 }
 
-func logStages(info api.DealInfo, log UpdateStatus) {
+func toStageData(stage *storagemarket.DealStage) *StageData {
+	logs := make([]*Log, 0, len(stage.Logs))
+	for _, log := range stage.Logs {
+		logs = append(logs, &Log{
+			Log:       log.Log,
+			UpdatedAt: log.UpdatedTime.Time(),
+		})
+	}
+	return &StageData{
+		Description:      stage.Description,
+		ExpectedDuration: stage.ExpectedDuration,
+		UpdatedAt:        stage.UpdatedTime.Time(),
+		Logs:             logs,
+	}
+}
+
+func logStages(info api.DealInfo, log LogStatus) {
 	if info.DealStages == nil {
 		log("Deal stages is nil")
 		return
@@ -183,19 +318,4 @@ func logStages(info api.DealInfo, log UpdateStatus) {
 			"verfied", info.Verified,
 		)
 	}
-}
-
-func minerAskPrice(ctx context.Context, api api.FullNode, tipSet *types.TipSet, addr address.Address) (abi.TokenAmount, error) {
-	minerInfo, err := api.StateMinerInfo(ctx, addr, tipSet.Key())
-	if err != nil {
-		return big.Zero(), err
-	}
-
-	peerId := *minerInfo.PeerId
-	ask, err := api.ClientQueryAsk(ctx, peerId, addr)
-	if err != nil {
-		return big.Zero(), err
-	}
-
-	return ask.Price, nil
 }
