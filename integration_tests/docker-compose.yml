@@ -14,6 +14,8 @@ services:
       - "8764:8764"
     depends_on: 
       - db
+    environment: 
+      - VIRTUAL_HOST=localhost
   mockbot:
     build: ..
     command: ["mock", "--endpoint", "http://controller:8764"]
@@ -34,3 +36,11 @@ services:
       - "./prometheus.yml:/etc/prometheus/prometheus.yml"
     depends_on: 
       - controller
+  nginx-proxy:
+    image: jwilder/nginx-proxy
+    ports:
+      - "80:80"
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      - "./htpasswd:/etc/nginx/htpasswd"
+      - "./vhost:/etc/nginx/vhost.d"
