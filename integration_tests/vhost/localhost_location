@@ -1,0 +1,4 @@
+  limit_except OPTIONS {
+		auth_basic	"Restricted localhost";
+		auth_basic_user_file	"/etc/nginx/htpasswd/localhost-no-options";
+  }
