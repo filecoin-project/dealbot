@@ -9,6 +9,7 @@ import (
 
 	"github.com/filecoin-project/dealbot/controller/client"
 	"github.com/filecoin-project/dealbot/tasks"
+	"github.com/filecoin-project/go-fil-markets/storagemarket"
 	logging "github.com/ipfs/go-log/v2"
 	"github.com/urfave/cli/v2"
 
@@ -52,7 +53,29 @@ func NewMockDaemon(ctx context.Context, cliCtx *cli.Context) (srv *MockDaemon) {
 
 func (md *MockDaemon) worker(n int) {
 	log.Infow("mock worker started", "worker_id", n)
-
+	baseFailStates := make([]string, 0, len(tasks.ConnectivityStages))
+	for state := range tasks.ConnectivityStages {
+		baseFailStates = append(baseFailStates, state)
+	}
+	retrievalFailStates := make([]string, 0, len(tasks.RetrievalStages)-1+len(baseFailStates))
+	for state := range tasks.RetrievalStages {
+		if state != "DealComplete" {
+			retrievalFailStates = append(retrievalFailStates, state)
+		}
+	}
+	retrievalFailStates = append(retrievalFailStates, baseFailStates...)
+	storageFailStates := make([]string, 0, len(storagemarket.DealStates)-1+len(baseFailStates))
+	storageStageDetails := make(map[string]tasks.StageDetails, len(storagemarket.DealStates))
+	for state, stateName := range storagemarket.DealStates {
+		if state != storagemarket.StorageDealActive {
+			storageFailStates = append(storageFailStates, stateName)
+		}
+		storageStageDetails[stateName] = tasks.StageDetails{
+			Description:      storagemarket.DealStatesDescriptions[state],
+			ExpectedDuration: storagemarket.DealStatesDurations[state],
+		}
+	}
+	storageFailStates = append(storageFailStates, baseFailStates...)
 	for {
 		// add delay to avoid querying the controller many times if there are no available tasks
 		time.Sleep(5 * time.Second)
@@ -77,9 +100,32 @@ func (md *MockDaemon) worker(n int) {
 		log.Infow("successfully acquired task", "uuid", task.UUID)
 		isSuccess := rand.Float64() <= md.successRate
 		var taskDuration time.Duration
+		var stage string
+		var stageDetails tasks.StageDetails
+		var ok bool
 		if isSuccess {
+			if task.RetrievalTask != nil {
+				stage = "DealComplete"
+				stageDetails = tasks.RetrievalStages[stage]
+			} else {
+				stage = "StorageDealActive"
+				stageDetails = storageStageDetails[stage]
+			}
 			taskDuration = md.successAvg + time.Duration(rand.NormFloat64()*float64(md.successDeviation))
 		} else {
+			if task.RetrievalTask != nil {
+				stage = retrievalFailStates[rand.Intn(len(retrievalFailStates))]
+				stageDetails, ok = tasks.RetrievalStages[stage]
+				if !ok {
+					stageDetails = tasks.ConnectivityStages[stage]
+				}
+			} else {
+				stage = storageFailStates[rand.Intn(len(storageFailStates))]
+				stageDetails, ok = storageStageDetails[stage]
+				if !ok {
+					stageDetails = tasks.ConnectivityStages[stage]
+				}
+			}
 			taskDuration = md.failureAvg + time.Duration(rand.NormFloat64()*float64(md.failureDeviation))
 		}
 		if taskDuration < 0 {
@@ -95,8 +141,10 @@ func (md *MockDaemon) worker(n int) {
 				result = tasks.Failed
 			}
 			req := &client.UpdateTaskRequest{
-				Status:   result,
-				WorkedBy: md.host,
+				Status:              result,
+				Stage:               stage,
+				CurrentStageDetails: &stageDetails,
+				WorkedBy:            md.host,
 			}
 
 			task, err = md.client.UpdateTask(ctx, task.UUID, req)
