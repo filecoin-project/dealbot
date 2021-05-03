@@ -37,6 +37,8 @@ func (e errorString) Error() string {
 const ErrNotAssigned = errorString("tasks must be acquired through pop task")
 const ErrWrongWorker = errorString("task already acquired by other worker")
 
+const migrationsDir = "file://state/migrations"
+
 // stateDB is a persisted implementation of the State interface
 type stateDB struct {
 	dbconn DBConnector
@@ -51,7 +53,7 @@ func migratePostgres(db *sql.DB) error {
 		return err
 	}
 	m, err := migrate.NewWithDatabaseInstance(
-		"file://./migrations",
+		migrationsDir,
 		"postgres", driver)
 	if err != nil {
 		return err
@@ -66,7 +68,7 @@ func migrateSqlite(db *sql.DB) error {
 		return err
 	}
 	m, err := migrate.NewWithDatabaseInstance(
-		"file://./migrations",
+		migrationsDir,
 		"sqlite", driver)
 	if err != nil {
 		return err
