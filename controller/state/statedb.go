@@ -26,6 +26,9 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
+// MigrationsDir is the directory to look for migrations
+var MigrationsDir = "/dealbot/controller/state/migrations"
+
 var log = logging.Logger("controller-state")
 
 type errorString string
@@ -36,8 +39,6 @@ func (e errorString) Error() string {
 
 const ErrNotAssigned = errorString("tasks must be acquired through pop task")
 const ErrWrongWorker = errorString("task already acquired by other worker")
-
-const migrationsDir = "file://state/migrations"
 
 // stateDB is a persisted implementation of the State interface
 type stateDB struct {
@@ -53,7 +54,7 @@ func migratePostgres(db *sql.DB) error {
 		return err
 	}
 	m, err := migrate.NewWithDatabaseInstance(
-		migrationsDir,
+		"file://"+MigrationsDir,
 		"postgres", driver)
 	if err != nil {
 		return err
@@ -68,7 +69,7 @@ func migrateSqlite(db *sql.DB) error {
 		return err
 	}
 	m, err := migrate.NewWithDatabaseInstance(
-		migrationsDir,
+		"file://"+MigrationsDir,
 		"sqlite", driver)
 	if err != nil {
 		return err
