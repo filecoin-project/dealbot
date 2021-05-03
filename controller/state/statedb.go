@@ -339,60 +339,6 @@ func (s *stateDB) TaskHistory(ctx context.Context, taskID string) ([]tasks.TaskE
 	return history, nil
 }
 
-func (s *stateDB) createInitialTasks(ctx context.Context) error {
-	err := s.saveTask(ctx, &tasks.Task{
-		UUID:   uuid.New().String()[:8],
-		Status: tasks.Available,
-		RetrievalTask: &tasks.RetrievalTask{
-			Miner:      "t01000",
-			PayloadCID: "bafk2bzacedli6qxp43sf54feczjd26jgeyfxv4ucwylujd3xo5s6cohcqbg36",
-			CARExport:  false,
-		},
-	})
-	if err != nil {
-		return err
-	}
-
-	err = s.saveTask(ctx, &tasks.Task{
-		UUID:   uuid.New().String()[:8],
-		Status: tasks.Available,
-		RetrievalTask: &tasks.RetrievalTask{
-			Miner:      "t01000",
-			PayloadCID: "bafk2bzacecettil4umy443e4ferok7jbxiqqseef7soa3ntelflf3zkvvndbg",
-			CARExport:  false,
-		},
-	})
-	if err != nil {
-		return err
-	}
-
-	err = s.saveTask(ctx, &tasks.Task{
-		UUID:   uuid.New().String()[:8],
-		Status: tasks.Available,
-		RetrievalTask: &tasks.RetrievalTask{
-			Miner:      "f0127896",
-			PayloadCID: "bafykbzacedikkmeotawrxqquthryw3cijaonobygdp7fb5bujhuos6wdkwomm",
-			CARExport:  false,
-		},
-	})
-	if err != nil {
-		return err
-	}
-
-	return s.saveTask(ctx, &tasks.Task{
-		UUID:   uuid.New().String()[:8],
-		Status: tasks.Available,
-		StorageTask: &tasks.StorageTask{
-			Miner:           "t01000",
-			MaxPriceAttoFIL: 100000000000000000, // 0.10 FIL
-			Size:            1024,               // 1kb
-			StartOffset:     0,
-			FastRetrieval:   true,
-			Verified:        false,
-		},
-	})
-}
-
 func (s *stateDB) transact(ctx context.Context, retries int, f func(*sql.Tx) error) (err error) {
 	// Check connection and reconnect if down
 	err = s.dbconn.Connect()
