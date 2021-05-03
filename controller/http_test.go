@@ -1,6 +1,7 @@
 package controller_test
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -16,6 +17,7 @@ import (
 	"github.com/filecoin-project/dealbot/controller/state"
 	"github.com/filecoin-project/dealbot/metrics/testrecorder"
 	"github.com/filecoin-project/dealbot/tasks"
+	"github.com/ipld/go-ipld-prime/codec/dagjson"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/stretchr/testify/require"
 )
@@ -215,17 +217,19 @@ func populateTestTasks(ctx context.Context, jsonTests string, apiClient *client.
 		return err
 	}
 	for _, task := range byTask {
-		rt := tasks.RetrievalTask{}
-		if err = json.Unmarshal(task, &rt); err != nil {
-			st := tasks.StorageTask{}
-			if err = json.Unmarshal(task, &st); err != nil {
+		rtp := tasks.Type.RetrievalTask.NewBuilder()
+		if err = dagjson.Decoder(rtp, bytes.NewBuffer(task)); err != nil {
+			stp := tasks.Type.StorageTask.NewBuilder()
+			if err = dagjson.Decoder(stp, bytes.NewBuffer(task)); err != nil {
 				return fmt.Errorf("could not decode sample task as either storage or retrieval %s: %w", task, err)
 			}
-			if _, err = apiClient.CreateStorageTask(ctx, &st); err != nil {
+			st := stp.Build().(tasks.StorageTask)
+			if _, err = apiClient.CreateStorageTask(ctx, st); err != nil {
 				return err
 			}
 		} else {
-			if _, err = apiClient.CreateRetrievalTask(ctx, &rt); err != nil {
+			rt := rtp.Build().(tasks.RetrievalTask)
+			if _, err = apiClient.CreateRetrievalTask(ctx, rt); err != nil {
 				return err
 			}
 		}

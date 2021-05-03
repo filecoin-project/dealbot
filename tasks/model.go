@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/filecoin-project/go-address"
+	"github.com/google/uuid"
 	"github.com/ipld/go-ipld-prime/schema"
 )
 
@@ -39,6 +40,21 @@ var (
 	// Failed means the task has failed
 	Failed Status = &_Status{x: 4}
 )
+
+func (f *_Status__Prototype) Of(x int) Status {
+	switch x {
+	case 1:
+		return Available
+	case 2:
+		return InProgress
+	case 3:
+		return Successful
+	case 4:
+		return Failed
+	default:
+		return nil
+	}
+}
 
 var statusNames = map[Status]string{
 	Available:  "Available",
@@ -115,6 +131,76 @@ func executeStage(stage string, updateStage UpdateStage, steps []step) error {
 	return nil
 }
 
+func (sdp *_StageDetails__Prototype) Of(desc, expected string) *_StageDetails {
+	sd := _StageDetails{
+		Description:      _String__Maybe{m: schema.Maybe_Value, v: &_String{desc}},
+		ExpectedDuration: _String__Maybe{m: schema.Maybe_Value, v: &_String{expected}},
+		Logs:             _List_Logs{[]_Logs{}},
+		UpdatedAt:        _Time__Maybe{m: schema.Maybe_Value, v: &_Time{x: time.Now().UnixNano()}},
+	}
+	return &sd
+}
+
+// WithLog makes a copy of the stage details with an additional log appended.
+func (sd *_StageDetails) WithLog(log string) *_StageDetails {
+	nl := _List_Logs{
+		x: append(sd.Logs.x, _Logs{
+			Log:       _String{log},
+			UpdatedAt: _Time{x: time.Now().UnixNano()},
+		}),
+	}
+	n := _StageDetails{
+		Description:      sd.Description,
+		ExpectedDuration: sd.ExpectedDuration,
+		Logs:             nl,
+		UpdatedAt:        _Time__Maybe{m: schema.Maybe_Value, v: &_Time{x: time.Now().UnixNano()}},
+	}
+	return &n
+}
+
 func (t *_Time) Time() time.Time {
 	return time.Unix(0, t.x)
+}
+
+func (tp *_Task__Prototype) New(r RetrievalTask, s StorageTask) Task {
+	t := _Task{
+		UUID:                _String{uuid.New().String()},
+		Status:              *Available,
+		WorkedBy:            _String__Maybe{m: schema.Maybe_Absent},
+		Stage:               _String{""},
+		CurrentStageDetails: _StageDetails__Maybe{m: schema.Maybe_Absent},
+		StartedAt:           _Time__Maybe{m: schema.Maybe_Absent},
+		RetrievalTask:       _RetrievalTask__Maybe{m: schema.Maybe_Absent},
+		StorageTask:         _StorageTask__Maybe{m: schema.Maybe_Absent},
+	}
+	if r != nil {
+		t.RetrievalTask.m = schema.Maybe_Value
+		t.RetrievalTask.v = r
+	}
+	if s != nil {
+		t.StorageTask.m = schema.Maybe_Value
+		t.StorageTask.v = s
+	}
+	return &t
+}
+
+func (t *_Task) Assign(worker string, status Status) {
+	t.WorkedBy = _String__Maybe{m: schema.Maybe_Value, v: &_String{worker}}
+	t.StartedAt = _Time__Maybe{m: schema.Maybe_Value, v: &_Time{x: time.Now().UnixNano()}}
+	t.Status = *status
+
+	//todo: sign
+}
+
+func (t *_Task) Update(status Status, stage string, details StageDetails) error {
+	t.Status = *status
+	t.Stage = _String{stage}
+	t.CurrentStageDetails = _StageDetails__Maybe{m: schema.Maybe_Value, v: details}
+
+	//todo: sign
+	return nil
+}
+
+func (t *_Task) GetUUID() string {
+	return t.UUID.x
 }

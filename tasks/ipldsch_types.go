@@ -31,12 +31,6 @@ type typeSlab struct {
 	Int__Repr _Int__ReprPrototype
 	Link       _Link__Prototype
 	Link__Repr _Link__ReprPrototype
-	Link_RetrievalTask       _Link_RetrievalTask__Prototype
-	Link_RetrievalTask__Repr _Link_RetrievalTask__ReprPrototype
-	Link_StageDetails       _Link_StageDetails__Prototype
-	Link_StageDetails__Repr _Link_StageDetails__ReprPrototype
-	Link_StorageTask       _Link_StorageTask__Prototype
-	Link_StorageTask__Repr _Link_StorageTask__ReprPrototype
 	List       _List__Prototype
 	List__Repr _List__ReprPrototype
 	List_Logs       _List_Logs__Prototype
@@ -99,18 +93,6 @@ type _Int struct{ x int64 }
 // Link matches the IPLD Schema type "Link".  It has link kind.
 type Link = *_Link
 type _Link struct{ x ipld.Link }
-
-// Link_RetrievalTask matches the IPLD Schema type "Link_RetrievalTask".  It has link kind.
-type Link_RetrievalTask = *_Link_RetrievalTask
-type _Link_RetrievalTask struct{ x ipld.Link }
-
-// Link_StageDetails matches the IPLD Schema type "Link_StageDetails".  It has link kind.
-type Link_StageDetails = *_Link_StageDetails
-type _Link_StageDetails struct{ x ipld.Link }
-
-// Link_StorageTask matches the IPLD Schema type "Link_StorageTask".  It has link kind.
-type Link_StorageTask = *_Link_StorageTask
-type _Link_StorageTask struct{ x ipld.Link }
 
 // List matches the IPLD Schema type "List".  It has list kind.
 type List = *_List
@@ -185,10 +167,10 @@ type _Task struct {
 	Status _Status
 	WorkedBy _String__Maybe
 	Stage _String
-	CurrentStageDetails _Link_StageDetails__Maybe
+	CurrentStageDetails _StageDetails__Maybe
 	StartedAt _Time__Maybe
-	RetrievalTask _Link_RetrievalTask__Maybe
-	StorageTask _Link_StorageTask__Maybe
+	RetrievalTask _RetrievalTask__Maybe
+	StorageTask _StorageTask__Maybe
 }
 
 // Time matches the IPLD Schema type "Time".  It has int kind.

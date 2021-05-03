@@ -70,10 +70,7 @@ func (md *MockDaemon) worker(n int) {
 		if state != storagemarket.StorageDealActive {
 			storageFailStates = append(storageFailStates, stateName)
 		}
-		storageStageDetails[stateName] = tasks.StageDetails{
-			Description:      storagemarket.DealStatesDescriptions[state],
-			ExpectedDuration: storagemarket.DealStatesDurations[state],
-		}
+		storageStageDetails[stateName] = tasks.Type.StageDetails.Of(storagemarket.DealStatesDescriptions[state], storagemarket.DealStatesDurations[state])
 	}
 	storageFailStates = append(storageFailStates, baseFailStates...)
 	for {
@@ -92,7 +89,7 @@ func (md *MockDaemon) worker(n int) {
 			continue // no task available
 		}
 
-		if task.WorkedBy != md.host {
+		if !task.WorkedBy.Exists() || (mustString(task.WorkedBy.Must().AsString()) != md.host) {
 			log.Warnw("pop-task returned a non-available task", "err", err)
 			continue
 		}
@@ -147,13 +144,17 @@ func (md *MockDaemon) worker(n int) {
 				WorkedBy:            md.host,
 			}
 
-			task, err = md.client.UpdateTask(ctx, task.UUID, req)
+			task, err = md.client.UpdateTask(ctx, mustString(task.UUID.AsString()), req)
 			if err != nil {
 				log.Warnw("update task returned error", "err", err)
 				continue
 			}
 		}
 	}
+}
+
+func mustString(s string, _ error) string {
+	return s
 }
 
 func (md *MockDaemon) Serve() error {

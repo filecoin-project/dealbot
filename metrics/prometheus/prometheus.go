@@ -83,35 +83,39 @@ func (pmr *prometheusMetricsRecorder) ObserveTask(task tasks.Task) error {
 	return fmt.Errorf("Cannot observe task: %s, both tasks are nil", task.UUID)
 }
 
+func mustString(s string, _ error) string {
+	return s
+}
+
 func (pmr *prometheusMetricsRecorder) observeStorageTask(task tasks.Task) error {
 	observer, err := pmr.storageVec.GetMetricWith(prometheus.Labels{
-		metrics.UUID:            task.UUID,
-		metrics.Miner:           task.StorageTask.Miner,
-		metrics.MaxPriceAttoFIL: strconv.FormatUint(task.StorageTask.MaxPriceAttoFIL, 10),
-		metrics.Size:            strconv.FormatUint(task.StorageTask.Size, 10),
-		metrics.StartOffset:     strconv.FormatUint(task.StorageTask.StartOffset, 10),
-		metrics.FastRetrieval:   strconv.FormatBool(task.StorageTask.FastRetrieval),
-		metrics.Verified:        strconv.FormatBool(task.StorageTask.Verified),
+		metrics.UUID:            task.GetUUID(),
+		metrics.Miner:           mustString(task.StorageTask.Must().Miner.AsString()),
+		metrics.MaxPriceAttoFIL: strconv.FormatUint(uint64(task.StorageTask.Must().MaxPriceAttoFIL.Int()), 10),
+		metrics.Size:            strconv.FormatUint(uint64(task.StorageTask.Must().Size.Int()), 10),
+		metrics.StartOffset:     strconv.FormatUint(uint64(task.StorageTask.Must().StartOffset.Int()), 10),
+		metrics.FastRetrieval:   strconv.FormatBool(task.StorageTask.Must().FastRetrieval.Bool()),
+		metrics.Verified:        strconv.FormatBool(task.StorageTask.Must().Verified.Bool()),
 		metrics.Status:          task.Status.String(),
 	})
 	if err != nil {
 		return err
 	}
-	observer.Observe(float64(time.Since(task.StartedAt).Milliseconds()))
+	observer.Observe(float64(time.Since(task.StartedAt.Must().Time()).Milliseconds()))
 	return nil
 }
 
 func (pmr *prometheusMetricsRecorder) observeRetrievalTask(task tasks.Task) error {
 	observer, err := pmr.retrievalVec.GetMetricWith(prometheus.Labels{
-		metrics.UUID:       task.UUID,
-		metrics.Miner:      task.RetrievalTask.Miner,
-		metrics.PayloadCID: task.RetrievalTask.PayloadCID,
-		metrics.CARExport:  strconv.FormatBool(task.RetrievalTask.CARExport),
+		metrics.UUID:       task.GetUUID(),
+		metrics.Miner:      task.RetrievalTask.Must().Miner.String(),
+		metrics.PayloadCID: task.RetrievalTask.Must().PayloadCID.String(),
+		metrics.CARExport:  strconv.FormatBool(task.RetrievalTask.Must().CARExport.Bool()),
 		metrics.Status:     task.Status.String(),
 	})
 	if err != nil {
 		return err
 	}
-	observer.Observe(float64(time.Since(task.StartedAt).Milliseconds()))
+	observer.Observe(float64(time.Since(task.StartedAt.Must().Time()).Milliseconds()))
 	return nil
 }

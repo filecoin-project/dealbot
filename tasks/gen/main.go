@@ -71,7 +71,6 @@ func main() {
 		schema.SpawnStructField("Logs", "List_Logs", false, false),
 		schema.SpawnStructField("UpdatedAt", "Time", true, false),
 	}, schema.SpawnStructRepresentationMap(map[string]string{})))
-	ts.Accumulate(schema.SpawnLinkReference("Link_StageDetails", "StageDetails"))
 
 	ts.Accumulate(schema.SpawnList("List_Logs", "Logs", false))
 	ts.Accumulate(schema.SpawnStruct("Logs", []schema.StructField{
@@ -84,7 +83,6 @@ func main() {
 		schema.SpawnStructField("PayloadCID", "String", false, false),
 		schema.SpawnStructField("CARExport", "Bool", false, false),
 	}, schema.SpawnStructRepresentationMap(map[string]string{})))
-	ts.Accumulate(schema.SpawnLinkReference("Link_RetrievalTask", "RetrievalTask"))
 
 	ts.Accumulate(schema.SpawnStruct("StorageTask", []schema.StructField{
 		schema.SpawnStructField("Miner", "String", false, false),
@@ -94,17 +92,16 @@ func main() {
 		schema.SpawnStructField("FastRetrieval", "Bool", false, false),
 		schema.SpawnStructField("Verified", "Bool", false, false),
 	}, schema.SpawnStructRepresentationMap(map[string]string{})))
-	ts.Accumulate(schema.SpawnLinkReference("Link_StorageTask", "StorageTask"))
 
 	ts.Accumulate(schema.SpawnStruct("Task", []schema.StructField{
 		schema.SpawnStructField("UUID", "String", false, false),
 		schema.SpawnStructField("Status", "Status", false, false),
 		schema.SpawnStructField("WorkedBy", "String", true, false),
 		schema.SpawnStructField("Stage", "String", false, false),
-		schema.SpawnStructField("CurrentStageDetails", "Link_StageDetails", true, false),
+		schema.SpawnStructField("CurrentStageDetails", "StageDetails", true, false),
 		schema.SpawnStructField("StartedAt", "Time", true, false),
-		schema.SpawnStructField("RetrievalTask", "Link_RetrievalTask", true, false),
-		schema.SpawnStructField("StorageTask", "Link_StorageTask", true, false),
+		schema.SpawnStructField("RetrievalTask", "RetrievalTask", true, false),
+		schema.SpawnStructField("StorageTask", "StorageTask", true, false),
 	}, schema.SpawnStructRepresentationMap(map[string]string{})))
 
 	if errs := ts.ValidateGraph(); errs != nil {

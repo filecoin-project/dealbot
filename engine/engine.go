@@ -101,7 +101,7 @@ func (e *Engine) worker(n int) {
 		}
 		if task.RetrievalTask.Exists() {
 			ctx := context.TODO()
-			err = tasks.MakeRetrievalDeal(ctx, e.nodeConfig, e.node, task.RetrievalTask, updateStage, log.Infow)
+			err = tasks.MakeRetrievalDeal(ctx, e.nodeConfig, e.node, task.RetrievalTask.Must(), updateStage, log.Infow)
 			if err != nil {
 				finalStatus = tasks.Failed
 				log.Errorw("retrieval task returned error", "err", err)
@@ -112,7 +112,7 @@ func (e *Engine) worker(n int) {
 
 		if task.StorageTask.Exists() {
 			ctx := context.TODO()
-			err = tasks.MakeStorageDeal(ctx, e.nodeConfig, e.node, task.StorageTask, updateStage, log.Infow)
+			err = tasks.MakeStorageDeal(ctx, e.nodeConfig, e.node, task.StorageTask.Must(), updateStage, log.Infow)
 			if err != nil {
 				finalStatus = tasks.Failed
 				log.Errorw("storage task returned error", "err", err)
@@ -122,7 +122,7 @@ func (e *Engine) worker(n int) {
 		}
 		_, err = e.client.UpdateTask(ctx, mustString(task.UUID.AsString()), &client.UpdateTaskRequest{
 			Status:              finalStatus,
-			Stage:               task.Stage,
+			Stage:               mustString(task.Stage.AsString()),
 			CurrentStageDetails: task.CurrentStageDetails.Must(),
 			WorkedBy:            e.host,
 		})

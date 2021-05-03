@@ -1,9 +1,9 @@
 package state
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
@@ -11,8 +11,8 @@ import (
 	"github.com/filecoin-project/dealbot/controller/client"
 	"github.com/filecoin-project/dealbot/metrics"
 	"github.com/filecoin-project/dealbot/tasks"
-	"github.com/google/uuid"
 	logging "github.com/ipfs/go-log/v2"
+	dagjson "github.com/ipld/go-ipld-prime/codec/dagjson"
 	crypto "github.com/libp2p/go-libp2p-crypto"
 
 	"github.com/filecoin-project/dealbot/controller/state/postgresdb"
@@ -93,11 +93,11 @@ func (s *stateDB) Get(ctx context.Context, taskID string) (tasks.Task, error) {
 		return nil, err
 	}
 
-	var task tasks.Task
-	if err := json.Unmarshal([]byte(serialized), &task); err != nil {
+	tp := tasks.Type.Task.NewBuilder()
+	if err := dagjson.Decoder(tp, bytes.NewBufferString(serialized)); err != nil {
 		return nil, err
 	}
-	return task, nil
+	return tp.Build().(tasks.Task), nil
 }
 
 // GetAll queries all tasks from the DB
@@ -108,17 +108,18 @@ func (s *stateDB) GetAll(ctx context.Context) ([]tasks.Task, error) {
 	}
 	defer rows.Close()
 
-	var tasklist []*tasks.Task
+	var tasklist []tasks.Task
 	for rows.Next() {
 		var serialized string
 		if err = rows.Scan(&serialized); err != nil {
 			return nil, err
 		}
-		var task tasks.Task
-		if err = json.Unmarshal([]byte(serialized), &task); err != nil {
+		tp := tasks.Type.Task.NewBuilder()
+		if err = dagjson.Decoder(tp, bytes.NewBufferString(serialized)); err != nil {
 			return nil, err
 		}
-		tasklist = append(tasklist, &task)
+		task := tp.Build().(tasks.Task)
+		tasklist = append(tasklist, task)
 	}
 	return tasklist, nil
 
@@ -133,7 +134,6 @@ func (s *stateDB) AssignTask(ctx context.Context, req client.PopTaskRequest) (ta
 	var assigned tasks.Task
 	err := s.transact(ctx, 13, func(tx *sql.Tx) error {
 		var taskID, serialized string
-		var task tasks.Task
 		err := tx.QueryRowContext(ctx, oldestAvailableTaskSQL).Scan(&taskID, &serialized)
 		if err != nil {
 			if err == sql.ErrNoRows {
@@ -143,22 +143,16 @@ func (s *stateDB) AssignTask(ctx context.Context, req client.PopTaskRequest) (ta
 			return err
 		}
 
-		if err = json.Unmarshal([]byte(serialized), &task); err != nil {
+		tp := tasks.Type.Task.NewBuilder()
+		if err = dagjson.Decoder(tp, bytes.NewBufferString(serialized)); err != nil {
 			return err
 		}
+		task := tp.Build().(tasks.Task)
 
-		now := time.Now()
-		task.WorkedBy = req.WorkedBy
-		task.StartedAt = now
-		task.Status = req.Status
+		task.Assign(req.WorkedBy, req.Status)
 
-		err = task.Sign(s.PrivKey)
-		if err != nil {
-			return err
-		}
-
-		data, err := json.Marshal(task)
-		if err != nil {
+		data := bytes.NewBuffer([]byte{})
+		if err := dagjson.Encoder(task, data); err != nil {
 			return err
 		}
 
@@ -169,7 +163,7 @@ func (s *stateDB) AssignTask(ctx context.Context, req client.PopTaskRequest) (ta
 		}
 
 		// Set new status for task
-		_, err = tx.ExecContext(ctx, setTaskStatusSQL, taskID, req.Status, now)
+		_, err = tx.ExecContext(ctx, setTaskStatusSQL, taskID, req.Status, time.Now())
 		if err != nil {
 			return err
 		}
@@ -189,6 +183,10 @@ func (s *stateDB) AssignTask(ctx context.Context, req client.PopTaskRequest) (ta
 	return assigned, nil
 }
 
+func mustString(s string, _ error) string {
+	return s
+}
+
 func (s *stateDB) Update(ctx context.Context, taskID string, req client.UpdateTaskRequest) (tasks.Task, error) {
 	var task tasks.Task
 	err := s.transact(ctx, 3, func(tx *sql.Tx) error {
@@ -198,26 +196,28 @@ func (s *stateDB) Update(ctx context.Context, taskID string, req client.UpdateTa
 			return err
 		}
 
-		if err := json.Unmarshal([]byte(serialized), &task); err != nil {
+		tp := tasks.Type.Task.NewBuilder()
+		if err = dagjson.Decoder(tp, bytes.NewBufferString(serialized)); err != nil {
 			return err
 		}
+		task = tp.Build().(tasks.Task)
 
-		if task.WorkedBy == "" {
+		if !task.WorkedBy.Exists() {
 			return ErrNotAssigned
-		} else if req.WorkedBy != task.WorkedBy {
+		}
+		twb := mustString(task.WorkedBy.Must().AsString())
+		if twb == "" {
+			return ErrNotAssigned
+		} else if req.WorkedBy != twb {
 			return ErrWrongWorker
 		}
 
-		task.Status = req.Status
-		task.Stage = req.Stage
-		task.CurrentStageDetails = req.CurrentStageDetails
-		err = task.Sign(s.PrivKey)
-		if err != nil {
+		if err := task.Update(req.Status, req.Stage, req.CurrentStageDetails); err != nil {
 			return err
 		}
 
-		data, err := json.Marshal(task)
-		if err != nil {
+		data := bytes.NewBuffer([]byte{})
+		if err := dagjson.Encoder(task, data); err != nil {
 			return err
 		}
 
@@ -246,18 +246,10 @@ func (s *stateDB) Update(ctx context.Context, taskID string, req client.UpdateTa
 }
 
 func (s *stateDB) NewStorageTask(ctx context.Context, storageTask tasks.StorageTask) (tasks.Task, error) {
-	task := tasks.Task{
-		UUID:        uuid.New().String()[:8],
-		Status:      tasks.Available,
-		StorageTask: storageTask,
-	}
-	err := task.Sign(s.PrivKey)
-	if err != nil {
-		return nil, err
-	}
+	task := tasks.Type.Task.New(nil, storageTask)
 
 	// save the update back to DB
-	if err = s.saveTask(ctx, task); err != nil {
+	if err := s.saveTask(ctx, task); err != nil {
 		return nil, err
 	}
 
@@ -265,18 +257,10 @@ func (s *stateDB) NewStorageTask(ctx context.Context, storageTask tasks.StorageT
 }
 
 func (s *stateDB) NewRetrievalTask(ctx context.Context, retrievalTask tasks.RetrievalTask) (tasks.Task, error) {
-	task := &tasks.Task{
-		UUID:          uuid.New().String()[:8],
-		Status:        tasks.Available,
-		RetrievalTask: retrievalTask,
-	}
-	err := task.Sign(s.PrivKey)
-	if err != nil {
-		return nil, err
-	}
+	task := tasks.Type.Task.New(retrievalTask, nil)
 
 	// save the update back to DB
-	if err = s.saveTask(ctx, task); err != nil {
+	if err := s.saveTask(ctx, task); err != nil {
 		return nil, err
 	}
 
@@ -298,63 +282,42 @@ func (s *stateDB) TaskHistory(ctx context.Context, taskID string) ([]tasks.TaskE
 		if err = rows.Scan(&status, &stage, &ts); err != nil {
 			return nil, err
 		}
-		history = append(history, tasks.TaskEvent{tasks.Status(status), stage, ts})
+		history = append(history, tasks.TaskEvent{tasks.Type.Status.Of(status), stage, ts})
 	}
 	return history, nil
 }
 
 func (s *stateDB) createInitialTasks(ctx context.Context) error {
-	err := s.saveTask(ctx, tasks.Task{
-		UUID:   uuid.New().String()[:8],
-		Status: tasks.Available,
-		RetrievalTask: &tasks.RetrievalTask{
-			Miner:      "t01000",
-			PayloadCID: "bafk2bzacedli6qxp43sf54feczjd26jgeyfxv4ucwylujd3xo5s6cohcqbg36",
-			CARExport:  false,
-		},
-	})
+	rt := tasks.Type.RetrievalTask.Of("t01000", "bafk2bzacedli6qxp43sf54feczjd26jgeyfxv4ucwylujd3xo5s6cohcqbg36", false)
+	task := tasks.Type.Task.New(rt, nil)
+	err := s.saveTask(ctx, task)
 	if err != nil {
 		return err
 	}
 
-	err = s.saveTask(ctx, tasks.Task{
-		UUID:   uuid.New().String()[:8],
-		Status: tasks.Available,
-		RetrievalTask: &tasks.RetrievalTask{
-			Miner:      "t01000",
-			PayloadCID: "bafk2bzacecettil4umy443e4ferok7jbxiqqseef7soa3ntelflf3zkvvndbg",
-			CARExport:  false,
-		},
-	})
+	rt = tasks.Type.RetrievalTask.Of("t01000", "bafk2bzacecettil4umy443e4ferok7jbxiqqseef7soa3ntelflf3zkvvndbg", false)
+	task = tasks.Type.Task.New(rt, nil)
+	err = s.saveTask(ctx, task)
 	if err != nil {
 		return err
 	}
 
-	err = s.saveTask(ctx, tasks.Task{
-		UUID:   uuid.New().String()[:8],
-		Status: tasks.Available,
-		RetrievalTask: &tasks.RetrievalTask{
-			Miner:      "f0127896",
-			PayloadCID: "bafykbzacedikkmeotawrxqquthryw3cijaonobygdp7fb5bujhuos6wdkwomm",
-			CARExport:  false,
-		},
-	})
+	rt = tasks.Type.RetrievalTask.Of("f0127896", "bafykbzacedikkmeotawrxqquthryw3cijaonobygdp7fb5bujhuos6wdkwomm", false)
+	task = tasks.Type.Task.New(rt, nil)
+	err = s.saveTask(ctx, task)
 	if err != nil {
 		return err
 	}
 
-	return s.saveTask(ctx, tasks.Task{
-		UUID:   uuid.New().String()[:8],
-		Status: tasks.Available,
-		StorageTask: &tasks.StorageTask{
-			Miner:           "t01000",
-			MaxPriceAttoFIL: 100000000000000000, // 0.10 FIL
-			Size:            1024,               // 1kb
-			StartOffset:     0,
-			FastRetrieval:   true,
-			Verified:        false,
-		},
-	})
+	st := tasks.Type.StorageTask.Of(
+		"t01000",
+		100000000000000000, // 0.10 FIL
+		1024,               // 1kb
+		0,
+		true,
+		false)
+	task = tasks.Type.Task.New(nil, st)
+	return s.saveTask(ctx, task)
 }
 
 func (s *stateDB) transact(ctx context.Context, retries int, f func(*sql.Tx) error) (err error) {
@@ -390,8 +353,8 @@ func (s *stateDB) transact(ctx context.Context, retries int, f func(*sql.Tx) err
 
 // createTask inserts a new task and new task status into the database
 func (s *stateDB) saveTask(ctx context.Context, task tasks.Task) error {
-	data, err := json.Marshal(task)
-	if err != nil {
+	data := bytes.NewBuffer([]byte{})
+	if err := dagjson.Encoder(task, data); err != nil {
 		return err
 	}
 
