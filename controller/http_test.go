@@ -22,6 +22,10 @@ import (
 
 const jsonTestDeals = "../devnet/sample_tasks.json"
 
+func mustString(s string, _ error) string {
+	return s
+}
+
 func TestControllerHTTPInterface(t *testing.T) {
 	ctx := context.Background()
 	testCases := map[string]func(ctx context.Context, t *testing.T, apiClient *client.Client, recorder *testrecorder.TestMetricsRecorder){
@@ -35,10 +39,10 @@ func TestControllerHTTPInterface(t *testing.T) {
 				WorkedBy: "dealbot 1",
 				Status:   tasks.InProgress,
 			})
-			taskUUID := task.UUID
+			taskUUID := mustString(task.UUID.AsString())
 			require.NoError(t, err)
 			require.Equal(t, tasks.InProgress, task.Status)
-			refetchTask, err := apiClient.GetTask(ctx, task.UUID)
+			refetchTask, err := apiClient.GetTask(ctx, mustString(task.UUID.AsString()))
 			require.NoError(t, err)
 			require.Equal(t, tasks.InProgress, refetchTask.Status)
 			require.Equal(t, "dealbot 1", refetchTask.WorkedBy)
@@ -74,7 +78,7 @@ func TestControllerHTTPInterface(t *testing.T) {
 				WorkedBy: "dealbot 2",
 				Status:   tasks.Successful,
 			})
-			taskUUID = task.UUID
+			taskUUID = mustString(task.UUID.AsString())
 			require.NoError(t, err)
 			require.Equal(t, tasks.Successful, task.Status)
 			refetchTask, err = apiClient.GetTask(ctx, taskUUID)
@@ -82,8 +86,8 @@ func TestControllerHTTPInterface(t *testing.T) {
 			require.Equal(t, tasks.Successful, refetchTask.Status)
 			require.Equal(t, "dealbot 2", refetchTask.WorkedBy)
 
-			recorder.AssertExactObservedStatuses(t, currentTasks[0].UUID, tasks.InProgress, tasks.Successful)
-			recorder.AssertExactObservedStatuses(t, currentTasks[1].UUID, tasks.Successful)
+			recorder.AssertExactObservedStatuses(t, mustString(currentTasks[0].UUID.AsString()), tasks.InProgress, tasks.Successful)
+			recorder.AssertExactObservedStatuses(t, mustString(currentTasks[1].UUID.AsString()), tasks.Successful)
 		},
 		"pop a task": func(ctx context.Context, t *testing.T, apiClient *client.Client, recorder *testrecorder.TestMetricsRecorder) {
 			updatedTask, err := apiClient.PopTask(ctx, &client.PopTaskRequest{
@@ -92,7 +96,7 @@ func TestControllerHTTPInterface(t *testing.T) {
 			})
 			require.NoError(t, err)
 			require.Equal(t, tasks.InProgress, updatedTask.Status)
-			refetchTask, err := apiClient.GetTask(ctx, updatedTask.UUID)
+			refetchTask, err := apiClient.GetTask(ctx, mustString(updatedTask.UUID.AsString()))
 			require.NoError(t, err)
 			require.Equal(t, tasks.InProgress, refetchTask.Status)
 			require.Equal(t, "dealbot 1", refetchTask.WorkedBy)
@@ -110,33 +114,31 @@ func TestControllerHTTPInterface(t *testing.T) {
 			}
 		},
 		"creating tasks": func(ctx context.Context, t *testing.T, apiClient *client.Client, _ *testrecorder.TestMetricsRecorder) {
-			newStorageTask := &tasks.StorageTask{
-				Miner:           "t01000",
-				MaxPriceAttoFIL: 100000000000000000, // 0.10 FIL
-				Size:            2048,               // 1kb
-				StartOffset:     0,
-				FastRetrieval:   true,
-				Verified:        true,
-			}
+			newStorageTask := tasks.Type.StorageTask.Of("t01000",
+				100000000000000000, // 0.10 FIL
+				2048,               // 1kb
+				0,
+				true,
+				true)
 			task, err := apiClient.CreateStorageTask(ctx, newStorageTask)
 			require.NoError(t, err)
 			require.Equal(t, task.StorageTask, newStorageTask)
-			task, err = apiClient.GetTask(ctx, task.UUID)
+			task, err = apiClient.GetTask(ctx, mustString(task.UUID.AsString()))
 			require.NoError(t, err)
 			require.Equal(t, task.StorageTask, newStorageTask)
 			currentTasks, err := apiClient.ListTasks(ctx)
 			require.NoError(t, err)
 			require.Len(t, currentTasks, 5)
 
-			newRetrievalTask := &tasks.RetrievalTask{
-				Miner:      "f0127896",
-				PayloadCID: "bafykbzacedikkmeotawrxqquthryw3cijaonobygdp7fb5bujhuos6wdkwomm",
-				CARExport:  false,
-			}
+			newRetrievalTask := tasks.Type.RetrievalTask.Of(
+				"f0127896",
+				"bafykbzacedikkmeotawrxqquthryw3cijaonobygdp7fb5bujhuos6wdkwomm",
+				false,
+			)
 			task, err = apiClient.CreateRetrievalTask(ctx, newRetrievalTask)
 			require.NoError(t, err)
 			require.Equal(t, task.RetrievalTask, newRetrievalTask)
-			task, err = apiClient.GetTask(ctx, task.UUID)
+			task, err = apiClient.GetTask(ctx, mustString(task.UUID.AsString()))
 			require.NoError(t, err)
 			require.Equal(t, task.RetrievalTask, newRetrievalTask)
 			currentTasks, err = apiClient.ListTasks(ctx)

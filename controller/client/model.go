@@ -18,7 +18,7 @@ type UpdateTaskRequest struct {
 	// When a task status is Successful or Failure, Stage indicates the final stage of the deal making process that was reached
 	Stage string
 	// CurrentStageDeatails offers more information about what is happening in the current stage of the deal making process
-	CurrentStageDetails *tasks.StageDetails
+	CurrentStageDetails tasks.StageDetails
 	// WorkedBy indicates the dealbot making this update request
 	WorkedBy string `json:"worked_by,omitempty"`
 }

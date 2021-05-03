@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-fil-markets/storagemarket"
@@ -17,18 +18,10 @@ import (
 	"github.com/filecoin-project/lotus/chain/actors/builtin/miner"
 	"github.com/filecoin-project/lotus/chain/types"
 	"github.com/google/uuid"
+	"github.com/ipld/go-ipld-prime/schema"
 	peer "github.com/libp2p/go-libp2p-core/peer"
 	"github.com/multiformats/go-multiaddr"
 )
-
-type StorageTask struct {
-	Miner           string `json:"miner"`
-	MaxPriceAttoFIL uint64 `json:"max_price_attofil"`
-	Size            uint64 `json:"size"`
-	StartOffset     uint64 `json:"start_offset"`
-	FastRetrieval   bool   `json:"fast_retrieval"`
-	Verified        bool   `json:"verified"`
-}
 
 const maxPriceDefault = 5e16
 const startOffsetDefault = 30760
@@ -39,7 +32,7 @@ func MakeStorageDeal(ctx context.Context, config NodeConfig, node api.FullNode, 
 			ctx:    ctx,
 			config: config,
 			node:   node,
-			miner:  task.Miner,
+			miner:  task.Miner.x,
 			log:    log,
 		},
 		task: task,
@@ -142,7 +135,7 @@ func (de *storageDealExecutor) queryAsk() (err error) {
 		return err
 	}
 
-	if de.task.Verified {
+	if de.task.Verified.x {
 		de.price = ask.VerifiedPrice
 	} else {
 		de.price = ask.Price
@@ -151,8 +144,8 @@ func (de *storageDealExecutor) queryAsk() (err error) {
 }
 
 func (de *storageDealExecutor) checkPrice() error {
-	maxPrice := abi.NewTokenAmount(int64(de.task.MaxPriceAttoFIL))
-	if de.task.MaxPriceAttoFIL == 0 {
+	maxPrice := abi.NewTokenAmount(de.task.MaxPriceAttoFIL.x)
+	if de.task.MaxPriceAttoFIL.x == 0 {
 		maxPrice = abi.NewTokenAmount(maxPriceDefault)
 	}
 	if de.price.GreaterThan(maxPrice) {
@@ -171,7 +164,7 @@ func (de *storageDealExecutor) generateFile() error {
 	defer file.Close()
 
 	de.log("creating deal file", "name", de.fileName, "size", de.task.Size, "path", filePath)
-	_, err = io.CopyN(file, rand.Reader, int64(de.task.Size))
+	_, err = io.CopyN(file, rand.Reader, de.task.Size.x)
 	if err != nil {
 		return fmt.Errorf("error creating random file for deal: %s, %v", de.fileName, err)
 	}
@@ -194,7 +187,7 @@ func (de *storageDealExecutor) importFile() (err error) {
 
 func (de *storageDealExecutor) executeAndMonitorDeal(updateStage UpdateStage) error {
 
-	startOffset := de.task.StartOffset
+	startOffset := de.task.StartOffset.x
 	if startOffset == 0 {
 		startOffset = startOffsetDefault
 	}
@@ -212,8 +205,8 @@ func (de *storageDealExecutor) executeAndMonitorDeal(updateStage UpdateStage) er
 		EpochPrice:        de.price,
 		MinBlocksDuration: 2880 * 180,
 		DealStartEpoch:    de.tipSet.Height() + abi.ChainEpoch(startOffset),
-		FastRetrieval:     de.task.FastRetrieval,
-		VerifiedDeal:      de.task.Verified,
+		FastRetrieval:     de.task.FastRetrieval.x,
+		VerifiedDeal:      de.task.Verified.x,
 	}
 	_ = params
 
@@ -280,19 +273,29 @@ func (de *storageDealExecutor) executeAndMonitorDeal(updateStage UpdateStage) er
 	return nil
 }
 
-func toStageDetails(stage *storagemarket.DealStage) *StageDetails {
-	logs := make([]*Log, 0, len(stage.Logs))
+func mktime(t time.Time) _Time {
+	return _Time{x: t.UnixNano()}
+}
+
+func asStrM(s string) _String__Maybe {
+	return _String__Maybe{m: schema.Maybe_Value, v: &_String{s}}
+}
+
+func toStageDetails(stage *storagemarket.DealStage) StageDetails {
+	logs := make([]_Logs, 0, len(stage.Logs))
 	for _, log := range stage.Logs {
-		logs = append(logs, &Log{
-			Log:       log.Log,
-			UpdatedAt: log.UpdatedTime.Time(),
-		})
+		l := _Logs{
+			Log:       _String{log.Log},
+			UpdatedAt: mktime(log.UpdatedTime.Time()),
+		}
+		logs = append(logs, l)
 	}
-	return &StageDetails{
-		Description:      stage.Description,
-		ExpectedDuration: stage.ExpectedDuration,
-		UpdatedAt:        stage.UpdatedTime.Time(),
-		Logs:             logs,
+	detailTime := mktime(stage.UpdatedTime.Time())
+	return &_StageDetails{
+		Description:      asStrM(stage.Description),
+		ExpectedDuration: asStrM(stage.ExpectedDuration),
+		UpdatedAt:        _Time__Maybe{m: schema.Maybe_Value, v: &detailTime},
+		Logs:             _List_Logs{logs},
 	}
 }
 
@@ -320,4 +323,16 @@ func logStages(info api.DealInfo, log LogStatus) {
 			"verfied", info.Verified,
 		)
 	}
+}
+
+func (sp *_StorageTask__Prototype) Of(miner string, maxPrice, size, startOffset int64, fastRetrieval, verified bool) StorageTask {
+	st := _StorageTask{
+		Miner:           _String{miner},
+		MaxPriceAttoFIL: _Int{maxPrice},
+		Size:            _Int{size},
+		StartOffset:     _Int{startOffset},
+		FastRetrieval:   _Bool{fastRetrieval},
+		Verified:        _Bool{verified},
+	}
+	return &st
 }

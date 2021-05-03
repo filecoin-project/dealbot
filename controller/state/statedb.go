@@ -86,7 +86,7 @@ func (s *stateDB) db() *sql.DB {
 }
 
 // Get returns a specific task identified by ID
-func (s *stateDB) Get(ctx context.Context, taskID string) (*tasks.Task, error) {
+func (s *stateDB) Get(ctx context.Context, taskID string) (tasks.Task, error) {
 	var serialized string
 	err := s.db().QueryRowContext(ctx, getTaskSQL, taskID).Scan(&serialized)
 	if err != nil {
@@ -97,11 +97,11 @@ func (s *stateDB) Get(ctx context.Context, taskID string) (*tasks.Task, error) {
 	if err := json.Unmarshal([]byte(serialized), &task); err != nil {
 		return nil, err
 	}
-	return &task, nil
+	return task, nil
 }
 
 // GetAll queries all tasks from the DB
-func (s *stateDB) GetAll(ctx context.Context) ([]*tasks.Task, error) {
+func (s *stateDB) GetAll(ctx context.Context) ([]tasks.Task, error) {
 	rows, err := s.db().QueryContext(ctx, getAllTasksSQL)
 	if err != nil {
 		return nil, err
@@ -129,8 +129,8 @@ func (s *stateDB) GetAll(ctx context.Context) ([]*tasks.Task, error) {
 // is nil.
 //
 // TODO: There should be a limit to the age of the task to assign.
-func (s *stateDB) AssignTask(ctx context.Context, req client.PopTaskRequest) (*tasks.Task, error) {
-	var assigned *tasks.Task
+func (s *stateDB) AssignTask(ctx context.Context, req client.PopTaskRequest) (tasks.Task, error) {
+	var assigned tasks.Task
 	err := s.transact(ctx, 13, func(tx *sql.Tx) error {
 		var taskID, serialized string
 		var task tasks.Task
@@ -174,7 +174,7 @@ func (s *stateDB) AssignTask(ctx context.Context, req client.PopTaskRequest) (*t
 			return err
 		}
 
-		assigned = &task
+		assigned = task
 		return nil
 	})
 	if err != nil {
@@ -189,7 +189,7 @@ func (s *stateDB) AssignTask(ctx context.Context, req client.PopTaskRequest) (*t
 	return assigned, nil
 }
 
-func (s *stateDB) Update(ctx context.Context, taskID string, req client.UpdateTaskRequest) (*tasks.Task, error) {
+func (s *stateDB) Update(ctx context.Context, taskID string, req client.UpdateTaskRequest) (tasks.Task, error) {
 	var task tasks.Task
 	err := s.transact(ctx, 3, func(tx *sql.Tx) error {
 		var serialized string
@@ -237,16 +237,16 @@ func (s *stateDB) Update(ctx context.Context, taskID string, req client.UpdateTa
 	}
 
 	if s.recorder != nil {
-		if err = s.recorder.ObserveTask(&task); err != nil {
+		if err = s.recorder.ObserveTask(task); err != nil {
 			return nil, err
 		}
 	}
 
-	return &task, nil
+	return task, nil
 }
 
-func (s *stateDB) NewStorageTask(ctx context.Context, storageTask *tasks.StorageTask) (*tasks.Task, error) {
-	task := &tasks.Task{
+func (s *stateDB) NewStorageTask(ctx context.Context, storageTask tasks.StorageTask) (tasks.Task, error) {
+	task := tasks.Task{
 		UUID:        uuid.New().String()[:8],
 		Status:      tasks.Available,
 		StorageTask: storageTask,
@@ -264,7 +264,7 @@ func (s *stateDB) NewStorageTask(ctx context.Context, storageTask *tasks.Storage
 	return task, nil
 }
 
-func (s *stateDB) NewRetrievalTask(ctx context.Context, retrievalTask *tasks.RetrievalTask) (*tasks.Task, error) {
+func (s *stateDB) NewRetrievalTask(ctx context.Context, retrievalTask tasks.RetrievalTask) (tasks.Task, error) {
 	task := &tasks.Task{
 		UUID:          uuid.New().String()[:8],
 		Status:        tasks.Available,
@@ -304,7 +304,7 @@ func (s *stateDB) TaskHistory(ctx context.Context, taskID string) ([]tasks.TaskE
 }
 
 func (s *stateDB) createInitialTasks(ctx context.Context) error {
-	err := s.saveTask(ctx, &tasks.Task{
+	err := s.saveTask(ctx, tasks.Task{
 		UUID:   uuid.New().String()[:8],
 		Status: tasks.Available,
 		RetrievalTask: &tasks.RetrievalTask{
@@ -317,7 +317,7 @@ func (s *stateDB) createInitialTasks(ctx context.Context) error {
 		return err
 	}
 
-	err = s.saveTask(ctx, &tasks.Task{
+	err = s.saveTask(ctx, tasks.Task{
 		UUID:   uuid.New().String()[:8],
 		Status: tasks.Available,
 		RetrievalTask: &tasks.RetrievalTask{
@@ -330,7 +330,7 @@ func (s *stateDB) createInitialTasks(ctx context.Context) error {
 		return err
 	}
 
-	err = s.saveTask(ctx, &tasks.Task{
+	err = s.saveTask(ctx, tasks.Task{
 		UUID:   uuid.New().String()[:8],
 		Status: tasks.Available,
 		RetrievalTask: &tasks.RetrievalTask{
@@ -343,7 +343,7 @@ func (s *stateDB) createInitialTasks(ctx context.Context) error {
 		return err
 	}
 
-	return s.saveTask(ctx, &tasks.Task{
+	return s.saveTask(ctx, tasks.Task{
 		UUID:   uuid.New().String()[:8],
 		Status: tasks.Available,
 		StorageTask: &tasks.StorageTask{
@@ -389,7 +389,7 @@ func (s *stateDB) transact(ctx context.Context, retries int, f func(*sql.Tx) err
 }
 
 // createTask inserts a new task and new task status into the database
-func (s *stateDB) saveTask(ctx context.Context, task *tasks.Task) error {
+func (s *stateDB) saveTask(ctx context.Context, task tasks.Task) error {
 	data, err := json.Marshal(task)
 	if err != nil {
 		return err

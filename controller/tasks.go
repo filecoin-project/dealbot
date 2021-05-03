@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/ipld/go-ipld-prime/codec/dagjson"
 
 	"github.com/filecoin-project/dealbot/controller/client"
 	"github.com/filecoin-project/dealbot/tasks"
@@ -101,6 +102,10 @@ func (c *Controller) updateTaskHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(task)
 }
 
+func mustString(s string, _ error) string {
+	return s
+}
+
 func (c *Controller) newStorageTaskHandler(w http.ResponseWriter, r *http.Request) {
 	logger := log.With("req_id", r.Header.Get("X-Request-ID"))
 
@@ -108,13 +113,13 @@ func (c *Controller) newStorageTaskHandler(w http.ResponseWriter, r *http.Reques
 	defer logger.Debugw("request handled", "command", "create task")
 
 	w.Header().Set("Content-Type", "application/json")
-	var storageTask *tasks.StorageTask
-	err := json.NewDecoder(r.Body).Decode(&storageTask)
-	if err != nil {
+	stp := tasks.Type.StorageTask.NewBuilder()
+	if err := dagjson.Decoder(stp, r.Body); err != nil {
 		log.Errorw("StorageTask json decode", "err", err.Error())
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+	storageTask := stp.Build().(tasks.StorageTask)
 
 	task, err := c.db.NewStorageTask(r.Context(), storageTask)
 	if err != nil {
@@ -123,7 +128,7 @@ func (c *Controller) newStorageTaskHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	taskURL, err := r.URL.Parse("/tasks/" + task.UUID)
+	taskURL, err := r.URL.Parse("/tasks/" + mustString(task.UUID.AsString()))
 	if err != nil {
 		log.Errorw("StorageTask parse URL", "err", err.Error())
 		w.WriteHeader(http.StatusBadRequest)
@@ -142,13 +147,14 @@ func (c *Controller) newRetrievalTaskHandler(w http.ResponseWriter, r *http.Requ
 	defer logger.Debugw("request handled", "command", "create task")
 
 	w.Header().Set("Content-Type", "application/json")
-	var retrievalTask *tasks.RetrievalTask
-	err := json.NewDecoder(r.Body).Decode(&retrievalTask)
-	if err != nil {
+
+	rtp := tasks.Type.RetrievalTask.NewBuilder()
+	if err := dagjson.Decoder(rtp, r.Body); err != nil {
 		log.Errorw("RetrievalTask json decode", "err", err.Error())
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+	retrievalTask := rtp.Build().(tasks.RetrievalTask)
 
 	task, err := c.db.NewRetrievalTask(r.Context(), retrievalTask)
 	if err != nil {
@@ -157,7 +163,7 @@ func (c *Controller) newRetrievalTaskHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	taskURL, err := r.URL.Parse("/tasks/" + task.UUID)
+	taskURL, err := r.URL.Parse("/tasks/" + mustString(task.UUID.AsString()))
 	if err != nil {
 		log.Errorw("RetrievalTask parse URL", "err", err.Error())
 		w.WriteHeader(http.StatusBadRequest)

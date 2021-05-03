@@ -72,18 +72,18 @@ func (pmr *prometheusMetricsRecorder) Handler() http.Handler {
 	return promhttp.Handler()
 }
 
-func (pmr *prometheusMetricsRecorder) ObserveTask(task *tasks.Task) error {
+func (pmr *prometheusMetricsRecorder) ObserveTask(task tasks.Task) error {
 
-	if task.RetrievalTask != nil {
+	if task.RetrievalTask.Exists() {
 		return pmr.observeRetrievalTask(task)
 	}
-	if task.StorageTask != nil {
+	if task.StorageTask.Exists() {
 		return pmr.observeStorageTask(task)
 	}
 	return fmt.Errorf("Cannot observe task: %s, both tasks are nil", task.UUID)
 }
 
-func (pmr *prometheusMetricsRecorder) observeStorageTask(task *tasks.Task) error {
+func (pmr *prometheusMetricsRecorder) observeStorageTask(task tasks.Task) error {
 	observer, err := pmr.storageVec.GetMetricWith(prometheus.Labels{
 		metrics.UUID:            task.UUID,
 		metrics.Miner:           task.StorageTask.Miner,
@@ -101,7 +101,7 @@ func (pmr *prometheusMetricsRecorder) observeStorageTask(task *tasks.Task) error
 	return nil
 }
 
-func (pmr *prometheusMetricsRecorder) observeRetrievalTask(task *tasks.Task) error {
+func (pmr *prometheusMetricsRecorder) observeRetrievalTask(task tasks.Task) error {
 	observer, err := pmr.retrievalVec.GetMetricWith(prometheus.Labels{
 		metrics.UUID:       task.UUID,
 		metrics.Miner:      task.RetrievalTask.Miner,

@@ -104,7 +104,7 @@ func (md *MockDaemon) worker(n int) {
 		var stageDetails tasks.StageDetails
 		var ok bool
 		if isSuccess {
-			if task.RetrievalTask != nil {
+			if task.RetrievalTask.Exists() {
 				stage = "DealComplete"
 				stageDetails = tasks.RetrievalStages[stage]
 			} else {
@@ -113,7 +113,7 @@ func (md *MockDaemon) worker(n int) {
 			}
 			taskDuration = md.successAvg + time.Duration(rand.NormFloat64()*float64(md.successDeviation))
 		} else {
-			if task.RetrievalTask != nil {
+			if task.RetrievalTask.Exists() {
 				stage = retrievalFailStates[rand.Intn(len(retrievalFailStates))]
 				stageDetails, ok = tasks.RetrievalStages[stage]
 				if !ok {
@@ -143,7 +143,7 @@ func (md *MockDaemon) worker(n int) {
 			req := &client.UpdateTaskRequest{
 				Status:              result,
 				Stage:               stage,
-				CurrentStageDetails: &stageDetails,
+				CurrentStageDetails: stageDetails,
 				WorkedBy:            md.host,
 			}
 

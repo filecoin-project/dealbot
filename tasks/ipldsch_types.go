@@ -142,9 +142,54 @@ type _Map__entry struct {
 	v _Any__Maybe
 }
 
+// RetrievalTask matches the IPLD Schema type "RetrievalTask".  It has Struct type-kind, and may be interrogated like map kind.
+type RetrievalTask = *_RetrievalTask
+type _RetrievalTask struct {
+	Miner _String
+	PayloadCID _String
+	CARExport _Bool
+}
+
+// StageDetails matches the IPLD Schema type "StageDetails".  It has Struct type-kind, and may be interrogated like map kind.
+type StageDetails = *_StageDetails
+type _StageDetails struct {
+	Description _String__Maybe
+	ExpectedDuration _String__Maybe
+	Logs _List_Logs
+	UpdatedAt _Time__Maybe
+}
+
+// Status matches the IPLD Schema type "Status".  It has int kind.
+type Status = *_Status
+type _Status struct{ x int64 }
+
+// StorageTask matches the IPLD Schema type "StorageTask".  It has Struct type-kind, and may be interrogated like map kind.
+type StorageTask = *_StorageTask
+type _StorageTask struct {
+	Miner _String
+	MaxPriceAttoFIL _Int
+	Size _Int
+	StartOffset _Int
+	FastRetrieval _Bool
+	Verified _Bool
+}
+
 // String matches the IPLD Schema type "String".  It has string kind.
 type String = *_String
 type _String struct{ x string }
+
+// Task matches the IPLD Schema type "Task".  It has Struct type-kind, and may be interrogated like map kind.
+type Task = *_Task
+type _Task struct {
+	UUID _String
+	Status _Status
+	WorkedBy _String__Maybe
+	Stage _String
+	CurrentStageDetails _Link_StageDetails__Maybe
+	StartedAt _Time__Maybe
+	RetrievalTask _Link_RetrievalTask__Maybe
+	StorageTask _Link_StorageTask__Maybe
+}
 
 // Time matches the IPLD Schema type "Time".  It has int kind.
 type Time = *_Time

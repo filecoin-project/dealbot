@@ -61,13 +61,13 @@ func (c *Client) Close() error {
 	return nil
 }
 
-func (c *Client) ListTasks(ctx context.Context) ([]*tasks.Task, error) {
+func (c *Client) ListTasks(ctx context.Context) ([]tasks.Task, error) {
 	resp, err := c.request(ctx, "GET", "/tasks", nil)
 	if err != nil {
 		return nil, err
 	}
 
-	var res []*tasks.Task
+	var res []tasks.Task
 	err = json.NewDecoder(resp.Body).Decode(&res)
 	if err != nil {
 		return nil, err
@@ -76,7 +76,7 @@ func (c *Client) ListTasks(ctx context.Context) ([]*tasks.Task, error) {
 	return res, nil
 }
 
-func (c *Client) PopTask(ctx context.Context, r *PopTaskRequest) (*tasks.Task, error) {
+func (c *Client) PopTask(ctx context.Context, r *PopTaskRequest) (tasks.Task, error) {
 	var body bytes.Buffer
 	err := json.NewEncoder(&body).Encode(r)
 	if err != nil {
@@ -92,7 +92,7 @@ func (c *Client) PopTask(ctx context.Context, r *PopTaskRequest) (*tasks.Task, e
 		return nil, ErrRequestFailed{resp.StatusCode}
 	}
 
-	var res *tasks.Task
+	var res tasks.Task
 	err = json.NewDecoder(resp.Body).Decode(&res)
 	if err != nil {
 		return nil, err
@@ -102,7 +102,7 @@ func (c *Client) PopTask(ctx context.Context, r *PopTaskRequest) (*tasks.Task, e
 	return res, nil
 }
 
-func (c *Client) UpdateTask(ctx context.Context, uuid string, r *UpdateTaskRequest) (*tasks.Task, error) {
+func (c *Client) UpdateTask(ctx context.Context, uuid string, r *UpdateTaskRequest) (tasks.Task, error) {
 	var body bytes.Buffer
 	err := json.NewEncoder(&body).Encode(r)
 	if err != nil {
@@ -118,7 +118,7 @@ func (c *Client) UpdateTask(ctx context.Context, uuid string, r *UpdateTaskReque
 		return nil, ErrRequestFailed{resp.StatusCode}
 	}
 
-	var res *tasks.Task
+	var res tasks.Task
 	err = json.NewDecoder(resp.Body).Decode(&res)
 	if err != nil {
 		return nil, err
@@ -126,7 +126,7 @@ func (c *Client) UpdateTask(ctx context.Context, uuid string, r *UpdateTaskReque
 	return res, nil
 }
 
-func (c *Client) GetTask(ctx context.Context, uuid string) (*tasks.Task, error) {
+func (c *Client) GetTask(ctx context.Context, uuid string) (tasks.Task, error) {
 	resp, err := c.request(ctx, "GET", "/tasks/"+uuid, nil)
 	if err != nil {
 		return nil, err
@@ -136,7 +136,7 @@ func (c *Client) GetTask(ctx context.Context, uuid string) (*tasks.Task, error) 
 		return nil, ErrRequestFailed{resp.StatusCode}
 	}
 
-	var res *tasks.Task
+	var res tasks.Task
 	err = json.NewDecoder(resp.Body).Decode(&res)
 	if err != nil {
 		return nil, err
@@ -144,7 +144,7 @@ func (c *Client) GetTask(ctx context.Context, uuid string) (*tasks.Task, error) 
 	return res, nil
 }
 
-func (c *Client) CreateStorageTask(ctx context.Context, storageTask *tasks.StorageTask) (*tasks.Task, error) {
+func (c *Client) CreateStorageTask(ctx context.Context, storageTask tasks.StorageTask) (tasks.Task, error) {
 	var body bytes.Buffer
 	err := json.NewEncoder(&body).Encode(storageTask)
 	if err != nil {
@@ -160,7 +160,7 @@ func (c *Client) CreateStorageTask(ctx context.Context, storageTask *tasks.Stora
 		return nil, ErrRequestFailed{resp.StatusCode}
 	}
 
-	var res *tasks.Task
+	var res tasks.Task
 	err = json.NewDecoder(resp.Body).Decode(&res)
 	if err != nil {
 		return nil, err
@@ -168,7 +168,7 @@ func (c *Client) CreateStorageTask(ctx context.Context, storageTask *tasks.Stora
 	return res, nil
 }
 
-func (c *Client) CreateRetrievalTask(ctx context.Context, retrievalTask *tasks.RetrievalTask) (*tasks.Task, error) {
+func (c *Client) CreateRetrievalTask(ctx context.Context, retrievalTask tasks.RetrievalTask) (tasks.Task, error) {
 	var body bytes.Buffer
 	err := json.NewEncoder(&body).Encode(retrievalTask)
 	if err != nil {
@@ -184,7 +184,7 @@ func (c *Client) CreateRetrievalTask(ctx context.Context, retrievalTask *tasks.R
 		return nil, ErrRequestFailed{resp.StatusCode}
 	}
 
-	var res *tasks.Task
+	var res tasks.Task
 	err = json.NewDecoder(resp.Body).Decode(&res)
 	if err != nil {
 		return nil, err

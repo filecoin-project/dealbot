@@ -61,6 +61,10 @@ func (e *Engine) Close() {
 	e.closer()
 }
 
+func mustString(s string, _ error) string {
+	return s
+}
+
 func (e *Engine) worker(n int) {
 	log.Infow("engine worker started", "worker_id", n)
 
@@ -78,7 +82,7 @@ func (e *Engine) worker(n int) {
 		if task == nil {
 			continue // no task available
 		}
-		if task.WorkedBy != e.host {
+		if mustString(task.WorkedBy.Must().AsString()) != e.host {
 			log.Warnw("pop-task returned task that is not for this host", "err", err)
 			continue
 		}
@@ -86,8 +90,8 @@ func (e *Engine) worker(n int) {
 		log.Infow("successfully acquired task", "uuid", task.UUID)
 
 		finalStatus := tasks.Successful
-		updateStage := func(stage string, stageDetails *tasks.StageDetails) error {
-			task, err = e.client.UpdateTask(ctx, task.UUID, &client.UpdateTaskRequest{
+		updateStage := func(stage string, stageDetails tasks.StageDetails) error {
+			task, err = e.client.UpdateTask(ctx, mustString(task.UUID.AsString()), &client.UpdateTaskRequest{
 				Status:              tasks.InProgress,
 				Stage:               stage,
 				CurrentStageDetails: stageDetails,
@@ -95,9 +99,9 @@ func (e *Engine) worker(n int) {
 			})
 			return err
 		}
-		if task.RetrievalTask != nil {
+		if task.RetrievalTask.Exists() {
 			ctx := context.TODO()
-			err = tasks.MakeRetrievalDeal(ctx, e.nodeConfig, e.node, *task.RetrievalTask, updateStage, log.Infow)
+			err = tasks.MakeRetrievalDeal(ctx, e.nodeConfig, e.node, task.RetrievalTask, updateStage, log.Infow)
 			if err != nil {
 				finalStatus = tasks.Failed
 				log.Errorw("retrieval task returned error", "err", err)
@@ -106,9 +110,9 @@ func (e *Engine) worker(n int) {
 			}
 		}
 
-		if task.StorageTask != nil {
+		if task.StorageTask.Exists() {
 			ctx := context.TODO()
-			err = tasks.MakeStorageDeal(ctx, e.nodeConfig, e.node, *task.StorageTask, updateStage, log.Infow)
+			err = tasks.MakeStorageDeal(ctx, e.nodeConfig, e.node, task.StorageTask, updateStage, log.Infow)
 			if err != nil {
 				finalStatus = tasks.Failed
 				log.Errorw("storage task returned error", "err", err)
@@ -116,10 +120,10 @@ func (e *Engine) worker(n int) {
 				log.Info("successfully stored data")
 			}
 		}
-		_, err = e.client.UpdateTask(ctx, task.UUID, &client.UpdateTaskRequest{
+		_, err = e.client.UpdateTask(ctx, mustString(task.UUID.AsString()), &client.UpdateTaskRequest{
 			Status:              finalStatus,
 			Stage:               task.Stage,
-			CurrentStageDetails: task.CurrentStageDetails,
+			CurrentStageDetails: task.CurrentStageDetails.Must(),
 			WorkedBy:            e.host,
 		})
 		if err != nil {
