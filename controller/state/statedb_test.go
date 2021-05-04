@@ -11,7 +11,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/filecoin-project/dealbot/controller/client"
 	"github.com/filecoin-project/dealbot/tasks"
 	"github.com/ipld/go-ipld-prime/codec/dagjson"
 	"github.com/libp2p/go-libp2p-core/crypto"
@@ -83,10 +82,7 @@ func TestAssignTask(t *testing.T) {
 	seen := make(map[string]struct{}, taskCount)
 	for i := 0; i < taskCount; i++ {
 		worker := fmt.Sprintf("tester-%d", i)
-		req := client.PopTaskRequest{
-			Status:   tasks.InProgress,
-			WorkedBy: worker,
-		}
+		req := tasks.Type.PopTask.Of(worker, tasks.InProgress)
 		task, err = state.AssignTask(ctx, req)
 		require.NoError(t, err)
 		require.NotNil(t, task, "Did not find task to assign")
@@ -105,10 +101,7 @@ func TestAssignTask(t *testing.T) {
 		seen[uuid] = struct{}{}
 	}
 
-	task, err = state.AssignTask(ctx, client.PopTaskRequest{
-		Status:   tasks.InProgress,
-		WorkedBy: "it's me",
-	})
+	task, err = state.AssignTask(ctx, tasks.Type.PopTask.Of("it's me", tasks.InProgress))
 	require.NoError(t, err)
 	require.Nil(t, task, "Shoud not be able to assign more tasks")
 }
@@ -145,10 +138,7 @@ func TestAssignConcurrentTask(t *testing.T) {
 		go func(n int) {
 			worker := fmt.Sprintf("worker-%d", n)
 			<-release
-			req := client.PopTaskRequest{
-				Status:   tasks.InProgress,
-				WorkedBy: worker,
-			}
+			req := tasks.Type.PopTask.Of(worker, tasks.InProgress)
 
 			task, err := state.AssignTask(ctx, req)
 			if err != nil {
@@ -209,10 +199,7 @@ func TestUpdateTasks(t *testing.T) {
 	var inProgressTasks []tasks.Task
 	for i := 0; i < taskCount-1; i++ {
 		worker := fmt.Sprintf("tester")
-		req := client.PopTaskRequest{
-			Status:   tasks.InProgress,
-			WorkedBy: worker,
-		}
+		req := tasks.Type.PopTask.Of(worker, tasks.InProgress)
 		task, err := state.AssignTask(ctx, req)
 		require.NoError(t, err)
 		inProgressTasks = append(inProgressTasks, task)
@@ -235,12 +222,8 @@ func TestUpdateTasks(t *testing.T) {
 	workedStageDetail := exStageDetail.WithLog("stuff happened")
 
 	// add a stage name to the last in progress task
-	_, err = state.Update(ctx, inProgressTasks[2].GetUUID(), client.UpdateTaskRequest{
-		Status:              tasks.InProgress,
-		Stage:               "Stuff",
-		CurrentStageDetails: exStageDetail,
-		WorkedBy:            mustString(inProgressTasks[2].WorkedBy.Must().AsString()),
-	})
+	_, err = state.Update(ctx, inProgressTasks[2].GetUUID(),
+		tasks.Type.UpdateTask.OfStage(inProgressTasks[2].WorkedBy.Must().String(), tasks.InProgress, "Stuff", exStageDetail))
 	require.NoError(t, err)
 
 	type statusHistory struct {
@@ -250,7 +233,7 @@ func TestUpdateTasks(t *testing.T) {
 
 	testCases := map[string]struct {
 		uuid                 string
-		updateTaskRequest    client.UpdateTaskRequest
+		updateTaskRequest    tasks.UpdateTask
 		expectedStatus       tasks.Status
 		expectedStage        string
 		expectedStageDetails tasks.StageDetails
@@ -258,28 +241,19 @@ func TestUpdateTasks(t *testing.T) {
 		expectedError        error
 	}{
 		"attempting to work on unassigned task": {
-			uuid: unassignedTask.GetUUID(),
-			updateTaskRequest: client.UpdateTaskRequest{
-				Status:   tasks.InProgress,
-				WorkedBy: "tester",
-			},
-			expectedError: ErrNotAssigned,
+			uuid:              unassignedTask.GetUUID(),
+			updateTaskRequest: tasks.Type.UpdateTask.Of("tester", tasks.InProgress),
+			expectedError:     ErrNotAssigned,
 		},
 		"attempting to work on task with another worker": {
-			uuid: inProgressTasks[0].GetUUID(),
-			updateTaskRequest: client.UpdateTaskRequest{
-				Status:   tasks.Successful,
-				WorkedBy: "tester 2",
-			},
-			expectedError: ErrWrongWorker,
+			uuid:              inProgressTasks[0].GetUUID(),
+			updateTaskRequest: tasks.Type.UpdateTask.Of("tester 2", tasks.Successful),
+			expectedError:     ErrWrongWorker,
 		},
 		"update task status": {
-			uuid: inProgressTasks[0].GetUUID(),
-			updateTaskRequest: client.UpdateTaskRequest{
-				Status:   tasks.Successful,
-				WorkedBy: mustString(inProgressTasks[0].WorkedBy.Must().AsString()),
-			},
-			expectedStatus: tasks.Successful,
+			uuid:              inProgressTasks[0].GetUUID(),
+			updateTaskRequest: tasks.Type.UpdateTask.Of(inProgressTasks[0].WorkedBy.Must().String(), tasks.Successful),
+			expectedStatus:    tasks.Successful,
 			expectedTaskHistory: []statusHistory{
 				{tasks.Available, ""},
 				{tasks.InProgress, ""},
@@ -287,13 +261,8 @@ func TestUpdateTasks(t *testing.T) {
 			},
 		},
 		"update stage": {
-			uuid: inProgressTasks[1].GetUUID(),
-			updateTaskRequest: client.UpdateTaskRequest{
-				Status:              tasks.InProgress,
-				Stage:               "Stuff",
-				CurrentStageDetails: exStageDetail,
-				WorkedBy:            mustString(inProgressTasks[1].WorkedBy.Must().AsString()),
-			},
+			uuid:                 inProgressTasks[1].GetUUID(),
+			updateTaskRequest:    tasks.Type.UpdateTask.OfStage(inProgressTasks[1].WorkedBy.Must().String(), tasks.InProgress, "Stuff", exStageDetail),
 			expectedStage:        "Stuff",
 			expectedStageDetails: exStageDetail,
 			expectedStatus:       tasks.InProgress,
@@ -304,13 +273,8 @@ func TestUpdateTasks(t *testing.T) {
 			},
 		},
 		"update stage data within stage": {
-			uuid: inProgressTasks[2].GetUUID(),
-			updateTaskRequest: client.UpdateTaskRequest{
-				Status:              tasks.InProgress,
-				Stage:               "Stuff",
-				CurrentStageDetails: workedStageDetail,
-				WorkedBy:            inProgressTasks[2].WorkedBy.Must().String(),
-			},
+			uuid:                 inProgressTasks[2].GetUUID(),
+			updateTaskRequest:    tasks.Type.UpdateTask.OfStage(inProgressTasks[2].WorkedBy.Must().String(), tasks.InProgress, "Stuff", workedStageDetail),
 			expectedStage:        "Stuff",
 			expectedStageDetails: workedStageDetail,
 			expectedStatus:       tasks.InProgress,

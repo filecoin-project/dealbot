@@ -39,6 +39,8 @@ type typeSlab struct {
 	Logs__Repr _Logs__ReprPrototype
 	Map       _Map__Prototype
 	Map__Repr _Map__ReprPrototype
+	PopTask       _PopTask__Prototype
+	PopTask__Repr _PopTask__ReprPrototype
 	RetrievalTask       _RetrievalTask__Prototype
 	RetrievalTask__Repr _RetrievalTask__ReprPrototype
 	StageDetails       _StageDetails__Prototype
@@ -51,8 +53,12 @@ type typeSlab struct {
 	String__Repr _String__ReprPrototype
 	Task       _Task__Prototype
 	Task__Repr _Task__ReprPrototype
+	Tasks       _Tasks__Prototype
+	Tasks__Repr _Tasks__ReprPrototype
 	Time       _Time__Prototype
 	Time__Repr _Time__ReprPrototype
+	UpdateTask       _UpdateTask__Prototype
+	UpdateTask__Repr _UpdateTask__ReprPrototype
 }
 
 // --- type definitions follow ---
@@ -124,6 +130,13 @@ type _Map__entry struct {
 	v _Any__Maybe
 }
 
+// PopTask matches the IPLD Schema type "PopTask".  It has Struct type-kind, and may be interrogated like map kind.
+type PopTask = *_PopTask
+type _PopTask struct {
+	Status _Status
+	WorkedBy _String
+}
+
 // RetrievalTask matches the IPLD Schema type "RetrievalTask".  It has Struct type-kind, and may be interrogated like map kind.
 type RetrievalTask = *_RetrievalTask
 type _RetrievalTask struct {
@@ -173,7 +186,22 @@ type _Task struct {
 	StorageTask _StorageTask__Maybe
 }
 
+// Tasks matches the IPLD Schema type "Tasks".  It has list kind.
+type Tasks = *_Tasks
+type _Tasks struct {
+	x []_Task
+}
+
 // Time matches the IPLD Schema type "Time".  It has int kind.
 type Time = *_Time
 type _Time struct{ x int64 }
+
+// UpdateTask matches the IPLD Schema type "UpdateTask".  It has Struct type-kind, and may be interrogated like map kind.
+type UpdateTask = *_UpdateTask
+type _UpdateTask struct {
+	Status _Status
+	Stage _String__Maybe
+	CurrentStageDetails _StageDetails__Maybe
+	WorkedBy _String
+}
 

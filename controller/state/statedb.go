@@ -8,7 +8,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/filecoin-project/dealbot/controller/client"
 	"github.com/filecoin-project/dealbot/metrics"
 	"github.com/filecoin-project/dealbot/tasks"
 	logging "github.com/ipfs/go-log/v2"
@@ -130,7 +129,7 @@ func (s *stateDB) GetAll(ctx context.Context) ([]tasks.Task, error) {
 // is nil.
 //
 // TODO: There should be a limit to the age of the task to assign.
-func (s *stateDB) AssignTask(ctx context.Context, req client.PopTaskRequest) (tasks.Task, error) {
+func (s *stateDB) AssignTask(ctx context.Context, req tasks.PopTask) (tasks.Task, error) {
 	var assigned tasks.Task
 	err := s.transact(ctx, 13, func(tx *sql.Tx) error {
 		var taskID, serialized string
@@ -149,7 +148,7 @@ func (s *stateDB) AssignTask(ctx context.Context, req client.PopTaskRequest) (ta
 		}
 		task := tp.Build().(tasks.Task)
 
-		task.Assign(req.WorkedBy, req.Status)
+		task.Assign(req.WorkedBy.String(), &req.Status)
 
 		data := bytes.NewBuffer([]byte{})
 		if err := dagjson.Encoder(task.Representation(), data); err != nil {
@@ -157,7 +156,7 @@ func (s *stateDB) AssignTask(ctx context.Context, req client.PopTaskRequest) (ta
 		}
 
 		// Assign task to worker
-		_, err = tx.ExecContext(ctx, assignTaskSQL, taskID, data.Bytes(), req.WorkedBy)
+		_, err = tx.ExecContext(ctx, assignTaskSQL, taskID, data.Bytes(), req.WorkedBy.String())
 		if err != nil {
 			return fmt.Errorf("could not assign task: %w", err)
 		}
@@ -187,7 +186,7 @@ func mustString(s string, _ error) string {
 	return s
 }
 
-func (s *stateDB) Update(ctx context.Context, taskID string, req client.UpdateTaskRequest) (tasks.Task, error) {
+func (s *stateDB) Update(ctx context.Context, taskID string, req tasks.UpdateTask) (tasks.Task, error) {
 	var task tasks.Task
 	err := s.transact(ctx, 3, func(tx *sql.Tx) error {
 		var serialized string
@@ -205,14 +204,14 @@ func (s *stateDB) Update(ctx context.Context, taskID string, req client.UpdateTa
 		if !task.WorkedBy.Exists() {
 			return ErrNotAssigned
 		}
-		twb := mustString(task.WorkedBy.Must().AsString())
+		twb := task.WorkedBy.Must().String()
 		if twb == "" {
 			return ErrNotAssigned
-		} else if req.WorkedBy != twb {
+		} else if req.WorkedBy.String() != twb {
 			return ErrWrongWorker
 		}
 
-		if err := task.Update(req.Status, req.Stage, req.CurrentStageDetails); err != nil {
+		if err := task.UpdateTask(req); err != nil {
 			return err
 		}
 
@@ -229,8 +228,8 @@ func (s *stateDB) Update(ctx context.Context, taskID string, req client.UpdateTa
 
 		// publish a task event update as neccesary
 		now := time.Now()
-		if req.CurrentStageDetails != nil && req.CurrentStageDetails.UpdatedAt.Exists() {
-			now = req.CurrentStageDetails.UpdatedAt.Must().Time()
+		if req.CurrentStageDetails.Exists() && req.CurrentStageDetails.Must().UpdatedAt.Exists() {
+			now = req.CurrentStageDetails.Must().UpdatedAt.Must().Time()
 		}
 		_, err = tx.ExecContext(ctx, upsertTaskStatusSQL, taskID, task.Status.Int(), task.Stage.String(), now)
 		return nil

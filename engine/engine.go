@@ -61,10 +61,6 @@ func (e *Engine) Close() {
 	e.closer()
 }
 
-func mustString(s string, _ error) string {
-	return s
-}
-
 func (e *Engine) worker(n int) {
 	log.Infow("engine worker started", "worker_id", n)
 
@@ -74,7 +70,7 @@ func (e *Engine) worker(n int) {
 
 		// pop a task
 		ctx := context.Background()
-		task, err := e.client.PopTask(ctx, &client.PopTaskRequest{Status: tasks.Available, WorkedBy: e.host})
+		task, err := e.client.PopTask(ctx, tasks.Type.PopTask.Of(e.host, tasks.Available))
 		if err != nil {
 			log.Warnw("pop-task returned error", "err", err)
 			continue
@@ -82,7 +78,7 @@ func (e *Engine) worker(n int) {
 		if task == nil {
 			continue // no task available
 		}
-		if mustString(task.WorkedBy.Must().AsString()) != e.host {
+		if task.WorkedBy.Must().String() != e.host {
 			log.Warnw("pop-task returned task that is not for this host", "err", err)
 			continue
 		}
@@ -91,12 +87,13 @@ func (e *Engine) worker(n int) {
 
 		finalStatus := tasks.Successful
 		updateStage := func(stage string, stageDetails tasks.StageDetails) error {
-			task, err = e.client.UpdateTask(ctx, mustString(task.UUID.AsString()), &client.UpdateTaskRequest{
-				Status:              tasks.InProgress,
-				Stage:               stage,
-				CurrentStageDetails: stageDetails,
-				WorkedBy:            e.host,
-			})
+			task, err = e.client.UpdateTask(ctx, task.UUID.String(),
+				tasks.Type.UpdateTask.OfStage(
+					e.host,
+					tasks.InProgress,
+					stage,
+					stageDetails,
+				))
 			return err
 		}
 		if task.RetrievalTask.Exists() {
@@ -120,12 +117,13 @@ func (e *Engine) worker(n int) {
 				log.Info("successfully stored data")
 			}
 		}
-		_, err = e.client.UpdateTask(ctx, mustString(task.UUID.AsString()), &client.UpdateTaskRequest{
-			Status:              finalStatus,
-			Stage:               mustString(task.Stage.AsString()),
-			CurrentStageDetails: task.CurrentStageDetails.Must(),
-			WorkedBy:            e.host,
-		})
+		_, err = e.client.UpdateTask(ctx, task.UUID.String(),
+			tasks.Type.UpdateTask.OfStage(
+				e.host,
+				finalStatus,
+				task.Stage.String(),
+				task.CurrentStageDetails.Must(),
+			))
 		if err != nil {
 			log.Error("Error updating final status")
 		}

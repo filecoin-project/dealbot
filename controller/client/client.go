@@ -3,13 +3,13 @@ package client
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"time"
 
 	"github.com/filecoin-project/dealbot/tasks"
+	dagjson "github.com/ipld/go-ipld-prime/codec/dagjson"
 	"github.com/urfave/cli/v2"
 
 	logging "github.com/ipfs/go-log/v2"
@@ -67,18 +67,19 @@ func (c *Client) ListTasks(ctx context.Context) ([]tasks.Task, error) {
 		return nil, err
 	}
 
-	var res []tasks.Task
-	err = json.NewDecoder(resp.Body).Decode(&res)
+	tlp := tasks.Type.Tasks.NewBuilder()
+	err = dagjson.Decoder(tlp, resp.Body)
 	if err != nil {
 		return nil, err
 	}
+	tsks := tlp.Build().(tasks.Tasks)
 
-	return res, nil
+	return tsks.List(), nil
 }
 
-func (c *Client) PopTask(ctx context.Context, r *PopTaskRequest) (tasks.Task, error) {
+func (c *Client) PopTask(ctx context.Context, r tasks.PopTask) (tasks.Task, error) {
 	var body bytes.Buffer
-	err := json.NewEncoder(&body).Encode(r)
+	err := dagjson.Encoder(r.Representation(), &body)
 	if err != nil {
 		return nil, err
 	}
@@ -88,23 +89,23 @@ func (c *Client) PopTask(ctx context.Context, r *PopTaskRequest) (tasks.Task, er
 		return nil, err
 	}
 
+	if resp.StatusCode == http.StatusNoContent {
+		return nil, nil
+	}
 	if resp.StatusCode != http.StatusOK {
 		return nil, ErrRequestFailed{resp.StatusCode}
 	}
 
-	var res tasks.Task
-	err = json.NewDecoder(resp.Body).Decode(&res)
-	if err != nil {
+	rp := tasks.Type.Task.NewBuilder()
+	if err := dagjson.Decoder(rp, resp.Body); err != nil {
 		return nil, err
 	}
-
-	// Note that if there's no task available, res will be nil.
-	return res, nil
+	return rp.Build().(tasks.Task), nil
 }
 
-func (c *Client) UpdateTask(ctx context.Context, uuid string, r *UpdateTaskRequest) (tasks.Task, error) {
+func (c *Client) UpdateTask(ctx context.Context, uuid string, r tasks.UpdateTask) (tasks.Task, error) {
 	var body bytes.Buffer
-	err := json.NewEncoder(&body).Encode(r)
+	err := dagjson.Encoder(r.Representation(), &body)
 	if err != nil {
 		return nil, err
 	}
@@ -118,12 +119,11 @@ func (c *Client) UpdateTask(ctx context.Context, uuid string, r *UpdateTaskReque
 		return nil, ErrRequestFailed{resp.StatusCode}
 	}
 
-	var res tasks.Task
-	err = json.NewDecoder(resp.Body).Decode(&res)
-	if err != nil {
+	rp := tasks.Type.Task.NewBuilder()
+	if err := dagjson.Decoder(rp, resp.Body); err != nil {
 		return nil, err
 	}
-	return res, nil
+	return rp.Build().(tasks.Task), nil
 }
 
 func (c *Client) GetTask(ctx context.Context, uuid string) (tasks.Task, error) {
@@ -136,17 +136,17 @@ func (c *Client) GetTask(ctx context.Context, uuid string) (tasks.Task, error) {
 		return nil, ErrRequestFailed{resp.StatusCode}
 	}
 
-	var res tasks.Task
-	err = json.NewDecoder(resp.Body).Decode(&res)
+	tp := tasks.Type.Task.NewBuilder()
+	err = dagjson.Decoder(tp, resp.Body)
 	if err != nil {
 		return nil, err
 	}
-	return res, nil
+	return tp.Build().(tasks.Task), nil
 }
 
 func (c *Client) CreateStorageTask(ctx context.Context, storageTask tasks.StorageTask) (tasks.Task, error) {
 	var body bytes.Buffer
-	err := json.NewEncoder(&body).Encode(storageTask)
+	err := dagjson.Encoder(storageTask.Representation(), &body)
 	if err != nil {
 		return nil, err
 	}
@@ -160,17 +160,17 @@ func (c *Client) CreateStorageTask(ctx context.Context, storageTask tasks.Storag
 		return nil, ErrRequestFailed{resp.StatusCode}
 	}
 
-	var res tasks.Task
-	err = json.NewDecoder(resp.Body).Decode(&res)
+	tp := tasks.Type.Task.NewBuilder()
+	err = dagjson.Decoder(tp, resp.Body)
 	if err != nil {
 		return nil, err
 	}
-	return res, nil
+	return tp.Build().(tasks.Task), nil
 }
 
 func (c *Client) CreateRetrievalTask(ctx context.Context, retrievalTask tasks.RetrievalTask) (tasks.Task, error) {
 	var body bytes.Buffer
-	err := json.NewEncoder(&body).Encode(retrievalTask)
+	err := dagjson.Encoder(retrievalTask.Representation(), &body)
 	if err != nil {
 		return nil, err
 	}
@@ -184,12 +184,12 @@ func (c *Client) CreateRetrievalTask(ctx context.Context, retrievalTask tasks.Re
 		return nil, ErrRequestFailed{resp.StatusCode}
 	}
 
-	var res tasks.Task
-	err = json.NewDecoder(resp.Body).Decode(&res)
+	tp := tasks.Type.Task.NewBuilder()
+	err = dagjson.Decoder(tp, resp.Body)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("could not parse /tasks/retrieval response: %w", err)
 	}
-	return res, nil
+	return tp.Build().(tasks.Task), nil
 }
 
 func (c *Client) request(ctx context.Context, method string, path string, body io.Reader, headers ...string) (*http.Response, error) {

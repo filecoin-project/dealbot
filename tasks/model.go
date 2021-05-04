@@ -205,6 +205,41 @@ func (t *_Task) Update(status Status, stage string, details StageDetails) error 
 	return nil
 }
 
+func (t *_Task) UpdateTask(tsk UpdateTask) error {
+	t.Status = tsk.Status
+	if tsk.CurrentStageDetails.Exists() {
+		t.CurrentStageDetails = tsk.CurrentStageDetails
+	} else {
+		t.CurrentStageDetails = _StageDetails__Maybe{m: schema.Maybe_Absent}
+	}
+	if tsk.Stage.Exists() {
+		t.Stage = *tsk.Stage.Must()
+	} else {
+		t.Stage = _String{""}
+	}
+
+	//todo: sign
+	return nil
+}
+
 func (t *_Task) GetUUID() string {
 	return t.UUID.x
+}
+
+func (tl *_Tasks__Prototype) Of(ts []Task) *_Tasks {
+	t := _Tasks{
+		x: []_Task{},
+	}
+	for _, c := range ts {
+		t.x = append(t.x, *c)
+	}
+	return &t
+}
+
+func (ts *_Tasks) List() []Task {
+	itms := make([]Task, 0, len(ts.x))
+	for _, t := range ts.x {
+		itms = append(itms, &t)
+	}
+	return itms
 }

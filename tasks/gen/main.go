@@ -103,6 +103,19 @@ func main() {
 		schema.SpawnStructField("RetrievalTask", "RetrievalTask", true, false),
 		schema.SpawnStructField("StorageTask", "StorageTask", true, false),
 	}, schema.SpawnStructRepresentationMap(map[string]string{})))
+	ts.Accumulate(schema.SpawnList("Tasks", "Task", false))
+
+	// client api
+	ts.Accumulate(schema.SpawnStruct("PopTask", []schema.StructField{
+		schema.SpawnStructField("Status", "Status", false, false),
+		schema.SpawnStructField("WorkedBy", "String", false, false),
+	}, schema.SpawnStructRepresentationMap(map[string]string{})))
+	ts.Accumulate(schema.SpawnStruct("UpdateTask", []schema.StructField{
+		schema.SpawnStructField("Status", "Status", false, false),
+		schema.SpawnStructField("Stage", "String", true, false),
+		schema.SpawnStructField("CurrentStageDetails", "StageDetails", true, false),
+		schema.SpawnStructField("WorkedBy", "String", false, false),
+	}, schema.SpawnStructRepresentationMap(map[string]string{})))
 
 	if errs := ts.ValidateGraph(); errs != nil {
 		for _, err := range errs {

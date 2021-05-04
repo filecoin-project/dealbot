@@ -79,7 +79,8 @@ func (md *MockDaemon) worker(n int) {
 
 		// pop a task
 		ctx := context.Background()
-		task, err := md.client.PopTask(ctx, &client.PopTaskRequest{Status: tasks.InProgress, WorkedBy: md.host})
+		task, err := md.client.PopTask(ctx,
+			tasks.Type.PopTask.Of(md.host, tasks.InProgress))
 		if err != nil {
 			log.Warnw("pop-task returned error", "err", err)
 			continue
@@ -137,12 +138,12 @@ func (md *MockDaemon) worker(n int) {
 			if !isSuccess {
 				result = tasks.Failed
 			}
-			req := &client.UpdateTaskRequest{
-				Status:              result,
-				Stage:               stage,
-				CurrentStageDetails: stageDetails,
-				WorkedBy:            md.host,
-			}
+			req := tasks.Type.UpdateTask.OfStage(
+				md.host,
+				result,
+				stage,
+				stageDetails,
+			)
 
 			task, err = md.client.UpdateTask(ctx, mustString(task.UUID.AsString()), req)
 			if err != nil {

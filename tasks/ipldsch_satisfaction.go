@@ -5086,6 +5086,912 @@ func (ma *_Map__ReprAssembler) ValuePrototype(_ string) ipld.NodePrototype {
 }
 
 
+func (n _PopTask) FieldStatus() Status {
+	return &n.Status
+}
+func (n _PopTask) FieldWorkedBy() String {
+	return &n.WorkedBy
+}
+type _PopTask__Maybe struct {
+	m schema.Maybe
+	v PopTask
+}
+type MaybePopTask = *_PopTask__Maybe
+
+func (m MaybePopTask) IsNull() bool {
+	return m.m == schema.Maybe_Null
+}
+func (m MaybePopTask) IsAbsent() bool {
+	return m.m == schema.Maybe_Absent
+}
+func (m MaybePopTask) Exists() bool {
+	return m.m == schema.Maybe_Value
+}
+func (m MaybePopTask) AsNode() ipld.Node {
+	switch m.m {
+		case schema.Maybe_Absent:
+			return ipld.Absent
+		case schema.Maybe_Null:
+			return ipld.Null
+		case schema.Maybe_Value:
+			return m.v
+		default:
+			panic("unreachable")
+	}
+}
+func (m MaybePopTask) Must() PopTask {
+	if !m.Exists() {
+		panic("unbox of a maybe rejected")
+	}
+	return m.v
+}
+var (
+	fieldName__PopTask_Status = _String{"Status"}
+	fieldName__PopTask_WorkedBy = _String{"WorkedBy"}
+)
+var _ ipld.Node = (PopTask)(&_PopTask{})
+var _ schema.TypedNode = (PopTask)(&_PopTask{})
+func (PopTask) Kind() ipld.Kind {
+	return ipld.Kind_Map
+}
+func (n PopTask) LookupByString(key string) (ipld.Node, error) {
+	switch key {
+	case "Status":
+		return &n.Status, nil
+	case "WorkedBy":
+		return &n.WorkedBy, nil
+	default:
+		return nil, schema.ErrNoSuchField{Type: nil /*TODO*/, Field: ipld.PathSegmentOfString(key)}
+	}
+}
+func (n PopTask) LookupByNode(key ipld.Node) (ipld.Node, error) {
+	ks, err := key.AsString()
+	if err != nil {
+		return nil, err
+	}
+	return n.LookupByString(ks)
+}
+func (PopTask) LookupByIndex(idx int64) (ipld.Node, error) {
+	return mixins.Map{"tasks.PopTask"}.LookupByIndex(0)
+}
+func (n PopTask) LookupBySegment(seg ipld.PathSegment) (ipld.Node, error) {
+	return n.LookupByString(seg.String())
+}
+func (n PopTask) MapIterator() ipld.MapIterator {
+	return &_PopTask__MapItr{n, 0}
+}
+
+type _PopTask__MapItr struct {
+	n PopTask
+	idx  int
+}
+
+func (itr *_PopTask__MapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
+	if itr.idx >= 2 {
+		return nil, nil, ipld.ErrIteratorOverread{}
+	}
+	switch itr.idx {
+	case 0:
+		k = &fieldName__PopTask_Status
+		v = &itr.n.Status
+	case 1:
+		k = &fieldName__PopTask_WorkedBy
+		v = &itr.n.WorkedBy
+	default:
+		panic("unreachable")
+	}
+	itr.idx++
+	return
+}
+func (itr *_PopTask__MapItr) Done() bool {
+	return itr.idx >= 2
+}
+
+func (PopTask) ListIterator() ipld.ListIterator {
+	return nil
+}
+func (PopTask) Length() int64 {
+	return 2
+}
+func (PopTask) IsAbsent() bool {
+	return false
+}
+func (PopTask) IsNull() bool {
+	return false
+}
+func (PopTask) AsBool() (bool, error) {
+	return mixins.Map{"tasks.PopTask"}.AsBool()
+}
+func (PopTask) AsInt() (int64, error) {
+	return mixins.Map{"tasks.PopTask"}.AsInt()
+}
+func (PopTask) AsFloat() (float64, error) {
+	return mixins.Map{"tasks.PopTask"}.AsFloat()
+}
+func (PopTask) AsString() (string, error) {
+	return mixins.Map{"tasks.PopTask"}.AsString()
+}
+func (PopTask) AsBytes() ([]byte, error) {
+	return mixins.Map{"tasks.PopTask"}.AsBytes()
+}
+func (PopTask) AsLink() (ipld.Link, error) {
+	return mixins.Map{"tasks.PopTask"}.AsLink()
+}
+func (PopTask) Prototype() ipld.NodePrototype {
+	return _PopTask__Prototype{}
+}
+type _PopTask__Prototype struct{}
+
+func (_PopTask__Prototype) NewBuilder() ipld.NodeBuilder {
+	var nb _PopTask__Builder
+	nb.Reset()
+	return &nb
+}
+type _PopTask__Builder struct {
+	_PopTask__Assembler
+}
+func (nb *_PopTask__Builder) Build() ipld.Node {
+	if *nb.m != schema.Maybe_Value {
+		panic("invalid state: cannot call Build on an assembler that's not finished")
+	}
+	return nb.w
+}
+func (nb *_PopTask__Builder) Reset() {
+	var w _PopTask
+	var m schema.Maybe
+	*nb = _PopTask__Builder{_PopTask__Assembler{w: &w, m: &m}}
+}
+type _PopTask__Assembler struct {
+	w *_PopTask
+	m *schema.Maybe
+	state maState
+	s int
+	f int
+
+	cm schema.Maybe
+	ca_Status _Status__Assembler
+	ca_WorkedBy _String__Assembler
+	}
+
+func (na *_PopTask__Assembler) reset() {
+	na.state = maState_initial
+	na.s = 0
+	na.ca_Status.reset()
+	na.ca_WorkedBy.reset()
+}
+
+var (
+	fieldBit__PopTask_Status = 1 << 0
+	fieldBit__PopTask_WorkedBy = 1 << 1
+	fieldBits__PopTask_sufficient = 0 + 1 << 0 + 1 << 1
+)
+func (na *_PopTask__Assembler) BeginMap(int64) (ipld.MapAssembler, error) {
+	switch *na.m {
+	case schema.Maybe_Value, schema.Maybe_Null:
+		panic("invalid state: cannot assign into assembler that's already finished")
+	case midvalue:
+		panic("invalid state: it makes no sense to 'begin' twice on the same assembler!")
+	}
+	*na.m = midvalue
+	if na.w == nil {
+		na.w = &_PopTask{}
+	}
+	return na, nil
+}
+func (_PopTask__Assembler) BeginList(sizeHint int64) (ipld.ListAssembler, error) {
+	return mixins.MapAssembler{"tasks.PopTask"}.BeginList(0)
+}
+func (na *_PopTask__Assembler) AssignNull() error {
+	switch *na.m {
+	case allowNull:
+		*na.m = schema.Maybe_Null
+		return nil
+	case schema.Maybe_Absent:
+		return mixins.MapAssembler{"tasks.PopTask"}.AssignNull()
+	case schema.Maybe_Value, schema.Maybe_Null:
+		panic("invalid state: cannot assign into assembler that's already finished")
+	case midvalue:
+		panic("invalid state: cannot assign null into an assembler that's already begun working on recursive structures!")
+	}
+	panic("unreachable")
+}
+func (_PopTask__Assembler) AssignBool(bool) error {
+	return mixins.MapAssembler{"tasks.PopTask"}.AssignBool(false)
+}
+func (_PopTask__Assembler) AssignInt(int64) error {
+	return mixins.MapAssembler{"tasks.PopTask"}.AssignInt(0)
+}
+func (_PopTask__Assembler) AssignFloat(float64) error {
+	return mixins.MapAssembler{"tasks.PopTask"}.AssignFloat(0)
+}
+func (_PopTask__Assembler) AssignString(string) error {
+	return mixins.MapAssembler{"tasks.PopTask"}.AssignString("")
+}
+func (_PopTask__Assembler) AssignBytes([]byte) error {
+	return mixins.MapAssembler{"tasks.PopTask"}.AssignBytes(nil)
+}
+func (_PopTask__Assembler) AssignLink(ipld.Link) error {
+	return mixins.MapAssembler{"tasks.PopTask"}.AssignLink(nil)
+}
+func (na *_PopTask__Assembler) AssignNode(v ipld.Node) error {
+	if v.IsNull() {
+		return na.AssignNull()
+	}
+	if v2, ok := v.(*_PopTask); ok {
+		switch *na.m {
+		case schema.Maybe_Value, schema.Maybe_Null:
+			panic("invalid state: cannot assign into assembler that's already finished")
+		case midvalue:
+			panic("invalid state: cannot assign null into an assembler that's already begun working on recursive structures!")
+		}
+		if na.w == nil {
+			na.w = v2
+			*na.m = schema.Maybe_Value
+			return nil
+		}
+		*na.w = *v2
+		*na.m = schema.Maybe_Value
+		return nil
+	}
+	if v.Kind() != ipld.Kind_Map {
+		return ipld.ErrWrongKind{TypeName: "tasks.PopTask", MethodName: "AssignNode", AppropriateKind: ipld.KindSet_JustMap, ActualKind: v.Kind()}
+	}
+	itr := v.MapIterator()
+	for !itr.Done() {
+		k, v, err := itr.Next()
+		if err != nil {
+			return err
+		}
+		if err := na.AssembleKey().AssignNode(k); err != nil {
+			return err
+		}
+		if err := na.AssembleValue().AssignNode(v); err != nil {
+			return err
+		}
+	}
+	return na.Finish()
+}
+func (_PopTask__Assembler) Prototype() ipld.NodePrototype {
+	return _PopTask__Prototype{}
+}
+func (ma *_PopTask__Assembler) valueFinishTidy() bool {
+	switch ma.f {
+	case 0:
+		switch ma.cm {
+		case schema.Maybe_Value:
+			ma.ca_Status.w = nil
+			ma.cm = schema.Maybe_Absent
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
+	case 1:
+		switch ma.cm {
+		case schema.Maybe_Value:
+			ma.ca_WorkedBy.w = nil
+			ma.cm = schema.Maybe_Absent
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
+	default:
+		panic("unreachable")
+	}
+}
+func (ma *_PopTask__Assembler) AssembleEntry(k string) (ipld.NodeAssembler, error) {
+	switch ma.state {
+	case maState_initial:
+		// carry on
+	case maState_midKey:
+		panic("invalid state: AssembleEntry cannot be called when in the middle of assembling another key")
+	case maState_expectValue:
+		panic("invalid state: AssembleEntry cannot be called when expecting start of value assembly")
+	case maState_midValue:
+		if !ma.valueFinishTidy() {
+			panic("invalid state: AssembleEntry cannot be called when in the middle of assembling a value")
+		} // if tidy success: carry on
+	case maState_finished:
+		panic("invalid state: AssembleEntry cannot be called on an assembler that's already finished")
+	}
+	switch k {
+	case "Status":
+		if ma.s & fieldBit__PopTask_Status != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__PopTask_Status}
+		}
+		ma.s += fieldBit__PopTask_Status
+		ma.state = maState_midValue
+		ma.f = 0
+		ma.ca_Status.w = &ma.w.Status
+		ma.ca_Status.m = &ma.cm
+		return &ma.ca_Status, nil
+	case "WorkedBy":
+		if ma.s & fieldBit__PopTask_WorkedBy != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__PopTask_WorkedBy}
+		}
+		ma.s += fieldBit__PopTask_WorkedBy
+		ma.state = maState_midValue
+		ma.f = 1
+		ma.ca_WorkedBy.w = &ma.w.WorkedBy
+		ma.ca_WorkedBy.m = &ma.cm
+		return &ma.ca_WorkedBy, nil
+	default:
+		return nil, ipld.ErrInvalidKey{TypeName:"tasks.PopTask", Key:&_String{k}}
+	}
+}
+func (ma *_PopTask__Assembler) AssembleKey() ipld.NodeAssembler {
+	switch ma.state {
+	case maState_initial:
+		// carry on
+	case maState_midKey:
+		panic("invalid state: AssembleKey cannot be called when in the middle of assembling another key")
+	case maState_expectValue:
+		panic("invalid state: AssembleKey cannot be called when expecting start of value assembly")
+	case maState_midValue:
+		if !ma.valueFinishTidy() {
+			panic("invalid state: AssembleKey cannot be called when in the middle of assembling a value")
+		} // if tidy success: carry on
+	case maState_finished:
+		panic("invalid state: AssembleKey cannot be called on an assembler that's already finished")
+	}
+	ma.state = maState_midKey
+	return (*_PopTask__KeyAssembler)(ma)
+}
+func (ma *_PopTask__Assembler) AssembleValue() ipld.NodeAssembler {
+	switch ma.state {
+	case maState_initial:
+		panic("invalid state: AssembleValue cannot be called when no key is primed")
+	case maState_midKey:
+		panic("invalid state: AssembleValue cannot be called when in the middle of assembling a key")
+	case maState_expectValue:
+		// carry on
+	case maState_midValue:
+		panic("invalid state: AssembleValue cannot be called when in the middle of assembling another value")
+	case maState_finished:
+		panic("invalid state: AssembleValue cannot be called on an assembler that's already finished")
+	}
+	ma.state = maState_midValue
+	switch ma.f {
+	case 0:
+		ma.ca_Status.w = &ma.w.Status
+		ma.ca_Status.m = &ma.cm
+		return &ma.ca_Status
+	case 1:
+		ma.ca_WorkedBy.w = &ma.w.WorkedBy
+		ma.ca_WorkedBy.m = &ma.cm
+		return &ma.ca_WorkedBy
+	default:
+		panic("unreachable")
+	}
+}
+func (ma *_PopTask__Assembler) Finish() error {
+	switch ma.state {
+	case maState_initial:
+		// carry on
+	case maState_midKey:
+		panic("invalid state: Finish cannot be called when in the middle of assembling a key")
+	case maState_expectValue:
+		panic("invalid state: Finish cannot be called when expecting start of value assembly")
+	case maState_midValue:
+		if !ma.valueFinishTidy() {
+			panic("invalid state: Finish cannot be called when in the middle of assembling a value")
+		} // if tidy success: carry on
+	case maState_finished:
+		panic("invalid state: Finish cannot be called on an assembler that's already finished")
+	}
+	if ma.s & fieldBits__PopTask_sufficient != fieldBits__PopTask_sufficient {
+		err := ipld.ErrMissingRequiredField{Missing: make([]string, 0)}
+		if ma.s & fieldBit__PopTask_Status == 0 {
+			err.Missing = append(err.Missing, "Status")
+		}
+		if ma.s & fieldBit__PopTask_WorkedBy == 0 {
+			err.Missing = append(err.Missing, "WorkedBy")
+		}
+		return err
+	}
+	ma.state = maState_finished
+	*ma.m = schema.Maybe_Value
+	return nil
+}
+func (ma *_PopTask__Assembler) KeyPrototype() ipld.NodePrototype {
+	return _String__Prototype{}
+}
+func (ma *_PopTask__Assembler) ValuePrototype(k string) ipld.NodePrototype {
+	panic("todo structbuilder mapassembler valueprototype")
+}
+type _PopTask__KeyAssembler _PopTask__Assembler
+func (_PopTask__KeyAssembler) BeginMap(sizeHint int64) (ipld.MapAssembler, error) {
+	return mixins.StringAssembler{"tasks.PopTask.KeyAssembler"}.BeginMap(0)
+}
+func (_PopTask__KeyAssembler) BeginList(sizeHint int64) (ipld.ListAssembler, error) {
+	return mixins.StringAssembler{"tasks.PopTask.KeyAssembler"}.BeginList(0)
+}
+func (na *_PopTask__KeyAssembler) AssignNull() error {
+	return mixins.StringAssembler{"tasks.PopTask.KeyAssembler"}.AssignNull()
+}
+func (_PopTask__KeyAssembler) AssignBool(bool) error {
+	return mixins.StringAssembler{"tasks.PopTask.KeyAssembler"}.AssignBool(false)
+}
+func (_PopTask__KeyAssembler) AssignInt(int64) error {
+	return mixins.StringAssembler{"tasks.PopTask.KeyAssembler"}.AssignInt(0)
+}
+func (_PopTask__KeyAssembler) AssignFloat(float64) error {
+	return mixins.StringAssembler{"tasks.PopTask.KeyAssembler"}.AssignFloat(0)
+}
+func (ka *_PopTask__KeyAssembler) AssignString(k string) error {
+	if ka.state != maState_midKey {
+		panic("misuse: KeyAssembler held beyond its valid lifetime")
+	}
+	switch k {
+	case "Status":
+		if ka.s & fieldBit__PopTask_Status != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__PopTask_Status}
+		}
+		ka.s += fieldBit__PopTask_Status
+		ka.state = maState_expectValue
+		ka.f = 0
+	case "WorkedBy":
+		if ka.s & fieldBit__PopTask_WorkedBy != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__PopTask_WorkedBy}
+		}
+		ka.s += fieldBit__PopTask_WorkedBy
+		ka.state = maState_expectValue
+		ka.f = 1
+	default:
+		return ipld.ErrInvalidKey{TypeName:"tasks.PopTask", Key:&_String{k}}
+	}
+	return nil
+}
+func (_PopTask__KeyAssembler) AssignBytes([]byte) error {
+	return mixins.StringAssembler{"tasks.PopTask.KeyAssembler"}.AssignBytes(nil)
+}
+func (_PopTask__KeyAssembler) AssignLink(ipld.Link) error {
+	return mixins.StringAssembler{"tasks.PopTask.KeyAssembler"}.AssignLink(nil)
+}
+func (ka *_PopTask__KeyAssembler) AssignNode(v ipld.Node) error {
+	if v2, err := v.AsString(); err != nil {
+		return err
+	} else {
+		return ka.AssignString(v2)
+	}
+}
+func (_PopTask__KeyAssembler) Prototype() ipld.NodePrototype {
+	return _String__Prototype{}
+}
+func (PopTask) Type() schema.Type {
+	return nil /*TODO:typelit*/
+}
+func (n PopTask) Representation() ipld.Node {
+	return (*_PopTask__Repr)(n)
+}
+type _PopTask__Repr _PopTask
+var (
+	fieldName__PopTask_Status_serial = _String{"Status"}
+	fieldName__PopTask_WorkedBy_serial = _String{"WorkedBy"}
+)
+var _ ipld.Node = &_PopTask__Repr{}
+func (_PopTask__Repr) Kind() ipld.Kind {
+	return ipld.Kind_Map
+}
+func (n *_PopTask__Repr) LookupByString(key string) (ipld.Node, error) {
+	switch key {
+	case "Status":
+		return n.Status.Representation(), nil
+	case "WorkedBy":
+		return n.WorkedBy.Representation(), nil
+	default:
+		return nil, schema.ErrNoSuchField{Type: nil /*TODO*/, Field: ipld.PathSegmentOfString(key)}
+	}
+}
+func (n *_PopTask__Repr) LookupByNode(key ipld.Node) (ipld.Node, error) {
+	ks, err := key.AsString()
+	if err != nil {
+		return nil, err
+	}
+	return n.LookupByString(ks)
+}
+func (_PopTask__Repr) LookupByIndex(idx int64) (ipld.Node, error) {
+	return mixins.Map{"tasks.PopTask.Repr"}.LookupByIndex(0)
+}
+func (n _PopTask__Repr) LookupBySegment(seg ipld.PathSegment) (ipld.Node, error) {
+	return n.LookupByString(seg.String())
+}
+func (n *_PopTask__Repr) MapIterator() ipld.MapIterator {
+	return &_PopTask__ReprMapItr{n, 0}
+}
+
+type _PopTask__ReprMapItr struct {
+	n   *_PopTask__Repr
+	idx int
+	
+}
+
+func (itr *_PopTask__ReprMapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
+if itr.idx >= 2 {
+		return nil, nil, ipld.ErrIteratorOverread{}
+	}
+	switch itr.idx {
+	case 0:
+		k = &fieldName__PopTask_Status_serial
+		v = itr.n.Status.Representation()
+	case 1:
+		k = &fieldName__PopTask_WorkedBy_serial
+		v = itr.n.WorkedBy.Representation()
+	default:
+		panic("unreachable")
+	}
+	itr.idx++
+	return
+}
+func (itr *_PopTask__ReprMapItr) Done() bool {
+	return itr.idx >= 2
+}
+func (_PopTask__Repr) ListIterator() ipld.ListIterator {
+	return nil
+}
+func (rn *_PopTask__Repr) Length() int64 {
+	l := 2
+	return int64(l)
+}
+func (_PopTask__Repr) IsAbsent() bool {
+	return false
+}
+func (_PopTask__Repr) IsNull() bool {
+	return false
+}
+func (_PopTask__Repr) AsBool() (bool, error) {
+	return mixins.Map{"tasks.PopTask.Repr"}.AsBool()
+}
+func (_PopTask__Repr) AsInt() (int64, error) {
+	return mixins.Map{"tasks.PopTask.Repr"}.AsInt()
+}
+func (_PopTask__Repr) AsFloat() (float64, error) {
+	return mixins.Map{"tasks.PopTask.Repr"}.AsFloat()
+}
+func (_PopTask__Repr) AsString() (string, error) {
+	return mixins.Map{"tasks.PopTask.Repr"}.AsString()
+}
+func (_PopTask__Repr) AsBytes() ([]byte, error) {
+	return mixins.Map{"tasks.PopTask.Repr"}.AsBytes()
+}
+func (_PopTask__Repr) AsLink() (ipld.Link, error) {
+	return mixins.Map{"tasks.PopTask.Repr"}.AsLink()
+}
+func (_PopTask__Repr) Prototype() ipld.NodePrototype {
+	return _PopTask__ReprPrototype{}
+}
+type _PopTask__ReprPrototype struct{}
+
+func (_PopTask__ReprPrototype) NewBuilder() ipld.NodeBuilder {
+	var nb _PopTask__ReprBuilder
+	nb.Reset()
+	return &nb
+}
+type _PopTask__ReprBuilder struct {
+	_PopTask__ReprAssembler
+}
+func (nb *_PopTask__ReprBuilder) Build() ipld.Node {
+	if *nb.m != schema.Maybe_Value {
+		panic("invalid state: cannot call Build on an assembler that's not finished")
+	}
+	return nb.w
+}
+func (nb *_PopTask__ReprBuilder) Reset() {
+	var w _PopTask
+	var m schema.Maybe
+	*nb = _PopTask__ReprBuilder{_PopTask__ReprAssembler{w: &w, m: &m}}
+}
+type _PopTask__ReprAssembler struct {
+	w *_PopTask
+	m *schema.Maybe
+	state maState
+	s int
+	f int
+
+	cm schema.Maybe
+	ca_Status _Status__ReprAssembler
+	ca_WorkedBy _String__ReprAssembler
+	}
+
+func (na *_PopTask__ReprAssembler) reset() {
+	na.state = maState_initial
+	na.s = 0
+	na.ca_Status.reset()
+	na.ca_WorkedBy.reset()
+}
+func (na *_PopTask__ReprAssembler) BeginMap(int64) (ipld.MapAssembler, error) {
+	switch *na.m {
+	case schema.Maybe_Value, schema.Maybe_Null:
+		panic("invalid state: cannot assign into assembler that's already finished")
+	case midvalue:
+		panic("invalid state: it makes no sense to 'begin' twice on the same assembler!")
+	}
+	*na.m = midvalue
+	if na.w == nil {
+		na.w = &_PopTask{}
+	}
+	return na, nil
+}
+func (_PopTask__ReprAssembler) BeginList(sizeHint int64) (ipld.ListAssembler, error) {
+	return mixins.MapAssembler{"tasks.PopTask.Repr"}.BeginList(0)
+}
+func (na *_PopTask__ReprAssembler) AssignNull() error {
+	switch *na.m {
+	case allowNull:
+		*na.m = schema.Maybe_Null
+		return nil
+	case schema.Maybe_Absent:
+		return mixins.MapAssembler{"tasks.PopTask.Repr.Repr"}.AssignNull()
+	case schema.Maybe_Value, schema.Maybe_Null:
+		panic("invalid state: cannot assign into assembler that's already finished")
+	case midvalue:
+		panic("invalid state: cannot assign null into an assembler that's already begun working on recursive structures!")
+	}
+	panic("unreachable")
+}
+func (_PopTask__ReprAssembler) AssignBool(bool) error {
+	return mixins.MapAssembler{"tasks.PopTask.Repr"}.AssignBool(false)
+}
+func (_PopTask__ReprAssembler) AssignInt(int64) error {
+	return mixins.MapAssembler{"tasks.PopTask.Repr"}.AssignInt(0)
+}
+func (_PopTask__ReprAssembler) AssignFloat(float64) error {
+	return mixins.MapAssembler{"tasks.PopTask.Repr"}.AssignFloat(0)
+}
+func (_PopTask__ReprAssembler) AssignString(string) error {
+	return mixins.MapAssembler{"tasks.PopTask.Repr"}.AssignString("")
+}
+func (_PopTask__ReprAssembler) AssignBytes([]byte) error {
+	return mixins.MapAssembler{"tasks.PopTask.Repr"}.AssignBytes(nil)
+}
+func (_PopTask__ReprAssembler) AssignLink(ipld.Link) error {
+	return mixins.MapAssembler{"tasks.PopTask.Repr"}.AssignLink(nil)
+}
+func (na *_PopTask__ReprAssembler) AssignNode(v ipld.Node) error {
+	if v.IsNull() {
+		return na.AssignNull()
+	}
+	if v2, ok := v.(*_PopTask); ok {
+		switch *na.m {
+		case schema.Maybe_Value, schema.Maybe_Null:
+			panic("invalid state: cannot assign into assembler that's already finished")
+		case midvalue:
+			panic("invalid state: cannot assign null into an assembler that's already begun working on recursive structures!")
+		}
+		if na.w == nil {
+			na.w = v2
+			*na.m = schema.Maybe_Value
+			return nil
+		}
+		*na.w = *v2
+		*na.m = schema.Maybe_Value
+		return nil
+	}
+	if v.Kind() != ipld.Kind_Map {
+		return ipld.ErrWrongKind{TypeName: "tasks.PopTask.Repr", MethodName: "AssignNode", AppropriateKind: ipld.KindSet_JustMap, ActualKind: v.Kind()}
+	}
+	itr := v.MapIterator()
+	for !itr.Done() {
+		k, v, err := itr.Next()
+		if err != nil {
+			return err
+		}
+		if err := na.AssembleKey().AssignNode(k); err != nil {
+			return err
+		}
+		if err := na.AssembleValue().AssignNode(v); err != nil {
+			return err
+		}
+	}
+	return na.Finish()
+}
+func (_PopTask__ReprAssembler) Prototype() ipld.NodePrototype {
+	return _PopTask__ReprPrototype{}
+}
+func (ma *_PopTask__ReprAssembler) valueFinishTidy() bool {
+	switch ma.f {
+	case 0:
+		switch ma.cm {
+		case schema.Maybe_Value:ma.cm = schema.Maybe_Absent
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
+	case 1:
+		switch ma.cm {
+		case schema.Maybe_Value:ma.cm = schema.Maybe_Absent
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
+	default:
+		panic("unreachable")
+	}
+}
+func (ma *_PopTask__ReprAssembler) AssembleEntry(k string) (ipld.NodeAssembler, error) {
+	switch ma.state {
+	case maState_initial:
+		// carry on
+	case maState_midKey:
+		panic("invalid state: AssembleEntry cannot be called when in the middle of assembling another key")
+	case maState_expectValue:
+		panic("invalid state: AssembleEntry cannot be called when expecting start of value assembly")
+	case maState_midValue:
+		if !ma.valueFinishTidy() {
+			panic("invalid state: AssembleEntry cannot be called when in the middle of assembling a value")
+		} // if tidy success: carry on
+	case maState_finished:
+		panic("invalid state: AssembleEntry cannot be called on an assembler that's already finished")
+	}
+	switch k {
+	case "Status":
+		if ma.s & fieldBit__PopTask_Status != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__PopTask_Status_serial}
+		}
+		ma.s += fieldBit__PopTask_Status
+		ma.state = maState_midValue
+		ma.f = 0
+		ma.ca_Status.w = &ma.w.Status
+		ma.ca_Status.m = &ma.cm
+		return &ma.ca_Status, nil
+	case "WorkedBy":
+		if ma.s & fieldBit__PopTask_WorkedBy != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__PopTask_WorkedBy_serial}
+		}
+		ma.s += fieldBit__PopTask_WorkedBy
+		ma.state = maState_midValue
+		ma.f = 1
+		ma.ca_WorkedBy.w = &ma.w.WorkedBy
+		ma.ca_WorkedBy.m = &ma.cm
+		return &ma.ca_WorkedBy, nil
+	default:
+		return nil, ipld.ErrInvalidKey{TypeName:"tasks.PopTask.Repr", Key:&_String{k}}
+	}
+}
+func (ma *_PopTask__ReprAssembler) AssembleKey() ipld.NodeAssembler {
+	switch ma.state {
+	case maState_initial:
+		// carry on
+	case maState_midKey:
+		panic("invalid state: AssembleKey cannot be called when in the middle of assembling another key")
+	case maState_expectValue:
+		panic("invalid state: AssembleKey cannot be called when expecting start of value assembly")
+	case maState_midValue:
+		if !ma.valueFinishTidy() {
+			panic("invalid state: AssembleKey cannot be called when in the middle of assembling a value")
+		} // if tidy success: carry on
+	case maState_finished:
+		panic("invalid state: AssembleKey cannot be called on an assembler that's already finished")
+	}
+	ma.state = maState_midKey
+	return (*_PopTask__ReprKeyAssembler)(ma)
+}
+func (ma *_PopTask__ReprAssembler) AssembleValue() ipld.NodeAssembler {
+	switch ma.state {
+	case maState_initial:
+		panic("invalid state: AssembleValue cannot be called when no key is primed")
+	case maState_midKey:
+		panic("invalid state: AssembleValue cannot be called when in the middle of assembling a key")
+	case maState_expectValue:
+		// carry on
+	case maState_midValue:
+		panic("invalid state: AssembleValue cannot be called when in the middle of assembling another value")
+	case maState_finished:
+		panic("invalid state: AssembleValue cannot be called on an assembler that's already finished")
+	}
+	ma.state = maState_midValue
+	switch ma.f {
+	case 0:
+		ma.ca_Status.w = &ma.w.Status
+		ma.ca_Status.m = &ma.cm
+		return &ma.ca_Status
+	case 1:
+		ma.ca_WorkedBy.w = &ma.w.WorkedBy
+		ma.ca_WorkedBy.m = &ma.cm
+		return &ma.ca_WorkedBy
+	default:
+		panic("unreachable")
+	}
+}
+func (ma *_PopTask__ReprAssembler) Finish() error {
+	switch ma.state {
+	case maState_initial:
+		// carry on
+	case maState_midKey:
+		panic("invalid state: Finish cannot be called when in the middle of assembling a key")
+	case maState_expectValue:
+		panic("invalid state: Finish cannot be called when expecting start of value assembly")
+	case maState_midValue:
+		if !ma.valueFinishTidy() {
+			panic("invalid state: Finish cannot be called when in the middle of assembling a value")
+		} // if tidy success: carry on
+	case maState_finished:
+		panic("invalid state: Finish cannot be called on an assembler that's already finished")
+	}
+	if ma.s & fieldBits__PopTask_sufficient != fieldBits__PopTask_sufficient {
+		err := ipld.ErrMissingRequiredField{Missing: make([]string, 0)}
+		if ma.s & fieldBit__PopTask_Status == 0 {
+			err.Missing = append(err.Missing, "Status")
+		}
+		if ma.s & fieldBit__PopTask_WorkedBy == 0 {
+			err.Missing = append(err.Missing, "WorkedBy")
+		}
+		return err
+	}
+	ma.state = maState_finished
+	*ma.m = schema.Maybe_Value
+	return nil
+}
+func (ma *_PopTask__ReprAssembler) KeyPrototype() ipld.NodePrototype {
+	return _String__Prototype{}
+}
+func (ma *_PopTask__ReprAssembler) ValuePrototype(k string) ipld.NodePrototype {
+	panic("todo structbuilder mapassembler repr valueprototype")
+}
+type _PopTask__ReprKeyAssembler _PopTask__ReprAssembler
+func (_PopTask__ReprKeyAssembler) BeginMap(sizeHint int64) (ipld.MapAssembler, error) {
+	return mixins.StringAssembler{"tasks.PopTask.Repr.KeyAssembler"}.BeginMap(0)
+}
+func (_PopTask__ReprKeyAssembler) BeginList(sizeHint int64) (ipld.ListAssembler, error) {
+	return mixins.StringAssembler{"tasks.PopTask.Repr.KeyAssembler"}.BeginList(0)
+}
+func (na *_PopTask__ReprKeyAssembler) AssignNull() error {
+	return mixins.StringAssembler{"tasks.PopTask.Repr.KeyAssembler"}.AssignNull()
+}
+func (_PopTask__ReprKeyAssembler) AssignBool(bool) error {
+	return mixins.StringAssembler{"tasks.PopTask.Repr.KeyAssembler"}.AssignBool(false)
+}
+func (_PopTask__ReprKeyAssembler) AssignInt(int64) error {
+	return mixins.StringAssembler{"tasks.PopTask.Repr.KeyAssembler"}.AssignInt(0)
+}
+func (_PopTask__ReprKeyAssembler) AssignFloat(float64) error {
+	return mixins.StringAssembler{"tasks.PopTask.Repr.KeyAssembler"}.AssignFloat(0)
+}
+func (ka *_PopTask__ReprKeyAssembler) AssignString(k string) error {
+	if ka.state != maState_midKey {
+		panic("misuse: KeyAssembler held beyond its valid lifetime")
+	}
+	switch k {
+	case "Status":
+		if ka.s & fieldBit__PopTask_Status != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__PopTask_Status_serial}
+		}
+		ka.s += fieldBit__PopTask_Status
+		ka.state = maState_expectValue
+		ka.f = 0
+	case "WorkedBy":
+		if ka.s & fieldBit__PopTask_WorkedBy != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__PopTask_WorkedBy_serial}
+		}
+		ka.s += fieldBit__PopTask_WorkedBy
+		ka.state = maState_expectValue
+		ka.f = 1
+	default:
+		return ipld.ErrInvalidKey{TypeName:"tasks.PopTask.Repr", Key:&_String{k}}
+	}
+	return nil
+}
+func (_PopTask__ReprKeyAssembler) AssignBytes([]byte) error {
+	return mixins.StringAssembler{"tasks.PopTask.Repr.KeyAssembler"}.AssignBytes(nil)
+}
+func (_PopTask__ReprKeyAssembler) AssignLink(ipld.Link) error {
+	return mixins.StringAssembler{"tasks.PopTask.Repr.KeyAssembler"}.AssignLink(nil)
+}
+func (ka *_PopTask__ReprKeyAssembler) AssignNode(v ipld.Node) error {
+	if v2, err := v.AsString(); err != nil {
+		return err
+	} else {
+		return ka.AssignString(v2)
+	}
+}
+func (_PopTask__ReprKeyAssembler) Prototype() ipld.NodePrototype {
+	return _String__Prototype{}
+}
+
+
 func (n _RetrievalTask) FieldMiner() String {
 	return &n.Miner
 }
@@ -10370,6 +11276,599 @@ func (_Task__ReprKeyAssembler) Prototype() ipld.NodePrototype {
 	return _String__Prototype{}
 }
 
+func (n *_Tasks) Lookup(idx int64) Task {
+	if n.Length() <= idx {
+		return nil
+	}
+	v := &n.x[idx]
+	return v
+}
+func (n *_Tasks) LookupMaybe(idx int64) MaybeTask {
+	if n.Length() <= idx {
+		return nil
+	}
+	v := &n.x[idx]
+	return &_Task__Maybe{
+		m: schema.Maybe_Value,
+		v: v,
+	}
+}
+
+var _Tasks__valueAbsent = _Task__Maybe{m:schema.Maybe_Absent}
+func (n Tasks) Iterator() *Tasks__Itr {
+	return &Tasks__Itr{n, 0}
+}
+
+type Tasks__Itr struct {
+	n Tasks
+	idx  int
+}
+
+func (itr *Tasks__Itr) Next() (idx int64, v Task) {
+	if itr.idx >= len(itr.n.x) {
+		return -1, nil
+	}
+	idx = int64(itr.idx)
+	v = &itr.n.x[itr.idx]
+	itr.idx++
+	return
+}
+func (itr *Tasks__Itr) Done() bool {
+	return itr.idx >= len(itr.n.x)
+}
+
+type _Tasks__Maybe struct {
+	m schema.Maybe
+	v Tasks
+}
+type MaybeTasks = *_Tasks__Maybe
+
+func (m MaybeTasks) IsNull() bool {
+	return m.m == schema.Maybe_Null
+}
+func (m MaybeTasks) IsAbsent() bool {
+	return m.m == schema.Maybe_Absent
+}
+func (m MaybeTasks) Exists() bool {
+	return m.m == schema.Maybe_Value
+}
+func (m MaybeTasks) AsNode() ipld.Node {
+	switch m.m {
+		case schema.Maybe_Absent:
+			return ipld.Absent
+		case schema.Maybe_Null:
+			return ipld.Null
+		case schema.Maybe_Value:
+			return m.v
+		default:
+			panic("unreachable")
+	}
+}
+func (m MaybeTasks) Must() Tasks {
+	if !m.Exists() {
+		panic("unbox of a maybe rejected")
+	}
+	return m.v
+}
+var _ ipld.Node = (Tasks)(&_Tasks{})
+var _ schema.TypedNode = (Tasks)(&_Tasks{})
+func (Tasks) Kind() ipld.Kind {
+	return ipld.Kind_List
+}
+func (Tasks) LookupByString(string) (ipld.Node, error) {
+	return mixins.List{"tasks.Tasks"}.LookupByString("")
+}
+func (n Tasks) LookupByNode(k ipld.Node) (ipld.Node, error) {
+	idx, err := k.AsInt()
+	if err != nil {
+		return nil, err
+	}
+	return n.LookupByIndex(idx)
+}
+func (n Tasks) LookupByIndex(idx int64) (ipld.Node, error) {
+	if n.Length() <= idx {
+		return nil, ipld.ErrNotExists{ipld.PathSegmentOfInt(idx)}
+	}
+	v := &n.x[idx]
+	return v, nil
+}
+func (n Tasks) LookupBySegment(seg ipld.PathSegment) (ipld.Node, error) {
+	i, err := seg.Index()
+	if err != nil {
+		return nil, ipld.ErrInvalidSegmentForList{TypeName: "tasks.Tasks", TroubleSegment: seg, Reason: err}
+	}
+	return n.LookupByIndex(i)
+}
+func (Tasks) MapIterator() ipld.MapIterator {
+	return nil
+}
+func (n Tasks) ListIterator() ipld.ListIterator {
+	return &_Tasks__ListItr{n, 0}
+}
+
+type _Tasks__ListItr struct {
+	n Tasks
+	idx  int
+}
+
+func (itr *_Tasks__ListItr) Next() (idx int64, v ipld.Node, _ error) {
+	if itr.idx >= len(itr.n.x) {
+		return -1, nil, ipld.ErrIteratorOverread{}
+	}
+	idx = int64(itr.idx)
+	x := &itr.n.x[itr.idx]
+	v = x
+	itr.idx++
+	return
+}
+func (itr *_Tasks__ListItr) Done() bool {
+	return itr.idx >= len(itr.n.x)
+}
+
+func (n Tasks) Length() int64 {
+	return int64(len(n.x))
+}
+func (Tasks) IsAbsent() bool {
+	return false
+}
+func (Tasks) IsNull() bool {
+	return false
+}
+func (Tasks) AsBool() (bool, error) {
+	return mixins.List{"tasks.Tasks"}.AsBool()
+}
+func (Tasks) AsInt() (int64, error) {
+	return mixins.List{"tasks.Tasks"}.AsInt()
+}
+func (Tasks) AsFloat() (float64, error) {
+	return mixins.List{"tasks.Tasks"}.AsFloat()
+}
+func (Tasks) AsString() (string, error) {
+	return mixins.List{"tasks.Tasks"}.AsString()
+}
+func (Tasks) AsBytes() ([]byte, error) {
+	return mixins.List{"tasks.Tasks"}.AsBytes()
+}
+func (Tasks) AsLink() (ipld.Link, error) {
+	return mixins.List{"tasks.Tasks"}.AsLink()
+}
+func (Tasks) Prototype() ipld.NodePrototype {
+	return _Tasks__Prototype{}
+}
+type _Tasks__Prototype struct{}
+
+func (_Tasks__Prototype) NewBuilder() ipld.NodeBuilder {
+	var nb _Tasks__Builder
+	nb.Reset()
+	return &nb
+}
+type _Tasks__Builder struct {
+	_Tasks__Assembler
+}
+func (nb *_Tasks__Builder) Build() ipld.Node {
+	if *nb.m != schema.Maybe_Value {
+		panic("invalid state: cannot call Build on an assembler that's not finished")
+	}
+	return nb.w
+}
+func (nb *_Tasks__Builder) Reset() {
+	var w _Tasks
+	var m schema.Maybe
+	*nb = _Tasks__Builder{_Tasks__Assembler{w: &w, m: &m}}
+}
+type _Tasks__Assembler struct {
+	w *_Tasks
+	m *schema.Maybe
+	state laState
+
+	cm schema.Maybe
+	va _Task__Assembler
+}
+
+func (na *_Tasks__Assembler) reset() {
+	na.state = laState_initial
+	na.va.reset()
+}
+func (_Tasks__Assembler) BeginMap(sizeHint int64) (ipld.MapAssembler, error) {
+	return mixins.ListAssembler{"tasks.Tasks"}.BeginMap(0)
+}
+func (na *_Tasks__Assembler) BeginList(sizeHint int64) (ipld.ListAssembler, error) {
+	switch *na.m {
+	case schema.Maybe_Value, schema.Maybe_Null:
+		panic("invalid state: cannot assign into assembler that's already finished")
+	case midvalue:
+		panic("invalid state: it makes no sense to 'begin' twice on the same assembler!")
+	}
+	*na.m = midvalue
+	if sizeHint < 0 {
+		sizeHint = 0
+	}
+	if na.w == nil {
+		na.w = &_Tasks{}
+	}
+	if sizeHint > 0 {
+		na.w.x = make([]_Task, 0, sizeHint)
+	}
+	return na, nil
+}
+func (na *_Tasks__Assembler) AssignNull() error {
+	switch *na.m {
+	case allowNull:
+		*na.m = schema.Maybe_Null
+		return nil
+	case schema.Maybe_Absent:
+		return mixins.ListAssembler{"tasks.Tasks"}.AssignNull()
+	case schema.Maybe_Value, schema.Maybe_Null:
+		panic("invalid state: cannot assign into assembler that's already finished")
+	case midvalue:
+		panic("invalid state: cannot assign null into an assembler that's already begun working on recursive structures!")
+	}
+	panic("unreachable")
+}
+func (_Tasks__Assembler) AssignBool(bool) error {
+	return mixins.ListAssembler{"tasks.Tasks"}.AssignBool(false)
+}
+func (_Tasks__Assembler) AssignInt(int64) error {
+	return mixins.ListAssembler{"tasks.Tasks"}.AssignInt(0)
+}
+func (_Tasks__Assembler) AssignFloat(float64) error {
+	return mixins.ListAssembler{"tasks.Tasks"}.AssignFloat(0)
+}
+func (_Tasks__Assembler) AssignString(string) error {
+	return mixins.ListAssembler{"tasks.Tasks"}.AssignString("")
+}
+func (_Tasks__Assembler) AssignBytes([]byte) error {
+	return mixins.ListAssembler{"tasks.Tasks"}.AssignBytes(nil)
+}
+func (_Tasks__Assembler) AssignLink(ipld.Link) error {
+	return mixins.ListAssembler{"tasks.Tasks"}.AssignLink(nil)
+}
+func (na *_Tasks__Assembler) AssignNode(v ipld.Node) error {
+	if v.IsNull() {
+		return na.AssignNull()
+	}
+	if v2, ok := v.(*_Tasks); ok {
+		switch *na.m {
+		case schema.Maybe_Value, schema.Maybe_Null:
+			panic("invalid state: cannot assign into assembler that's already finished")
+		case midvalue:
+			panic("invalid state: cannot assign null into an assembler that's already begun working on recursive structures!")
+		}
+		if na.w == nil {
+			na.w = v2
+			*na.m = schema.Maybe_Value
+			return nil
+		}
+		*na.w = *v2
+		*na.m = schema.Maybe_Value
+		return nil
+	}
+	if v.Kind() != ipld.Kind_List {
+		return ipld.ErrWrongKind{TypeName: "tasks.Tasks", MethodName: "AssignNode", AppropriateKind: ipld.KindSet_JustList, ActualKind: v.Kind()}
+	}
+	itr := v.ListIterator()
+	for !itr.Done() {
+		_, v, err := itr.Next()
+		if err != nil {
+			return err
+		}
+		if err := na.AssembleValue().AssignNode(v); err != nil {
+			return err
+		}
+	}
+	return na.Finish()
+}
+func (_Tasks__Assembler) Prototype() ipld.NodePrototype {
+	return _Tasks__Prototype{}
+}
+func (la *_Tasks__Assembler) valueFinishTidy() bool {
+	switch la.cm {
+	case schema.Maybe_Value:
+		la.va.w = nil
+		la.cm = schema.Maybe_Absent
+		la.state = laState_initial
+		la.va.reset()
+		return true
+	default:
+		return false
+	}
+}
+func (la *_Tasks__Assembler) AssembleValue() ipld.NodeAssembler {
+	switch la.state {
+	case laState_initial:
+		// carry on
+	case laState_midValue:
+		if !la.valueFinishTidy() {
+			panic("invalid state: AssembleValue cannot be called when still in the middle of assembling the previous value")
+		} // if tidy success: carry on
+	case laState_finished:
+		panic("invalid state: AssembleValue cannot be called on an assembler that's already finished")
+	}
+	la.w.x = append(la.w.x, _Task{})
+	la.state = laState_midValue
+	row := &la.w.x[len(la.w.x)-1]
+	la.va.w = row
+	la.va.m = &la.cm
+	return &la.va
+}
+func (la *_Tasks__Assembler) Finish() error {
+	switch la.state {
+	case laState_initial:
+		// carry on
+	case laState_midValue:
+		if !la.valueFinishTidy() {
+			panic("invalid state: Finish cannot be called when in the middle of assembling a value")
+		} // if tidy success: carry on
+	case laState_finished:
+		panic("invalid state: Finish cannot be called on an assembler that's already finished")
+	}
+	la.state = laState_finished
+	*la.m = schema.Maybe_Value
+	return nil
+}
+func (la *_Tasks__Assembler) ValuePrototype(_ int64) ipld.NodePrototype {
+	return _Task__Prototype{}
+}
+func (Tasks) Type() schema.Type {
+	return nil /*TODO:typelit*/
+}
+func (n Tasks) Representation() ipld.Node {
+	return (*_Tasks__Repr)(n)
+}
+type _Tasks__Repr _Tasks
+var _ ipld.Node = &_Tasks__Repr{}
+func (_Tasks__Repr) Kind() ipld.Kind {
+	return ipld.Kind_List
+}
+func (_Tasks__Repr) LookupByString(string) (ipld.Node, error) {
+	return mixins.List{"tasks.Tasks.Repr"}.LookupByString("")
+}
+func (nr *_Tasks__Repr) LookupByNode(k ipld.Node) (ipld.Node, error) {
+	v, err := (Tasks)(nr).LookupByNode(k)
+	if err != nil || v == ipld.Null {
+		return v, err
+	}
+	return v.(Task).Representation(), nil
+}
+func (nr *_Tasks__Repr) LookupByIndex(idx int64) (ipld.Node, error) {
+	v, err := (Tasks)(nr).LookupByIndex(idx)
+	if err != nil || v == ipld.Null {
+		return v, err
+	}
+	return v.(Task).Representation(), nil
+}
+func (n _Tasks__Repr) LookupBySegment(seg ipld.PathSegment) (ipld.Node, error) {
+	i, err := seg.Index()
+	if err != nil {
+		return nil, ipld.ErrInvalidSegmentForList{TypeName: "tasks.Tasks.Repr", TroubleSegment: seg, Reason: err}
+	}
+	return n.LookupByIndex(i)
+}
+func (_Tasks__Repr) MapIterator() ipld.MapIterator {
+	return nil
+}
+func (nr *_Tasks__Repr) ListIterator() ipld.ListIterator {
+	return &_Tasks__ReprListItr{(Tasks)(nr), 0}
+}
+
+type _Tasks__ReprListItr _Tasks__ListItr
+
+func (itr *_Tasks__ReprListItr) Next() (idx int64, v ipld.Node, err error) {
+	idx, v, err = (*_Tasks__ListItr)(itr).Next()
+	if err != nil || v == ipld.Null {
+		return
+	}
+	return idx, v.(Task).Representation(), nil
+}
+func (itr *_Tasks__ReprListItr) Done() bool {
+	return (*_Tasks__ListItr)(itr).Done()
+}
+
+func (rn *_Tasks__Repr) Length() int64 {
+	return int64(len(rn.x))
+}
+func (_Tasks__Repr) IsAbsent() bool {
+	return false
+}
+func (_Tasks__Repr) IsNull() bool {
+	return false
+}
+func (_Tasks__Repr) AsBool() (bool, error) {
+	return mixins.List{"tasks.Tasks.Repr"}.AsBool()
+}
+func (_Tasks__Repr) AsInt() (int64, error) {
+	return mixins.List{"tasks.Tasks.Repr"}.AsInt()
+}
+func (_Tasks__Repr) AsFloat() (float64, error) {
+	return mixins.List{"tasks.Tasks.Repr"}.AsFloat()
+}
+func (_Tasks__Repr) AsString() (string, error) {
+	return mixins.List{"tasks.Tasks.Repr"}.AsString()
+}
+func (_Tasks__Repr) AsBytes() ([]byte, error) {
+	return mixins.List{"tasks.Tasks.Repr"}.AsBytes()
+}
+func (_Tasks__Repr) AsLink() (ipld.Link, error) {
+	return mixins.List{"tasks.Tasks.Repr"}.AsLink()
+}
+func (_Tasks__Repr) Prototype() ipld.NodePrototype {
+	return _Tasks__ReprPrototype{}
+}
+type _Tasks__ReprPrototype struct{}
+
+func (_Tasks__ReprPrototype) NewBuilder() ipld.NodeBuilder {
+	var nb _Tasks__ReprBuilder
+	nb.Reset()
+	return &nb
+}
+type _Tasks__ReprBuilder struct {
+	_Tasks__ReprAssembler
+}
+func (nb *_Tasks__ReprBuilder) Build() ipld.Node {
+	if *nb.m != schema.Maybe_Value {
+		panic("invalid state: cannot call Build on an assembler that's not finished")
+	}
+	return nb.w
+}
+func (nb *_Tasks__ReprBuilder) Reset() {
+	var w _Tasks
+	var m schema.Maybe
+	*nb = _Tasks__ReprBuilder{_Tasks__ReprAssembler{w: &w, m: &m}}
+}
+type _Tasks__ReprAssembler struct {
+	w *_Tasks
+	m *schema.Maybe
+	state laState
+
+	cm schema.Maybe
+	va _Task__ReprAssembler
+}
+
+func (na *_Tasks__ReprAssembler) reset() {
+	na.state = laState_initial
+	na.va.reset()
+}
+func (_Tasks__ReprAssembler) BeginMap(sizeHint int64) (ipld.MapAssembler, error) {
+	return mixins.ListAssembler{"tasks.Tasks.Repr"}.BeginMap(0)
+}
+func (na *_Tasks__ReprAssembler) BeginList(sizeHint int64) (ipld.ListAssembler, error) {
+	switch *na.m {
+	case schema.Maybe_Value, schema.Maybe_Null:
+		panic("invalid state: cannot assign into assembler that's already finished")
+	case midvalue:
+		panic("invalid state: it makes no sense to 'begin' twice on the same assembler!")
+	}
+	*na.m = midvalue
+	if sizeHint < 0 {
+		sizeHint = 0
+	}
+	if na.w == nil {
+		na.w = &_Tasks{}
+	}
+	if sizeHint > 0 {
+		na.w.x = make([]_Task, 0, sizeHint)
+	}
+	return na, nil
+}
+func (na *_Tasks__ReprAssembler) AssignNull() error {
+	switch *na.m {
+	case allowNull:
+		*na.m = schema.Maybe_Null
+		return nil
+	case schema.Maybe_Absent:
+		return mixins.ListAssembler{"tasks.Tasks.Repr.Repr"}.AssignNull()
+	case schema.Maybe_Value, schema.Maybe_Null:
+		panic("invalid state: cannot assign into assembler that's already finished")
+	case midvalue:
+		panic("invalid state: cannot assign null into an assembler that's already begun working on recursive structures!")
+	}
+	panic("unreachable")
+}
+func (_Tasks__ReprAssembler) AssignBool(bool) error {
+	return mixins.ListAssembler{"tasks.Tasks.Repr"}.AssignBool(false)
+}
+func (_Tasks__ReprAssembler) AssignInt(int64) error {
+	return mixins.ListAssembler{"tasks.Tasks.Repr"}.AssignInt(0)
+}
+func (_Tasks__ReprAssembler) AssignFloat(float64) error {
+	return mixins.ListAssembler{"tasks.Tasks.Repr"}.AssignFloat(0)
+}
+func (_Tasks__ReprAssembler) AssignString(string) error {
+	return mixins.ListAssembler{"tasks.Tasks.Repr"}.AssignString("")
+}
+func (_Tasks__ReprAssembler) AssignBytes([]byte) error {
+	return mixins.ListAssembler{"tasks.Tasks.Repr"}.AssignBytes(nil)
+}
+func (_Tasks__ReprAssembler) AssignLink(ipld.Link) error {
+	return mixins.ListAssembler{"tasks.Tasks.Repr"}.AssignLink(nil)
+}
+func (na *_Tasks__ReprAssembler) AssignNode(v ipld.Node) error {
+	if v.IsNull() {
+		return na.AssignNull()
+	}
+	if v2, ok := v.(*_Tasks); ok {
+		switch *na.m {
+		case schema.Maybe_Value, schema.Maybe_Null:
+			panic("invalid state: cannot assign into assembler that's already finished")
+		case midvalue:
+			panic("invalid state: cannot assign null into an assembler that's already begun working on recursive structures!")
+		}
+		if na.w == nil {
+			na.w = v2
+			*na.m = schema.Maybe_Value
+			return nil
+		}
+		*na.w = *v2
+		*na.m = schema.Maybe_Value
+		return nil
+	}
+	if v.Kind() != ipld.Kind_List {
+		return ipld.ErrWrongKind{TypeName: "tasks.Tasks.Repr", MethodName: "AssignNode", AppropriateKind: ipld.KindSet_JustList, ActualKind: v.Kind()}
+	}
+	itr := v.ListIterator()
+	for !itr.Done() {
+		_, v, err := itr.Next()
+		if err != nil {
+			return err
+		}
+		if err := na.AssembleValue().AssignNode(v); err != nil {
+			return err
+		}
+	}
+	return na.Finish()
+}
+func (_Tasks__ReprAssembler) Prototype() ipld.NodePrototype {
+	return _Tasks__ReprPrototype{}
+}
+func (la *_Tasks__ReprAssembler) valueFinishTidy() bool {
+	switch la.cm {
+	case schema.Maybe_Value:
+		la.va.w = nil
+		la.cm = schema.Maybe_Absent
+		la.state = laState_initial
+		la.va.reset()
+		return true
+	default:
+		return false
+	}
+}
+func (la *_Tasks__ReprAssembler) AssembleValue() ipld.NodeAssembler {
+	switch la.state {
+	case laState_initial:
+		// carry on
+	case laState_midValue:
+		if !la.valueFinishTidy() {
+			panic("invalid state: AssembleValue cannot be called when still in the middle of assembling the previous value")
+		} // if tidy success: carry on
+	case laState_finished:
+		panic("invalid state: AssembleValue cannot be called on an assembler that's already finished")
+	}
+	la.w.x = append(la.w.x, _Task{})
+	la.state = laState_midValue
+	row := &la.w.x[len(la.w.x)-1]
+	la.va.w = row
+	la.va.m = &la.cm
+	return &la.va
+}
+func (la *_Tasks__ReprAssembler) Finish() error {
+	switch la.state {
+	case laState_initial:
+		// carry on
+	case laState_midValue:
+		if !la.valueFinishTidy() {
+			panic("invalid state: Finish cannot be called when in the middle of assembling a value")
+		} // if tidy success: carry on
+	case laState_finished:
+		panic("invalid state: Finish cannot be called on an assembler that's already finished")
+	}
+	la.state = laState_finished
+	*la.m = schema.Maybe_Value
+	return nil
+}
+func (la *_Tasks__ReprAssembler) ValuePrototype(_ int64) ipld.NodePrototype {
+	return _Task__ReprPrototype{}
+}
+
 func (n Time) Int() int64 {
 	return n.x
 }
@@ -10572,4 +12071,1108 @@ type _Time__Repr = _Time
 var _ ipld.Node = &_Time__Repr{}
 type _Time__ReprPrototype = _Time__Prototype
 type _Time__ReprAssembler = _Time__Assembler
+
+
+func (n _UpdateTask) FieldStatus() Status {
+	return &n.Status
+}
+func (n _UpdateTask) FieldStage() MaybeString {
+	return &n.Stage
+}
+func (n _UpdateTask) FieldCurrentStageDetails() MaybeStageDetails {
+	return &n.CurrentStageDetails
+}
+func (n _UpdateTask) FieldWorkedBy() String {
+	return &n.WorkedBy
+}
+type _UpdateTask__Maybe struct {
+	m schema.Maybe
+	v UpdateTask
+}
+type MaybeUpdateTask = *_UpdateTask__Maybe
+
+func (m MaybeUpdateTask) IsNull() bool {
+	return m.m == schema.Maybe_Null
+}
+func (m MaybeUpdateTask) IsAbsent() bool {
+	return m.m == schema.Maybe_Absent
+}
+func (m MaybeUpdateTask) Exists() bool {
+	return m.m == schema.Maybe_Value
+}
+func (m MaybeUpdateTask) AsNode() ipld.Node {
+	switch m.m {
+		case schema.Maybe_Absent:
+			return ipld.Absent
+		case schema.Maybe_Null:
+			return ipld.Null
+		case schema.Maybe_Value:
+			return m.v
+		default:
+			panic("unreachable")
+	}
+}
+func (m MaybeUpdateTask) Must() UpdateTask {
+	if !m.Exists() {
+		panic("unbox of a maybe rejected")
+	}
+	return m.v
+}
+var (
+	fieldName__UpdateTask_Status = _String{"Status"}
+	fieldName__UpdateTask_Stage = _String{"Stage"}
+	fieldName__UpdateTask_CurrentStageDetails = _String{"CurrentStageDetails"}
+	fieldName__UpdateTask_WorkedBy = _String{"WorkedBy"}
+)
+var _ ipld.Node = (UpdateTask)(&_UpdateTask{})
+var _ schema.TypedNode = (UpdateTask)(&_UpdateTask{})
+func (UpdateTask) Kind() ipld.Kind {
+	return ipld.Kind_Map
+}
+func (n UpdateTask) LookupByString(key string) (ipld.Node, error) {
+	switch key {
+	case "Status":
+		return &n.Status, nil
+	case "Stage":
+		if n.Stage.m == schema.Maybe_Absent {
+			return ipld.Absent, nil
+		}
+		return n.Stage.v, nil
+	case "CurrentStageDetails":
+		if n.CurrentStageDetails.m == schema.Maybe_Absent {
+			return ipld.Absent, nil
+		}
+		return n.CurrentStageDetails.v, nil
+	case "WorkedBy":
+		return &n.WorkedBy, nil
+	default:
+		return nil, schema.ErrNoSuchField{Type: nil /*TODO*/, Field: ipld.PathSegmentOfString(key)}
+	}
+}
+func (n UpdateTask) LookupByNode(key ipld.Node) (ipld.Node, error) {
+	ks, err := key.AsString()
+	if err != nil {
+		return nil, err
+	}
+	return n.LookupByString(ks)
+}
+func (UpdateTask) LookupByIndex(idx int64) (ipld.Node, error) {
+	return mixins.Map{"tasks.UpdateTask"}.LookupByIndex(0)
+}
+func (n UpdateTask) LookupBySegment(seg ipld.PathSegment) (ipld.Node, error) {
+	return n.LookupByString(seg.String())
+}
+func (n UpdateTask) MapIterator() ipld.MapIterator {
+	return &_UpdateTask__MapItr{n, 0}
+}
+
+type _UpdateTask__MapItr struct {
+	n UpdateTask
+	idx  int
+}
+
+func (itr *_UpdateTask__MapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
+	if itr.idx >= 4 {
+		return nil, nil, ipld.ErrIteratorOverread{}
+	}
+	switch itr.idx {
+	case 0:
+		k = &fieldName__UpdateTask_Status
+		v = &itr.n.Status
+	case 1:
+		k = &fieldName__UpdateTask_Stage
+		if itr.n.Stage.m == schema.Maybe_Absent {
+			v = ipld.Absent
+			break
+		}
+		v = itr.n.Stage.v
+	case 2:
+		k = &fieldName__UpdateTask_CurrentStageDetails
+		if itr.n.CurrentStageDetails.m == schema.Maybe_Absent {
+			v = ipld.Absent
+			break
+		}
+		v = itr.n.CurrentStageDetails.v
+	case 3:
+		k = &fieldName__UpdateTask_WorkedBy
+		v = &itr.n.WorkedBy
+	default:
+		panic("unreachable")
+	}
+	itr.idx++
+	return
+}
+func (itr *_UpdateTask__MapItr) Done() bool {
+	return itr.idx >= 4
+}
+
+func (UpdateTask) ListIterator() ipld.ListIterator {
+	return nil
+}
+func (UpdateTask) Length() int64 {
+	return 4
+}
+func (UpdateTask) IsAbsent() bool {
+	return false
+}
+func (UpdateTask) IsNull() bool {
+	return false
+}
+func (UpdateTask) AsBool() (bool, error) {
+	return mixins.Map{"tasks.UpdateTask"}.AsBool()
+}
+func (UpdateTask) AsInt() (int64, error) {
+	return mixins.Map{"tasks.UpdateTask"}.AsInt()
+}
+func (UpdateTask) AsFloat() (float64, error) {
+	return mixins.Map{"tasks.UpdateTask"}.AsFloat()
+}
+func (UpdateTask) AsString() (string, error) {
+	return mixins.Map{"tasks.UpdateTask"}.AsString()
+}
+func (UpdateTask) AsBytes() ([]byte, error) {
+	return mixins.Map{"tasks.UpdateTask"}.AsBytes()
+}
+func (UpdateTask) AsLink() (ipld.Link, error) {
+	return mixins.Map{"tasks.UpdateTask"}.AsLink()
+}
+func (UpdateTask) Prototype() ipld.NodePrototype {
+	return _UpdateTask__Prototype{}
+}
+type _UpdateTask__Prototype struct{}
+
+func (_UpdateTask__Prototype) NewBuilder() ipld.NodeBuilder {
+	var nb _UpdateTask__Builder
+	nb.Reset()
+	return &nb
+}
+type _UpdateTask__Builder struct {
+	_UpdateTask__Assembler
+}
+func (nb *_UpdateTask__Builder) Build() ipld.Node {
+	if *nb.m != schema.Maybe_Value {
+		panic("invalid state: cannot call Build on an assembler that's not finished")
+	}
+	return nb.w
+}
+func (nb *_UpdateTask__Builder) Reset() {
+	var w _UpdateTask
+	var m schema.Maybe
+	*nb = _UpdateTask__Builder{_UpdateTask__Assembler{w: &w, m: &m}}
+}
+type _UpdateTask__Assembler struct {
+	w *_UpdateTask
+	m *schema.Maybe
+	state maState
+	s int
+	f int
+
+	cm schema.Maybe
+	ca_Status _Status__Assembler
+	ca_Stage _String__Assembler
+	ca_CurrentStageDetails _StageDetails__Assembler
+	ca_WorkedBy _String__Assembler
+	}
+
+func (na *_UpdateTask__Assembler) reset() {
+	na.state = maState_initial
+	na.s = 0
+	na.ca_Status.reset()
+	na.ca_Stage.reset()
+	na.ca_CurrentStageDetails.reset()
+	na.ca_WorkedBy.reset()
+}
+
+var (
+	fieldBit__UpdateTask_Status = 1 << 0
+	fieldBit__UpdateTask_Stage = 1 << 1
+	fieldBit__UpdateTask_CurrentStageDetails = 1 << 2
+	fieldBit__UpdateTask_WorkedBy = 1 << 3
+	fieldBits__UpdateTask_sufficient = 0 + 1 << 0 + 1 << 3
+)
+func (na *_UpdateTask__Assembler) BeginMap(int64) (ipld.MapAssembler, error) {
+	switch *na.m {
+	case schema.Maybe_Value, schema.Maybe_Null:
+		panic("invalid state: cannot assign into assembler that's already finished")
+	case midvalue:
+		panic("invalid state: it makes no sense to 'begin' twice on the same assembler!")
+	}
+	*na.m = midvalue
+	if na.w == nil {
+		na.w = &_UpdateTask{}
+	}
+	return na, nil
+}
+func (_UpdateTask__Assembler) BeginList(sizeHint int64) (ipld.ListAssembler, error) {
+	return mixins.MapAssembler{"tasks.UpdateTask"}.BeginList(0)
+}
+func (na *_UpdateTask__Assembler) AssignNull() error {
+	switch *na.m {
+	case allowNull:
+		*na.m = schema.Maybe_Null
+		return nil
+	case schema.Maybe_Absent:
+		return mixins.MapAssembler{"tasks.UpdateTask"}.AssignNull()
+	case schema.Maybe_Value, schema.Maybe_Null:
+		panic("invalid state: cannot assign into assembler that's already finished")
+	case midvalue:
+		panic("invalid state: cannot assign null into an assembler that's already begun working on recursive structures!")
+	}
+	panic("unreachable")
+}
+func (_UpdateTask__Assembler) AssignBool(bool) error {
+	return mixins.MapAssembler{"tasks.UpdateTask"}.AssignBool(false)
+}
+func (_UpdateTask__Assembler) AssignInt(int64) error {
+	return mixins.MapAssembler{"tasks.UpdateTask"}.AssignInt(0)
+}
+func (_UpdateTask__Assembler) AssignFloat(float64) error {
+	return mixins.MapAssembler{"tasks.UpdateTask"}.AssignFloat(0)
+}
+func (_UpdateTask__Assembler) AssignString(string) error {
+	return mixins.MapAssembler{"tasks.UpdateTask"}.AssignString("")
+}
+func (_UpdateTask__Assembler) AssignBytes([]byte) error {
+	return mixins.MapAssembler{"tasks.UpdateTask"}.AssignBytes(nil)
+}
+func (_UpdateTask__Assembler) AssignLink(ipld.Link) error {
+	return mixins.MapAssembler{"tasks.UpdateTask"}.AssignLink(nil)
+}
+func (na *_UpdateTask__Assembler) AssignNode(v ipld.Node) error {
+	if v.IsNull() {
+		return na.AssignNull()
+	}
+	if v2, ok := v.(*_UpdateTask); ok {
+		switch *na.m {
+		case schema.Maybe_Value, schema.Maybe_Null:
+			panic("invalid state: cannot assign into assembler that's already finished")
+		case midvalue:
+			panic("invalid state: cannot assign null into an assembler that's already begun working on recursive structures!")
+		}
+		if na.w == nil {
+			na.w = v2
+			*na.m = schema.Maybe_Value
+			return nil
+		}
+		*na.w = *v2
+		*na.m = schema.Maybe_Value
+		return nil
+	}
+	if v.Kind() != ipld.Kind_Map {
+		return ipld.ErrWrongKind{TypeName: "tasks.UpdateTask", MethodName: "AssignNode", AppropriateKind: ipld.KindSet_JustMap, ActualKind: v.Kind()}
+	}
+	itr := v.MapIterator()
+	for !itr.Done() {
+		k, v, err := itr.Next()
+		if err != nil {
+			return err
+		}
+		if err := na.AssembleKey().AssignNode(k); err != nil {
+			return err
+		}
+		if err := na.AssembleValue().AssignNode(v); err != nil {
+			return err
+		}
+	}
+	return na.Finish()
+}
+func (_UpdateTask__Assembler) Prototype() ipld.NodePrototype {
+	return _UpdateTask__Prototype{}
+}
+func (ma *_UpdateTask__Assembler) valueFinishTidy() bool {
+	switch ma.f {
+	case 0:
+		switch ma.cm {
+		case schema.Maybe_Value:
+			ma.ca_Status.w = nil
+			ma.cm = schema.Maybe_Absent
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
+	case 1:
+		switch ma.w.Stage.m {
+		case schema.Maybe_Value:
+			ma.w.Stage.v = ma.ca_Stage.w
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
+	case 2:
+		switch ma.w.CurrentStageDetails.m {
+		case schema.Maybe_Value:
+			ma.w.CurrentStageDetails.v = ma.ca_CurrentStageDetails.w
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
+	case 3:
+		switch ma.cm {
+		case schema.Maybe_Value:
+			ma.ca_WorkedBy.w = nil
+			ma.cm = schema.Maybe_Absent
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
+	default:
+		panic("unreachable")
+	}
+}
+func (ma *_UpdateTask__Assembler) AssembleEntry(k string) (ipld.NodeAssembler, error) {
+	switch ma.state {
+	case maState_initial:
+		// carry on
+	case maState_midKey:
+		panic("invalid state: AssembleEntry cannot be called when in the middle of assembling another key")
+	case maState_expectValue:
+		panic("invalid state: AssembleEntry cannot be called when expecting start of value assembly")
+	case maState_midValue:
+		if !ma.valueFinishTidy() {
+			panic("invalid state: AssembleEntry cannot be called when in the middle of assembling a value")
+		} // if tidy success: carry on
+	case maState_finished:
+		panic("invalid state: AssembleEntry cannot be called on an assembler that's already finished")
+	}
+	switch k {
+	case "Status":
+		if ma.s & fieldBit__UpdateTask_Status != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__UpdateTask_Status}
+		}
+		ma.s += fieldBit__UpdateTask_Status
+		ma.state = maState_midValue
+		ma.f = 0
+		ma.ca_Status.w = &ma.w.Status
+		ma.ca_Status.m = &ma.cm
+		return &ma.ca_Status, nil
+	case "Stage":
+		if ma.s & fieldBit__UpdateTask_Stage != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__UpdateTask_Stage}
+		}
+		ma.s += fieldBit__UpdateTask_Stage
+		ma.state = maState_midValue
+		ma.f = 1
+		ma.ca_Stage.w = ma.w.Stage.v
+		ma.ca_Stage.m = &ma.w.Stage.m
+		return &ma.ca_Stage, nil
+	case "CurrentStageDetails":
+		if ma.s & fieldBit__UpdateTask_CurrentStageDetails != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__UpdateTask_CurrentStageDetails}
+		}
+		ma.s += fieldBit__UpdateTask_CurrentStageDetails
+		ma.state = maState_midValue
+		ma.f = 2
+		ma.ca_CurrentStageDetails.w = ma.w.CurrentStageDetails.v
+		ma.ca_CurrentStageDetails.m = &ma.w.CurrentStageDetails.m
+		return &ma.ca_CurrentStageDetails, nil
+	case "WorkedBy":
+		if ma.s & fieldBit__UpdateTask_WorkedBy != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__UpdateTask_WorkedBy}
+		}
+		ma.s += fieldBit__UpdateTask_WorkedBy
+		ma.state = maState_midValue
+		ma.f = 3
+		ma.ca_WorkedBy.w = &ma.w.WorkedBy
+		ma.ca_WorkedBy.m = &ma.cm
+		return &ma.ca_WorkedBy, nil
+	default:
+		return nil, ipld.ErrInvalidKey{TypeName:"tasks.UpdateTask", Key:&_String{k}}
+	}
+}
+func (ma *_UpdateTask__Assembler) AssembleKey() ipld.NodeAssembler {
+	switch ma.state {
+	case maState_initial:
+		// carry on
+	case maState_midKey:
+		panic("invalid state: AssembleKey cannot be called when in the middle of assembling another key")
+	case maState_expectValue:
+		panic("invalid state: AssembleKey cannot be called when expecting start of value assembly")
+	case maState_midValue:
+		if !ma.valueFinishTidy() {
+			panic("invalid state: AssembleKey cannot be called when in the middle of assembling a value")
+		} // if tidy success: carry on
+	case maState_finished:
+		panic("invalid state: AssembleKey cannot be called on an assembler that's already finished")
+	}
+	ma.state = maState_midKey
+	return (*_UpdateTask__KeyAssembler)(ma)
+}
+func (ma *_UpdateTask__Assembler) AssembleValue() ipld.NodeAssembler {
+	switch ma.state {
+	case maState_initial:
+		panic("invalid state: AssembleValue cannot be called when no key is primed")
+	case maState_midKey:
+		panic("invalid state: AssembleValue cannot be called when in the middle of assembling a key")
+	case maState_expectValue:
+		// carry on
+	case maState_midValue:
+		panic("invalid state: AssembleValue cannot be called when in the middle of assembling another value")
+	case maState_finished:
+		panic("invalid state: AssembleValue cannot be called on an assembler that's already finished")
+	}
+	ma.state = maState_midValue
+	switch ma.f {
+	case 0:
+		ma.ca_Status.w = &ma.w.Status
+		ma.ca_Status.m = &ma.cm
+		return &ma.ca_Status
+	case 1:
+		ma.ca_Stage.w = ma.w.Stage.v
+		ma.ca_Stage.m = &ma.w.Stage.m
+		return &ma.ca_Stage
+	case 2:
+		ma.ca_CurrentStageDetails.w = ma.w.CurrentStageDetails.v
+		ma.ca_CurrentStageDetails.m = &ma.w.CurrentStageDetails.m
+		return &ma.ca_CurrentStageDetails
+	case 3:
+		ma.ca_WorkedBy.w = &ma.w.WorkedBy
+		ma.ca_WorkedBy.m = &ma.cm
+		return &ma.ca_WorkedBy
+	default:
+		panic("unreachable")
+	}
+}
+func (ma *_UpdateTask__Assembler) Finish() error {
+	switch ma.state {
+	case maState_initial:
+		// carry on
+	case maState_midKey:
+		panic("invalid state: Finish cannot be called when in the middle of assembling a key")
+	case maState_expectValue:
+		panic("invalid state: Finish cannot be called when expecting start of value assembly")
+	case maState_midValue:
+		if !ma.valueFinishTidy() {
+			panic("invalid state: Finish cannot be called when in the middle of assembling a value")
+		} // if tidy success: carry on
+	case maState_finished:
+		panic("invalid state: Finish cannot be called on an assembler that's already finished")
+	}
+	if ma.s & fieldBits__UpdateTask_sufficient != fieldBits__UpdateTask_sufficient {
+		err := ipld.ErrMissingRequiredField{Missing: make([]string, 0)}
+		if ma.s & fieldBit__UpdateTask_Status == 0 {
+			err.Missing = append(err.Missing, "Status")
+		}
+		if ma.s & fieldBit__UpdateTask_WorkedBy == 0 {
+			err.Missing = append(err.Missing, "WorkedBy")
+		}
+		return err
+	}
+	ma.state = maState_finished
+	*ma.m = schema.Maybe_Value
+	return nil
+}
+func (ma *_UpdateTask__Assembler) KeyPrototype() ipld.NodePrototype {
+	return _String__Prototype{}
+}
+func (ma *_UpdateTask__Assembler) ValuePrototype(k string) ipld.NodePrototype {
+	panic("todo structbuilder mapassembler valueprototype")
+}
+type _UpdateTask__KeyAssembler _UpdateTask__Assembler
+func (_UpdateTask__KeyAssembler) BeginMap(sizeHint int64) (ipld.MapAssembler, error) {
+	return mixins.StringAssembler{"tasks.UpdateTask.KeyAssembler"}.BeginMap(0)
+}
+func (_UpdateTask__KeyAssembler) BeginList(sizeHint int64) (ipld.ListAssembler, error) {
+	return mixins.StringAssembler{"tasks.UpdateTask.KeyAssembler"}.BeginList(0)
+}
+func (na *_UpdateTask__KeyAssembler) AssignNull() error {
+	return mixins.StringAssembler{"tasks.UpdateTask.KeyAssembler"}.AssignNull()
+}
+func (_UpdateTask__KeyAssembler) AssignBool(bool) error {
+	return mixins.StringAssembler{"tasks.UpdateTask.KeyAssembler"}.AssignBool(false)
+}
+func (_UpdateTask__KeyAssembler) AssignInt(int64) error {
+	return mixins.StringAssembler{"tasks.UpdateTask.KeyAssembler"}.AssignInt(0)
+}
+func (_UpdateTask__KeyAssembler) AssignFloat(float64) error {
+	return mixins.StringAssembler{"tasks.UpdateTask.KeyAssembler"}.AssignFloat(0)
+}
+func (ka *_UpdateTask__KeyAssembler) AssignString(k string) error {
+	if ka.state != maState_midKey {
+		panic("misuse: KeyAssembler held beyond its valid lifetime")
+	}
+	switch k {
+	case "Status":
+		if ka.s & fieldBit__UpdateTask_Status != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__UpdateTask_Status}
+		}
+		ka.s += fieldBit__UpdateTask_Status
+		ka.state = maState_expectValue
+		ka.f = 0
+	case "Stage":
+		if ka.s & fieldBit__UpdateTask_Stage != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__UpdateTask_Stage}
+		}
+		ka.s += fieldBit__UpdateTask_Stage
+		ka.state = maState_expectValue
+		ka.f = 1
+	case "CurrentStageDetails":
+		if ka.s & fieldBit__UpdateTask_CurrentStageDetails != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__UpdateTask_CurrentStageDetails}
+		}
+		ka.s += fieldBit__UpdateTask_CurrentStageDetails
+		ka.state = maState_expectValue
+		ka.f = 2
+	case "WorkedBy":
+		if ka.s & fieldBit__UpdateTask_WorkedBy != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__UpdateTask_WorkedBy}
+		}
+		ka.s += fieldBit__UpdateTask_WorkedBy
+		ka.state = maState_expectValue
+		ka.f = 3
+	default:
+		return ipld.ErrInvalidKey{TypeName:"tasks.UpdateTask", Key:&_String{k}}
+	}
+	return nil
+}
+func (_UpdateTask__KeyAssembler) AssignBytes([]byte) error {
+	return mixins.StringAssembler{"tasks.UpdateTask.KeyAssembler"}.AssignBytes(nil)
+}
+func (_UpdateTask__KeyAssembler) AssignLink(ipld.Link) error {
+	return mixins.StringAssembler{"tasks.UpdateTask.KeyAssembler"}.AssignLink(nil)
+}
+func (ka *_UpdateTask__KeyAssembler) AssignNode(v ipld.Node) error {
+	if v2, err := v.AsString(); err != nil {
+		return err
+	} else {
+		return ka.AssignString(v2)
+	}
+}
+func (_UpdateTask__KeyAssembler) Prototype() ipld.NodePrototype {
+	return _String__Prototype{}
+}
+func (UpdateTask) Type() schema.Type {
+	return nil /*TODO:typelit*/
+}
+func (n UpdateTask) Representation() ipld.Node {
+	return (*_UpdateTask__Repr)(n)
+}
+type _UpdateTask__Repr _UpdateTask
+var (
+	fieldName__UpdateTask_Status_serial = _String{"Status"}
+	fieldName__UpdateTask_Stage_serial = _String{"Stage"}
+	fieldName__UpdateTask_CurrentStageDetails_serial = _String{"CurrentStageDetails"}
+	fieldName__UpdateTask_WorkedBy_serial = _String{"WorkedBy"}
+)
+var _ ipld.Node = &_UpdateTask__Repr{}
+func (_UpdateTask__Repr) Kind() ipld.Kind {
+	return ipld.Kind_Map
+}
+func (n *_UpdateTask__Repr) LookupByString(key string) (ipld.Node, error) {
+	switch key {
+	case "Status":
+		return n.Status.Representation(), nil
+	case "Stage":
+		if n.Stage.m == schema.Maybe_Absent {
+			return ipld.Absent, ipld.ErrNotExists{ipld.PathSegmentOfString(key)}
+		}
+		return n.Stage.v.Representation(), nil
+	case "CurrentStageDetails":
+		if n.CurrentStageDetails.m == schema.Maybe_Absent {
+			return ipld.Absent, ipld.ErrNotExists{ipld.PathSegmentOfString(key)}
+		}
+		return n.CurrentStageDetails.v.Representation(), nil
+	case "WorkedBy":
+		return n.WorkedBy.Representation(), nil
+	default:
+		return nil, schema.ErrNoSuchField{Type: nil /*TODO*/, Field: ipld.PathSegmentOfString(key)}
+	}
+}
+func (n *_UpdateTask__Repr) LookupByNode(key ipld.Node) (ipld.Node, error) {
+	ks, err := key.AsString()
+	if err != nil {
+		return nil, err
+	}
+	return n.LookupByString(ks)
+}
+func (_UpdateTask__Repr) LookupByIndex(idx int64) (ipld.Node, error) {
+	return mixins.Map{"tasks.UpdateTask.Repr"}.LookupByIndex(0)
+}
+func (n _UpdateTask__Repr) LookupBySegment(seg ipld.PathSegment) (ipld.Node, error) {
+	return n.LookupByString(seg.String())
+}
+func (n *_UpdateTask__Repr) MapIterator() ipld.MapIterator {
+	return &_UpdateTask__ReprMapItr{n, 0}
+}
+
+type _UpdateTask__ReprMapItr struct {
+	n   *_UpdateTask__Repr
+	idx int
+	
+}
+
+func (itr *_UpdateTask__ReprMapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
+advance:if itr.idx >= 4 {
+		return nil, nil, ipld.ErrIteratorOverread{}
+	}
+	switch itr.idx {
+	case 0:
+		k = &fieldName__UpdateTask_Status_serial
+		v = itr.n.Status.Representation()
+	case 1:
+		k = &fieldName__UpdateTask_Stage_serial
+		if itr.n.Stage.m == schema.Maybe_Absent {
+			itr.idx++
+			goto advance
+		}
+		v = itr.n.Stage.v.Representation()
+	case 2:
+		k = &fieldName__UpdateTask_CurrentStageDetails_serial
+		if itr.n.CurrentStageDetails.m == schema.Maybe_Absent {
+			itr.idx++
+			goto advance
+		}
+		v = itr.n.CurrentStageDetails.v.Representation()
+	case 3:
+		k = &fieldName__UpdateTask_WorkedBy_serial
+		v = itr.n.WorkedBy.Representation()
+	default:
+		panic("unreachable")
+	}
+	itr.idx++
+	return
+}
+func (itr *_UpdateTask__ReprMapItr) Done() bool {
+	return itr.idx >= 4
+}
+func (_UpdateTask__Repr) ListIterator() ipld.ListIterator {
+	return nil
+}
+func (rn *_UpdateTask__Repr) Length() int64 {
+	l := 4
+	if rn.Stage.m == schema.Maybe_Absent {
+		l--
+	}
+	if rn.CurrentStageDetails.m == schema.Maybe_Absent {
+		l--
+	}
+	return int64(l)
+}
+func (_UpdateTask__Repr) IsAbsent() bool {
+	return false
+}
+func (_UpdateTask__Repr) IsNull() bool {
+	return false
+}
+func (_UpdateTask__Repr) AsBool() (bool, error) {
+	return mixins.Map{"tasks.UpdateTask.Repr"}.AsBool()
+}
+func (_UpdateTask__Repr) AsInt() (int64, error) {
+	return mixins.Map{"tasks.UpdateTask.Repr"}.AsInt()
+}
+func (_UpdateTask__Repr) AsFloat() (float64, error) {
+	return mixins.Map{"tasks.UpdateTask.Repr"}.AsFloat()
+}
+func (_UpdateTask__Repr) AsString() (string, error) {
+	return mixins.Map{"tasks.UpdateTask.Repr"}.AsString()
+}
+func (_UpdateTask__Repr) AsBytes() ([]byte, error) {
+	return mixins.Map{"tasks.UpdateTask.Repr"}.AsBytes()
+}
+func (_UpdateTask__Repr) AsLink() (ipld.Link, error) {
+	return mixins.Map{"tasks.UpdateTask.Repr"}.AsLink()
+}
+func (_UpdateTask__Repr) Prototype() ipld.NodePrototype {
+	return _UpdateTask__ReprPrototype{}
+}
+type _UpdateTask__ReprPrototype struct{}
+
+func (_UpdateTask__ReprPrototype) NewBuilder() ipld.NodeBuilder {
+	var nb _UpdateTask__ReprBuilder
+	nb.Reset()
+	return &nb
+}
+type _UpdateTask__ReprBuilder struct {
+	_UpdateTask__ReprAssembler
+}
+func (nb *_UpdateTask__ReprBuilder) Build() ipld.Node {
+	if *nb.m != schema.Maybe_Value {
+		panic("invalid state: cannot call Build on an assembler that's not finished")
+	}
+	return nb.w
+}
+func (nb *_UpdateTask__ReprBuilder) Reset() {
+	var w _UpdateTask
+	var m schema.Maybe
+	*nb = _UpdateTask__ReprBuilder{_UpdateTask__ReprAssembler{w: &w, m: &m}}
+}
+type _UpdateTask__ReprAssembler struct {
+	w *_UpdateTask
+	m *schema.Maybe
+	state maState
+	s int
+	f int
+
+	cm schema.Maybe
+	ca_Status _Status__ReprAssembler
+	ca_Stage _String__ReprAssembler
+	ca_CurrentStageDetails _StageDetails__ReprAssembler
+	ca_WorkedBy _String__ReprAssembler
+	}
+
+func (na *_UpdateTask__ReprAssembler) reset() {
+	na.state = maState_initial
+	na.s = 0
+	na.ca_Status.reset()
+	na.ca_Stage.reset()
+	na.ca_CurrentStageDetails.reset()
+	na.ca_WorkedBy.reset()
+}
+func (na *_UpdateTask__ReprAssembler) BeginMap(int64) (ipld.MapAssembler, error) {
+	switch *na.m {
+	case schema.Maybe_Value, schema.Maybe_Null:
+		panic("invalid state: cannot assign into assembler that's already finished")
+	case midvalue:
+		panic("invalid state: it makes no sense to 'begin' twice on the same assembler!")
+	}
+	*na.m = midvalue
+	if na.w == nil {
+		na.w = &_UpdateTask{}
+	}
+	return na, nil
+}
+func (_UpdateTask__ReprAssembler) BeginList(sizeHint int64) (ipld.ListAssembler, error) {
+	return mixins.MapAssembler{"tasks.UpdateTask.Repr"}.BeginList(0)
+}
+func (na *_UpdateTask__ReprAssembler) AssignNull() error {
+	switch *na.m {
+	case allowNull:
+		*na.m = schema.Maybe_Null
+		return nil
+	case schema.Maybe_Absent:
+		return mixins.MapAssembler{"tasks.UpdateTask.Repr.Repr"}.AssignNull()
+	case schema.Maybe_Value, schema.Maybe_Null:
+		panic("invalid state: cannot assign into assembler that's already finished")
+	case midvalue:
+		panic("invalid state: cannot assign null into an assembler that's already begun working on recursive structures!")
+	}
+	panic("unreachable")
+}
+func (_UpdateTask__ReprAssembler) AssignBool(bool) error {
+	return mixins.MapAssembler{"tasks.UpdateTask.Repr"}.AssignBool(false)
+}
+func (_UpdateTask__ReprAssembler) AssignInt(int64) error {
+	return mixins.MapAssembler{"tasks.UpdateTask.Repr"}.AssignInt(0)
+}
+func (_UpdateTask__ReprAssembler) AssignFloat(float64) error {
+	return mixins.MapAssembler{"tasks.UpdateTask.Repr"}.AssignFloat(0)
+}
+func (_UpdateTask__ReprAssembler) AssignString(string) error {
+	return mixins.MapAssembler{"tasks.UpdateTask.Repr"}.AssignString("")
+}
+func (_UpdateTask__ReprAssembler) AssignBytes([]byte) error {
+	return mixins.MapAssembler{"tasks.UpdateTask.Repr"}.AssignBytes(nil)
+}
+func (_UpdateTask__ReprAssembler) AssignLink(ipld.Link) error {
+	return mixins.MapAssembler{"tasks.UpdateTask.Repr"}.AssignLink(nil)
+}
+func (na *_UpdateTask__ReprAssembler) AssignNode(v ipld.Node) error {
+	if v.IsNull() {
+		return na.AssignNull()
+	}
+	if v2, ok := v.(*_UpdateTask); ok {
+		switch *na.m {
+		case schema.Maybe_Value, schema.Maybe_Null:
+			panic("invalid state: cannot assign into assembler that's already finished")
+		case midvalue:
+			panic("invalid state: cannot assign null into an assembler that's already begun working on recursive structures!")
+		}
+		if na.w == nil {
+			na.w = v2
+			*na.m = schema.Maybe_Value
+			return nil
+		}
+		*na.w = *v2
+		*na.m = schema.Maybe_Value
+		return nil
+	}
+	if v.Kind() != ipld.Kind_Map {
+		return ipld.ErrWrongKind{TypeName: "tasks.UpdateTask.Repr", MethodName: "AssignNode", AppropriateKind: ipld.KindSet_JustMap, ActualKind: v.Kind()}
+	}
+	itr := v.MapIterator()
+	for !itr.Done() {
+		k, v, err := itr.Next()
+		if err != nil {
+			return err
+		}
+		if err := na.AssembleKey().AssignNode(k); err != nil {
+			return err
+		}
+		if err := na.AssembleValue().AssignNode(v); err != nil {
+			return err
+		}
+	}
+	return na.Finish()
+}
+func (_UpdateTask__ReprAssembler) Prototype() ipld.NodePrototype {
+	return _UpdateTask__ReprPrototype{}
+}
+func (ma *_UpdateTask__ReprAssembler) valueFinishTidy() bool {
+	switch ma.f {
+	case 0:
+		switch ma.cm {
+		case schema.Maybe_Value:ma.cm = schema.Maybe_Absent
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
+	case 1:
+		switch ma.w.Stage.m {
+		case schema.Maybe_Value:
+			ma.w.Stage.v = ma.ca_Stage.w
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
+	case 2:
+		switch ma.w.CurrentStageDetails.m {
+		case schema.Maybe_Value:
+			ma.w.CurrentStageDetails.v = ma.ca_CurrentStageDetails.w
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
+	case 3:
+		switch ma.cm {
+		case schema.Maybe_Value:ma.cm = schema.Maybe_Absent
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
+	default:
+		panic("unreachable")
+	}
+}
+func (ma *_UpdateTask__ReprAssembler) AssembleEntry(k string) (ipld.NodeAssembler, error) {
+	switch ma.state {
+	case maState_initial:
+		// carry on
+	case maState_midKey:
+		panic("invalid state: AssembleEntry cannot be called when in the middle of assembling another key")
+	case maState_expectValue:
+		panic("invalid state: AssembleEntry cannot be called when expecting start of value assembly")
+	case maState_midValue:
+		if !ma.valueFinishTidy() {
+			panic("invalid state: AssembleEntry cannot be called when in the middle of assembling a value")
+		} // if tidy success: carry on
+	case maState_finished:
+		panic("invalid state: AssembleEntry cannot be called on an assembler that's already finished")
+	}
+	switch k {
+	case "Status":
+		if ma.s & fieldBit__UpdateTask_Status != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__UpdateTask_Status_serial}
+		}
+		ma.s += fieldBit__UpdateTask_Status
+		ma.state = maState_midValue
+		ma.f = 0
+		ma.ca_Status.w = &ma.w.Status
+		ma.ca_Status.m = &ma.cm
+		return &ma.ca_Status, nil
+	case "Stage":
+		if ma.s & fieldBit__UpdateTask_Stage != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__UpdateTask_Stage_serial}
+		}
+		ma.s += fieldBit__UpdateTask_Stage
+		ma.state = maState_midValue
+		ma.f = 1
+		ma.ca_Stage.w = ma.w.Stage.v
+		ma.ca_Stage.m = &ma.w.Stage.m
+		
+		return &ma.ca_Stage, nil
+	case "CurrentStageDetails":
+		if ma.s & fieldBit__UpdateTask_CurrentStageDetails != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__UpdateTask_CurrentStageDetails_serial}
+		}
+		ma.s += fieldBit__UpdateTask_CurrentStageDetails
+		ma.state = maState_midValue
+		ma.f = 2
+		ma.ca_CurrentStageDetails.w = ma.w.CurrentStageDetails.v
+		ma.ca_CurrentStageDetails.m = &ma.w.CurrentStageDetails.m
+		
+		return &ma.ca_CurrentStageDetails, nil
+	case "WorkedBy":
+		if ma.s & fieldBit__UpdateTask_WorkedBy != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__UpdateTask_WorkedBy_serial}
+		}
+		ma.s += fieldBit__UpdateTask_WorkedBy
+		ma.state = maState_midValue
+		ma.f = 3
+		ma.ca_WorkedBy.w = &ma.w.WorkedBy
+		ma.ca_WorkedBy.m = &ma.cm
+		return &ma.ca_WorkedBy, nil
+	default:
+		return nil, ipld.ErrInvalidKey{TypeName:"tasks.UpdateTask.Repr", Key:&_String{k}}
+	}
+}
+func (ma *_UpdateTask__ReprAssembler) AssembleKey() ipld.NodeAssembler {
+	switch ma.state {
+	case maState_initial:
+		// carry on
+	case maState_midKey:
+		panic("invalid state: AssembleKey cannot be called when in the middle of assembling another key")
+	case maState_expectValue:
+		panic("invalid state: AssembleKey cannot be called when expecting start of value assembly")
+	case maState_midValue:
+		if !ma.valueFinishTidy() {
+			panic("invalid state: AssembleKey cannot be called when in the middle of assembling a value")
+		} // if tidy success: carry on
+	case maState_finished:
+		panic("invalid state: AssembleKey cannot be called on an assembler that's already finished")
+	}
+	ma.state = maState_midKey
+	return (*_UpdateTask__ReprKeyAssembler)(ma)
+}
+func (ma *_UpdateTask__ReprAssembler) AssembleValue() ipld.NodeAssembler {
+	switch ma.state {
+	case maState_initial:
+		panic("invalid state: AssembleValue cannot be called when no key is primed")
+	case maState_midKey:
+		panic("invalid state: AssembleValue cannot be called when in the middle of assembling a key")
+	case maState_expectValue:
+		// carry on
+	case maState_midValue:
+		panic("invalid state: AssembleValue cannot be called when in the middle of assembling another value")
+	case maState_finished:
+		panic("invalid state: AssembleValue cannot be called on an assembler that's already finished")
+	}
+	ma.state = maState_midValue
+	switch ma.f {
+	case 0:
+		ma.ca_Status.w = &ma.w.Status
+		ma.ca_Status.m = &ma.cm
+		return &ma.ca_Status
+	case 1:
+		ma.ca_Stage.w = ma.w.Stage.v
+		ma.ca_Stage.m = &ma.w.Stage.m
+		
+		return &ma.ca_Stage
+	case 2:
+		ma.ca_CurrentStageDetails.w = ma.w.CurrentStageDetails.v
+		ma.ca_CurrentStageDetails.m = &ma.w.CurrentStageDetails.m
+		
+		return &ma.ca_CurrentStageDetails
+	case 3:
+		ma.ca_WorkedBy.w = &ma.w.WorkedBy
+		ma.ca_WorkedBy.m = &ma.cm
+		return &ma.ca_WorkedBy
+	default:
+		panic("unreachable")
+	}
+}
+func (ma *_UpdateTask__ReprAssembler) Finish() error {
+	switch ma.state {
+	case maState_initial:
+		// carry on
+	case maState_midKey:
+		panic("invalid state: Finish cannot be called when in the middle of assembling a key")
+	case maState_expectValue:
+		panic("invalid state: Finish cannot be called when expecting start of value assembly")
+	case maState_midValue:
+		if !ma.valueFinishTidy() {
+			panic("invalid state: Finish cannot be called when in the middle of assembling a value")
+		} // if tidy success: carry on
+	case maState_finished:
+		panic("invalid state: Finish cannot be called on an assembler that's already finished")
+	}
+	if ma.s & fieldBits__UpdateTask_sufficient != fieldBits__UpdateTask_sufficient {
+		err := ipld.ErrMissingRequiredField{Missing: make([]string, 0)}
+		if ma.s & fieldBit__UpdateTask_Status == 0 {
+			err.Missing = append(err.Missing, "Status")
+		}
+		if ma.s & fieldBit__UpdateTask_WorkedBy == 0 {
+			err.Missing = append(err.Missing, "WorkedBy")
+		}
+		return err
+	}
+	ma.state = maState_finished
+	*ma.m = schema.Maybe_Value
+	return nil
+}
+func (ma *_UpdateTask__ReprAssembler) KeyPrototype() ipld.NodePrototype {
+	return _String__Prototype{}
+}
+func (ma *_UpdateTask__ReprAssembler) ValuePrototype(k string) ipld.NodePrototype {
+	panic("todo structbuilder mapassembler repr valueprototype")
+}
+type _UpdateTask__ReprKeyAssembler _UpdateTask__ReprAssembler
+func (_UpdateTask__ReprKeyAssembler) BeginMap(sizeHint int64) (ipld.MapAssembler, error) {
+	return mixins.StringAssembler{"tasks.UpdateTask.Repr.KeyAssembler"}.BeginMap(0)
+}
+func (_UpdateTask__ReprKeyAssembler) BeginList(sizeHint int64) (ipld.ListAssembler, error) {
+	return mixins.StringAssembler{"tasks.UpdateTask.Repr.KeyAssembler"}.BeginList(0)
+}
+func (na *_UpdateTask__ReprKeyAssembler) AssignNull() error {
+	return mixins.StringAssembler{"tasks.UpdateTask.Repr.KeyAssembler"}.AssignNull()
+}
+func (_UpdateTask__ReprKeyAssembler) AssignBool(bool) error {
+	return mixins.StringAssembler{"tasks.UpdateTask.Repr.KeyAssembler"}.AssignBool(false)
+}
+func (_UpdateTask__ReprKeyAssembler) AssignInt(int64) error {
+	return mixins.StringAssembler{"tasks.UpdateTask.Repr.KeyAssembler"}.AssignInt(0)
+}
+func (_UpdateTask__ReprKeyAssembler) AssignFloat(float64) error {
+	return mixins.StringAssembler{"tasks.UpdateTask.Repr.KeyAssembler"}.AssignFloat(0)
+}
+func (ka *_UpdateTask__ReprKeyAssembler) AssignString(k string) error {
+	if ka.state != maState_midKey {
+		panic("misuse: KeyAssembler held beyond its valid lifetime")
+	}
+	switch k {
+	case "Status":
+		if ka.s & fieldBit__UpdateTask_Status != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__UpdateTask_Status_serial}
+		}
+		ka.s += fieldBit__UpdateTask_Status
+		ka.state = maState_expectValue
+		ka.f = 0
+	case "Stage":
+		if ka.s & fieldBit__UpdateTask_Stage != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__UpdateTask_Stage_serial}
+		}
+		ka.s += fieldBit__UpdateTask_Stage
+		ka.state = maState_expectValue
+		ka.f = 1
+	case "CurrentStageDetails":
+		if ka.s & fieldBit__UpdateTask_CurrentStageDetails != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__UpdateTask_CurrentStageDetails_serial}
+		}
+		ka.s += fieldBit__UpdateTask_CurrentStageDetails
+		ka.state = maState_expectValue
+		ka.f = 2
+	case "WorkedBy":
+		if ka.s & fieldBit__UpdateTask_WorkedBy != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__UpdateTask_WorkedBy_serial}
+		}
+		ka.s += fieldBit__UpdateTask_WorkedBy
+		ka.state = maState_expectValue
+		ka.f = 3
+	default:
+		return ipld.ErrInvalidKey{TypeName:"tasks.UpdateTask.Repr", Key:&_String{k}}
+	}
+	return nil
+}
+func (_UpdateTask__ReprKeyAssembler) AssignBytes([]byte) error {
+	return mixins.StringAssembler{"tasks.UpdateTask.Repr.KeyAssembler"}.AssignBytes(nil)
+}
+func (_UpdateTask__ReprKeyAssembler) AssignLink(ipld.Link) error {
+	return mixins.StringAssembler{"tasks.UpdateTask.Repr.KeyAssembler"}.AssignLink(nil)
+}
+func (ka *_UpdateTask__ReprKeyAssembler) AssignNode(v ipld.Node) error {
+	if v2, err := v.AsString(); err != nil {
+		return err
+	} else {
+		return ka.AssignString(v2)
+	}
+}
+func (_UpdateTask__ReprKeyAssembler) Prototype() ipld.NodePrototype {
+	return _String__Prototype{}
+}
 

@@ -37,78 +37,64 @@ func TestControllerHTTPInterface(t *testing.T) {
 			require.Len(t, currentTasks, 4)
 
 			// update a task
-			task, err := apiClient.PopTask(ctx, &client.PopTaskRequest{
-				WorkedBy: "dealbot 1",
-				Status:   tasks.InProgress,
-			})
+			pt := tasks.Type.PopTask.Of("dealbot 1", tasks.InProgress)
+			task, err := apiClient.PopTask(ctx, pt)
 			taskUUID := mustString(task.UUID.AsString())
 			require.NoError(t, err)
-			require.Equal(t, tasks.InProgress, task.Status)
+			require.Equal(t, *tasks.InProgress, task.Status)
 			refetchTask, err := apiClient.GetTask(ctx, mustString(task.UUID.AsString()))
 			require.NoError(t, err)
-			require.Equal(t, tasks.InProgress, refetchTask.Status)
-			require.Equal(t, "dealbot 1", refetchTask.WorkedBy)
+			require.Equal(t, *tasks.InProgress, refetchTask.Status)
+			require.Equal(t, "dealbot 1", refetchTask.WorkedBy.Must().String())
 
 			// update but from the wrong dealbot
-			task, err = apiClient.UpdateTask(ctx, taskUUID, &client.UpdateTaskRequest{
-				WorkedBy: "dealbot 2",
-				Status:   tasks.Successful,
-			})
+			task, err = apiClient.UpdateTask(ctx, taskUUID, tasks.Type.UpdateTask.Of("dealbot 2", tasks.Successful))
 			// request fails
 			require.EqualError(t, err, client.ErrRequestFailed{Code: http.StatusBadRequest}.Error())
 			require.Nil(t, task)
 			refetchTask, err = apiClient.GetTask(ctx, taskUUID)
 			require.NoError(t, err)
 			// status should not change
-			require.Equal(t, tasks.InProgress, refetchTask.Status)
-			require.Equal(t, "dealbot 1", refetchTask.WorkedBy)
+			require.Equal(t, *tasks.InProgress, refetchTask.Status)
+			require.Equal(t, "dealbot 1", refetchTask.WorkedBy.Must().String())
 
 			// update again
-			task, err = apiClient.UpdateTask(ctx, taskUUID, &client.UpdateTaskRequest{
-				WorkedBy: "dealbot 1",
-				Status:   tasks.Successful,
-			})
+			task, err = apiClient.UpdateTask(ctx, taskUUID, tasks.Type.UpdateTask.Of("dealbot 1", tasks.Successful))
 			require.NoError(t, err)
-			require.Equal(t, tasks.Successful, task.Status)
+			require.Equal(t, *tasks.Successful, task.Status)
 			refetchTask, err = apiClient.GetTask(ctx, taskUUID)
 			require.NoError(t, err)
-			require.Equal(t, tasks.Successful, refetchTask.Status)
-			require.Equal(t, "dealbot 1", refetchTask.WorkedBy)
+			require.Equal(t, *tasks.Successful, refetchTask.Status)
+			require.Equal(t, "dealbot 1", refetchTask.WorkedBy.Must().String())
 
 			// update a different
-			task, err = apiClient.PopTask(ctx, &client.PopTaskRequest{
-				WorkedBy: "dealbot 2",
-				Status:   tasks.Successful,
-			})
+			pt = tasks.Type.PopTask.Of("dealbot 2", tasks.Successful)
+			task, err = apiClient.PopTask(ctx, pt)
 			taskUUID = mustString(task.UUID.AsString())
 			require.NoError(t, err)
-			require.Equal(t, tasks.Successful, task.Status)
+			require.Equal(t, *tasks.Successful, task.Status)
 			refetchTask, err = apiClient.GetTask(ctx, taskUUID)
 			require.NoError(t, err)
-			require.Equal(t, tasks.Successful, refetchTask.Status)
-			require.Equal(t, "dealbot 2", refetchTask.WorkedBy)
+			require.Equal(t, *tasks.Successful, refetchTask.Status)
+			require.Equal(t, "dealbot 2", refetchTask.WorkedBy.Must().String())
 
+			fmt.Printf("%v\n", recorder)
+			fmt.Printf("%s\n", mustString(currentTasks[0].UUID.AsString()))
 			recorder.AssertExactObservedStatuses(t, mustString(currentTasks[0].UUID.AsString()), tasks.InProgress, tasks.Successful)
 			recorder.AssertExactObservedStatuses(t, mustString(currentTasks[1].UUID.AsString()), tasks.Successful)
 		},
 		"pop a task": func(ctx context.Context, t *testing.T, apiClient *client.Client, recorder *testrecorder.TestMetricsRecorder) {
-			updatedTask, err := apiClient.PopTask(ctx, &client.PopTaskRequest{
-				WorkedBy: "dealbot 1",
-				Status:   tasks.InProgress,
-			})
+			updatedTask, err := apiClient.PopTask(ctx, tasks.Type.PopTask.Of("dealbot 1", tasks.InProgress))
 			require.NoError(t, err)
-			require.Equal(t, tasks.InProgress, updatedTask.Status)
+			require.Equal(t, *tasks.InProgress, updatedTask.Status)
 			refetchTask, err := apiClient.GetTask(ctx, mustString(updatedTask.UUID.AsString()))
 			require.NoError(t, err)
-			require.Equal(t, tasks.InProgress, refetchTask.Status)
-			require.Equal(t, "dealbot 1", refetchTask.WorkedBy)
+			require.Equal(t, *tasks.InProgress, refetchTask.Status)
+			require.Equal(t, "dealbot 1", refetchTask.WorkedBy.Must().String())
 
 			// when no tasks are available, pop-task should return nil
 			for {
-				task, err := apiClient.PopTask(ctx, &client.PopTaskRequest{
-					WorkedBy: "dealbot 1",
-					Status:   tasks.InProgress,
-				})
+				task, err := apiClient.PopTask(ctx, tasks.Type.PopTask.Of("dealbot 1", tasks.InProgress))
 				require.NoError(t, err)
 				if task == nil {
 					break
@@ -124,10 +110,10 @@ func TestControllerHTTPInterface(t *testing.T) {
 				true)
 			task, err := apiClient.CreateStorageTask(ctx, newStorageTask)
 			require.NoError(t, err)
-			require.Equal(t, task.StorageTask, newStorageTask)
+			require.Equal(t, task.StorageTask.Must(), newStorageTask)
 			task, err = apiClient.GetTask(ctx, mustString(task.UUID.AsString()))
 			require.NoError(t, err)
-			require.Equal(t, task.StorageTask, newStorageTask)
+			require.Equal(t, task.StorageTask.Must(), newStorageTask)
 			currentTasks, err := apiClient.ListTasks(ctx)
 			require.NoError(t, err)
 			require.Len(t, currentTasks, 5)
@@ -139,10 +125,10 @@ func TestControllerHTTPInterface(t *testing.T) {
 			)
 			task, err = apiClient.CreateRetrievalTask(ctx, newRetrievalTask)
 			require.NoError(t, err)
-			require.Equal(t, task.RetrievalTask, newRetrievalTask)
+			require.Equal(t, task.RetrievalTask.Must(), newRetrievalTask)
 			task, err = apiClient.GetTask(ctx, mustString(task.UUID.AsString()))
 			require.NoError(t, err)
-			require.Equal(t, task.RetrievalTask, newRetrievalTask)
+			require.Equal(t, task.RetrievalTask.Must(), newRetrievalTask)
 			currentTasks, err = apiClient.ListTasks(ctx)
 			require.NoError(t, err)
 			require.Len(t, currentTasks, 6)
