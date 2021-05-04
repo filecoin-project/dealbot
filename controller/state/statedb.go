@@ -145,7 +145,7 @@ func (s *stateDB) AssignTask(ctx context.Context, req client.PopTaskRequest) (ta
 
 		tp := tasks.Type.Task.NewBuilder()
 		if err = dagjson.Decoder(tp, bytes.NewBufferString(serialized)); err != nil {
-			return err
+			return fmt.Errorf("could not decode task (%s): %w", serialized, err)
 		}
 		task := tp.Build().(tasks.Task)
 
@@ -157,15 +157,15 @@ func (s *stateDB) AssignTask(ctx context.Context, req client.PopTaskRequest) (ta
 		}
 
 		// Assign task to worker
-		_, err = tx.ExecContext(ctx, assignTaskSQL, taskID, data, req.WorkedBy)
+		_, err = tx.ExecContext(ctx, assignTaskSQL, taskID, data.Bytes(), req.WorkedBy)
 		if err != nil {
-			return err
+			return fmt.Errorf("could not assign task: %w", err)
 		}
 
 		// Set new status for task
-		_, err = tx.ExecContext(ctx, setTaskStatusSQL, taskID, req.Status, time.Now())
+		_, err = tx.ExecContext(ctx, setTaskStatusSQL, taskID, req.Status.String(), time.Now())
 		if err != nil {
-			return err
+			return fmt.Errorf("could not update status task: %w", err)
 		}
 
 		assigned = task
@@ -360,11 +360,11 @@ func (s *stateDB) saveTask(ctx context.Context, task tasks.Task) error {
 
 	return s.transact(ctx, 0, func(tx *sql.Tx) error {
 		now := time.Now()
-		if _, err := tx.ExecContext(ctx, createTaskSQL, task.UUID, data, now); err != nil {
+		if _, err := tx.ExecContext(ctx, createTaskSQL, task.UUID.String(), data.Bytes(), now); err != nil {
 			return err
 		}
 
-		if _, err := tx.ExecContext(ctx, setTaskStatusSQL, task.UUID, tasks.Available, now); err != nil {
+		if _, err := tx.ExecContext(ctx, setTaskStatusSQL, task.UUID.String(), tasks.Available.Int(), now); err != nil {
 			return err
 		}
 		return nil

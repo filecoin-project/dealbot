@@ -166,7 +166,7 @@ func (tp *_Task__Prototype) New(r RetrievalTask, s StorageTask) Task {
 	t := _Task{
 		UUID:                _String{uuid.New().String()},
 		Status:              *Available,
-		WorkedBy:            _String__Maybe{m: schema.Maybe_Absent},
+		WorkedBy:            _String__Maybe{m: schema.Maybe_Value, v: &_String{""}},
 		Stage:               _String{""},
 		CurrentStageDetails: _StageDetails__Maybe{m: schema.Maybe_Absent},
 		StartedAt:           _Time__Maybe{m: schema.Maybe_Absent},
