@@ -237,9 +237,11 @@ func (tl *_Tasks__Prototype) Of(ts []Task) *_Tasks {
 }
 
 func (ts *_Tasks) List() []Task {
-	itms := make([]Task, 0, len(ts.x))
-	for _, t := range ts.x {
-		itms = append(itms, &t)
+	itmsp := make([]_Task, len(ts.x))
+	itms := make([]Task, len(ts.x))
+	for i := range ts.x {
+		itmsp[i] = ts.x[i]
+		itms[i] = &itmsp[i]
 	}
 	return itms
 }

@@ -66,6 +66,7 @@ func (c *Client) ListTasks(ctx context.Context) ([]tasks.Task, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 
 	tlp := tasks.Type.Tasks.NewBuilder()
 	err = dagjson.Decoder(tlp, resp.Body)
@@ -88,6 +89,7 @@ func (c *Client) PopTask(ctx context.Context, r tasks.PopTask) (tasks.Task, erro
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusNoContent {
 		return nil, nil
@@ -114,6 +116,7 @@ func (c *Client) UpdateTask(ctx context.Context, uuid string, r tasks.UpdateTask
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, ErrRequestFailed{resp.StatusCode}
@@ -131,6 +134,7 @@ func (c *Client) GetTask(ctx context.Context, uuid string) (tasks.Task, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, ErrRequestFailed{resp.StatusCode}
@@ -155,6 +159,7 @@ func (c *Client) CreateStorageTask(ctx context.Context, storageTask tasks.Storag
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusCreated {
 		return nil, ErrRequestFailed{resp.StatusCode}
@@ -179,6 +184,7 @@ func (c *Client) CreateRetrievalTask(ctx context.Context, retrievalTask tasks.Re
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusCreated {
 		return nil, ErrRequestFailed{resp.StatusCode}

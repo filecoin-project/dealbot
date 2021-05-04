@@ -78,8 +78,6 @@ func TestControllerHTTPInterface(t *testing.T) {
 			require.Equal(t, *tasks.Successful, refetchTask.Status)
 			require.Equal(t, "dealbot 2", refetchTask.WorkedBy.Must().String())
 
-			fmt.Printf("%v\n", recorder)
-			fmt.Printf("%s\n", mustString(currentTasks[0].UUID.AsString()))
 			recorder.AssertExactObservedStatuses(t, mustString(currentTasks[0].UUID.AsString()), tasks.InProgress, tasks.Successful)
 			recorder.AssertExactObservedStatuses(t, mustString(currentTasks[1].UUID.AsString()), tasks.Successful)
 		},
