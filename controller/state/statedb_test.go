@@ -90,7 +90,7 @@ func TestAssignTask(t *testing.T) {
 		task, err = state.AssignTask(ctx, req)
 		require.NoError(t, err)
 		require.NotNil(t, task, "Did not find task to assign")
-		require.Equal(t, worker, task.WorkedBy, "should be assigned to correct worker")
+		require.Equal(t, worker, task.WorkedBy.Must().String(), "should be assigned to correct worker")
 		uuid := mustString(task.UUID.AsString())
 		_, found := seen[uuid]
 		require.False(t, found, "Assigned task that was previously assigned")
@@ -252,7 +252,7 @@ func TestUpdateTasks(t *testing.T) {
 		updateTaskRequest    client.UpdateTaskRequest
 		expectedStatus       tasks.Status
 		expectedStage        string
-		expectedStageDetails *tasks.StageDetails
+		expectedStageDetails tasks.StageDetails
 		expectedTaskHistory  []statusHistory
 		expectedError        error
 	}{
@@ -294,7 +294,7 @@ func TestUpdateTasks(t *testing.T) {
 				WorkedBy:            mustString(inProgressTasks[1].WorkedBy.Must().AsString()),
 			},
 			expectedStage:        "Stuff",
-			expectedStageDetails: &exStageDetail,
+			expectedStageDetails: exStageDetail,
 			expectedStatus:       tasks.InProgress,
 			expectedTaskHistory: []statusHistory{
 				{tasks.Available, ""},
@@ -311,7 +311,7 @@ func TestUpdateTasks(t *testing.T) {
 				WorkedBy:            inProgressTasks[2].WorkedBy.Must().String(),
 			},
 			expectedStage:        "Stuff",
-			expectedStageDetails: &workedStageDetail,
+			expectedStageDetails: workedStageDetail,
 			expectedStatus:       tasks.InProgress,
 			expectedTaskHistory: []statusHistory{
 				{tasks.Available, ""},
@@ -331,9 +331,13 @@ func TestUpdateTasks(t *testing.T) {
 				require.EqualError(t, err, data.expectedError.Error())
 			} else {
 				require.NoError(t, err)
-				require.Equal(t, data.expectedStatus, task.Status)
-				require.Equal(t, data.expectedStage, task.Stage)
-				require.Equal(t, data.expectedStageDetails, task.CurrentStageDetails)
+				require.Equal(t, *data.expectedStatus, task.Status)
+				require.Equal(t, data.expectedStage, task.Stage.String())
+				if data.expectedStageDetails == nil {
+					require.Equal(t, task.CurrentStageDetails.Exists(), false)
+				} else {
+					require.Equal(t, data.expectedStageDetails, task.CurrentStageDetails.Must())
+				}
 				taskEvents, err := state.TaskHistory(ctx, data.uuid)
 				require.NoError(t, err)
 				history := make([]statusHistory, 0, len(taskEvents))

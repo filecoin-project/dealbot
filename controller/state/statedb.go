@@ -152,7 +152,7 @@ func (s *stateDB) AssignTask(ctx context.Context, req client.PopTaskRequest) (ta
 		task.Assign(req.WorkedBy, req.Status)
 
 		data := bytes.NewBuffer([]byte{})
-		if err := dagjson.Encoder(task, data); err != nil {
+		if err := dagjson.Encoder(task.Representation(), data); err != nil {
 			return err
 		}
 
@@ -163,7 +163,7 @@ func (s *stateDB) AssignTask(ctx context.Context, req client.PopTaskRequest) (ta
 		}
 
 		// Set new status for task
-		_, err = tx.ExecContext(ctx, setTaskStatusSQL, taskID, req.Status.String(), time.Now())
+		_, err = tx.ExecContext(ctx, setTaskStatusSQL, taskID, req.Status.Int(), time.Now())
 		if err != nil {
 			return fmt.Errorf("could not update status task: %w", err)
 		}
@@ -217,12 +217,12 @@ func (s *stateDB) Update(ctx context.Context, taskID string, req client.UpdateTa
 		}
 
 		data := bytes.NewBuffer([]byte{})
-		if err := dagjson.Encoder(task, data); err != nil {
+		if err := dagjson.Encoder(task.Representation(), data); err != nil {
 			return err
 		}
 
 		// save the update back to DB
-		_, err = tx.ExecContext(ctx, updateTaskDataSQL, taskID, data)
+		_, err = tx.ExecContext(ctx, updateTaskDataSQL, taskID, data.Bytes())
 		if err != nil {
 			return err
 		}
@@ -354,7 +354,7 @@ func (s *stateDB) transact(ctx context.Context, retries int, f func(*sql.Tx) err
 // createTask inserts a new task and new task status into the database
 func (s *stateDB) saveTask(ctx context.Context, task tasks.Task) error {
 	data := bytes.NewBuffer([]byte{})
-	if err := dagjson.Encoder(task, data); err != nil {
+	if err := dagjson.Encoder(task.Representation(), data); err != nil {
 		return err
 	}
 

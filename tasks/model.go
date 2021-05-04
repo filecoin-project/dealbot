@@ -195,7 +195,11 @@ func (t *_Task) Assign(worker string, status Status) {
 func (t *_Task) Update(status Status, stage string, details StageDetails) error {
 	t.Status = *status
 	t.Stage = _String{stage}
-	t.CurrentStageDetails = _StageDetails__Maybe{m: schema.Maybe_Value, v: details}
+	if details == nil {
+		t.CurrentStageDetails = _StageDetails__Maybe{m: schema.Maybe_Absent}
+	} else {
+		t.CurrentStageDetails = _StageDetails__Maybe{m: schema.Maybe_Value, v: details}
+	}
 
 	//todo: sign
 	return nil
