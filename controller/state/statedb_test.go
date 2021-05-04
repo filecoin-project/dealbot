@@ -231,11 +231,14 @@ func TestUpdateTasks(t *testing.T) {
 	}
 	require.NotNil(t, unassignedTask)
 
+	exStageDetail := tasks.Type.StageDetails.Of("Doing Stuff", "A good long while")
+	workedStageDetail := exStageDetail.WithLog("stuff happened")
+
 	// add a stage name to the last in progress task
 	_, err = state.Update(ctx, inProgressTasks[2].GetUUID(), client.UpdateTaskRequest{
 		Status:              tasks.InProgress,
 		Stage:               "Stuff",
-		CurrentStageDetails: tasks.Type.StageDetails.Of("Doing Stuff", "A good long while"),
+		CurrentStageDetails: exStageDetail,
 		WorkedBy:            mustString(inProgressTasks[2].WorkedBy.Must().AsString()),
 	})
 	require.NoError(t, err)
@@ -245,8 +248,6 @@ func TestUpdateTasks(t *testing.T) {
 		stage  string
 	}
 
-	exStageDetail := tasks.Type.StageDetails.Of("Doing Stuff", "A good long while")
-	workedStageDetail := tasks.Type.StageDetails.Of("Doing Stuff", "A good long while").WithLog("stuff happened")
 	testCases := map[string]struct {
 		uuid                 string
 		updateTaskRequest    client.UpdateTaskRequest
@@ -290,7 +291,7 @@ func TestUpdateTasks(t *testing.T) {
 			updateTaskRequest: client.UpdateTaskRequest{
 				Status:              tasks.InProgress,
 				Stage:               "Stuff",
-				CurrentStageDetails: tasks.Type.StageDetails.Of("Doing Stuff", "A good long while"),
+				CurrentStageDetails: exStageDetail,
 				WorkedBy:            mustString(inProgressTasks[1].WorkedBy.Must().AsString()),
 			},
 			expectedStage:        "Stuff",

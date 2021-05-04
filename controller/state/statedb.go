@@ -228,7 +228,11 @@ func (s *stateDB) Update(ctx context.Context, taskID string, req client.UpdateTa
 		}
 
 		// publish a task event update as neccesary
-		_, err = tx.ExecContext(ctx, upsertTaskStatusSQL, taskID, task.Status, task.Stage, time.Now())
+		now := time.Now()
+		if req.CurrentStageDetails != nil && req.CurrentStageDetails.UpdatedAt.Exists() {
+			now = req.CurrentStageDetails.UpdatedAt.Must().Time()
+		}
+		_, err = tx.ExecContext(ctx, upsertTaskStatusSQL, taskID, task.Status.Int(), task.Stage.String(), now)
 		return nil
 	})
 
