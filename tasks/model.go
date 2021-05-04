@@ -93,14 +93,27 @@ var RetrievalStages = map[string]StageDetails{
 }
 
 // AddLog adds a log message to details about the current stage
-func AddLog(stageDetails StageDetails, log string) {
+func AddLog(stageDetails StageDetails, log string) StageDetails {
 	now := time.Now()
-	stageDetails.UpdatedAt.m = schema.Maybe_Value
-	stageDetails.UpdatedAt.v.x = now.UnixNano()
-	stageDetails.Logs.x = append(stageDetails.Logs.x, _Logs{
+
+	logs := make([]_Logs, 0)
+	if stageDetails != nil && stageDetails.Logs.x != nil {
+		logs = append(logs, stageDetails.Logs.x...)
+	}
+	logs = append(logs, _Logs{
 		Log:       _String{log},
 		UpdatedAt: mktime(now),
 	})
+	n := _StageDetails{
+		Description:      stageDetails.Description,
+		ExpectedDuration: stageDetails.ExpectedDuration,
+		UpdatedAt:        _Time__Maybe{m: schema.Maybe_Value, v: &_Time{now.UnixNano()}},
+		Logs: _List_Logs{
+			x: logs,
+		},
+	}
+
+	return &n
 }
 
 type step struct {
@@ -122,7 +135,7 @@ func executeStage(stage string, updateStage UpdateStage, steps []step) error {
 		if err != nil {
 			return err
 		}
-		AddLog(stageDetails, step.stepSuccess)
+		stageDetails = AddLog(stageDetails, step.stepSuccess)
 		err = updateStage(stage, stageDetails)
 		if err != nil {
 			return nil

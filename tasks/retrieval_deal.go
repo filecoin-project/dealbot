@@ -84,7 +84,7 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(updateStage UpdateStage) 
 		return err
 	}
 
-	AddLog(dealStage, "deal sent to miner")
+	dealStage = AddLog(dealStage, "deal sent to miner")
 	err = updateStage("ProposeRetrieval", dealStage)
 	if err != nil {
 		return err
@@ -128,7 +128,7 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(updateStage UpdateStage) 
 		// deal is on chain, exit successfully
 		case retrievalmarket.DealStatusCompleted:
 			dealStage = RetrievalStages["DealComplete"]
-			AddLog(dealStage, fmt.Sprintf("bytes received: %d", event.BytesReceived))
+			dealStage = AddLog(dealStage, fmt.Sprintf("bytes received: %d", event.BytesReceived))
 			err := updateStage("DealComplete", dealStage)
 			if err != nil {
 				return err
@@ -143,7 +143,7 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(updateStage UpdateStage) 
 
 			_ = rdata
 
-			AddLog(dealStage, "file read from file system")
+			dealStage = AddLog(dealStage, "file read from file system")
 			err = updateStage("DealComplete", dealStage)
 			if err != nil {
 				return err
