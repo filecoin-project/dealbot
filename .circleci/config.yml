@@ -94,4 +94,8 @@ workflows:
   ci:
     jobs:
       - build-and-test
-      - build-push-deploy
+      - build-push-deploy:
+          filters:
+            branches:
+              only:
+                - main
