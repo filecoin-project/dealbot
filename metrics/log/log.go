@@ -23,29 +23,35 @@ func (lr *logRecorder) Handler() http.Handler {
 	return nil
 }
 
-func (lr *logRecorder) ObserveTask(task *tasks.Task) error {
-	duration := time.Since(task.StartedAt).Milliseconds()
+func mustString(s string, _ error) string {
+	return s
+}
 
-	if task.RetrievalTask != nil {
+func (lr *logRecorder) ObserveTask(task tasks.Task) error {
+	duration := time.Since(task.StartedAt.Must().Time()).Milliseconds()
+
+	if task.RetrievalTask.Exists() {
+		rt := task.RetrievalTask.Must()
 		lr.log.Infow("retrieval task",
 			metrics.UUID, task.UUID,
-			metrics.Miner, task.RetrievalTask.Miner,
-			metrics.PayloadCID, task.RetrievalTask.PayloadCID,
-			metrics.CARExport, task.RetrievalTask.CARExport,
-			metrics.Status, task.Status,
+			metrics.Miner, rt.Miner,
+			metrics.PayloadCID, rt.PayloadCID,
+			metrics.CARExport, rt.CARExport,
+			metrics.Status, mustString(task.Status.AsString()),
 			"duration (ms)", duration)
 		return nil
 	}
-	if task.StorageTask != nil {
+	if task.StorageTask.Exists() {
+		st := task.StorageTask.Must()
 		lr.log.Infow("storage task",
-			metrics.UUID, task.UUID,
-			metrics.Miner, task.StorageTask.Miner,
-			metrics.MaxPriceAttoFIL, task.StorageTask.MaxPriceAttoFIL,
-			metrics.Size, task.StorageTask.Size,
-			metrics.StartOffset, task.StorageTask.StartOffset,
-			metrics.FastRetrieval, task.StorageTask.FastRetrieval,
-			metrics.Verified, task.StorageTask.Verified,
-			metrics.Status, task.Status,
+			metrics.UUID, mustString(task.UUID.AsString()),
+			metrics.Miner, st.Miner,
+			metrics.MaxPriceAttoFIL, st.MaxPriceAttoFIL,
+			metrics.Size, st.Size,
+			metrics.StartOffset, st.StartOffset,
+			metrics.FastRetrieval, st.FastRetrieval,
+			metrics.Verified, st.Verified,
+			metrics.Status, mustString(task.Status.AsString()),
 			"duration (ms)", duration)
 		return nil
 	}

@@ -24,13 +24,9 @@ func queueRetrievalDeal(cctx *cli.Context) error {
 	// get miner address
 	minerParam := cctx.String("miner")
 
-	task := tasks.RetrievalTask{
-		Miner:      minerParam,
-		PayloadCID: payloadCid,
-		CARExport:  carExport,
-	}
+	task := tasks.Type.RetrievalTask.Of(minerParam, payloadCid, carExport)
 
-	t, err := client.CreateRetrievalTask(cctx.Context, &task)
+	t, err := client.CreateRetrievalTask(cctx.Context, task)
 
 	if err != nil {
 		log.Fatal(err)

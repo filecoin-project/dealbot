@@ -1,13 +1,12 @@
 package tasks
 
 import (
-	"encoding/json"
 	"errors"
 	"time"
 
 	"github.com/filecoin-project/go-address"
-	logging "github.com/ipfs/go-log/v2"
-	"github.com/libp2p/go-libp2p-core/crypto"
+	"github.com/google/uuid"
+	"github.com/ipld/go-ipld-prime/schema"
 )
 
 // LogStatus is a function that logs messages
@@ -15,51 +14,13 @@ type LogStatus func(msg string, keysAndValues ...interface{})
 
 // UpdateStage updates the stage & current stage details for a deal, and
 // records the previous stage in the task status ledger as needed
-type UpdateStage func(stage string, stageDetails *StageDetails) error
+type UpdateStage func(stage string, stageDetails StageDetails) error
 
 // NodeConfig specifies parameters to a running deal bot
 type NodeConfig struct {
 	DataDir       string
 	NodeDataDir   string
 	WalletAddress address.Address
-}
-
-// Task is a task to be run by the deal bot
-type Task struct {
-	// UUID is a unique identifier for this task
-	UUID string `json:"uuid"`
-	// Status is the global task status, shared among all tasks types -- always one of Available, InProgress, Successful, or Failure
-	Status Status `json:"status"`
-	// WorkedBy indicates the dealbot assigned to this task
-	WorkedBy string `json:"worked_by,omitempty"`
-	// Stage is a more detailed identifier for what part of the process the deal is in. Some stages are unique to the task type
-	// When a task status is Successful or Failure, Stage indicates the final stage of the deal making process that was reached
-	Stage string `json:"stage"`
-	// CurrentStageDeatails offers more information about what is happening in the current stage of the deal making process
-	CurrentStageDetails *StageDetails `json:"current_stage_details,omitempty"`
-	// StartedAt the time the task was assigned first assigned to a dealbot
-	StartedAt time.Time `json:"started_at,omitempty"`
-	// RetrievalTask is subparameters for a retrieval deal -- will be nil for a storage deal
-	RetrievalTask *RetrievalTask `json:"retrieval_task,omitempty"`
-	// StorageTask is subparameters for a storage deal -- will be nil for a retrieval deal
-	StorageTask *StorageTask `json:"storage_task,omitempty"`
-	// Signature is the crytographic signature of all the data in this task absent the signature field itself (i.e. sig set to nil)
-	Signature []byte `json:"signature,omitempty"`
-}
-
-// StageDetails offers detailed information about progress within the current stage
-type StageDetails struct {
-	// Human-readable fields.
-	Description      string    `json:"description,omitempty"`
-	ExpectedDuration string    `json:"expected_duration,omitempty"`
-	Logs             []*Log    `json:"logs"`
-	UpdatedAt        time.Time `json:"updated_at,omitempty"`
-}
-
-// Log is a message about something that happened in the current stage
-type Log struct {
-	Log       string    `json:"log"`
-	UpdatedAt time.Time `json:"updated_at,omitempty"`
 }
 
 // TaskEvent logs a change in either status
@@ -69,44 +30,31 @@ type TaskEvent struct {
 	At     time.Time
 }
 
-func (t Task) Bytes() []byte {
-	b, err := json.Marshal(&t)
-	if err != nil {
-		return []byte{}
-	}
-	return b
-}
-
-func (t *Task) Sign(privKey crypto.PrivKey) error {
-	var err error
-	t.Signature = nil
-	t.Signature, err = privKey.Sign(t.Bytes())
-	return err
-}
-
-func (t *Task) Log(log *logging.ZapEventLogger) {
-	if t.RetrievalTask != nil {
-		log.Infow("retrieval task", "uuid", t.UUID, "status", t.Status, "worked_by", t.WorkedBy)
-	} else if t.StorageTask != nil {
-		log.Infow("storage task", "uuid", t.UUID, "status", t.Status, "worked_by", t.WorkedBy)
-	} else {
-		panic("both tasks are nil")
-	}
-}
-
-// Status is a global task status, shared among all tasks types
-type Status int
-
-const (
+var (
 	// Available indicates a task is ready to be assigned to a deal bot
-	Available Status = iota + 1
+	Available Status = &_Status{x: 1}
 	// InProgress means the task is running
-	InProgress
+	InProgress Status = &_Status{x: 2}
 	// Successful means the task completed successfully
-	Successful
+	Successful Status = &_Status{x: 3}
 	// Failed means the task has failed
-	Failed
+	Failed Status = &_Status{x: 4}
 )
+
+func (f *_Status__Prototype) Of(x int) Status {
+	switch x {
+	case 1:
+		return Available
+	case 2:
+		return InProgress
+	case 3:
+		return Successful
+	case 4:
+		return Failed
+	default:
+		return nil
+	}
+}
 
 var statusNames = map[Status]string{
 	Available:  "Available",
@@ -119,54 +67,53 @@ func (s Status) String() string {
 	return statusNames[s]
 }
 
+func asStageDetails(description, expected string) StageDetails {
+	return &_StageDetails{
+		Description:      asStrM(description),
+		ExpectedDuration: asStrM(expected),
+		Logs:             _List_Logs{[]_Logs{}},
+		UpdatedAt:        _Time__Maybe{m: schema.Maybe_Absent},
+	}
+}
+
 // ConnectivityStages are stages that occur prior to initiating a deal
 var ConnectivityStages = map[string]StageDetails{
-	"MinerOnline": {
-		Description:      "Miner is online",
-		ExpectedDuration: "a few seconds",
-	},
-	"QueryAsk": {
-		Description:      "Miner responds to query ask",
-		ExpectedDuration: "a few seconds",
-	},
-	"CheckPrice": {
-		Description:      "Miner meets price criteria",
-		ExpectedDuration: "",
-	},
-	"ClientImport": {
-		Description:      "Importing data into Lotus",
-		ExpectedDuration: "a few minutes",
-	},
+	"MinerOnline":  asStageDetails("Miner is online", "a few seconds"),
+	"QueryAsk":     asStageDetails("Miner responds to query ask", "a few seconds"),
+	"CheckPrice":   asStageDetails("Miner meets price criteria", ""),
+	"ClientImport": asStageDetails("Importing data into Lotus", "a few minutes"),
 }
 
 // RetrievalStages are stages that occur in a retrieval deal
 var RetrievalStages = map[string]StageDetails{
-	"ProposeRetrieval": {
-		Description:      "Send retrieval to miner",
-		ExpectedDuration: "",
-	},
-	"DealAccepted": {
-		Description:      "Miner accepts deal",
-		ExpectedDuration: "a few seconds",
-	},
-	"FirstByteReceived": {
-		Description:      "First byte of data received from miner",
-		ExpectedDuration: "a few seconds, or several hours when unsealing",
-	},
-	"DealComplete": {
-		Description:      "All bytes received and deal is completed",
-		ExpectedDuration: "a few seconds",
-	},
+	"ProposeRetrieval":  asStageDetails("Send retrieval to miner", ""),
+	"DealAccepted":      asStageDetails("Miner accepts deal", "a few seconds"),
+	"FirstByteReceived": asStageDetails("First byte of data received from miner", "a few seconds, or several hours when unsealing"),
+	"DealComplete":      asStageDetails("All bytes received and deal is completed", "a few seconds"),
 }
 
 // AddLog adds a log message to details about the current stage
-func AddLog(stageDetails *StageDetails, log string) {
+func AddLog(stageDetails StageDetails, log string) StageDetails {
 	now := time.Now()
-	stageDetails.UpdatedAt = now
-	stageDetails.Logs = append(stageDetails.Logs, &Log{
-		Log:       log,
-		UpdatedAt: now,
+
+	logs := make([]_Logs, 0)
+	if stageDetails != nil && stageDetails.Logs.x != nil {
+		logs = append(logs, stageDetails.Logs.x...)
+	}
+	logs = append(logs, _Logs{
+		Log:       _String{log},
+		UpdatedAt: mktime(now),
 	})
+	n := _StageDetails{
+		Description:      stageDetails.Description,
+		ExpectedDuration: stageDetails.ExpectedDuration,
+		UpdatedAt:        _Time__Maybe{m: schema.Maybe_Value, v: &_Time{now.UnixNano()}},
+		Logs: _List_Logs{
+			x: logs,
+		},
+	}
+
+	return &n
 }
 
 type step struct {
@@ -179,7 +126,7 @@ func executeStage(stage string, updateStage UpdateStage, steps []step) error {
 	if !ok {
 		return errors.New("unknown stage")
 	}
-	err := updateStage(stage, &stageDetails)
+	err := updateStage(stage, stageDetails)
 	if err != nil {
 		return err
 	}
@@ -188,11 +135,126 @@ func executeStage(stage string, updateStage UpdateStage, steps []step) error {
 		if err != nil {
 			return err
 		}
-		AddLog(&stageDetails, step.stepSuccess)
-		err = updateStage(stage, &stageDetails)
+		stageDetails = AddLog(stageDetails, step.stepSuccess)
+		err = updateStage(stage, stageDetails)
 		if err != nil {
 			return nil
 		}
 	}
 	return nil
+}
+
+func (sdp *_StageDetails__Prototype) Of(desc, expected string) *_StageDetails {
+	sd := _StageDetails{
+		Description:      _String__Maybe{m: schema.Maybe_Value, v: &_String{desc}},
+		ExpectedDuration: _String__Maybe{m: schema.Maybe_Value, v: &_String{expected}},
+		Logs:             _List_Logs{[]_Logs{}},
+		UpdatedAt:        _Time__Maybe{m: schema.Maybe_Value, v: &_Time{x: time.Now().UnixNano()}},
+	}
+	return &sd
+}
+
+// WithLog makes a copy of the stage details with an additional log appended.
+func (sd *_StageDetails) WithLog(log string) *_StageDetails {
+	nl := _List_Logs{
+		x: append(sd.Logs.x, _Logs{
+			Log:       _String{log},
+			UpdatedAt: _Time{x: time.Now().UnixNano()},
+		}),
+	}
+	n := _StageDetails{
+		Description:      sd.Description,
+		ExpectedDuration: sd.ExpectedDuration,
+		Logs:             nl,
+		UpdatedAt:        _Time__Maybe{m: schema.Maybe_Value, v: &_Time{x: time.Now().UnixNano()}},
+	}
+	return &n
+}
+
+func (t *_Time) Time() time.Time {
+	return time.Unix(0, t.x)
+}
+
+func (tp *_Task__Prototype) New(r RetrievalTask, s StorageTask) Task {
+	t := _Task{
+		UUID:                _String{uuid.New().String()},
+		Status:              *Available,
+		WorkedBy:            _String__Maybe{m: schema.Maybe_Value, v: &_String{""}},
+		Stage:               _String{""},
+		CurrentStageDetails: _StageDetails__Maybe{m: schema.Maybe_Absent},
+		StartedAt:           _Time__Maybe{m: schema.Maybe_Absent},
+		RetrievalTask:       _RetrievalTask__Maybe{m: schema.Maybe_Absent},
+		StorageTask:         _StorageTask__Maybe{m: schema.Maybe_Absent},
+	}
+	if r != nil {
+		t.RetrievalTask.m = schema.Maybe_Value
+		t.RetrievalTask.v = r
+	}
+	if s != nil {
+		t.StorageTask.m = schema.Maybe_Value
+		t.StorageTask.v = s
+	}
+	return &t
+}
+
+func (t *_Task) Assign(worker string, status Status) {
+	t.WorkedBy = _String__Maybe{m: schema.Maybe_Value, v: &_String{worker}}
+	t.StartedAt = _Time__Maybe{m: schema.Maybe_Value, v: &_Time{x: time.Now().UnixNano()}}
+	t.Status = *status
+
+	//todo: sign
+}
+
+func (t *_Task) Update(status Status, stage string, details StageDetails) error {
+	t.Status = *status
+	t.Stage = _String{stage}
+	if details == nil {
+		t.CurrentStageDetails = _StageDetails__Maybe{m: schema.Maybe_Absent}
+	} else {
+		t.CurrentStageDetails = _StageDetails__Maybe{m: schema.Maybe_Value, v: details}
+	}
+
+	//todo: sign
+	return nil
+}
+
+func (t *_Task) UpdateTask(tsk UpdateTask) error {
+	t.Status = tsk.Status
+	if tsk.CurrentStageDetails.Exists() {
+		t.CurrentStageDetails = tsk.CurrentStageDetails
+	} else {
+		t.CurrentStageDetails = _StageDetails__Maybe{m: schema.Maybe_Absent}
+	}
+	if tsk.Stage.Exists() {
+		t.Stage = *tsk.Stage.Must()
+	} else {
+		t.Stage = _String{""}
+	}
+
+	//todo: sign
+	return nil
+}
+
+func (t *_Task) GetUUID() string {
+	return t.UUID.x
+}
+
+func (tl *_Tasks__Prototype) Of(ts []Task) *_Tasks {
+	t := _Tasks{
+		x: []_Task{},
+	}
+	for _, c := range ts {
+		t.x = append(t.x, *c)
+	}
+	return &t
+}
+
+func (ts *_Tasks) List() []Task {
+	itmsp := make([]_Task, len(ts.x))
+	itms := make([]Task, len(ts.x))
+	for i := range ts.x {
+		itmsp[i] = ts.x[i]
+		itms[i] = &itmsp[i]
+	}
+	return itms
 }

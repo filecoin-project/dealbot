@@ -70,7 +70,7 @@ func (e *Engine) worker(n int) {
 
 		// pop a task
 		ctx := context.Background()
-		task, err := e.client.PopTask(ctx, &client.PopTaskRequest{Status: tasks.Available, WorkedBy: e.host})
+		task, err := e.client.PopTask(ctx, tasks.Type.PopTask.Of(e.host, tasks.Available))
 		if err != nil {
 			log.Warnw("pop-task returned error", "err", err)
 			continue
@@ -78,7 +78,7 @@ func (e *Engine) worker(n int) {
 		if task == nil {
 			continue // no task available
 		}
-		if task.WorkedBy != e.host {
+		if task.WorkedBy.Must().String() != e.host {
 			log.Warnw("pop-task returned task that is not for this host", "err", err)
 			continue
 		}
@@ -86,18 +86,19 @@ func (e *Engine) worker(n int) {
 		log.Infow("successfully acquired task", "uuid", task.UUID)
 
 		finalStatus := tasks.Successful
-		updateStage := func(stage string, stageDetails *tasks.StageDetails) error {
-			task, err = e.client.UpdateTask(ctx, task.UUID, &client.UpdateTaskRequest{
-				Status:              tasks.InProgress,
-				Stage:               stage,
-				CurrentStageDetails: stageDetails,
-				WorkedBy:            e.host,
-			})
+		updateStage := func(stage string, stageDetails tasks.StageDetails) error {
+			task, err = e.client.UpdateTask(ctx, task.UUID.String(),
+				tasks.Type.UpdateTask.OfStage(
+					e.host,
+					tasks.InProgress,
+					stage,
+					stageDetails,
+				))
 			return err
 		}
-		if task.RetrievalTask != nil {
+		if task.RetrievalTask.Exists() {
 			ctx := context.TODO()
-			err = tasks.MakeRetrievalDeal(ctx, e.nodeConfig, e.node, *task.RetrievalTask, updateStage, log.Infow)
+			err = tasks.MakeRetrievalDeal(ctx, e.nodeConfig, e.node, task.RetrievalTask.Must(), updateStage, log.Infow)
 			if err != nil {
 				finalStatus = tasks.Failed
 				log.Errorw("retrieval task returned error", "err", err)
@@ -106,9 +107,9 @@ func (e *Engine) worker(n int) {
 			}
 		}
 
-		if task.StorageTask != nil {
+		if task.StorageTask.Exists() {
 			ctx := context.TODO()
-			err = tasks.MakeStorageDeal(ctx, e.nodeConfig, e.node, *task.StorageTask, updateStage, log.Infow)
+			err = tasks.MakeStorageDeal(ctx, e.nodeConfig, e.node, task.StorageTask.Must(), updateStage, log.Infow)
 			if err != nil {
 				finalStatus = tasks.Failed
 				log.Errorw("storage task returned error", "err", err)
@@ -116,12 +117,13 @@ func (e *Engine) worker(n int) {
 				log.Info("successfully stored data")
 			}
 		}
-		_, err = e.client.UpdateTask(ctx, task.UUID, &client.UpdateTaskRequest{
-			Status:              finalStatus,
-			Stage:               task.Stage,
-			CurrentStageDetails: task.CurrentStageDetails,
-			WorkedBy:            e.host,
-		})
+		_, err = e.client.UpdateTask(ctx, task.UUID.String(),
+			tasks.Type.UpdateTask.OfStage(
+				e.host,
+				finalStatus,
+				task.Stage.String(),
+				task.CurrentStageDetails.Must(),
+			))
 		if err != nil {
 			log.Error("Error updating final status")
 		}

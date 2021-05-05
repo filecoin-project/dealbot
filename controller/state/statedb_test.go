@@ -1,6 +1,7 @@
 package state
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -10,9 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/filecoin-project/dealbot/controller/client"
 	"github.com/filecoin-project/dealbot/tasks"
-	"github.com/google/uuid"
+	"github.com/ipld/go-ipld-prime/codec/dagjson"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -40,15 +40,9 @@ func TestLoadTask(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 0, count)
 
-	err = state.saveTask(ctx, &tasks.Task{
-		UUID:   uuid.New().String()[:8],
-		Status: tasks.Available,
-		RetrievalTask: &tasks.RetrievalTask{
-			Miner:      "t01000",
-			PayloadCID: "bafk2bzacedli6qxp43sf54feczjd26jgeyfxv4ucwylujd3xo5s6cohcqbg36",
-			CARExport:  false,
-		},
-	})
+	rt := tasks.Type.RetrievalTask.Of("t01000", "bafk2bzacedli6qxp43sf54feczjd26jgeyfxv4ucwylujd3xo5s6cohcqbg36", false)
+	tsk := tasks.Type.Task.New(rt, nil)
+	err = state.saveTask(ctx, tsk)
 	require.NoError(t, err)
 
 	oldCount := count
@@ -79,15 +73,8 @@ func TestAssignTask(t *testing.T) {
 	err = populateTestTasks(ctx, jsonTestDeals, stateInterface)
 	require.NoError(t, err)
 
-	task := &tasks.Task{
-		UUID:   uuid.New().String()[:8],
-		Status: tasks.Available,
-		RetrievalTask: &tasks.RetrievalTask{
-			Miner:      "t01000",
-			PayloadCID: "bafk2bzacedli6qxp43sf54feczjd26jgeyfxv4ucwylujd3xo5s6cohcqbg36",
-			CARExport:  false,
-		},
-	}
+	rt := tasks.Type.RetrievalTask.Of("t01000", "bafk2bzacedli6qxp43sf54feczjd26jgeyfxv4ucwylujd3xo5s6cohcqbg36", false)
+	task := tasks.Type.Task.New(rt, nil)
 	err = state.saveTask(ctx, task)
 	require.NoError(t, err)
 
@@ -97,31 +84,26 @@ func TestAssignTask(t *testing.T) {
 	seen := make(map[string]struct{}, taskCount)
 	for i := 0; i < taskCount; i++ {
 		worker := fmt.Sprintf("tester-%d", i)
-		req := client.PopTaskRequest{
-			Status:   tasks.InProgress,
-			WorkedBy: worker,
-		}
+		req := tasks.Type.PopTask.Of(worker, tasks.InProgress)
 		task, err = state.AssignTask(ctx, req)
 		require.NoError(t, err)
 		require.NotNil(t, task, "Did not find task to assign")
-		require.Equal(t, worker, task.WorkedBy, "should be assigned to correct worker")
-		_, found := seen[task.UUID]
+		require.Equal(t, worker, task.WorkedBy.Must().String(), "should be assigned to correct worker")
+		uuid := mustString(task.UUID.AsString())
+		_, found := seen[uuid]
 		require.False(t, found, "Assigned task that was previously assigned")
 
-		history, err := state.TaskHistory(ctx, task.UUID)
+		history, err := state.TaskHistory(ctx, uuid)
 		require.NoError(t, err)
 
 		assert.Len(t, history, 2)
 		assert.Equal(t, tasks.Available, history[0].Status, "wrong status for 1st history")
 		assert.Equal(t, tasks.InProgress, history[1].Status, "wrong status for 2nd history")
 
-		seen[task.UUID] = struct{}{}
+		seen[uuid] = struct{}{}
 	}
 
-	task, err = state.AssignTask(ctx, client.PopTaskRequest{
-		Status:   tasks.InProgress,
-		WorkedBy: "it's me",
-	})
+	task, err = state.AssignTask(ctx, tasks.Type.PopTask.Of("it's me", tasks.InProgress))
 	require.NoError(t, err)
 	require.Nil(t, task, "Shoud not be able to assign more tasks")
 }
@@ -152,17 +134,14 @@ func TestAssignConcurrentTask(t *testing.T) {
 	require.NoError(t, err)
 
 	release := make(chan struct{})
-	assigned := make([]*tasks.Task, taskCount)
+	assigned := make([]tasks.Task, taskCount)
 	errChan := make(chan error)
 	t.Log("concurrently assigning", taskCount, "tasks")
 	for i := 0; i < taskCount; i++ {
 		go func(n int) {
 			worker := fmt.Sprintf("worker-%d", n)
 			<-release
-			req := client.PopTaskRequest{
-				Status:   tasks.InProgress,
-				WorkedBy: worker,
-			}
+			req := tasks.Type.PopTask.Of(worker, tasks.InProgress)
 
 			task, err := state.AssignTask(ctx, req)
 			if err != nil {
@@ -186,7 +165,7 @@ func TestAssignConcurrentTask(t *testing.T) {
 			t.Log("did not find task to assign")
 			continue
 		}
-		history, err := state.TaskHistory(ctx, task.UUID)
+		history, err := state.TaskHistory(ctx, mustString(task.UUID.AsString()))
 		require.NoError(t, err)
 
 		assert.Len(t, history, 2)
@@ -221,13 +200,10 @@ func TestUpdateTasks(t *testing.T) {
 	require.NoError(t, err)
 
 	// assign all but one tasks
-	var inProgressTasks []*tasks.Task
+	var inProgressTasks []tasks.Task
 	for i := 0; i < taskCount-1; i++ {
 		worker := fmt.Sprintf("tester")
-		req := client.PopTaskRequest{
-			Status:   tasks.InProgress,
-			WorkedBy: worker,
-		}
+		req := tasks.Type.PopTask.Of(worker, tasks.InProgress)
 		task, err := state.AssignTask(ctx, req)
 		require.NoError(t, err)
 		inProgressTasks = append(inProgressTasks, task)
@@ -237,25 +213,21 @@ func TestUpdateTasks(t *testing.T) {
 	require.NoError(t, err)
 
 	// find the remaining unassigned task
-	var unassignedTask *tasks.Task
+	var unassignedTask tasks.Task
 	for _, task := range allTasks {
-		if task.Status == tasks.Available {
+		if task.Status == *tasks.Available {
 			unassignedTask = task
 			break
 		}
 	}
 	require.NotNil(t, unassignedTask)
 
+	exStageDetail := tasks.Type.StageDetails.Of("Doing Stuff", "A good long while")
+	workedStageDetail := exStageDetail.WithLog("stuff happened")
+
 	// add a stage name to the last in progress task
-	_, err = state.Update(ctx, inProgressTasks[2].UUID, client.UpdateTaskRequest{
-		Status: tasks.InProgress,
-		Stage:  "Stuff",
-		CurrentStageDetails: &tasks.StageDetails{
-			Description:      "Doing Stuff",
-			ExpectedDuration: "A good long while",
-		},
-		WorkedBy: inProgressTasks[2].WorkedBy,
-	})
+	_, err = state.Update(ctx, inProgressTasks[2].GetUUID(),
+		tasks.Type.UpdateTask.OfStage(inProgressTasks[2].WorkedBy.Must().String(), tasks.InProgress, "Stuff", exStageDetail))
 	require.NoError(t, err)
 
 	type statusHistory struct {
@@ -265,36 +237,27 @@ func TestUpdateTasks(t *testing.T) {
 
 	testCases := map[string]struct {
 		uuid                 string
-		updateTaskRequest    client.UpdateTaskRequest
+		updateTaskRequest    tasks.UpdateTask
 		expectedStatus       tasks.Status
 		expectedStage        string
-		expectedStageDetails *tasks.StageDetails
+		expectedStageDetails tasks.StageDetails
 		expectedTaskHistory  []statusHistory
 		expectedError        error
 	}{
 		"attempting to work on unassigned task": {
-			uuid: unassignedTask.UUID,
-			updateTaskRequest: client.UpdateTaskRequest{
-				Status:   tasks.InProgress,
-				WorkedBy: "tester",
-			},
-			expectedError: ErrNotAssigned,
+			uuid:              unassignedTask.GetUUID(),
+			updateTaskRequest: tasks.Type.UpdateTask.Of("tester", tasks.InProgress),
+			expectedError:     ErrNotAssigned,
 		},
 		"attempting to work on task with another worker": {
-			uuid: inProgressTasks[0].UUID,
-			updateTaskRequest: client.UpdateTaskRequest{
-				Status:   tasks.Successful,
-				WorkedBy: "tester 2",
-			},
-			expectedError: ErrWrongWorker,
+			uuid:              inProgressTasks[0].GetUUID(),
+			updateTaskRequest: tasks.Type.UpdateTask.Of("tester 2", tasks.Successful),
+			expectedError:     ErrWrongWorker,
 		},
 		"update task status": {
-			uuid: inProgressTasks[0].UUID,
-			updateTaskRequest: client.UpdateTaskRequest{
-				Status:   tasks.Successful,
-				WorkedBy: inProgressTasks[0].WorkedBy,
-			},
-			expectedStatus: tasks.Successful,
+			uuid:              inProgressTasks[0].GetUUID(),
+			updateTaskRequest: tasks.Type.UpdateTask.Of(inProgressTasks[0].WorkedBy.Must().String(), tasks.Successful),
+			expectedStatus:    tasks.Successful,
 			expectedTaskHistory: []statusHistory{
 				{tasks.Available, ""},
 				{tasks.InProgress, ""},
@@ -302,22 +265,11 @@ func TestUpdateTasks(t *testing.T) {
 			},
 		},
 		"update stage": {
-			uuid: inProgressTasks[1].UUID,
-			updateTaskRequest: client.UpdateTaskRequest{
-				Status: tasks.InProgress,
-				Stage:  "Stuff",
-				CurrentStageDetails: &tasks.StageDetails{
-					Description:      "Doing Stuff",
-					ExpectedDuration: "A good long while",
-				},
-				WorkedBy: inProgressTasks[1].WorkedBy,
-			},
-			expectedStage: "Stuff",
-			expectedStageDetails: &tasks.StageDetails{
-				Description:      "Doing Stuff",
-				ExpectedDuration: "A good long while",
-			},
-			expectedStatus: tasks.InProgress,
+			uuid:                 inProgressTasks[1].GetUUID(),
+			updateTaskRequest:    tasks.Type.UpdateTask.OfStage(inProgressTasks[1].WorkedBy.Must().String(), tasks.InProgress, "Stuff", exStageDetail),
+			expectedStage:        "Stuff",
+			expectedStageDetails: exStageDetail,
+			expectedStatus:       tasks.InProgress,
 			expectedTaskHistory: []statusHistory{
 				{tasks.Available, ""},
 				{tasks.InProgress, ""},
@@ -325,32 +277,11 @@ func TestUpdateTasks(t *testing.T) {
 			},
 		},
 		"update stage data within stage": {
-			uuid: inProgressTasks[2].UUID,
-			updateTaskRequest: client.UpdateTaskRequest{
-				Status: tasks.InProgress,
-				Stage:  "Stuff",
-				CurrentStageDetails: &tasks.StageDetails{
-					Description:      "Doing Stuff",
-					ExpectedDuration: "A good long while",
-					Logs: []*tasks.Log{
-						{
-							Log: "stuff happened",
-						},
-					},
-				},
-				WorkedBy: inProgressTasks[2].WorkedBy,
-			},
-			expectedStage: "Stuff",
-			expectedStageDetails: &tasks.StageDetails{
-				Description:      "Doing Stuff",
-				ExpectedDuration: "A good long while",
-				Logs: []*tasks.Log{
-					{
-						Log: "stuff happened",
-					},
-				},
-			},
-			expectedStatus: tasks.InProgress,
+			uuid:                 inProgressTasks[2].GetUUID(),
+			updateTaskRequest:    tasks.Type.UpdateTask.OfStage(inProgressTasks[2].WorkedBy.Must().String(), tasks.InProgress, "Stuff", workedStageDetail),
+			expectedStage:        "Stuff",
+			expectedStageDetails: workedStageDetail,
+			expectedStatus:       tasks.InProgress,
 			expectedTaskHistory: []statusHistory{
 				{tasks.Available, ""},
 				{tasks.InProgress, ""},
@@ -369,9 +300,13 @@ func TestUpdateTasks(t *testing.T) {
 				require.EqualError(t, err, data.expectedError.Error())
 			} else {
 				require.NoError(t, err)
-				require.Equal(t, data.expectedStatus, task.Status)
-				require.Equal(t, data.expectedStage, task.Stage)
-				require.Equal(t, data.expectedStageDetails, task.CurrentStageDetails)
+				require.Equal(t, *data.expectedStatus, task.Status)
+				require.Equal(t, data.expectedStage, task.Stage.String())
+				if data.expectedStageDetails == nil {
+					require.Equal(t, task.CurrentStageDetails.Exists(), false)
+				} else {
+					require.Equal(t, data.expectedStageDetails, task.CurrentStageDetails.Must())
+				}
 				taskEvents, err := state.TaskHistory(ctx, data.uuid)
 				require.NoError(t, err)
 				history := make([]statusHistory, 0, len(taskEvents))
@@ -400,17 +335,17 @@ func populateTestTasks(ctx context.Context, jsonTests string, state State) error
 		return err
 	}
 	for _, task := range byTask {
-		rt := tasks.RetrievalTask{}
-		if err = json.Unmarshal(task, &rt); err != nil {
-			st := tasks.StorageTask{}
-			if err = json.Unmarshal(task, &st); err != nil {
+		rtp := tasks.Type.RetrievalTask.NewBuilder()
+		if err = dagjson.Decoder(rtp, bytes.NewBuffer(task)); err != nil {
+			stp := tasks.Type.StorageTask.NewBuilder()
+			if err = dagjson.Decoder(stp, bytes.NewBuffer(task)); err != nil {
 				return fmt.Errorf("could not decode sample task as either storage or retrieval %s: %w", task, err)
 			}
-			if _, err = state.NewStorageTask(ctx, &st); err != nil {
+			if _, err = state.NewStorageTask(ctx, stp.Build().(tasks.StorageTask)); err != nil {
 				return err
 			}
 		} else {
-			if _, err = state.NewRetrievalTask(ctx, &rt); err != nil {
+			if _, err = state.NewRetrievalTask(ctx, rtp.Build().(tasks.RetrievalTask)); err != nil {
 				return err
 			}
 		}

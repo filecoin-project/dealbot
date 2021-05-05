@@ -12,19 +12,13 @@ import (
 	"github.com/ipfs/go-cid"
 )
 
-type RetrievalTask struct {
-	Miner      string `json:"miner"`
-	PayloadCID string `json:"payload_cid"`
-	CARExport  bool   `json:"car_export"`
-}
-
 func MakeRetrievalDeal(ctx context.Context, config NodeConfig, node api.FullNode, task RetrievalTask, updateStage UpdateStage, log LogStatus) error {
 	de := &retrievalDealExecutor{
 		dealExecutor: dealExecutor{
 			ctx:    ctx,
 			config: config,
 			node:   node,
-			miner:  task.Miner,
+			miner:  task.Miner.x,
 			log:    log,
 		},
 		task: task,
@@ -55,7 +49,7 @@ type retrievalDealExecutor struct {
 }
 
 func (de *retrievalDealExecutor) queryOffer() error {
-	payloadCid, err := cid.Parse(de.task.PayloadCID)
+	payloadCid, err := cid.Parse(de.task.PayloadCID.x)
 	if err != nil {
 		return err
 	}
@@ -75,14 +69,14 @@ func (de *retrievalDealExecutor) queryOffer() error {
 
 func (de *retrievalDealExecutor) executeAndMonitorDeal(updateStage UpdateStage) error {
 	dealStage := RetrievalStages["ProposeRetrieval"]
-	err := updateStage("ProposeRetrieval", &dealStage)
+	err := updateStage("ProposeRetrieval", dealStage)
 	if err != nil {
 		return err
 	}
 
 	ref := &api.FileRef{
 		Path:  filepath.Join(de.config.NodeDataDir, "ret"),
-		IsCAR: de.task.CARExport,
+		IsCAR: de.task.CARExport.x,
 	}
 
 	events, err := de.node.ClientRetrieveWithEvents(de.ctx, de.offer.Order(de.config.WalletAddress), ref)
@@ -90,8 +84,8 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(updateStage UpdateStage) 
 		return err
 	}
 
-	AddLog(&dealStage, "deal sent to miner")
-	err = updateStage("ProposeRetrieval", &dealStage)
+	dealStage = AddLog(dealStage, "deal sent to miner")
+	err = updateStage("ProposeRetrieval", dealStage)
 	if err != nil {
 		return err
 	}
@@ -101,7 +95,7 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(updateStage UpdateStage) 
 	for event := range events {
 		if event.Status != lastStatus {
 			de.log("Deal status",
-				"cid", de.task.PayloadCID,
+				"cid", de.task.PayloadCID.x,
 				"state", retrievalmarket.DealStatuses[event.Status],
 				"error", event.Err,
 				"received", event.BytesReceived,
@@ -111,14 +105,14 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(updateStage UpdateStage) 
 
 		if event.Event == retrievalmarket.ClientEventDealAccepted {
 			dealStage = RetrievalStages["DealAccepted"]
-			err := updateStage("DealAccepted", &dealStage)
+			err := updateStage("DealAccepted", dealStage)
 			if err != nil {
 				return err
 			}
 		}
 		if event.BytesReceived > 0 && lastBytesReceived == 0 {
 			dealStage = RetrievalStages["FirstByteReceived"]
-			err := updateStage("FirstByteReceived", &dealStage)
+			err := updateStage("FirstByteReceived", dealStage)
 			if err != nil {
 				return err
 			}
@@ -134,8 +128,8 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(updateStage UpdateStage) 
 		// deal is on chain, exit successfully
 		case retrievalmarket.DealStatusCompleted:
 			dealStage = RetrievalStages["DealComplete"]
-			AddLog(&dealStage, fmt.Sprintf("bytes received: %d", event.BytesReceived))
-			err := updateStage("DealComplete", &dealStage)
+			dealStage = AddLog(dealStage, fmt.Sprintf("bytes received: %d", event.BytesReceived))
+			err := updateStage("DealComplete", dealStage)
 			if err != nil {
 				return err
 			}
@@ -145,17 +139,17 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(updateStage UpdateStage) 
 				return err
 			}
 
-			de.log("retrieval successful", "PayloadCID", de.task.PayloadCID)
+			de.log("retrieval successful", "PayloadCID", de.task.PayloadCID.x)
 
 			_ = rdata
 
-			AddLog(&dealStage, "file read from file system")
-			err = updateStage("DealComplete", &dealStage)
+			dealStage = AddLog(dealStage, "file read from file system")
+			err = updateStage("DealComplete", dealStage)
 			if err != nil {
 				return err
 			}
 
-			if de.task.CARExport {
+			if de.task.CARExport.x {
 				return errors.New("car export not implemented")
 			}
 			return nil
@@ -163,4 +157,13 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(updateStage UpdateStage) 
 	}
 
 	return nil
+}
+
+func (rp *_RetrievalTask__Prototype) Of(minerParam string, payloadCid string, carExport bool) RetrievalTask {
+	rt := _RetrievalTask{
+		Miner:      _String{minerParam},
+		PayloadCID: _String{payloadCid},
+		CARExport:  _Bool{carExport},
+	}
+	return &rt
 }

@@ -2,13 +2,13 @@ package controller
 
 import (
 	"database/sql"
-	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/ipld/go-ipld-prime/codec/dagjson"
 
-	"github.com/filecoin-project/dealbot/controller/client"
 	"github.com/filecoin-project/dealbot/tasks"
 )
 
@@ -31,13 +31,17 @@ func (c *Controller) getTasksHandler(w http.ResponseWriter, r *http.Request) {
 
 	enableCors(&w, r)
 
-	tasks, err := c.db.GetAll(r.Context())
+	taskList, err := c.db.GetAll(r.Context())
 	if err != nil {
 		log.Errorw("getTasks failed: backend", "err", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	json.NewEncoder(w).Encode(tasks)
+	for _, tl := range taskList {
+		fmt.Printf("TL: %v\n", tl.UUID)
+	}
+	tsks := tasks.Type.Tasks.Of(taskList)
+	dagjson.Encoder(tsks.Representation(), w)
 }
 
 func (c *Controller) popTaskHandler(w http.ResponseWriter, r *http.Request) {
@@ -51,22 +55,26 @@ func (c *Controller) popTaskHandler(w http.ResponseWriter, r *http.Request) {
 	defer logger.Debugw("request handled", "command", "pop task")
 
 	w.Header().Set("Content-Type", "application/json")
-	var req client.PopTaskRequest
-	err := json.NewDecoder(r.Body).Decode(&req)
+	ptp := tasks.Type.PopTask.NewBuilder()
+	err := dagjson.Decoder(ptp, r.Body)
 	if err != nil {
 		log.Errorw("UpdateTaskRequest json decode", "err", err.Error())
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	task, err := c.db.AssignTask(r.Context(), req)
+	task, err := c.db.AssignTask(r.Context(), ptp.Build().(tasks.PopTask))
 	if err != nil {
 		log.Errorw("popTask failed: backend", "err", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	// If none are available, we return a JSON "null".
-	json.NewEncoder(w).Encode(task)
+	if task == nil {
+		w.WriteHeader(http.StatusNoContent)
+	} else {
+		dagjson.Encoder(task.Representation(), w)
+	}
 }
 
 func (c *Controller) updateTaskHandler(w http.ResponseWriter, r *http.Request) {
@@ -76,8 +84,8 @@ func (c *Controller) updateTaskHandler(w http.ResponseWriter, r *http.Request) {
 	defer logger.Debugw("request handled", "command", "update task")
 
 	w.Header().Set("Content-Type", "application/json")
-	var req client.UpdateTaskRequest
-	err := json.NewDecoder(r.Body).Decode(&req)
+	utp := tasks.Type.UpdateTask.NewBuilder()
+	err := dagjson.Decoder(utp, r.Body)
 	if err != nil {
 		log.Errorw("UpdateTaskRequest json decode", "err", err.Error())
 		w.WriteHeader(http.StatusBadRequest)
@@ -86,7 +94,7 @@ func (c *Controller) updateTaskHandler(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 	uuid := vars["uuid"]
-	task, err := c.db.Update(r.Context(), uuid, req)
+	task, err := c.db.Update(r.Context(), uuid, utp.Build().(tasks.UpdateTask))
 	if err != nil {
 		log.Errorw("UpdateTaskRequest db update", "err", err.Error())
 		if errors.Is(err, sql.ErrNoRows) {
@@ -98,7 +106,11 @@ func (c *Controller) updateTaskHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(task)
+	dagjson.Encoder(task.Representation(), w)
+}
+
+func mustString(s string, _ error) string {
+	return s
 }
 
 func (c *Controller) newStorageTaskHandler(w http.ResponseWriter, r *http.Request) {
@@ -108,13 +120,13 @@ func (c *Controller) newStorageTaskHandler(w http.ResponseWriter, r *http.Reques
 	defer logger.Debugw("request handled", "command", "create task")
 
 	w.Header().Set("Content-Type", "application/json")
-	var storageTask *tasks.StorageTask
-	err := json.NewDecoder(r.Body).Decode(&storageTask)
-	if err != nil {
+	stp := tasks.Type.StorageTask.NewBuilder()
+	if err := dagjson.Decoder(stp, r.Body); err != nil {
 		log.Errorw("StorageTask json decode", "err", err.Error())
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+	storageTask := stp.Build().(tasks.StorageTask)
 
 	task, err := c.db.NewStorageTask(r.Context(), storageTask)
 	if err != nil {
@@ -123,7 +135,7 @@ func (c *Controller) newStorageTaskHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	taskURL, err := r.URL.Parse("/tasks/" + task.UUID)
+	taskURL, err := r.URL.Parse("/tasks/" + mustString(task.UUID.AsString()))
 	if err != nil {
 		log.Errorw("StorageTask parse URL", "err", err.Error())
 		w.WriteHeader(http.StatusBadRequest)
@@ -132,7 +144,7 @@ func (c *Controller) newStorageTaskHandler(w http.ResponseWriter, r *http.Reques
 
 	w.Header().Set("Location", taskURL.String())
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(task)
+	dagjson.Encoder(task.Representation(), w)
 }
 
 func (c *Controller) newRetrievalTaskHandler(w http.ResponseWriter, r *http.Request) {
@@ -142,13 +154,14 @@ func (c *Controller) newRetrievalTaskHandler(w http.ResponseWriter, r *http.Requ
 	defer logger.Debugw("request handled", "command", "create task")
 
 	w.Header().Set("Content-Type", "application/json")
-	var retrievalTask *tasks.RetrievalTask
-	err := json.NewDecoder(r.Body).Decode(&retrievalTask)
-	if err != nil {
+
+	rtp := tasks.Type.RetrievalTask.NewBuilder()
+	if err := dagjson.Decoder(rtp, r.Body); err != nil {
 		log.Errorw("RetrievalTask json decode", "err", err.Error())
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+	retrievalTask := rtp.Build().(tasks.RetrievalTask)
 
 	task, err := c.db.NewRetrievalTask(r.Context(), retrievalTask)
 	if err != nil {
@@ -157,7 +170,7 @@ func (c *Controller) newRetrievalTaskHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	taskURL, err := r.URL.Parse("/tasks/" + task.UUID)
+	taskURL, err := r.URL.Parse("/tasks/" + mustString(task.UUID.AsString()))
 	if err != nil {
 		log.Errorw("RetrievalTask parse URL", "err", err.Error())
 		w.WriteHeader(http.StatusBadRequest)
@@ -166,7 +179,7 @@ func (c *Controller) newRetrievalTaskHandler(w http.ResponseWriter, r *http.Requ
 
 	w.Header().Set("Location", taskURL.String())
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(task)
+	dagjson.Encoder(task.Representation(), w)
 }
 
 func (c *Controller) getTaskHandler(w http.ResponseWriter, r *http.Request) {
@@ -187,7 +200,7 @@ func (c *Controller) getTaskHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(task)
+	dagjson.Encoder(task.Representation(), w)
 }
 
 func (c *Controller) sendCORSHeaders(w http.ResponseWriter, r *http.Request) {

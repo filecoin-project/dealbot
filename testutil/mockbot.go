@@ -70,10 +70,7 @@ func (md *MockDaemon) worker(n int) {
 		if state != storagemarket.StorageDealActive {
 			storageFailStates = append(storageFailStates, stateName)
 		}
-		storageStageDetails[stateName] = tasks.StageDetails{
-			Description:      storagemarket.DealStatesDescriptions[state],
-			ExpectedDuration: storagemarket.DealStatesDurations[state],
-		}
+		storageStageDetails[stateName] = tasks.Type.StageDetails.Of(storagemarket.DealStatesDescriptions[state], storagemarket.DealStatesDurations[state])
 	}
 	storageFailStates = append(storageFailStates, baseFailStates...)
 	for {
@@ -82,7 +79,8 @@ func (md *MockDaemon) worker(n int) {
 
 		// pop a task
 		ctx := context.Background()
-		task, err := md.client.PopTask(ctx, &client.PopTaskRequest{Status: tasks.InProgress, WorkedBy: md.host})
+		task, err := md.client.PopTask(ctx,
+			tasks.Type.PopTask.Of(md.host, tasks.InProgress))
 		if err != nil {
 			log.Warnw("pop-task returned error", "err", err)
 			continue
@@ -92,7 +90,7 @@ func (md *MockDaemon) worker(n int) {
 			continue // no task available
 		}
 
-		if task.WorkedBy != md.host {
+		if !task.WorkedBy.Exists() || (task.WorkedBy.Must().String() != md.host) {
 			log.Warnw("pop-task returned a non-available task", "err", err)
 			continue
 		}
@@ -104,7 +102,7 @@ func (md *MockDaemon) worker(n int) {
 		var stageDetails tasks.StageDetails
 		var ok bool
 		if isSuccess {
-			if task.RetrievalTask != nil {
+			if task.RetrievalTask.Exists() {
 				stage = "DealComplete"
 				stageDetails = tasks.RetrievalStages[stage]
 			} else {
@@ -113,7 +111,7 @@ func (md *MockDaemon) worker(n int) {
 			}
 			taskDuration = md.successAvg + time.Duration(rand.NormFloat64()*float64(md.successDeviation))
 		} else {
-			if task.RetrievalTask != nil {
+			if task.RetrievalTask.Exists() {
 				stage = retrievalFailStates[rand.Intn(len(retrievalFailStates))]
 				stageDetails, ok = tasks.RetrievalStages[stage]
 				if !ok {
@@ -140,14 +138,14 @@ func (md *MockDaemon) worker(n int) {
 			if !isSuccess {
 				result = tasks.Failed
 			}
-			req := &client.UpdateTaskRequest{
-				Status:              result,
-				Stage:               stage,
-				CurrentStageDetails: &stageDetails,
-				WorkedBy:            md.host,
-			}
+			req := tasks.Type.UpdateTask.OfStage(
+				md.host,
+				result,
+				stage,
+				stageDetails,
+			)
 
-			task, err = md.client.UpdateTask(ctx, task.UUID, req)
+			task, err = md.client.UpdateTask(ctx, task.GetUUID(), req)
 			if err != nil {
 				log.Warnw("update task returned error", "err", err)
 				continue
