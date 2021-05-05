@@ -90,7 +90,7 @@ func (md *MockDaemon) worker(n int) {
 			continue // no task available
 		}
 
-		if !task.WorkedBy.Exists() || (mustString(task.WorkedBy.Must().AsString()) != md.host) {
+		if !task.WorkedBy.Exists() || (task.WorkedBy.Must().String() != md.host) {
 			log.Warnw("pop-task returned a non-available task", "err", err)
 			continue
 		}
@@ -145,17 +145,13 @@ func (md *MockDaemon) worker(n int) {
 				stageDetails,
 			)
 
-			task, err = md.client.UpdateTask(ctx, mustString(task.UUID.AsString()), req)
+			task, err = md.client.UpdateTask(ctx, task.GetUUID(), req)
 			if err != nil {
 				log.Warnw("update task returned error", "err", err)
 				continue
 			}
 		}
 	}
-}
-
-func mustString(s string, _ error) string {
-	return s
 }
 
 func (md *MockDaemon) Serve() error {

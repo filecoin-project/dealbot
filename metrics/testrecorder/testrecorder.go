@@ -24,12 +24,8 @@ func (tr *TestMetricsRecorder) Handler() http.Handler {
 	return nil
 }
 
-func mustString(s string, _ error) string {
-	return s
-}
-
 func (tr *TestMetricsRecorder) ObserveTask(task tasks.Task) error {
-	tr.tasks[mustString(task.UUID.AsString())] = append(tr.tasks[mustString(task.UUID.AsString())], &task.Status)
+	tr.tasks[task.GetUUID()] = append(tr.tasks[task.GetUUID()], &task.Status)
 	return nil
 }
 

@@ -1,4 +1,8 @@
+// +build ignore
+
 package main
+
+//go:generate go run gen.go .
 
 import (
 	"fmt"
