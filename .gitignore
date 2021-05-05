@@ -26,3 +26,4 @@ support/tools/bin
 # from devnet
 dev.gen
 localnet.json
+*.log
