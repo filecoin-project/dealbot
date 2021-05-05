@@ -1,28 +1,7 @@
 package state
 
+// Define state database DML.  Any DDL is located in migrations.
 const (
-	createTasksTableSQL = `
-		CREATE TABLE IF NOT EXISTS tasks (
-			uuid varchar(36) NOT NULL,
-			worked_by text,
-			data text NOT NULL CHECK (data != ''),
-			created timestamp NOT NULL,
-			PRIMARY KEY(uuid)
-		)
-	`
-
-	createStatusLedgerSQL = `
-		CREATE TABLE IF NOT EXISTS task_status_ledger (
-			uuid varchar(36) NOT NULL,
-			status int,
-			stage varchar(255) NOT NULL,
-			ts timestamp NOT NULL,
-			PRIMARY KEY(uuid, ts),
-			CONSTRAINT fk_status_ledger_uuid FOREIGN KEY (uuid) REFERENCES tasks
-		);
-		CREATE UNIQUE INDEX IF NOT EXISTS idx_task_status_ledger_by_stage ON task_status_ledger (uuid, status, stage);
-	`
-
 	assignTaskSQL = `
 		UPDATE tasks SET data = $2, worked_by = $3
 		WHERE uuid = $1

@@ -27,7 +27,39 @@ commands:
       - run: sudo cp devnet-binary /usr/local/bin/devnet
       - run: sudo cp dealbot-binary /usr/local/bin/dealbot
       - run: ./integration_tests/01_storage_retrieval_ok.sh
-
+  docker-login:
+    steps:
+      - run:
+          command: echo $DOCKERHUB_PASSWORD | docker login --username $DOCKERHUB_USERNAME --password-stdin
+  deploy-to-lotusinfra:
+    parameters:
+      namespace:
+        type: string
+      release:
+        type: string
+      repository:
+        type: string
+      tag:
+        type: string
+    steps:
+      - run:
+          name: submit deploy job
+          command: 
+            curl --request POST \
+            --url https://circleci.com/api/v2/project/gh/filecoin-project/lotus-infra/pipeline \
+            --header "Circle-Token: $CIRCLE_TOKEN" \
+            --header "content-type: application/json" \
+            --data '{
+              "parameters":{
+                "api_workflow_requested": "helm-deploy",
+                "namespace": "<< parameters.namespace >>",
+                "release": "<< parameters.release >>",
+                "chart": "filecoin/dealbot",
+                "chart_version": "0.0.1",
+                "override_repository": "<< parameters.repository >>",
+                "override_tag": "<< parameters.tag >>"
+              }}'
+  
 jobs:
   build-and-test:
     executor: golang
@@ -35,9 +67,31 @@ jobs:
       - checkout-dealbot
       - install-lotus
       - test-dealbot
+  build-push-deploy:
+    machine:
+      image: ubuntu-2004:202010-01
+    steps:
+      - checkout-dealbot
+      - docker-login
+      - run:
+          name: docker build
+          command: |
+            DOCKER_REPO=filecoin/dealbot
+            DOCKER_TAG=$CIRCLE_SHA1
+            echo "export DOCKER_REPO=$DOCKER_REPO" >> $BASH_ENV
+            echo "export DOCKER_TAG=$DOCKER_TAG" >> $BASH_ENV
+            docker build -t "${DOCKER_REPO}:${DOCKER_TAG}" .
+            docker push "${DOCKER_REPO}:${DOCKER_TAG}"
+      - deploy-to-lotusinfra:
+          namespace: ntwk-nerpanet-dealbot
+          release: dealbot-0
+          repository: $DOCKER_REPO
+          tag: $DOCKER_TAG
+
 
 workflows:
   version: 2.1
   ci:
     jobs:
       - build-and-test
+      - build-push-deploy

@@ -14,9 +14,19 @@ import (
 	dagjson "github.com/ipld/go-ipld-prime/codec/dagjson"
 	crypto "github.com/libp2p/go-libp2p-crypto"
 
+	// DB interfaces
 	"github.com/filecoin-project/dealbot/controller/state/postgresdb"
 	"github.com/filecoin-project/dealbot/controller/state/sqlitedb"
+
+	// DB migrations
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/database/postgres"
+	"github.com/golang-migrate/migrate/v4/database/sqlite"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
+
+// MigrationsDir is the directory to look for migrations
+var MigrationsDir = "/dealbot/controller/state/migrations"
 
 var log = logging.Logger("controller-state")
 
@@ -37,17 +47,51 @@ type stateDB struct {
 	txlock   sync.Mutex
 }
 
+func migratePostgres(db *sql.DB) error {
+	driver, err := postgres.WithInstance(db, &postgres.Config{})
+	if err != nil {
+		return err
+	}
+	m, err := migrate.NewWithDatabaseInstance(
+		"file://"+MigrationsDir,
+		"postgres", driver)
+	if err != nil {
+		return err
+	}
+	//return m.Steps(2) // Migrate 2 versions up at mose
+	return m.Up()
+}
+
+func migrateSqlite(db *sql.DB) error {
+	driver, err := sqlite.WithInstance(db, &sqlite.Config{NoTxWrap: true})
+	if err != nil {
+		return err
+	}
+	m, err := migrate.NewWithDatabaseInstance(
+		"file://"+MigrationsDir,
+		"sqlite", driver)
+	if err != nil {
+		return err
+	}
+	//return m.Steps(2) // Migrate 2 versions up at mose
+	return m.Up()
+}
+
 // NewStateDB creates a state instance with a given driver and identity
 func NewStateDB(ctx context.Context, driver, conn string, identity crypto.PrivKey, recorder metrics.MetricsRecorder) (State, error) {
 	var dbConn DBConnector
+	var migrateFunc func(*sql.DB) error
+
 	switch driver {
 	case "postgres":
 		if conn == "" {
 			conn = postgresdb.PostgresConfig{}.String()
 		}
 		dbConn = postgresdb.New(conn)
+		migrateFunc = migratePostgres
 	case "sqlite":
 		dbConn = sqlitedb.New(conn)
+		migrateFunc = migrateSqlite
 	default:
 		return nil, fmt.Errorf("database driver %q is not supported", driver)
 	}
@@ -59,16 +103,9 @@ func NewStateDB(ctx context.Context, driver, conn string, identity crypto.PrivKe
 	}
 	db := dbConn.SqlDB()
 
-	// Create state tablespace if it does not exist
-	_, err = db.ExecContext(ctx, createTasksTableSQL)
-	if err != nil {
-		return nil, fmt.Errorf("could not create tasks table: %w", err)
-	}
-
-	// Create status ledger tablespace if it does not exist
-	_, err = db.ExecContext(ctx, createStatusLedgerSQL)
-	if err != nil {
-		return nil, fmt.Errorf("could not create task_status_ledger table: %w", err)
+	// Apply DB schema migrations
+	if err = migrateFunc(db); err != nil {
+		return nil, fmt.Errorf("%s database migration failed: %w", driver, err)
 	}
 
 	st := &stateDB{
@@ -288,39 +325,6 @@ func (s *stateDB) TaskHistory(ctx context.Context, taskID string) ([]tasks.TaskE
 		history = append(history, tasks.TaskEvent{tasks.Type.Status.Of(status), stage, ts})
 	}
 	return history, nil
-}
-
-func (s *stateDB) createInitialTasks(ctx context.Context) error {
-	rt := tasks.Type.RetrievalTask.Of("t01000", "bafk2bzacedli6qxp43sf54feczjd26jgeyfxv4ucwylujd3xo5s6cohcqbg36", false)
-	task := tasks.Type.Task.New(rt, nil)
-	err := s.saveTask(ctx, task)
-	if err != nil {
-		return err
-	}
-
-	rt = tasks.Type.RetrievalTask.Of("t01000", "bafk2bzacecettil4umy443e4ferok7jbxiqqseef7soa3ntelflf3zkvvndbg", false)
-	task = tasks.Type.Task.New(rt, nil)
-	err = s.saveTask(ctx, task)
-	if err != nil {
-		return err
-	}
-
-	rt = tasks.Type.RetrievalTask.Of("f0127896", "bafykbzacedikkmeotawrxqquthryw3cijaonobygdp7fb5bujhuos6wdkwomm", false)
-	task = tasks.Type.Task.New(rt, nil)
-	err = s.saveTask(ctx, task)
-	if err != nil {
-		return err
-	}
-
-	st := tasks.Type.StorageTask.Of(
-		"t01000",
-		100000000000000000, // 0.10 FIL
-		1024,               // 1kb
-		0,
-		true,
-		false)
-	task = tasks.Type.Task.New(nil, st)
-	return s.saveTask(ctx, task)
 }
 
 func (s *stateDB) transact(ctx context.Context, retries int, f func(*sql.Tx) error) (err error) {
