@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+	"embed"
 	"fmt"
+	"net/http"
 	"sync"
 	"time"
 
@@ -20,13 +22,16 @@ import (
 
 	// DB migrations
 	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/database"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	"github.com/golang-migrate/migrate/v4/database/sqlite"
-	_ "github.com/golang-migrate/migrate/v4/source/file"
+	"github.com/golang-migrate/migrate/v4/source/httpfs"
+	//"github.com/golang-migrate/migrate/v4/source/iofs"
 )
 
-// MigrationsDir is the directory to look for migrations
-var MigrationsDir = "/dealbot/controller/state/migrations"
+// Embed all the *.sql files in migrations.
+//go:embed migrations/*.sql
+var migrations embed.FS
 
 var log = logging.Logger("controller-state")
 
@@ -48,28 +53,30 @@ type stateDB struct {
 }
 
 func migratePostgres(db *sql.DB) error {
-	driver, err := postgres.WithInstance(db, &postgres.Config{})
+	dbInstance, err := postgres.WithInstance(db, &postgres.Config{})
 	if err != nil {
 		return err
 	}
-	m, err := migrate.NewWithDatabaseInstance(
-		"file://"+MigrationsDir,
-		"postgres", driver)
-	if err != nil {
-		return err
-	}
-	//return m.Steps(2) // Migrate 2 versions up at mose
-	return m.Up()
+	return migrateDatabase("postgres", dbInstance)
 }
 
 func migrateSqlite(db *sql.DB) error {
-	driver, err := sqlite.WithInstance(db, &sqlite.Config{NoTxWrap: true})
+	dbInstance, err := sqlite.WithInstance(db, &sqlite.Config{NoTxWrap: true})
 	if err != nil {
 		return err
 	}
-	m, err := migrate.NewWithDatabaseInstance(
-		"file://"+MigrationsDir,
-		"sqlite", driver)
+	return migrateDatabase("sqlite", dbInstance)
+}
+
+func migrateDatabase(dbName string, dbInstance database.Driver) error {
+	// TODO: Replace httpfs with iofs when it becomes available (June 2021?)
+	source, err := httpfs.New(http.FS(migrations), "migrations")
+	//source, err := iofs.New(migrations, "migrations")
+	if err != nil {
+		return err
+	}
+
+	m, err := migrate.NewWithInstance("iofs", source, dbName, dbInstance)
 	if err != nil {
 		return err
 	}

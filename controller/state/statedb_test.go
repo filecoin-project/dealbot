@@ -30,7 +30,6 @@ func TestLoadTask(t *testing.T) {
 	}
 	defer os.RemoveAll(tmpDir)
 
-	MigrationsDir = "migrations"
 	stateInterface, err := NewStateDB(ctx, "sqlite", filepath.Join(tmpDir, "teststate.db"), nil, nil)
 	require.NoError(t, err)
 	state, ok := stateInterface.(*stateDB)
@@ -64,7 +63,6 @@ func TestAssignTask(t *testing.T) {
 	key, err := makeKey()
 	require.NoError(t, err)
 
-	MigrationsDir = "migrations"
 	stateInterface, err := NewStateDB(ctx, "sqlite", filepath.Join(tmpDir, "teststate.db"), key, nil)
 	require.NoError(t, err)
 	state, ok := stateInterface.(*stateDB)
@@ -121,7 +119,6 @@ func TestAssignConcurrentTask(t *testing.T) {
 	key, err := makeKey()
 	require.NoError(t, err)
 
-	MigrationsDir = "migrations"
 	stateInterface, err := NewStateDB(ctx, "sqlite", filepath.Join(tmpDir, "teststate.db"), key, nil)
 	require.NoError(t, err)
 	state, ok := stateInterface.(*stateDB)
@@ -187,7 +184,6 @@ func TestUpdateTasks(t *testing.T) {
 	key, err := makeKey()
 	require.NoError(t, err)
 
-	MigrationsDir = "migrations"
 	stateInterface, err := NewStateDB(ctx, "sqlite", filepath.Join(tmpDir, "teststate.db"), key, nil)
 	require.NoError(t, err)
 	state, ok := stateInterface.(*stateDB)
