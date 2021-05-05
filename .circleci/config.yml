@@ -59,6 +59,7 @@ commands:
                 "override_repository": "<< parameters.repository >>",
                 "override_tag": "<< parameters.tag >>"
               }}'
+
 jobs:
   build-and-test:
     executor: golang
