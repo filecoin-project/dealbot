@@ -7,7 +7,9 @@ package main
 import (
 	"fmt"
 	"os"
+	"path"
 
+	gengraphql "github.com/ipld/go-ipld-graphql/gen"
 	ipld "github.com/ipld/go-ipld-prime"
 	"github.com/ipld/go-ipld-prime/schema"
 	gengo "github.com/ipld/go-ipld-prime/schema/gen/go"
@@ -129,4 +131,5 @@ func main() {
 	}
 
 	gengo.Generate(os.Args[1], "tasks", ts, adjCfg)
+	gengraphql.Generate(path.Join(os.Args[1], "..", "controller", "graphql"), "graphql", ts, "tasks", "github.com/filecoin-project/dealbot/tasks")
 }

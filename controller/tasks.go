@@ -3,7 +3,6 @@ package controller
 import (
 	"database/sql"
 	"errors"
-	"fmt"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -36,9 +35,6 @@ func (c *Controller) getTasksHandler(w http.ResponseWriter, r *http.Request) {
 		log.Errorw("getTasks failed: backend", "err", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
-	}
-	for _, tl := range taskList {
-		fmt.Printf("TL: %v\n", tl.UUID)
 	}
 	tsks := tasks.Type.Tasks.Of(taskList)
 	dagjson.Encoder(tsks.Representation(), w)

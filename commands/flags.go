@@ -181,6 +181,11 @@ var ControllerFlags = []cli.Flag{
 		EnvVars: []string{"DEALBOT_LISTEN"},
 	}),
 	altsrc.NewStringFlag(&cli.StringFlag{
+		Name:    "graphql",
+		Usage:   "host:port to bind graphql server on",
+		EnvVars: []string{"DEALBOT_GRAPHQL_LISTEN"},
+	}),
+	altsrc.NewStringFlag(&cli.StringFlag{
 		Name:    "metrics",
 		Usage:   "value of 'prometheus' or 'log'",
 		Aliases: []string{"m"},

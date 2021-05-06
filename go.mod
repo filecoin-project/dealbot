@@ -11,7 +11,9 @@ require (
 	github.com/filecoin-project/lotus v1.6.1-0.20210413134401-50b4ea308366
 	github.com/golang-migrate/migrate/v4 v4.14.2-0.20210505171241-ffdcb52998c9
 	github.com/google/uuid v1.1.2
+	github.com/gorilla/handlers v1.4.2
 	github.com/gorilla/mux v1.7.4
+	github.com/graphql-go/graphql v0.7.9
 	github.com/ipfs/go-cid v0.0.7
 	github.com/ipfs/go-log/v2 v2.1.2
 	github.com/ipld/go-ipld-prime v0.7.0
