@@ -54,11 +54,11 @@ func GetHandler(db state.State) (*http.ServeMux, error) {
 
 		if r.Method == "POST" && r.Header.Get("Content-Type") == "application/json" {
 			var p postData
+			defer r.Body.Close()
 			if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
-				http.Error(w, err.Error(), 500)
+				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
 			}
-			defer r.Body.Close()
 
 			result = graphql.Do(graphql.Params{
 				Context:        ctx,
@@ -89,7 +89,11 @@ func GetHandler(db state.State) (*http.ServeMux, error) {
 		if len(result.Errors) > 0 {
 			log.Printf("Query had errors: %s, %v", r.URL.Query().Get("query"), result.Errors)
 		}
-		json.NewEncoder(w).Encode(result)
+		if err := json.NewEncoder(w).Encode(result); err != nil {
+			log.Printf("Failed to encode response: %s", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}))
 
 	return mux, nil
