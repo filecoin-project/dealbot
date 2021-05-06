@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"embed"
+	"errors"
 	"fmt"
 	"net/http"
 	"sync"
@@ -174,6 +175,13 @@ func (s *stateDB) GetAll(ctx context.Context) ([]tasks.Task, error) {
 //
 // TODO: There should be a limit to the age of the task to assign.
 func (s *stateDB) AssignTask(ctx context.Context, req tasks.PopTask) (tasks.Task, error) {
+	if req.WorkedBy.String() == "" {
+		return nil, errors.New("PopTask request must specify WorkedBy")
+	}
+	if req.Status == *tasks.Available {
+		return nil, fmt.Errorf("cannot assign %q status to task", req.Status.String())
+	}
+
 	var assigned tasks.Task
 	err := s.transact(ctx, 13, func(tx *sql.Tx) error {
 		var taskID, serialized string
