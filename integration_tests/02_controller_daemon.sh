@@ -6,6 +6,8 @@ source "$my_dir/header.sh"
 export DEALBOT_MINER_ADDRESS=t01000
 
 function finish {
+	# We replace devnet's finish trap, so kill $DEVNETPID too.
+	kill $DEVNETPID
 	kill -9 $CONTROLLER_PID $DAEMON_PID $CONTROLLER_TAIL_PID $DAEMON_TAIL_PID
 }
 trap finish EXIT
@@ -13,32 +15,32 @@ trap finish EXIT
 CONTROLLER_LISTEN="localhost:8085"
 CONTROLLER_ENDPOINT="http://${CONTROLLER_LISTEN}"
 
-dealbot controller --listen="${CONTROLLER_LISTEN}" &>controller.log &
+dealbot controller --listen="${CONTROLLER_LISTEN}" &>dealbot-controller.log &
 CONTROLLER_PID=$!
 
-tail -f controller.log | sed 's/^/controller.log: /' &
+tail -f dealbot-controller.log | sed 's/^/dealbot-controller.log: /' &
 CONTROLLER_TAIL_PID=$!
 
 # Give it half a second to start.
 sleep 0.5
 if ! kill -0 $CONTROLLER_PID; then
-	cat controller.log
+	tail -n 50 dealbot-controller.log
 	unset CONTROLLER_PID # no need to kill it
 	exit 1
 fi
 
-dealbot daemon --endpoint=$CONTROLLER_ENDPOINT &>daemon.log  &
+dealbot daemon --endpoint=$CONTROLLER_ENDPOINT &>dealbot-daemon.log  &
 DAEMON_PID=$!
 
 # Give it half a second to start.
 sleep 0.5
 if ! kill -0 $DAEMON_PID; then
-	cat daemon.log
+	tail -n 50 dealbot-daemon.log
 	unset DAEMON_PID # no need to kill it
 	exit 1
 fi
 
-tail -f daemon.log | sed 's/^/daemon.log: /' &
+tail -f dealbot-daemon.log | sed 's/^/dealbot-daemon.log: /' &
 DAEMON_TAIL_PID=$!
 
 curl --header "Content-Type: application/json" \
@@ -59,7 +61,7 @@ curl --header "Content-Type: application/json" \
 # On average, the storage deal takes about four minutes.
 # Use a timeout of ten minutes, just in case.
 for ((i = 0; i < 10*60; i++)); do
-	if grep -q StorageDealActive daemon.log; then
+	if grep -q StorageDealActive dealbot-daemon.log; then
 		echo "Storage deal is active!"
 		exit 0
 	fi

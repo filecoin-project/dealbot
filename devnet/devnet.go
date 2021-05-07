@@ -36,7 +36,7 @@ func runLotusNode(ctx context.Context) {
 		"lotus daemon --lotus-make-genesis=dev.gen --genesis-template=localnet.json --bootstrap=false",
 	}
 
-	runShell(ctx, "daemon", lotusNodeCmds)
+	runShell(ctx, "lotus-daemon", lotusNodeCmds)
 }
 
 func runMiner(ctx context.Context) {
@@ -48,7 +48,7 @@ func runMiner(ctx context.Context) {
 		"lotus-miner run --nosync",
 	}
 
-	runShell(ctx, "miner", lotusMinerCmds)
+	runShell(ctx, "lotus-miner", lotusMinerCmds)
 }
 
 func publishDealsPeriodicallyCmd(ctx context.Context) {
