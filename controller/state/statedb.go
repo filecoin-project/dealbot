@@ -148,7 +148,7 @@ func (s *stateDB) Get(ctx context.Context, taskID string) (tasks.Task, error) {
 // Get returns a specific task identified by CID
 func (s *stateDB) GetByCID(ctx context.Context, taskCID cid.Cid) (tasks.Task, error) {
 	var serialized string
-	err := s.db().QueryRowContext(ctx, getTaskByCidSQL, taskCID.Bytes()).Scan(&serialized)
+	err := s.db().QueryRowContext(ctx, getTaskByCidSQL, taskCID.KeyString()).Scan(&serialized)
 	if err != nil {
 		return nil, err
 	}
@@ -289,8 +289,9 @@ func (s *stateDB) Update(ctx context.Context, taskID string, req tasks.UpdateTas
 		}
 
 		// save the update back to DB
-		var cid []byte // TODO: Get from task
-		_, err = tx.ExecContext(ctx, updateTaskDataSQL, taskID, data.Bytes(), cid)
+		//taskCID := task.CID().KeyString()
+		var taskCID string
+		_, err = tx.ExecContext(ctx, updateTaskDataSQL, taskID, data.Bytes(), taskCID)
 		if err != nil {
 			return err
 		}
