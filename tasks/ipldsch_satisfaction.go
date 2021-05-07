@@ -1594,6 +1594,1751 @@ var _ ipld.Node = &_Bytes__Repr{}
 type _Bytes__ReprPrototype = _Bytes__Prototype
 type _Bytes__ReprAssembler = _Bytes__Assembler
 
+
+func (n _FinishedTask) FieldStatus() Status {
+	return &n.Status
+}
+func (n _FinishedTask) FieldStartedAt() Time {
+	return &n.StartedAt
+}
+func (n _FinishedTask) FieldRetrievalTask() MaybeRetrievalTask {
+	return &n.RetrievalTask
+}
+func (n _FinishedTask) FieldStorageTask() MaybeStorageTask {
+	return &n.StorageTask
+}
+func (n _FinishedTask) FieldDealID() Int {
+	return &n.DealID
+}
+func (n _FinishedTask) FieldMinerMultiAddr() String {
+	return &n.MinerMultiAddr
+}
+func (n _FinishedTask) FieldClientApparentAddr() String {
+	return &n.ClientApparentAddr
+}
+func (n _FinishedTask) FieldMinerLatencyMS() MaybeInt {
+	return &n.MinerLatencyMS
+}
+func (n _FinishedTask) FieldTimeToFirstByteMS() MaybeInt {
+	return &n.TimeToFirstByteMS
+}
+func (n _FinishedTask) FieldTimeToLastByteMS() MaybeInt {
+	return &n.TimeToLastByteMS
+}
+func (n _FinishedTask) FieldEvents() Link_List_StageDetails {
+	return &n.Events
+}
+type _FinishedTask__Maybe struct {
+	m schema.Maybe
+	v FinishedTask
+}
+type MaybeFinishedTask = *_FinishedTask__Maybe
+
+func (m MaybeFinishedTask) IsNull() bool {
+	return m.m == schema.Maybe_Null
+}
+func (m MaybeFinishedTask) IsAbsent() bool {
+	return m.m == schema.Maybe_Absent
+}
+func (m MaybeFinishedTask) Exists() bool {
+	return m.m == schema.Maybe_Value
+}
+func (m MaybeFinishedTask) AsNode() ipld.Node {
+	switch m.m {
+		case schema.Maybe_Absent:
+			return ipld.Absent
+		case schema.Maybe_Null:
+			return ipld.Null
+		case schema.Maybe_Value:
+			return m.v
+		default:
+			panic("unreachable")
+	}
+}
+func (m MaybeFinishedTask) Must() FinishedTask {
+	if !m.Exists() {
+		panic("unbox of a maybe rejected")
+	}
+	return m.v
+}
+var (
+	fieldName__FinishedTask_Status = _String{"Status"}
+	fieldName__FinishedTask_StartedAt = _String{"StartedAt"}
+	fieldName__FinishedTask_RetrievalTask = _String{"RetrievalTask"}
+	fieldName__FinishedTask_StorageTask = _String{"StorageTask"}
+	fieldName__FinishedTask_DealID = _String{"DealID"}
+	fieldName__FinishedTask_MinerMultiAddr = _String{"MinerMultiAddr"}
+	fieldName__FinishedTask_ClientApparentAddr = _String{"ClientApparentAddr"}
+	fieldName__FinishedTask_MinerLatencyMS = _String{"MinerLatencyMS"}
+	fieldName__FinishedTask_TimeToFirstByteMS = _String{"TimeToFirstByteMS"}
+	fieldName__FinishedTask_TimeToLastByteMS = _String{"TimeToLastByteMS"}
+	fieldName__FinishedTask_Events = _String{"Events"}
+)
+var _ ipld.Node = (FinishedTask)(&_FinishedTask{})
+var _ schema.TypedNode = (FinishedTask)(&_FinishedTask{})
+func (FinishedTask) Kind() ipld.Kind {
+	return ipld.Kind_Map
+}
+func (n FinishedTask) LookupByString(key string) (ipld.Node, error) {
+	switch key {
+	case "Status":
+		return &n.Status, nil
+	case "StartedAt":
+		return &n.StartedAt, nil
+	case "RetrievalTask":
+		if n.RetrievalTask.m == schema.Maybe_Absent {
+			return ipld.Absent, nil
+		}
+		return n.RetrievalTask.v, nil
+	case "StorageTask":
+		if n.StorageTask.m == schema.Maybe_Absent {
+			return ipld.Absent, nil
+		}
+		return n.StorageTask.v, nil
+	case "DealID":
+		return &n.DealID, nil
+	case "MinerMultiAddr":
+		return &n.MinerMultiAddr, nil
+	case "ClientApparentAddr":
+		return &n.ClientApparentAddr, nil
+	case "MinerLatencyMS":
+		if n.MinerLatencyMS.m == schema.Maybe_Absent {
+			return ipld.Absent, nil
+		}
+		return n.MinerLatencyMS.v, nil
+	case "TimeToFirstByteMS":
+		if n.TimeToFirstByteMS.m == schema.Maybe_Absent {
+			return ipld.Absent, nil
+		}
+		return n.TimeToFirstByteMS.v, nil
+	case "TimeToLastByteMS":
+		if n.TimeToLastByteMS.m == schema.Maybe_Absent {
+			return ipld.Absent, nil
+		}
+		return n.TimeToLastByteMS.v, nil
+	case "Events":
+		return &n.Events, nil
+	default:
+		return nil, schema.ErrNoSuchField{Type: nil /*TODO*/, Field: ipld.PathSegmentOfString(key)}
+	}
+}
+func (n FinishedTask) LookupByNode(key ipld.Node) (ipld.Node, error) {
+	ks, err := key.AsString()
+	if err != nil {
+		return nil, err
+	}
+	return n.LookupByString(ks)
+}
+func (FinishedTask) LookupByIndex(idx int64) (ipld.Node, error) {
+	return mixins.Map{"tasks.FinishedTask"}.LookupByIndex(0)
+}
+func (n FinishedTask) LookupBySegment(seg ipld.PathSegment) (ipld.Node, error) {
+	return n.LookupByString(seg.String())
+}
+func (n FinishedTask) MapIterator() ipld.MapIterator {
+	return &_FinishedTask__MapItr{n, 0}
+}
+
+type _FinishedTask__MapItr struct {
+	n FinishedTask
+	idx  int
+}
+
+func (itr *_FinishedTask__MapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
+	if itr.idx >= 11 {
+		return nil, nil, ipld.ErrIteratorOverread{}
+	}
+	switch itr.idx {
+	case 0:
+		k = &fieldName__FinishedTask_Status
+		v = &itr.n.Status
+	case 1:
+		k = &fieldName__FinishedTask_StartedAt
+		v = &itr.n.StartedAt
+	case 2:
+		k = &fieldName__FinishedTask_RetrievalTask
+		if itr.n.RetrievalTask.m == schema.Maybe_Absent {
+			v = ipld.Absent
+			break
+		}
+		v = itr.n.RetrievalTask.v
+	case 3:
+		k = &fieldName__FinishedTask_StorageTask
+		if itr.n.StorageTask.m == schema.Maybe_Absent {
+			v = ipld.Absent
+			break
+		}
+		v = itr.n.StorageTask.v
+	case 4:
+		k = &fieldName__FinishedTask_DealID
+		v = &itr.n.DealID
+	case 5:
+		k = &fieldName__FinishedTask_MinerMultiAddr
+		v = &itr.n.MinerMultiAddr
+	case 6:
+		k = &fieldName__FinishedTask_ClientApparentAddr
+		v = &itr.n.ClientApparentAddr
+	case 7:
+		k = &fieldName__FinishedTask_MinerLatencyMS
+		if itr.n.MinerLatencyMS.m == schema.Maybe_Absent {
+			v = ipld.Absent
+			break
+		}
+		v = itr.n.MinerLatencyMS.v
+	case 8:
+		k = &fieldName__FinishedTask_TimeToFirstByteMS
+		if itr.n.TimeToFirstByteMS.m == schema.Maybe_Absent {
+			v = ipld.Absent
+			break
+		}
+		v = itr.n.TimeToFirstByteMS.v
+	case 9:
+		k = &fieldName__FinishedTask_TimeToLastByteMS
+		if itr.n.TimeToLastByteMS.m == schema.Maybe_Absent {
+			v = ipld.Absent
+			break
+		}
+		v = itr.n.TimeToLastByteMS.v
+	case 10:
+		k = &fieldName__FinishedTask_Events
+		v = &itr.n.Events
+	default:
+		panic("unreachable")
+	}
+	itr.idx++
+	return
+}
+func (itr *_FinishedTask__MapItr) Done() bool {
+	return itr.idx >= 11
+}
+
+func (FinishedTask) ListIterator() ipld.ListIterator {
+	return nil
+}
+func (FinishedTask) Length() int64 {
+	return 11
+}
+func (FinishedTask) IsAbsent() bool {
+	return false
+}
+func (FinishedTask) IsNull() bool {
+	return false
+}
+func (FinishedTask) AsBool() (bool, error) {
+	return mixins.Map{"tasks.FinishedTask"}.AsBool()
+}
+func (FinishedTask) AsInt() (int64, error) {
+	return mixins.Map{"tasks.FinishedTask"}.AsInt()
+}
+func (FinishedTask) AsFloat() (float64, error) {
+	return mixins.Map{"tasks.FinishedTask"}.AsFloat()
+}
+func (FinishedTask) AsString() (string, error) {
+	return mixins.Map{"tasks.FinishedTask"}.AsString()
+}
+func (FinishedTask) AsBytes() ([]byte, error) {
+	return mixins.Map{"tasks.FinishedTask"}.AsBytes()
+}
+func (FinishedTask) AsLink() (ipld.Link, error) {
+	return mixins.Map{"tasks.FinishedTask"}.AsLink()
+}
+func (FinishedTask) Prototype() ipld.NodePrototype {
+	return _FinishedTask__Prototype{}
+}
+type _FinishedTask__Prototype struct{}
+
+func (_FinishedTask__Prototype) NewBuilder() ipld.NodeBuilder {
+	var nb _FinishedTask__Builder
+	nb.Reset()
+	return &nb
+}
+type _FinishedTask__Builder struct {
+	_FinishedTask__Assembler
+}
+func (nb *_FinishedTask__Builder) Build() ipld.Node {
+	if *nb.m != schema.Maybe_Value {
+		panic("invalid state: cannot call Build on an assembler that's not finished")
+	}
+	return nb.w
+}
+func (nb *_FinishedTask__Builder) Reset() {
+	var w _FinishedTask
+	var m schema.Maybe
+	*nb = _FinishedTask__Builder{_FinishedTask__Assembler{w: &w, m: &m}}
+}
+type _FinishedTask__Assembler struct {
+	w *_FinishedTask
+	m *schema.Maybe
+	state maState
+	s int
+	f int
+
+	cm schema.Maybe
+	ca_Status _Status__Assembler
+	ca_StartedAt _Time__Assembler
+	ca_RetrievalTask _RetrievalTask__Assembler
+	ca_StorageTask _StorageTask__Assembler
+	ca_DealID _Int__Assembler
+	ca_MinerMultiAddr _String__Assembler
+	ca_ClientApparentAddr _String__Assembler
+	ca_MinerLatencyMS _Int__Assembler
+	ca_TimeToFirstByteMS _Int__Assembler
+	ca_TimeToLastByteMS _Int__Assembler
+	ca_Events _Link_List_StageDetails__Assembler
+	}
+
+func (na *_FinishedTask__Assembler) reset() {
+	na.state = maState_initial
+	na.s = 0
+	na.ca_Status.reset()
+	na.ca_StartedAt.reset()
+	na.ca_RetrievalTask.reset()
+	na.ca_StorageTask.reset()
+	na.ca_DealID.reset()
+	na.ca_MinerMultiAddr.reset()
+	na.ca_ClientApparentAddr.reset()
+	na.ca_MinerLatencyMS.reset()
+	na.ca_TimeToFirstByteMS.reset()
+	na.ca_TimeToLastByteMS.reset()
+	na.ca_Events.reset()
+}
+
+var (
+	fieldBit__FinishedTask_Status = 1 << 0
+	fieldBit__FinishedTask_StartedAt = 1 << 1
+	fieldBit__FinishedTask_RetrievalTask = 1 << 2
+	fieldBit__FinishedTask_StorageTask = 1 << 3
+	fieldBit__FinishedTask_DealID = 1 << 4
+	fieldBit__FinishedTask_MinerMultiAddr = 1 << 5
+	fieldBit__FinishedTask_ClientApparentAddr = 1 << 6
+	fieldBit__FinishedTask_MinerLatencyMS = 1 << 7
+	fieldBit__FinishedTask_TimeToFirstByteMS = 1 << 8
+	fieldBit__FinishedTask_TimeToLastByteMS = 1 << 9
+	fieldBit__FinishedTask_Events = 1 << 10
+	fieldBits__FinishedTask_sufficient = 0 + 1 << 0 + 1 << 1 + 1 << 4 + 1 << 5 + 1 << 6 + 1 << 10
+)
+func (na *_FinishedTask__Assembler) BeginMap(int64) (ipld.MapAssembler, error) {
+	switch *na.m {
+	case schema.Maybe_Value, schema.Maybe_Null:
+		panic("invalid state: cannot assign into assembler that's already finished")
+	case midvalue:
+		panic("invalid state: it makes no sense to 'begin' twice on the same assembler!")
+	}
+	*na.m = midvalue
+	if na.w == nil {
+		na.w = &_FinishedTask{}
+	}
+	return na, nil
+}
+func (_FinishedTask__Assembler) BeginList(sizeHint int64) (ipld.ListAssembler, error) {
+	return mixins.MapAssembler{"tasks.FinishedTask"}.BeginList(0)
+}
+func (na *_FinishedTask__Assembler) AssignNull() error {
+	switch *na.m {
+	case allowNull:
+		*na.m = schema.Maybe_Null
+		return nil
+	case schema.Maybe_Absent:
+		return mixins.MapAssembler{"tasks.FinishedTask"}.AssignNull()
+	case schema.Maybe_Value, schema.Maybe_Null:
+		panic("invalid state: cannot assign into assembler that's already finished")
+	case midvalue:
+		panic("invalid state: cannot assign null into an assembler that's already begun working on recursive structures!")
+	}
+	panic("unreachable")
+}
+func (_FinishedTask__Assembler) AssignBool(bool) error {
+	return mixins.MapAssembler{"tasks.FinishedTask"}.AssignBool(false)
+}
+func (_FinishedTask__Assembler) AssignInt(int64) error {
+	return mixins.MapAssembler{"tasks.FinishedTask"}.AssignInt(0)
+}
+func (_FinishedTask__Assembler) AssignFloat(float64) error {
+	return mixins.MapAssembler{"tasks.FinishedTask"}.AssignFloat(0)
+}
+func (_FinishedTask__Assembler) AssignString(string) error {
+	return mixins.MapAssembler{"tasks.FinishedTask"}.AssignString("")
+}
+func (_FinishedTask__Assembler) AssignBytes([]byte) error {
+	return mixins.MapAssembler{"tasks.FinishedTask"}.AssignBytes(nil)
+}
+func (_FinishedTask__Assembler) AssignLink(ipld.Link) error {
+	return mixins.MapAssembler{"tasks.FinishedTask"}.AssignLink(nil)
+}
+func (na *_FinishedTask__Assembler) AssignNode(v ipld.Node) error {
+	if v.IsNull() {
+		return na.AssignNull()
+	}
+	if v2, ok := v.(*_FinishedTask); ok {
+		switch *na.m {
+		case schema.Maybe_Value, schema.Maybe_Null:
+			panic("invalid state: cannot assign into assembler that's already finished")
+		case midvalue:
+			panic("invalid state: cannot assign null into an assembler that's already begun working on recursive structures!")
+		}
+		if na.w == nil {
+			na.w = v2
+			*na.m = schema.Maybe_Value
+			return nil
+		}
+		*na.w = *v2
+		*na.m = schema.Maybe_Value
+		return nil
+	}
+	if v.Kind() != ipld.Kind_Map {
+		return ipld.ErrWrongKind{TypeName: "tasks.FinishedTask", MethodName: "AssignNode", AppropriateKind: ipld.KindSet_JustMap, ActualKind: v.Kind()}
+	}
+	itr := v.MapIterator()
+	for !itr.Done() {
+		k, v, err := itr.Next()
+		if err != nil {
+			return err
+		}
+		if err := na.AssembleKey().AssignNode(k); err != nil {
+			return err
+		}
+		if err := na.AssembleValue().AssignNode(v); err != nil {
+			return err
+		}
+	}
+	return na.Finish()
+}
+func (_FinishedTask__Assembler) Prototype() ipld.NodePrototype {
+	return _FinishedTask__Prototype{}
+}
+func (ma *_FinishedTask__Assembler) valueFinishTidy() bool {
+	switch ma.f {
+	case 0:
+		switch ma.cm {
+		case schema.Maybe_Value:
+			ma.ca_Status.w = nil
+			ma.cm = schema.Maybe_Absent
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
+	case 1:
+		switch ma.cm {
+		case schema.Maybe_Value:
+			ma.ca_StartedAt.w = nil
+			ma.cm = schema.Maybe_Absent
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
+	case 2:
+		switch ma.w.RetrievalTask.m {
+		case schema.Maybe_Value:
+			ma.w.RetrievalTask.v = ma.ca_RetrievalTask.w
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
+	case 3:
+		switch ma.w.StorageTask.m {
+		case schema.Maybe_Value:
+			ma.w.StorageTask.v = ma.ca_StorageTask.w
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
+	case 4:
+		switch ma.cm {
+		case schema.Maybe_Value:
+			ma.ca_DealID.w = nil
+			ma.cm = schema.Maybe_Absent
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
+	case 5:
+		switch ma.cm {
+		case schema.Maybe_Value:
+			ma.ca_MinerMultiAddr.w = nil
+			ma.cm = schema.Maybe_Absent
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
+	case 6:
+		switch ma.cm {
+		case schema.Maybe_Value:
+			ma.ca_ClientApparentAddr.w = nil
+			ma.cm = schema.Maybe_Absent
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
+	case 7:
+		switch ma.w.MinerLatencyMS.m {
+		case schema.Maybe_Value:
+			ma.w.MinerLatencyMS.v = ma.ca_MinerLatencyMS.w
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
+	case 8:
+		switch ma.w.TimeToFirstByteMS.m {
+		case schema.Maybe_Value:
+			ma.w.TimeToFirstByteMS.v = ma.ca_TimeToFirstByteMS.w
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
+	case 9:
+		switch ma.w.TimeToLastByteMS.m {
+		case schema.Maybe_Value:
+			ma.w.TimeToLastByteMS.v = ma.ca_TimeToLastByteMS.w
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
+	case 10:
+		switch ma.cm {
+		case schema.Maybe_Value:
+			ma.ca_Events.w = nil
+			ma.cm = schema.Maybe_Absent
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
+	default:
+		panic("unreachable")
+	}
+}
+func (ma *_FinishedTask__Assembler) AssembleEntry(k string) (ipld.NodeAssembler, error) {
+	switch ma.state {
+	case maState_initial:
+		// carry on
+	case maState_midKey:
+		panic("invalid state: AssembleEntry cannot be called when in the middle of assembling another key")
+	case maState_expectValue:
+		panic("invalid state: AssembleEntry cannot be called when expecting start of value assembly")
+	case maState_midValue:
+		if !ma.valueFinishTidy() {
+			panic("invalid state: AssembleEntry cannot be called when in the middle of assembling a value")
+		} // if tidy success: carry on
+	case maState_finished:
+		panic("invalid state: AssembleEntry cannot be called on an assembler that's already finished")
+	}
+	switch k {
+	case "Status":
+		if ma.s & fieldBit__FinishedTask_Status != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_Status}
+		}
+		ma.s += fieldBit__FinishedTask_Status
+		ma.state = maState_midValue
+		ma.f = 0
+		ma.ca_Status.w = &ma.w.Status
+		ma.ca_Status.m = &ma.cm
+		return &ma.ca_Status, nil
+	case "StartedAt":
+		if ma.s & fieldBit__FinishedTask_StartedAt != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_StartedAt}
+		}
+		ma.s += fieldBit__FinishedTask_StartedAt
+		ma.state = maState_midValue
+		ma.f = 1
+		ma.ca_StartedAt.w = &ma.w.StartedAt
+		ma.ca_StartedAt.m = &ma.cm
+		return &ma.ca_StartedAt, nil
+	case "RetrievalTask":
+		if ma.s & fieldBit__FinishedTask_RetrievalTask != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_RetrievalTask}
+		}
+		ma.s += fieldBit__FinishedTask_RetrievalTask
+		ma.state = maState_midValue
+		ma.f = 2
+		ma.ca_RetrievalTask.w = ma.w.RetrievalTask.v
+		ma.ca_RetrievalTask.m = &ma.w.RetrievalTask.m
+		return &ma.ca_RetrievalTask, nil
+	case "StorageTask":
+		if ma.s & fieldBit__FinishedTask_StorageTask != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_StorageTask}
+		}
+		ma.s += fieldBit__FinishedTask_StorageTask
+		ma.state = maState_midValue
+		ma.f = 3
+		ma.ca_StorageTask.w = ma.w.StorageTask.v
+		ma.ca_StorageTask.m = &ma.w.StorageTask.m
+		return &ma.ca_StorageTask, nil
+	case "DealID":
+		if ma.s & fieldBit__FinishedTask_DealID != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_DealID}
+		}
+		ma.s += fieldBit__FinishedTask_DealID
+		ma.state = maState_midValue
+		ma.f = 4
+		ma.ca_DealID.w = &ma.w.DealID
+		ma.ca_DealID.m = &ma.cm
+		return &ma.ca_DealID, nil
+	case "MinerMultiAddr":
+		if ma.s & fieldBit__FinishedTask_MinerMultiAddr != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_MinerMultiAddr}
+		}
+		ma.s += fieldBit__FinishedTask_MinerMultiAddr
+		ma.state = maState_midValue
+		ma.f = 5
+		ma.ca_MinerMultiAddr.w = &ma.w.MinerMultiAddr
+		ma.ca_MinerMultiAddr.m = &ma.cm
+		return &ma.ca_MinerMultiAddr, nil
+	case "ClientApparentAddr":
+		if ma.s & fieldBit__FinishedTask_ClientApparentAddr != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_ClientApparentAddr}
+		}
+		ma.s += fieldBit__FinishedTask_ClientApparentAddr
+		ma.state = maState_midValue
+		ma.f = 6
+		ma.ca_ClientApparentAddr.w = &ma.w.ClientApparentAddr
+		ma.ca_ClientApparentAddr.m = &ma.cm
+		return &ma.ca_ClientApparentAddr, nil
+	case "MinerLatencyMS":
+		if ma.s & fieldBit__FinishedTask_MinerLatencyMS != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_MinerLatencyMS}
+		}
+		ma.s += fieldBit__FinishedTask_MinerLatencyMS
+		ma.state = maState_midValue
+		ma.f = 7
+		ma.ca_MinerLatencyMS.w = ma.w.MinerLatencyMS.v
+		ma.ca_MinerLatencyMS.m = &ma.w.MinerLatencyMS.m
+		return &ma.ca_MinerLatencyMS, nil
+	case "TimeToFirstByteMS":
+		if ma.s & fieldBit__FinishedTask_TimeToFirstByteMS != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_TimeToFirstByteMS}
+		}
+		ma.s += fieldBit__FinishedTask_TimeToFirstByteMS
+		ma.state = maState_midValue
+		ma.f = 8
+		ma.ca_TimeToFirstByteMS.w = ma.w.TimeToFirstByteMS.v
+		ma.ca_TimeToFirstByteMS.m = &ma.w.TimeToFirstByteMS.m
+		return &ma.ca_TimeToFirstByteMS, nil
+	case "TimeToLastByteMS":
+		if ma.s & fieldBit__FinishedTask_TimeToLastByteMS != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_TimeToLastByteMS}
+		}
+		ma.s += fieldBit__FinishedTask_TimeToLastByteMS
+		ma.state = maState_midValue
+		ma.f = 9
+		ma.ca_TimeToLastByteMS.w = ma.w.TimeToLastByteMS.v
+		ma.ca_TimeToLastByteMS.m = &ma.w.TimeToLastByteMS.m
+		return &ma.ca_TimeToLastByteMS, nil
+	case "Events":
+		if ma.s & fieldBit__FinishedTask_Events != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_Events}
+		}
+		ma.s += fieldBit__FinishedTask_Events
+		ma.state = maState_midValue
+		ma.f = 10
+		ma.ca_Events.w = &ma.w.Events
+		ma.ca_Events.m = &ma.cm
+		return &ma.ca_Events, nil
+	default:
+		return nil, ipld.ErrInvalidKey{TypeName:"tasks.FinishedTask", Key:&_String{k}}
+	}
+}
+func (ma *_FinishedTask__Assembler) AssembleKey() ipld.NodeAssembler {
+	switch ma.state {
+	case maState_initial:
+		// carry on
+	case maState_midKey:
+		panic("invalid state: AssembleKey cannot be called when in the middle of assembling another key")
+	case maState_expectValue:
+		panic("invalid state: AssembleKey cannot be called when expecting start of value assembly")
+	case maState_midValue:
+		if !ma.valueFinishTidy() {
+			panic("invalid state: AssembleKey cannot be called when in the middle of assembling a value")
+		} // if tidy success: carry on
+	case maState_finished:
+		panic("invalid state: AssembleKey cannot be called on an assembler that's already finished")
+	}
+	ma.state = maState_midKey
+	return (*_FinishedTask__KeyAssembler)(ma)
+}
+func (ma *_FinishedTask__Assembler) AssembleValue() ipld.NodeAssembler {
+	switch ma.state {
+	case maState_initial:
+		panic("invalid state: AssembleValue cannot be called when no key is primed")
+	case maState_midKey:
+		panic("invalid state: AssembleValue cannot be called when in the middle of assembling a key")
+	case maState_expectValue:
+		// carry on
+	case maState_midValue:
+		panic("invalid state: AssembleValue cannot be called when in the middle of assembling another value")
+	case maState_finished:
+		panic("invalid state: AssembleValue cannot be called on an assembler that's already finished")
+	}
+	ma.state = maState_midValue
+	switch ma.f {
+	case 0:
+		ma.ca_Status.w = &ma.w.Status
+		ma.ca_Status.m = &ma.cm
+		return &ma.ca_Status
+	case 1:
+		ma.ca_StartedAt.w = &ma.w.StartedAt
+		ma.ca_StartedAt.m = &ma.cm
+		return &ma.ca_StartedAt
+	case 2:
+		ma.ca_RetrievalTask.w = ma.w.RetrievalTask.v
+		ma.ca_RetrievalTask.m = &ma.w.RetrievalTask.m
+		return &ma.ca_RetrievalTask
+	case 3:
+		ma.ca_StorageTask.w = ma.w.StorageTask.v
+		ma.ca_StorageTask.m = &ma.w.StorageTask.m
+		return &ma.ca_StorageTask
+	case 4:
+		ma.ca_DealID.w = &ma.w.DealID
+		ma.ca_DealID.m = &ma.cm
+		return &ma.ca_DealID
+	case 5:
+		ma.ca_MinerMultiAddr.w = &ma.w.MinerMultiAddr
+		ma.ca_MinerMultiAddr.m = &ma.cm
+		return &ma.ca_MinerMultiAddr
+	case 6:
+		ma.ca_ClientApparentAddr.w = &ma.w.ClientApparentAddr
+		ma.ca_ClientApparentAddr.m = &ma.cm
+		return &ma.ca_ClientApparentAddr
+	case 7:
+		ma.ca_MinerLatencyMS.w = ma.w.MinerLatencyMS.v
+		ma.ca_MinerLatencyMS.m = &ma.w.MinerLatencyMS.m
+		return &ma.ca_MinerLatencyMS
+	case 8:
+		ma.ca_TimeToFirstByteMS.w = ma.w.TimeToFirstByteMS.v
+		ma.ca_TimeToFirstByteMS.m = &ma.w.TimeToFirstByteMS.m
+		return &ma.ca_TimeToFirstByteMS
+	case 9:
+		ma.ca_TimeToLastByteMS.w = ma.w.TimeToLastByteMS.v
+		ma.ca_TimeToLastByteMS.m = &ma.w.TimeToLastByteMS.m
+		return &ma.ca_TimeToLastByteMS
+	case 10:
+		ma.ca_Events.w = &ma.w.Events
+		ma.ca_Events.m = &ma.cm
+		return &ma.ca_Events
+	default:
+		panic("unreachable")
+	}
+}
+func (ma *_FinishedTask__Assembler) Finish() error {
+	switch ma.state {
+	case maState_initial:
+		// carry on
+	case maState_midKey:
+		panic("invalid state: Finish cannot be called when in the middle of assembling a key")
+	case maState_expectValue:
+		panic("invalid state: Finish cannot be called when expecting start of value assembly")
+	case maState_midValue:
+		if !ma.valueFinishTidy() {
+			panic("invalid state: Finish cannot be called when in the middle of assembling a value")
+		} // if tidy success: carry on
+	case maState_finished:
+		panic("invalid state: Finish cannot be called on an assembler that's already finished")
+	}
+	if ma.s & fieldBits__FinishedTask_sufficient != fieldBits__FinishedTask_sufficient {
+		err := ipld.ErrMissingRequiredField{Missing: make([]string, 0)}
+		if ma.s & fieldBit__FinishedTask_Status == 0 {
+			err.Missing = append(err.Missing, "Status")
+		}
+		if ma.s & fieldBit__FinishedTask_StartedAt == 0 {
+			err.Missing = append(err.Missing, "StartedAt")
+		}
+		if ma.s & fieldBit__FinishedTask_DealID == 0 {
+			err.Missing = append(err.Missing, "DealID")
+		}
+		if ma.s & fieldBit__FinishedTask_MinerMultiAddr == 0 {
+			err.Missing = append(err.Missing, "MinerMultiAddr")
+		}
+		if ma.s & fieldBit__FinishedTask_ClientApparentAddr == 0 {
+			err.Missing = append(err.Missing, "ClientApparentAddr")
+		}
+		if ma.s & fieldBit__FinishedTask_Events == 0 {
+			err.Missing = append(err.Missing, "Events")
+		}
+		return err
+	}
+	ma.state = maState_finished
+	*ma.m = schema.Maybe_Value
+	return nil
+}
+func (ma *_FinishedTask__Assembler) KeyPrototype() ipld.NodePrototype {
+	return _String__Prototype{}
+}
+func (ma *_FinishedTask__Assembler) ValuePrototype(k string) ipld.NodePrototype {
+	panic("todo structbuilder mapassembler valueprototype")
+}
+type _FinishedTask__KeyAssembler _FinishedTask__Assembler
+func (_FinishedTask__KeyAssembler) BeginMap(sizeHint int64) (ipld.MapAssembler, error) {
+	return mixins.StringAssembler{"tasks.FinishedTask.KeyAssembler"}.BeginMap(0)
+}
+func (_FinishedTask__KeyAssembler) BeginList(sizeHint int64) (ipld.ListAssembler, error) {
+	return mixins.StringAssembler{"tasks.FinishedTask.KeyAssembler"}.BeginList(0)
+}
+func (na *_FinishedTask__KeyAssembler) AssignNull() error {
+	return mixins.StringAssembler{"tasks.FinishedTask.KeyAssembler"}.AssignNull()
+}
+func (_FinishedTask__KeyAssembler) AssignBool(bool) error {
+	return mixins.StringAssembler{"tasks.FinishedTask.KeyAssembler"}.AssignBool(false)
+}
+func (_FinishedTask__KeyAssembler) AssignInt(int64) error {
+	return mixins.StringAssembler{"tasks.FinishedTask.KeyAssembler"}.AssignInt(0)
+}
+func (_FinishedTask__KeyAssembler) AssignFloat(float64) error {
+	return mixins.StringAssembler{"tasks.FinishedTask.KeyAssembler"}.AssignFloat(0)
+}
+func (ka *_FinishedTask__KeyAssembler) AssignString(k string) error {
+	if ka.state != maState_midKey {
+		panic("misuse: KeyAssembler held beyond its valid lifetime")
+	}
+	switch k {
+	case "Status":
+		if ka.s & fieldBit__FinishedTask_Status != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_Status}
+		}
+		ka.s += fieldBit__FinishedTask_Status
+		ka.state = maState_expectValue
+		ka.f = 0
+	case "StartedAt":
+		if ka.s & fieldBit__FinishedTask_StartedAt != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_StartedAt}
+		}
+		ka.s += fieldBit__FinishedTask_StartedAt
+		ka.state = maState_expectValue
+		ka.f = 1
+	case "RetrievalTask":
+		if ka.s & fieldBit__FinishedTask_RetrievalTask != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_RetrievalTask}
+		}
+		ka.s += fieldBit__FinishedTask_RetrievalTask
+		ka.state = maState_expectValue
+		ka.f = 2
+	case "StorageTask":
+		if ka.s & fieldBit__FinishedTask_StorageTask != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_StorageTask}
+		}
+		ka.s += fieldBit__FinishedTask_StorageTask
+		ka.state = maState_expectValue
+		ka.f = 3
+	case "DealID":
+		if ka.s & fieldBit__FinishedTask_DealID != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_DealID}
+		}
+		ka.s += fieldBit__FinishedTask_DealID
+		ka.state = maState_expectValue
+		ka.f = 4
+	case "MinerMultiAddr":
+		if ka.s & fieldBit__FinishedTask_MinerMultiAddr != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_MinerMultiAddr}
+		}
+		ka.s += fieldBit__FinishedTask_MinerMultiAddr
+		ka.state = maState_expectValue
+		ka.f = 5
+	case "ClientApparentAddr":
+		if ka.s & fieldBit__FinishedTask_ClientApparentAddr != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_ClientApparentAddr}
+		}
+		ka.s += fieldBit__FinishedTask_ClientApparentAddr
+		ka.state = maState_expectValue
+		ka.f = 6
+	case "MinerLatencyMS":
+		if ka.s & fieldBit__FinishedTask_MinerLatencyMS != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_MinerLatencyMS}
+		}
+		ka.s += fieldBit__FinishedTask_MinerLatencyMS
+		ka.state = maState_expectValue
+		ka.f = 7
+	case "TimeToFirstByteMS":
+		if ka.s & fieldBit__FinishedTask_TimeToFirstByteMS != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_TimeToFirstByteMS}
+		}
+		ka.s += fieldBit__FinishedTask_TimeToFirstByteMS
+		ka.state = maState_expectValue
+		ka.f = 8
+	case "TimeToLastByteMS":
+		if ka.s & fieldBit__FinishedTask_TimeToLastByteMS != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_TimeToLastByteMS}
+		}
+		ka.s += fieldBit__FinishedTask_TimeToLastByteMS
+		ka.state = maState_expectValue
+		ka.f = 9
+	case "Events":
+		if ka.s & fieldBit__FinishedTask_Events != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_Events}
+		}
+		ka.s += fieldBit__FinishedTask_Events
+		ka.state = maState_expectValue
+		ka.f = 10
+	default:
+		return ipld.ErrInvalidKey{TypeName:"tasks.FinishedTask", Key:&_String{k}}
+	}
+	return nil
+}
+func (_FinishedTask__KeyAssembler) AssignBytes([]byte) error {
+	return mixins.StringAssembler{"tasks.FinishedTask.KeyAssembler"}.AssignBytes(nil)
+}
+func (_FinishedTask__KeyAssembler) AssignLink(ipld.Link) error {
+	return mixins.StringAssembler{"tasks.FinishedTask.KeyAssembler"}.AssignLink(nil)
+}
+func (ka *_FinishedTask__KeyAssembler) AssignNode(v ipld.Node) error {
+	if v2, err := v.AsString(); err != nil {
+		return err
+	} else {
+		return ka.AssignString(v2)
+	}
+}
+func (_FinishedTask__KeyAssembler) Prototype() ipld.NodePrototype {
+	return _String__Prototype{}
+}
+func (FinishedTask) Type() schema.Type {
+	return nil /*TODO:typelit*/
+}
+func (n FinishedTask) Representation() ipld.Node {
+	return (*_FinishedTask__Repr)(n)
+}
+type _FinishedTask__Repr _FinishedTask
+var (
+	fieldName__FinishedTask_Status_serial = _String{"Status"}
+	fieldName__FinishedTask_StartedAt_serial = _String{"StartedAt"}
+	fieldName__FinishedTask_RetrievalTask_serial = _String{"RetrievalTask"}
+	fieldName__FinishedTask_StorageTask_serial = _String{"StorageTask"}
+	fieldName__FinishedTask_DealID_serial = _String{"DealID"}
+	fieldName__FinishedTask_MinerMultiAddr_serial = _String{"MinerMultiAddr"}
+	fieldName__FinishedTask_ClientApparentAddr_serial = _String{"ClientApparentAddr"}
+	fieldName__FinishedTask_MinerLatencyMS_serial = _String{"MinerLatencyMS"}
+	fieldName__FinishedTask_TimeToFirstByteMS_serial = _String{"TimeToFirstByteMS"}
+	fieldName__FinishedTask_TimeToLastByteMS_serial = _String{"TimeToLastByteMS"}
+	fieldName__FinishedTask_Events_serial = _String{"Events"}
+)
+var _ ipld.Node = &_FinishedTask__Repr{}
+func (_FinishedTask__Repr) Kind() ipld.Kind {
+	return ipld.Kind_Map
+}
+func (n *_FinishedTask__Repr) LookupByString(key string) (ipld.Node, error) {
+	switch key {
+	case "Status":
+		return n.Status.Representation(), nil
+	case "StartedAt":
+		return n.StartedAt.Representation(), nil
+	case "RetrievalTask":
+		if n.RetrievalTask.m == schema.Maybe_Absent {
+			return ipld.Absent, ipld.ErrNotExists{ipld.PathSegmentOfString(key)}
+		}
+		return n.RetrievalTask.v.Representation(), nil
+	case "StorageTask":
+		if n.StorageTask.m == schema.Maybe_Absent {
+			return ipld.Absent, ipld.ErrNotExists{ipld.PathSegmentOfString(key)}
+		}
+		return n.StorageTask.v.Representation(), nil
+	case "DealID":
+		return n.DealID.Representation(), nil
+	case "MinerMultiAddr":
+		return n.MinerMultiAddr.Representation(), nil
+	case "ClientApparentAddr":
+		return n.ClientApparentAddr.Representation(), nil
+	case "MinerLatencyMS":
+		if n.MinerLatencyMS.m == schema.Maybe_Absent {
+			return ipld.Absent, ipld.ErrNotExists{ipld.PathSegmentOfString(key)}
+		}
+		return n.MinerLatencyMS.v.Representation(), nil
+	case "TimeToFirstByteMS":
+		if n.TimeToFirstByteMS.m == schema.Maybe_Absent {
+			return ipld.Absent, ipld.ErrNotExists{ipld.PathSegmentOfString(key)}
+		}
+		return n.TimeToFirstByteMS.v.Representation(), nil
+	case "TimeToLastByteMS":
+		if n.TimeToLastByteMS.m == schema.Maybe_Absent {
+			return ipld.Absent, ipld.ErrNotExists{ipld.PathSegmentOfString(key)}
+		}
+		return n.TimeToLastByteMS.v.Representation(), nil
+	case "Events":
+		return n.Events.Representation(), nil
+	default:
+		return nil, schema.ErrNoSuchField{Type: nil /*TODO*/, Field: ipld.PathSegmentOfString(key)}
+	}
+}
+func (n *_FinishedTask__Repr) LookupByNode(key ipld.Node) (ipld.Node, error) {
+	ks, err := key.AsString()
+	if err != nil {
+		return nil, err
+	}
+	return n.LookupByString(ks)
+}
+func (_FinishedTask__Repr) LookupByIndex(idx int64) (ipld.Node, error) {
+	return mixins.Map{"tasks.FinishedTask.Repr"}.LookupByIndex(0)
+}
+func (n _FinishedTask__Repr) LookupBySegment(seg ipld.PathSegment) (ipld.Node, error) {
+	return n.LookupByString(seg.String())
+}
+func (n *_FinishedTask__Repr) MapIterator() ipld.MapIterator {
+	return &_FinishedTask__ReprMapItr{n, 0}
+}
+
+type _FinishedTask__ReprMapItr struct {
+	n   *_FinishedTask__Repr
+	idx int
+	
+}
+
+func (itr *_FinishedTask__ReprMapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
+advance:if itr.idx >= 11 {
+		return nil, nil, ipld.ErrIteratorOverread{}
+	}
+	switch itr.idx {
+	case 0:
+		k = &fieldName__FinishedTask_Status_serial
+		v = itr.n.Status.Representation()
+	case 1:
+		k = &fieldName__FinishedTask_StartedAt_serial
+		v = itr.n.StartedAt.Representation()
+	case 2:
+		k = &fieldName__FinishedTask_RetrievalTask_serial
+		if itr.n.RetrievalTask.m == schema.Maybe_Absent {
+			itr.idx++
+			goto advance
+		}
+		v = itr.n.RetrievalTask.v.Representation()
+	case 3:
+		k = &fieldName__FinishedTask_StorageTask_serial
+		if itr.n.StorageTask.m == schema.Maybe_Absent {
+			itr.idx++
+			goto advance
+		}
+		v = itr.n.StorageTask.v.Representation()
+	case 4:
+		k = &fieldName__FinishedTask_DealID_serial
+		v = itr.n.DealID.Representation()
+	case 5:
+		k = &fieldName__FinishedTask_MinerMultiAddr_serial
+		v = itr.n.MinerMultiAddr.Representation()
+	case 6:
+		k = &fieldName__FinishedTask_ClientApparentAddr_serial
+		v = itr.n.ClientApparentAddr.Representation()
+	case 7:
+		k = &fieldName__FinishedTask_MinerLatencyMS_serial
+		if itr.n.MinerLatencyMS.m == schema.Maybe_Absent {
+			itr.idx++
+			goto advance
+		}
+		v = itr.n.MinerLatencyMS.v.Representation()
+	case 8:
+		k = &fieldName__FinishedTask_TimeToFirstByteMS_serial
+		if itr.n.TimeToFirstByteMS.m == schema.Maybe_Absent {
+			itr.idx++
+			goto advance
+		}
+		v = itr.n.TimeToFirstByteMS.v.Representation()
+	case 9:
+		k = &fieldName__FinishedTask_TimeToLastByteMS_serial
+		if itr.n.TimeToLastByteMS.m == schema.Maybe_Absent {
+			itr.idx++
+			goto advance
+		}
+		v = itr.n.TimeToLastByteMS.v.Representation()
+	case 10:
+		k = &fieldName__FinishedTask_Events_serial
+		v = itr.n.Events.Representation()
+	default:
+		panic("unreachable")
+	}
+	itr.idx++
+	return
+}
+func (itr *_FinishedTask__ReprMapItr) Done() bool {
+	return itr.idx >= 11
+}
+func (_FinishedTask__Repr) ListIterator() ipld.ListIterator {
+	return nil
+}
+func (rn *_FinishedTask__Repr) Length() int64 {
+	l := 11
+	if rn.RetrievalTask.m == schema.Maybe_Absent {
+		l--
+	}
+	if rn.StorageTask.m == schema.Maybe_Absent {
+		l--
+	}
+	if rn.MinerLatencyMS.m == schema.Maybe_Absent {
+		l--
+	}
+	if rn.TimeToFirstByteMS.m == schema.Maybe_Absent {
+		l--
+	}
+	if rn.TimeToLastByteMS.m == schema.Maybe_Absent {
+		l--
+	}
+	return int64(l)
+}
+func (_FinishedTask__Repr) IsAbsent() bool {
+	return false
+}
+func (_FinishedTask__Repr) IsNull() bool {
+	return false
+}
+func (_FinishedTask__Repr) AsBool() (bool, error) {
+	return mixins.Map{"tasks.FinishedTask.Repr"}.AsBool()
+}
+func (_FinishedTask__Repr) AsInt() (int64, error) {
+	return mixins.Map{"tasks.FinishedTask.Repr"}.AsInt()
+}
+func (_FinishedTask__Repr) AsFloat() (float64, error) {
+	return mixins.Map{"tasks.FinishedTask.Repr"}.AsFloat()
+}
+func (_FinishedTask__Repr) AsString() (string, error) {
+	return mixins.Map{"tasks.FinishedTask.Repr"}.AsString()
+}
+func (_FinishedTask__Repr) AsBytes() ([]byte, error) {
+	return mixins.Map{"tasks.FinishedTask.Repr"}.AsBytes()
+}
+func (_FinishedTask__Repr) AsLink() (ipld.Link, error) {
+	return mixins.Map{"tasks.FinishedTask.Repr"}.AsLink()
+}
+func (_FinishedTask__Repr) Prototype() ipld.NodePrototype {
+	return _FinishedTask__ReprPrototype{}
+}
+type _FinishedTask__ReprPrototype struct{}
+
+func (_FinishedTask__ReprPrototype) NewBuilder() ipld.NodeBuilder {
+	var nb _FinishedTask__ReprBuilder
+	nb.Reset()
+	return &nb
+}
+type _FinishedTask__ReprBuilder struct {
+	_FinishedTask__ReprAssembler
+}
+func (nb *_FinishedTask__ReprBuilder) Build() ipld.Node {
+	if *nb.m != schema.Maybe_Value {
+		panic("invalid state: cannot call Build on an assembler that's not finished")
+	}
+	return nb.w
+}
+func (nb *_FinishedTask__ReprBuilder) Reset() {
+	var w _FinishedTask
+	var m schema.Maybe
+	*nb = _FinishedTask__ReprBuilder{_FinishedTask__ReprAssembler{w: &w, m: &m}}
+}
+type _FinishedTask__ReprAssembler struct {
+	w *_FinishedTask
+	m *schema.Maybe
+	state maState
+	s int
+	f int
+
+	cm schema.Maybe
+	ca_Status _Status__ReprAssembler
+	ca_StartedAt _Time__ReprAssembler
+	ca_RetrievalTask _RetrievalTask__ReprAssembler
+	ca_StorageTask _StorageTask__ReprAssembler
+	ca_DealID _Int__ReprAssembler
+	ca_MinerMultiAddr _String__ReprAssembler
+	ca_ClientApparentAddr _String__ReprAssembler
+	ca_MinerLatencyMS _Int__ReprAssembler
+	ca_TimeToFirstByteMS _Int__ReprAssembler
+	ca_TimeToLastByteMS _Int__ReprAssembler
+	ca_Events _Link_List_StageDetails__ReprAssembler
+	}
+
+func (na *_FinishedTask__ReprAssembler) reset() {
+	na.state = maState_initial
+	na.s = 0
+	na.ca_Status.reset()
+	na.ca_StartedAt.reset()
+	na.ca_RetrievalTask.reset()
+	na.ca_StorageTask.reset()
+	na.ca_DealID.reset()
+	na.ca_MinerMultiAddr.reset()
+	na.ca_ClientApparentAddr.reset()
+	na.ca_MinerLatencyMS.reset()
+	na.ca_TimeToFirstByteMS.reset()
+	na.ca_TimeToLastByteMS.reset()
+	na.ca_Events.reset()
+}
+func (na *_FinishedTask__ReprAssembler) BeginMap(int64) (ipld.MapAssembler, error) {
+	switch *na.m {
+	case schema.Maybe_Value, schema.Maybe_Null:
+		panic("invalid state: cannot assign into assembler that's already finished")
+	case midvalue:
+		panic("invalid state: it makes no sense to 'begin' twice on the same assembler!")
+	}
+	*na.m = midvalue
+	if na.w == nil {
+		na.w = &_FinishedTask{}
+	}
+	return na, nil
+}
+func (_FinishedTask__ReprAssembler) BeginList(sizeHint int64) (ipld.ListAssembler, error) {
+	return mixins.MapAssembler{"tasks.FinishedTask.Repr"}.BeginList(0)
+}
+func (na *_FinishedTask__ReprAssembler) AssignNull() error {
+	switch *na.m {
+	case allowNull:
+		*na.m = schema.Maybe_Null
+		return nil
+	case schema.Maybe_Absent:
+		return mixins.MapAssembler{"tasks.FinishedTask.Repr.Repr"}.AssignNull()
+	case schema.Maybe_Value, schema.Maybe_Null:
+		panic("invalid state: cannot assign into assembler that's already finished")
+	case midvalue:
+		panic("invalid state: cannot assign null into an assembler that's already begun working on recursive structures!")
+	}
+	panic("unreachable")
+}
+func (_FinishedTask__ReprAssembler) AssignBool(bool) error {
+	return mixins.MapAssembler{"tasks.FinishedTask.Repr"}.AssignBool(false)
+}
+func (_FinishedTask__ReprAssembler) AssignInt(int64) error {
+	return mixins.MapAssembler{"tasks.FinishedTask.Repr"}.AssignInt(0)
+}
+func (_FinishedTask__ReprAssembler) AssignFloat(float64) error {
+	return mixins.MapAssembler{"tasks.FinishedTask.Repr"}.AssignFloat(0)
+}
+func (_FinishedTask__ReprAssembler) AssignString(string) error {
+	return mixins.MapAssembler{"tasks.FinishedTask.Repr"}.AssignString("")
+}
+func (_FinishedTask__ReprAssembler) AssignBytes([]byte) error {
+	return mixins.MapAssembler{"tasks.FinishedTask.Repr"}.AssignBytes(nil)
+}
+func (_FinishedTask__ReprAssembler) AssignLink(ipld.Link) error {
+	return mixins.MapAssembler{"tasks.FinishedTask.Repr"}.AssignLink(nil)
+}
+func (na *_FinishedTask__ReprAssembler) AssignNode(v ipld.Node) error {
+	if v.IsNull() {
+		return na.AssignNull()
+	}
+	if v2, ok := v.(*_FinishedTask); ok {
+		switch *na.m {
+		case schema.Maybe_Value, schema.Maybe_Null:
+			panic("invalid state: cannot assign into assembler that's already finished")
+		case midvalue:
+			panic("invalid state: cannot assign null into an assembler that's already begun working on recursive structures!")
+		}
+		if na.w == nil {
+			na.w = v2
+			*na.m = schema.Maybe_Value
+			return nil
+		}
+		*na.w = *v2
+		*na.m = schema.Maybe_Value
+		return nil
+	}
+	if v.Kind() != ipld.Kind_Map {
+		return ipld.ErrWrongKind{TypeName: "tasks.FinishedTask.Repr", MethodName: "AssignNode", AppropriateKind: ipld.KindSet_JustMap, ActualKind: v.Kind()}
+	}
+	itr := v.MapIterator()
+	for !itr.Done() {
+		k, v, err := itr.Next()
+		if err != nil {
+			return err
+		}
+		if err := na.AssembleKey().AssignNode(k); err != nil {
+			return err
+		}
+		if err := na.AssembleValue().AssignNode(v); err != nil {
+			return err
+		}
+	}
+	return na.Finish()
+}
+func (_FinishedTask__ReprAssembler) Prototype() ipld.NodePrototype {
+	return _FinishedTask__ReprPrototype{}
+}
+func (ma *_FinishedTask__ReprAssembler) valueFinishTidy() bool {
+	switch ma.f {
+	case 0:
+		switch ma.cm {
+		case schema.Maybe_Value:ma.cm = schema.Maybe_Absent
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
+	case 1:
+		switch ma.cm {
+		case schema.Maybe_Value:ma.cm = schema.Maybe_Absent
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
+	case 2:
+		switch ma.w.RetrievalTask.m {
+		case schema.Maybe_Value:
+			ma.w.RetrievalTask.v = ma.ca_RetrievalTask.w
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
+	case 3:
+		switch ma.w.StorageTask.m {
+		case schema.Maybe_Value:
+			ma.w.StorageTask.v = ma.ca_StorageTask.w
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
+	case 4:
+		switch ma.cm {
+		case schema.Maybe_Value:ma.cm = schema.Maybe_Absent
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
+	case 5:
+		switch ma.cm {
+		case schema.Maybe_Value:ma.cm = schema.Maybe_Absent
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
+	case 6:
+		switch ma.cm {
+		case schema.Maybe_Value:ma.cm = schema.Maybe_Absent
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
+	case 7:
+		switch ma.w.MinerLatencyMS.m {
+		case schema.Maybe_Value:
+			ma.w.MinerLatencyMS.v = ma.ca_MinerLatencyMS.w
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
+	case 8:
+		switch ma.w.TimeToFirstByteMS.m {
+		case schema.Maybe_Value:
+			ma.w.TimeToFirstByteMS.v = ma.ca_TimeToFirstByteMS.w
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
+	case 9:
+		switch ma.w.TimeToLastByteMS.m {
+		case schema.Maybe_Value:
+			ma.w.TimeToLastByteMS.v = ma.ca_TimeToLastByteMS.w
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
+	case 10:
+		switch ma.cm {
+		case schema.Maybe_Value:ma.cm = schema.Maybe_Absent
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
+	default:
+		panic("unreachable")
+	}
+}
+func (ma *_FinishedTask__ReprAssembler) AssembleEntry(k string) (ipld.NodeAssembler, error) {
+	switch ma.state {
+	case maState_initial:
+		// carry on
+	case maState_midKey:
+		panic("invalid state: AssembleEntry cannot be called when in the middle of assembling another key")
+	case maState_expectValue:
+		panic("invalid state: AssembleEntry cannot be called when expecting start of value assembly")
+	case maState_midValue:
+		if !ma.valueFinishTidy() {
+			panic("invalid state: AssembleEntry cannot be called when in the middle of assembling a value")
+		} // if tidy success: carry on
+	case maState_finished:
+		panic("invalid state: AssembleEntry cannot be called on an assembler that's already finished")
+	}
+	switch k {
+	case "Status":
+		if ma.s & fieldBit__FinishedTask_Status != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_Status_serial}
+		}
+		ma.s += fieldBit__FinishedTask_Status
+		ma.state = maState_midValue
+		ma.f = 0
+		ma.ca_Status.w = &ma.w.Status
+		ma.ca_Status.m = &ma.cm
+		return &ma.ca_Status, nil
+	case "StartedAt":
+		if ma.s & fieldBit__FinishedTask_StartedAt != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_StartedAt_serial}
+		}
+		ma.s += fieldBit__FinishedTask_StartedAt
+		ma.state = maState_midValue
+		ma.f = 1
+		ma.ca_StartedAt.w = &ma.w.StartedAt
+		ma.ca_StartedAt.m = &ma.cm
+		return &ma.ca_StartedAt, nil
+	case "RetrievalTask":
+		if ma.s & fieldBit__FinishedTask_RetrievalTask != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_RetrievalTask_serial}
+		}
+		ma.s += fieldBit__FinishedTask_RetrievalTask
+		ma.state = maState_midValue
+		ma.f = 2
+		ma.ca_RetrievalTask.w = ma.w.RetrievalTask.v
+		ma.ca_RetrievalTask.m = &ma.w.RetrievalTask.m
+		
+		return &ma.ca_RetrievalTask, nil
+	case "StorageTask":
+		if ma.s & fieldBit__FinishedTask_StorageTask != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_StorageTask_serial}
+		}
+		ma.s += fieldBit__FinishedTask_StorageTask
+		ma.state = maState_midValue
+		ma.f = 3
+		ma.ca_StorageTask.w = ma.w.StorageTask.v
+		ma.ca_StorageTask.m = &ma.w.StorageTask.m
+		
+		return &ma.ca_StorageTask, nil
+	case "DealID":
+		if ma.s & fieldBit__FinishedTask_DealID != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_DealID_serial}
+		}
+		ma.s += fieldBit__FinishedTask_DealID
+		ma.state = maState_midValue
+		ma.f = 4
+		ma.ca_DealID.w = &ma.w.DealID
+		ma.ca_DealID.m = &ma.cm
+		return &ma.ca_DealID, nil
+	case "MinerMultiAddr":
+		if ma.s & fieldBit__FinishedTask_MinerMultiAddr != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_MinerMultiAddr_serial}
+		}
+		ma.s += fieldBit__FinishedTask_MinerMultiAddr
+		ma.state = maState_midValue
+		ma.f = 5
+		ma.ca_MinerMultiAddr.w = &ma.w.MinerMultiAddr
+		ma.ca_MinerMultiAddr.m = &ma.cm
+		return &ma.ca_MinerMultiAddr, nil
+	case "ClientApparentAddr":
+		if ma.s & fieldBit__FinishedTask_ClientApparentAddr != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_ClientApparentAddr_serial}
+		}
+		ma.s += fieldBit__FinishedTask_ClientApparentAddr
+		ma.state = maState_midValue
+		ma.f = 6
+		ma.ca_ClientApparentAddr.w = &ma.w.ClientApparentAddr
+		ma.ca_ClientApparentAddr.m = &ma.cm
+		return &ma.ca_ClientApparentAddr, nil
+	case "MinerLatencyMS":
+		if ma.s & fieldBit__FinishedTask_MinerLatencyMS != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_MinerLatencyMS_serial}
+		}
+		ma.s += fieldBit__FinishedTask_MinerLatencyMS
+		ma.state = maState_midValue
+		ma.f = 7
+		ma.ca_MinerLatencyMS.w = ma.w.MinerLatencyMS.v
+		ma.ca_MinerLatencyMS.m = &ma.w.MinerLatencyMS.m
+		
+		return &ma.ca_MinerLatencyMS, nil
+	case "TimeToFirstByteMS":
+		if ma.s & fieldBit__FinishedTask_TimeToFirstByteMS != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_TimeToFirstByteMS_serial}
+		}
+		ma.s += fieldBit__FinishedTask_TimeToFirstByteMS
+		ma.state = maState_midValue
+		ma.f = 8
+		ma.ca_TimeToFirstByteMS.w = ma.w.TimeToFirstByteMS.v
+		ma.ca_TimeToFirstByteMS.m = &ma.w.TimeToFirstByteMS.m
+		
+		return &ma.ca_TimeToFirstByteMS, nil
+	case "TimeToLastByteMS":
+		if ma.s & fieldBit__FinishedTask_TimeToLastByteMS != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_TimeToLastByteMS_serial}
+		}
+		ma.s += fieldBit__FinishedTask_TimeToLastByteMS
+		ma.state = maState_midValue
+		ma.f = 9
+		ma.ca_TimeToLastByteMS.w = ma.w.TimeToLastByteMS.v
+		ma.ca_TimeToLastByteMS.m = &ma.w.TimeToLastByteMS.m
+		
+		return &ma.ca_TimeToLastByteMS, nil
+	case "Events":
+		if ma.s & fieldBit__FinishedTask_Events != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_Events_serial}
+		}
+		ma.s += fieldBit__FinishedTask_Events
+		ma.state = maState_midValue
+		ma.f = 10
+		ma.ca_Events.w = &ma.w.Events
+		ma.ca_Events.m = &ma.cm
+		return &ma.ca_Events, nil
+	default:
+		return nil, ipld.ErrInvalidKey{TypeName:"tasks.FinishedTask.Repr", Key:&_String{k}}
+	}
+}
+func (ma *_FinishedTask__ReprAssembler) AssembleKey() ipld.NodeAssembler {
+	switch ma.state {
+	case maState_initial:
+		// carry on
+	case maState_midKey:
+		panic("invalid state: AssembleKey cannot be called when in the middle of assembling another key")
+	case maState_expectValue:
+		panic("invalid state: AssembleKey cannot be called when expecting start of value assembly")
+	case maState_midValue:
+		if !ma.valueFinishTidy() {
+			panic("invalid state: AssembleKey cannot be called when in the middle of assembling a value")
+		} // if tidy success: carry on
+	case maState_finished:
+		panic("invalid state: AssembleKey cannot be called on an assembler that's already finished")
+	}
+	ma.state = maState_midKey
+	return (*_FinishedTask__ReprKeyAssembler)(ma)
+}
+func (ma *_FinishedTask__ReprAssembler) AssembleValue() ipld.NodeAssembler {
+	switch ma.state {
+	case maState_initial:
+		panic("invalid state: AssembleValue cannot be called when no key is primed")
+	case maState_midKey:
+		panic("invalid state: AssembleValue cannot be called when in the middle of assembling a key")
+	case maState_expectValue:
+		// carry on
+	case maState_midValue:
+		panic("invalid state: AssembleValue cannot be called when in the middle of assembling another value")
+	case maState_finished:
+		panic("invalid state: AssembleValue cannot be called on an assembler that's already finished")
+	}
+	ma.state = maState_midValue
+	switch ma.f {
+	case 0:
+		ma.ca_Status.w = &ma.w.Status
+		ma.ca_Status.m = &ma.cm
+		return &ma.ca_Status
+	case 1:
+		ma.ca_StartedAt.w = &ma.w.StartedAt
+		ma.ca_StartedAt.m = &ma.cm
+		return &ma.ca_StartedAt
+	case 2:
+		ma.ca_RetrievalTask.w = ma.w.RetrievalTask.v
+		ma.ca_RetrievalTask.m = &ma.w.RetrievalTask.m
+		
+		return &ma.ca_RetrievalTask
+	case 3:
+		ma.ca_StorageTask.w = ma.w.StorageTask.v
+		ma.ca_StorageTask.m = &ma.w.StorageTask.m
+		
+		return &ma.ca_StorageTask
+	case 4:
+		ma.ca_DealID.w = &ma.w.DealID
+		ma.ca_DealID.m = &ma.cm
+		return &ma.ca_DealID
+	case 5:
+		ma.ca_MinerMultiAddr.w = &ma.w.MinerMultiAddr
+		ma.ca_MinerMultiAddr.m = &ma.cm
+		return &ma.ca_MinerMultiAddr
+	case 6:
+		ma.ca_ClientApparentAddr.w = &ma.w.ClientApparentAddr
+		ma.ca_ClientApparentAddr.m = &ma.cm
+		return &ma.ca_ClientApparentAddr
+	case 7:
+		ma.ca_MinerLatencyMS.w = ma.w.MinerLatencyMS.v
+		ma.ca_MinerLatencyMS.m = &ma.w.MinerLatencyMS.m
+		
+		return &ma.ca_MinerLatencyMS
+	case 8:
+		ma.ca_TimeToFirstByteMS.w = ma.w.TimeToFirstByteMS.v
+		ma.ca_TimeToFirstByteMS.m = &ma.w.TimeToFirstByteMS.m
+		
+		return &ma.ca_TimeToFirstByteMS
+	case 9:
+		ma.ca_TimeToLastByteMS.w = ma.w.TimeToLastByteMS.v
+		ma.ca_TimeToLastByteMS.m = &ma.w.TimeToLastByteMS.m
+		
+		return &ma.ca_TimeToLastByteMS
+	case 10:
+		ma.ca_Events.w = &ma.w.Events
+		ma.ca_Events.m = &ma.cm
+		return &ma.ca_Events
+	default:
+		panic("unreachable")
+	}
+}
+func (ma *_FinishedTask__ReprAssembler) Finish() error {
+	switch ma.state {
+	case maState_initial:
+		// carry on
+	case maState_midKey:
+		panic("invalid state: Finish cannot be called when in the middle of assembling a key")
+	case maState_expectValue:
+		panic("invalid state: Finish cannot be called when expecting start of value assembly")
+	case maState_midValue:
+		if !ma.valueFinishTidy() {
+			panic("invalid state: Finish cannot be called when in the middle of assembling a value")
+		} // if tidy success: carry on
+	case maState_finished:
+		panic("invalid state: Finish cannot be called on an assembler that's already finished")
+	}
+	if ma.s & fieldBits__FinishedTask_sufficient != fieldBits__FinishedTask_sufficient {
+		err := ipld.ErrMissingRequiredField{Missing: make([]string, 0)}
+		if ma.s & fieldBit__FinishedTask_Status == 0 {
+			err.Missing = append(err.Missing, "Status")
+		}
+		if ma.s & fieldBit__FinishedTask_StartedAt == 0 {
+			err.Missing = append(err.Missing, "StartedAt")
+		}
+		if ma.s & fieldBit__FinishedTask_DealID == 0 {
+			err.Missing = append(err.Missing, "DealID")
+		}
+		if ma.s & fieldBit__FinishedTask_MinerMultiAddr == 0 {
+			err.Missing = append(err.Missing, "MinerMultiAddr")
+		}
+		if ma.s & fieldBit__FinishedTask_ClientApparentAddr == 0 {
+			err.Missing = append(err.Missing, "ClientApparentAddr")
+		}
+		if ma.s & fieldBit__FinishedTask_Events == 0 {
+			err.Missing = append(err.Missing, "Events")
+		}
+		return err
+	}
+	ma.state = maState_finished
+	*ma.m = schema.Maybe_Value
+	return nil
+}
+func (ma *_FinishedTask__ReprAssembler) KeyPrototype() ipld.NodePrototype {
+	return _String__Prototype{}
+}
+func (ma *_FinishedTask__ReprAssembler) ValuePrototype(k string) ipld.NodePrototype {
+	panic("todo structbuilder mapassembler repr valueprototype")
+}
+type _FinishedTask__ReprKeyAssembler _FinishedTask__ReprAssembler
+func (_FinishedTask__ReprKeyAssembler) BeginMap(sizeHint int64) (ipld.MapAssembler, error) {
+	return mixins.StringAssembler{"tasks.FinishedTask.Repr.KeyAssembler"}.BeginMap(0)
+}
+func (_FinishedTask__ReprKeyAssembler) BeginList(sizeHint int64) (ipld.ListAssembler, error) {
+	return mixins.StringAssembler{"tasks.FinishedTask.Repr.KeyAssembler"}.BeginList(0)
+}
+func (na *_FinishedTask__ReprKeyAssembler) AssignNull() error {
+	return mixins.StringAssembler{"tasks.FinishedTask.Repr.KeyAssembler"}.AssignNull()
+}
+func (_FinishedTask__ReprKeyAssembler) AssignBool(bool) error {
+	return mixins.StringAssembler{"tasks.FinishedTask.Repr.KeyAssembler"}.AssignBool(false)
+}
+func (_FinishedTask__ReprKeyAssembler) AssignInt(int64) error {
+	return mixins.StringAssembler{"tasks.FinishedTask.Repr.KeyAssembler"}.AssignInt(0)
+}
+func (_FinishedTask__ReprKeyAssembler) AssignFloat(float64) error {
+	return mixins.StringAssembler{"tasks.FinishedTask.Repr.KeyAssembler"}.AssignFloat(0)
+}
+func (ka *_FinishedTask__ReprKeyAssembler) AssignString(k string) error {
+	if ka.state != maState_midKey {
+		panic("misuse: KeyAssembler held beyond its valid lifetime")
+	}
+	switch k {
+	case "Status":
+		if ka.s & fieldBit__FinishedTask_Status != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_Status_serial}
+		}
+		ka.s += fieldBit__FinishedTask_Status
+		ka.state = maState_expectValue
+		ka.f = 0
+	case "StartedAt":
+		if ka.s & fieldBit__FinishedTask_StartedAt != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_StartedAt_serial}
+		}
+		ka.s += fieldBit__FinishedTask_StartedAt
+		ka.state = maState_expectValue
+		ka.f = 1
+	case "RetrievalTask":
+		if ka.s & fieldBit__FinishedTask_RetrievalTask != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_RetrievalTask_serial}
+		}
+		ka.s += fieldBit__FinishedTask_RetrievalTask
+		ka.state = maState_expectValue
+		ka.f = 2
+	case "StorageTask":
+		if ka.s & fieldBit__FinishedTask_StorageTask != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_StorageTask_serial}
+		}
+		ka.s += fieldBit__FinishedTask_StorageTask
+		ka.state = maState_expectValue
+		ka.f = 3
+	case "DealID":
+		if ka.s & fieldBit__FinishedTask_DealID != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_DealID_serial}
+		}
+		ka.s += fieldBit__FinishedTask_DealID
+		ka.state = maState_expectValue
+		ka.f = 4
+	case "MinerMultiAddr":
+		if ka.s & fieldBit__FinishedTask_MinerMultiAddr != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_MinerMultiAddr_serial}
+		}
+		ka.s += fieldBit__FinishedTask_MinerMultiAddr
+		ka.state = maState_expectValue
+		ka.f = 5
+	case "ClientApparentAddr":
+		if ka.s & fieldBit__FinishedTask_ClientApparentAddr != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_ClientApparentAddr_serial}
+		}
+		ka.s += fieldBit__FinishedTask_ClientApparentAddr
+		ka.state = maState_expectValue
+		ka.f = 6
+	case "MinerLatencyMS":
+		if ka.s & fieldBit__FinishedTask_MinerLatencyMS != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_MinerLatencyMS_serial}
+		}
+		ka.s += fieldBit__FinishedTask_MinerLatencyMS
+		ka.state = maState_expectValue
+		ka.f = 7
+	case "TimeToFirstByteMS":
+		if ka.s & fieldBit__FinishedTask_TimeToFirstByteMS != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_TimeToFirstByteMS_serial}
+		}
+		ka.s += fieldBit__FinishedTask_TimeToFirstByteMS
+		ka.state = maState_expectValue
+		ka.f = 8
+	case "TimeToLastByteMS":
+		if ka.s & fieldBit__FinishedTask_TimeToLastByteMS != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_TimeToLastByteMS_serial}
+		}
+		ka.s += fieldBit__FinishedTask_TimeToLastByteMS
+		ka.state = maState_expectValue
+		ka.f = 9
+	case "Events":
+		if ka.s & fieldBit__FinishedTask_Events != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_Events_serial}
+		}
+		ka.s += fieldBit__FinishedTask_Events
+		ka.state = maState_expectValue
+		ka.f = 10
+	default:
+		return ipld.ErrInvalidKey{TypeName:"tasks.FinishedTask.Repr", Key:&_String{k}}
+	}
+	return nil
+}
+func (_FinishedTask__ReprKeyAssembler) AssignBytes([]byte) error {
+	return mixins.StringAssembler{"tasks.FinishedTask.Repr.KeyAssembler"}.AssignBytes(nil)
+}
+func (_FinishedTask__ReprKeyAssembler) AssignLink(ipld.Link) error {
+	return mixins.StringAssembler{"tasks.FinishedTask.Repr.KeyAssembler"}.AssignLink(nil)
+}
+func (ka *_FinishedTask__ReprKeyAssembler) AssignNode(v ipld.Node) error {
+	if v2, err := v.AsString(); err != nil {
+		return err
+	} else {
+		return ka.AssignString(v2)
+	}
+}
+func (_FinishedTask__ReprKeyAssembler) Prototype() ipld.NodePrototype {
+	return _String__Prototype{}
+}
+
 func (n Float) Float() float64 {
 	return n.x
 }
@@ -2202,6 +3947,212 @@ type _Link__Repr = _Link
 var _ ipld.Node = &_Link__Repr{}
 type _Link__ReprPrototype = _Link__Prototype
 type _Link__ReprAssembler = _Link__Assembler
+
+func (n Link_List_StageDetails) Link() ipld.Link {
+	return n.x
+}
+func (_Link_List_StageDetails__Prototype) FromLink(v ipld.Link) (Link_List_StageDetails, error) {
+	n := _Link_List_StageDetails{v}
+	return &n, nil
+}
+type _Link_List_StageDetails__Maybe struct {
+	m schema.Maybe
+	v Link_List_StageDetails
+}
+type MaybeLink_List_StageDetails = *_Link_List_StageDetails__Maybe
+
+func (m MaybeLink_List_StageDetails) IsNull() bool {
+	return m.m == schema.Maybe_Null
+}
+func (m MaybeLink_List_StageDetails) IsAbsent() bool {
+	return m.m == schema.Maybe_Absent
+}
+func (m MaybeLink_List_StageDetails) Exists() bool {
+	return m.m == schema.Maybe_Value
+}
+func (m MaybeLink_List_StageDetails) AsNode() ipld.Node {
+	switch m.m {
+		case schema.Maybe_Absent:
+			return ipld.Absent
+		case schema.Maybe_Null:
+			return ipld.Null
+		case schema.Maybe_Value:
+			return m.v
+		default:
+			panic("unreachable")
+	}
+}
+func (m MaybeLink_List_StageDetails) Must() Link_List_StageDetails {
+	if !m.Exists() {
+		panic("unbox of a maybe rejected")
+	}
+	return m.v
+}
+var _ ipld.Node = (Link_List_StageDetails)(&_Link_List_StageDetails{})
+var _ schema.TypedNode = (Link_List_StageDetails)(&_Link_List_StageDetails{})
+func (Link_List_StageDetails) Kind() ipld.Kind {
+	return ipld.Kind_Link
+}
+func (Link_List_StageDetails) LookupByString(string) (ipld.Node, error) {
+	return mixins.Link{"tasks.Link_List_StageDetails"}.LookupByString("")
+}
+func (Link_List_StageDetails) LookupByNode(ipld.Node) (ipld.Node, error) {
+	return mixins.Link{"tasks.Link_List_StageDetails"}.LookupByNode(nil)
+}
+func (Link_List_StageDetails) LookupByIndex(idx int64) (ipld.Node, error) {
+	return mixins.Link{"tasks.Link_List_StageDetails"}.LookupByIndex(0)
+}
+func (Link_List_StageDetails) LookupBySegment(seg ipld.PathSegment) (ipld.Node, error) {
+	return mixins.Link{"tasks.Link_List_StageDetails"}.LookupBySegment(seg)
+}
+func (Link_List_StageDetails) MapIterator() ipld.MapIterator {
+	return nil
+}
+func (Link_List_StageDetails) ListIterator() ipld.ListIterator {
+	return nil
+}
+func (Link_List_StageDetails) Length() int64 {
+	return -1
+}
+func (Link_List_StageDetails) IsAbsent() bool {
+	return false
+}
+func (Link_List_StageDetails) IsNull() bool {
+	return false
+}
+func (Link_List_StageDetails) AsBool() (bool, error) {
+	return mixins.Link{"tasks.Link_List_StageDetails"}.AsBool()
+}
+func (Link_List_StageDetails) AsInt() (int64, error) {
+	return mixins.Link{"tasks.Link_List_StageDetails"}.AsInt()
+}
+func (Link_List_StageDetails) AsFloat() (float64, error) {
+	return mixins.Link{"tasks.Link_List_StageDetails"}.AsFloat()
+}
+func (Link_List_StageDetails) AsString() (string, error) {
+	return mixins.Link{"tasks.Link_List_StageDetails"}.AsString()
+}
+func (Link_List_StageDetails) AsBytes() ([]byte, error) {
+	return mixins.Link{"tasks.Link_List_StageDetails"}.AsBytes()
+}
+func (n Link_List_StageDetails) AsLink() (ipld.Link, error) {
+	return n.x, nil
+}
+func (Link_List_StageDetails) Prototype() ipld.NodePrototype {
+	return _Link_List_StageDetails__Prototype{}
+}
+type _Link_List_StageDetails__Prototype struct{}
+
+func (_Link_List_StageDetails__Prototype) NewBuilder() ipld.NodeBuilder {
+	var nb _Link_List_StageDetails__Builder
+	nb.Reset()
+	return &nb
+}
+type _Link_List_StageDetails__Builder struct {
+	_Link_List_StageDetails__Assembler
+}
+func (nb *_Link_List_StageDetails__Builder) Build() ipld.Node {
+	if *nb.m != schema.Maybe_Value {
+		panic("invalid state: cannot call Build on an assembler that's not finished")
+	}
+	return nb.w
+}
+func (nb *_Link_List_StageDetails__Builder) Reset() {
+	var w _Link_List_StageDetails
+	var m schema.Maybe
+	*nb = _Link_List_StageDetails__Builder{_Link_List_StageDetails__Assembler{w: &w, m: &m}}
+}
+type _Link_List_StageDetails__Assembler struct {
+	w *_Link_List_StageDetails
+	m *schema.Maybe
+}
+
+func (na *_Link_List_StageDetails__Assembler) reset() {}
+func (_Link_List_StageDetails__Assembler) BeginMap(sizeHint int64) (ipld.MapAssembler, error) {
+	return mixins.LinkAssembler{"tasks.Link_List_StageDetails"}.BeginMap(0)
+}
+func (_Link_List_StageDetails__Assembler) BeginList(sizeHint int64) (ipld.ListAssembler, error) {
+	return mixins.LinkAssembler{"tasks.Link_List_StageDetails"}.BeginList(0)
+}
+func (na *_Link_List_StageDetails__Assembler) AssignNull() error {
+	switch *na.m {
+	case allowNull:
+		*na.m = schema.Maybe_Null
+		return nil
+	case schema.Maybe_Absent:
+		return mixins.LinkAssembler{"tasks.Link_List_StageDetails"}.AssignNull()
+	case schema.Maybe_Value, schema.Maybe_Null:
+		panic("invalid state: cannot assign into assembler that's already finished")
+	}
+	panic("unreachable")
+}
+func (_Link_List_StageDetails__Assembler) AssignBool(bool) error {
+	return mixins.LinkAssembler{"tasks.Link_List_StageDetails"}.AssignBool(false)
+}
+func (_Link_List_StageDetails__Assembler) AssignInt(int64) error {
+	return mixins.LinkAssembler{"tasks.Link_List_StageDetails"}.AssignInt(0)
+}
+func (_Link_List_StageDetails__Assembler) AssignFloat(float64) error {
+	return mixins.LinkAssembler{"tasks.Link_List_StageDetails"}.AssignFloat(0)
+}
+func (_Link_List_StageDetails__Assembler) AssignString(string) error {
+	return mixins.LinkAssembler{"tasks.Link_List_StageDetails"}.AssignString("")
+}
+func (_Link_List_StageDetails__Assembler) AssignBytes([]byte) error {
+	return mixins.LinkAssembler{"tasks.Link_List_StageDetails"}.AssignBytes(nil)
+}
+func (na *_Link_List_StageDetails__Assembler) AssignLink(v ipld.Link) error {
+	switch *na.m {
+	case schema.Maybe_Value, schema.Maybe_Null:
+		panic("invalid state: cannot assign into assembler that's already finished")
+	}
+	if na.w == nil {
+		na.w = &_Link_List_StageDetails{}
+	}
+	na.w.x = v
+	*na.m = schema.Maybe_Value
+	return nil
+}
+func (na *_Link_List_StageDetails__Assembler) AssignNode(v ipld.Node) error {
+	if v.IsNull() {
+		return na.AssignNull()
+	}
+	if v2, ok := v.(*_Link_List_StageDetails); ok {
+		switch *na.m {
+		case schema.Maybe_Value, schema.Maybe_Null:
+			panic("invalid state: cannot assign into assembler that's already finished")
+		}
+		if na.w == nil {
+			na.w = v2
+			*na.m = schema.Maybe_Value
+			return nil
+		}
+		*na.w = *v2
+		*na.m = schema.Maybe_Value
+		return nil
+	}
+	if v2, err := v.AsLink(); err != nil {
+		return err
+	} else {
+		return na.AssignLink(v2)
+	}
+}
+func (_Link_List_StageDetails__Assembler) Prototype() ipld.NodePrototype {
+	return _Link_List_StageDetails__Prototype{}
+}
+func (Link_List_StageDetails) Type() schema.Type {
+	return nil /*TODO:typelit*/
+}
+func (Link_List_StageDetails) LinkTargetNodePrototype() ipld.NodePrototype {
+	return Type.Link_List_StageDetails__Repr
+}
+func (n Link_List_StageDetails) Representation() ipld.Node {
+	return (*_Link_List_StageDetails__Repr)(n)
+}
+type _Link_List_StageDetails__Repr = _Link_List_StageDetails
+var _ ipld.Node = &_Link_List_StageDetails__Repr{}
+type _Link_List_StageDetails__ReprPrototype = _Link_List_StageDetails__Prototype
+type _Link_List_StageDetails__ReprAssembler = _Link_List_StageDetails__Assembler
 
 func (n *_List) Lookup(idx int64) Any {
 	if n.Length() <= idx {
@@ -3401,6 +5352,599 @@ func (la *_List_Logs__ReprAssembler) Finish() error {
 }
 func (la *_List_Logs__ReprAssembler) ValuePrototype(_ int64) ipld.NodePrototype {
 	return _Logs__ReprPrototype{}
+}
+
+func (n *_List_StageDetails) Lookup(idx int64) StageDetails {
+	if n.Length() <= idx {
+		return nil
+	}
+	v := &n.x[idx]
+	return v
+}
+func (n *_List_StageDetails) LookupMaybe(idx int64) MaybeStageDetails {
+	if n.Length() <= idx {
+		return nil
+	}
+	v := &n.x[idx]
+	return &_StageDetails__Maybe{
+		m: schema.Maybe_Value,
+		v: v,
+	}
+}
+
+var _List_StageDetails__valueAbsent = _StageDetails__Maybe{m:schema.Maybe_Absent}
+func (n List_StageDetails) Iterator() *List_StageDetails__Itr {
+	return &List_StageDetails__Itr{n, 0}
+}
+
+type List_StageDetails__Itr struct {
+	n List_StageDetails
+	idx  int
+}
+
+func (itr *List_StageDetails__Itr) Next() (idx int64, v StageDetails) {
+	if itr.idx >= len(itr.n.x) {
+		return -1, nil
+	}
+	idx = int64(itr.idx)
+	v = &itr.n.x[itr.idx]
+	itr.idx++
+	return
+}
+func (itr *List_StageDetails__Itr) Done() bool {
+	return itr.idx >= len(itr.n.x)
+}
+
+type _List_StageDetails__Maybe struct {
+	m schema.Maybe
+	v List_StageDetails
+}
+type MaybeList_StageDetails = *_List_StageDetails__Maybe
+
+func (m MaybeList_StageDetails) IsNull() bool {
+	return m.m == schema.Maybe_Null
+}
+func (m MaybeList_StageDetails) IsAbsent() bool {
+	return m.m == schema.Maybe_Absent
+}
+func (m MaybeList_StageDetails) Exists() bool {
+	return m.m == schema.Maybe_Value
+}
+func (m MaybeList_StageDetails) AsNode() ipld.Node {
+	switch m.m {
+		case schema.Maybe_Absent:
+			return ipld.Absent
+		case schema.Maybe_Null:
+			return ipld.Null
+		case schema.Maybe_Value:
+			return m.v
+		default:
+			panic("unreachable")
+	}
+}
+func (m MaybeList_StageDetails) Must() List_StageDetails {
+	if !m.Exists() {
+		panic("unbox of a maybe rejected")
+	}
+	return m.v
+}
+var _ ipld.Node = (List_StageDetails)(&_List_StageDetails{})
+var _ schema.TypedNode = (List_StageDetails)(&_List_StageDetails{})
+func (List_StageDetails) Kind() ipld.Kind {
+	return ipld.Kind_List
+}
+func (List_StageDetails) LookupByString(string) (ipld.Node, error) {
+	return mixins.List{"tasks.List_StageDetails"}.LookupByString("")
+}
+func (n List_StageDetails) LookupByNode(k ipld.Node) (ipld.Node, error) {
+	idx, err := k.AsInt()
+	if err != nil {
+		return nil, err
+	}
+	return n.LookupByIndex(idx)
+}
+func (n List_StageDetails) LookupByIndex(idx int64) (ipld.Node, error) {
+	if n.Length() <= idx {
+		return nil, ipld.ErrNotExists{ipld.PathSegmentOfInt(idx)}
+	}
+	v := &n.x[idx]
+	return v, nil
+}
+func (n List_StageDetails) LookupBySegment(seg ipld.PathSegment) (ipld.Node, error) {
+	i, err := seg.Index()
+	if err != nil {
+		return nil, ipld.ErrInvalidSegmentForList{TypeName: "tasks.List_StageDetails", TroubleSegment: seg, Reason: err}
+	}
+	return n.LookupByIndex(i)
+}
+func (List_StageDetails) MapIterator() ipld.MapIterator {
+	return nil
+}
+func (n List_StageDetails) ListIterator() ipld.ListIterator {
+	return &_List_StageDetails__ListItr{n, 0}
+}
+
+type _List_StageDetails__ListItr struct {
+	n List_StageDetails
+	idx  int
+}
+
+func (itr *_List_StageDetails__ListItr) Next() (idx int64, v ipld.Node, _ error) {
+	if itr.idx >= len(itr.n.x) {
+		return -1, nil, ipld.ErrIteratorOverread{}
+	}
+	idx = int64(itr.idx)
+	x := &itr.n.x[itr.idx]
+	v = x
+	itr.idx++
+	return
+}
+func (itr *_List_StageDetails__ListItr) Done() bool {
+	return itr.idx >= len(itr.n.x)
+}
+
+func (n List_StageDetails) Length() int64 {
+	return int64(len(n.x))
+}
+func (List_StageDetails) IsAbsent() bool {
+	return false
+}
+func (List_StageDetails) IsNull() bool {
+	return false
+}
+func (List_StageDetails) AsBool() (bool, error) {
+	return mixins.List{"tasks.List_StageDetails"}.AsBool()
+}
+func (List_StageDetails) AsInt() (int64, error) {
+	return mixins.List{"tasks.List_StageDetails"}.AsInt()
+}
+func (List_StageDetails) AsFloat() (float64, error) {
+	return mixins.List{"tasks.List_StageDetails"}.AsFloat()
+}
+func (List_StageDetails) AsString() (string, error) {
+	return mixins.List{"tasks.List_StageDetails"}.AsString()
+}
+func (List_StageDetails) AsBytes() ([]byte, error) {
+	return mixins.List{"tasks.List_StageDetails"}.AsBytes()
+}
+func (List_StageDetails) AsLink() (ipld.Link, error) {
+	return mixins.List{"tasks.List_StageDetails"}.AsLink()
+}
+func (List_StageDetails) Prototype() ipld.NodePrototype {
+	return _List_StageDetails__Prototype{}
+}
+type _List_StageDetails__Prototype struct{}
+
+func (_List_StageDetails__Prototype) NewBuilder() ipld.NodeBuilder {
+	var nb _List_StageDetails__Builder
+	nb.Reset()
+	return &nb
+}
+type _List_StageDetails__Builder struct {
+	_List_StageDetails__Assembler
+}
+func (nb *_List_StageDetails__Builder) Build() ipld.Node {
+	if *nb.m != schema.Maybe_Value {
+		panic("invalid state: cannot call Build on an assembler that's not finished")
+	}
+	return nb.w
+}
+func (nb *_List_StageDetails__Builder) Reset() {
+	var w _List_StageDetails
+	var m schema.Maybe
+	*nb = _List_StageDetails__Builder{_List_StageDetails__Assembler{w: &w, m: &m}}
+}
+type _List_StageDetails__Assembler struct {
+	w *_List_StageDetails
+	m *schema.Maybe
+	state laState
+
+	cm schema.Maybe
+	va _StageDetails__Assembler
+}
+
+func (na *_List_StageDetails__Assembler) reset() {
+	na.state = laState_initial
+	na.va.reset()
+}
+func (_List_StageDetails__Assembler) BeginMap(sizeHint int64) (ipld.MapAssembler, error) {
+	return mixins.ListAssembler{"tasks.List_StageDetails"}.BeginMap(0)
+}
+func (na *_List_StageDetails__Assembler) BeginList(sizeHint int64) (ipld.ListAssembler, error) {
+	switch *na.m {
+	case schema.Maybe_Value, schema.Maybe_Null:
+		panic("invalid state: cannot assign into assembler that's already finished")
+	case midvalue:
+		panic("invalid state: it makes no sense to 'begin' twice on the same assembler!")
+	}
+	*na.m = midvalue
+	if sizeHint < 0 {
+		sizeHint = 0
+	}
+	if na.w == nil {
+		na.w = &_List_StageDetails{}
+	}
+	if sizeHint > 0 {
+		na.w.x = make([]_StageDetails, 0, sizeHint)
+	}
+	return na, nil
+}
+func (na *_List_StageDetails__Assembler) AssignNull() error {
+	switch *na.m {
+	case allowNull:
+		*na.m = schema.Maybe_Null
+		return nil
+	case schema.Maybe_Absent:
+		return mixins.ListAssembler{"tasks.List_StageDetails"}.AssignNull()
+	case schema.Maybe_Value, schema.Maybe_Null:
+		panic("invalid state: cannot assign into assembler that's already finished")
+	case midvalue:
+		panic("invalid state: cannot assign null into an assembler that's already begun working on recursive structures!")
+	}
+	panic("unreachable")
+}
+func (_List_StageDetails__Assembler) AssignBool(bool) error {
+	return mixins.ListAssembler{"tasks.List_StageDetails"}.AssignBool(false)
+}
+func (_List_StageDetails__Assembler) AssignInt(int64) error {
+	return mixins.ListAssembler{"tasks.List_StageDetails"}.AssignInt(0)
+}
+func (_List_StageDetails__Assembler) AssignFloat(float64) error {
+	return mixins.ListAssembler{"tasks.List_StageDetails"}.AssignFloat(0)
+}
+func (_List_StageDetails__Assembler) AssignString(string) error {
+	return mixins.ListAssembler{"tasks.List_StageDetails"}.AssignString("")
+}
+func (_List_StageDetails__Assembler) AssignBytes([]byte) error {
+	return mixins.ListAssembler{"tasks.List_StageDetails"}.AssignBytes(nil)
+}
+func (_List_StageDetails__Assembler) AssignLink(ipld.Link) error {
+	return mixins.ListAssembler{"tasks.List_StageDetails"}.AssignLink(nil)
+}
+func (na *_List_StageDetails__Assembler) AssignNode(v ipld.Node) error {
+	if v.IsNull() {
+		return na.AssignNull()
+	}
+	if v2, ok := v.(*_List_StageDetails); ok {
+		switch *na.m {
+		case schema.Maybe_Value, schema.Maybe_Null:
+			panic("invalid state: cannot assign into assembler that's already finished")
+		case midvalue:
+			panic("invalid state: cannot assign null into an assembler that's already begun working on recursive structures!")
+		}
+		if na.w == nil {
+			na.w = v2
+			*na.m = schema.Maybe_Value
+			return nil
+		}
+		*na.w = *v2
+		*na.m = schema.Maybe_Value
+		return nil
+	}
+	if v.Kind() != ipld.Kind_List {
+		return ipld.ErrWrongKind{TypeName: "tasks.List_StageDetails", MethodName: "AssignNode", AppropriateKind: ipld.KindSet_JustList, ActualKind: v.Kind()}
+	}
+	itr := v.ListIterator()
+	for !itr.Done() {
+		_, v, err := itr.Next()
+		if err != nil {
+			return err
+		}
+		if err := na.AssembleValue().AssignNode(v); err != nil {
+			return err
+		}
+	}
+	return na.Finish()
+}
+func (_List_StageDetails__Assembler) Prototype() ipld.NodePrototype {
+	return _List_StageDetails__Prototype{}
+}
+func (la *_List_StageDetails__Assembler) valueFinishTidy() bool {
+	switch la.cm {
+	case schema.Maybe_Value:
+		la.va.w = nil
+		la.cm = schema.Maybe_Absent
+		la.state = laState_initial
+		la.va.reset()
+		return true
+	default:
+		return false
+	}
+}
+func (la *_List_StageDetails__Assembler) AssembleValue() ipld.NodeAssembler {
+	switch la.state {
+	case laState_initial:
+		// carry on
+	case laState_midValue:
+		if !la.valueFinishTidy() {
+			panic("invalid state: AssembleValue cannot be called when still in the middle of assembling the previous value")
+		} // if tidy success: carry on
+	case laState_finished:
+		panic("invalid state: AssembleValue cannot be called on an assembler that's already finished")
+	}
+	la.w.x = append(la.w.x, _StageDetails{})
+	la.state = laState_midValue
+	row := &la.w.x[len(la.w.x)-1]
+	la.va.w = row
+	la.va.m = &la.cm
+	return &la.va
+}
+func (la *_List_StageDetails__Assembler) Finish() error {
+	switch la.state {
+	case laState_initial:
+		// carry on
+	case laState_midValue:
+		if !la.valueFinishTidy() {
+			panic("invalid state: Finish cannot be called when in the middle of assembling a value")
+		} // if tidy success: carry on
+	case laState_finished:
+		panic("invalid state: Finish cannot be called on an assembler that's already finished")
+	}
+	la.state = laState_finished
+	*la.m = schema.Maybe_Value
+	return nil
+}
+func (la *_List_StageDetails__Assembler) ValuePrototype(_ int64) ipld.NodePrototype {
+	return _StageDetails__Prototype{}
+}
+func (List_StageDetails) Type() schema.Type {
+	return nil /*TODO:typelit*/
+}
+func (n List_StageDetails) Representation() ipld.Node {
+	return (*_List_StageDetails__Repr)(n)
+}
+type _List_StageDetails__Repr _List_StageDetails
+var _ ipld.Node = &_List_StageDetails__Repr{}
+func (_List_StageDetails__Repr) Kind() ipld.Kind {
+	return ipld.Kind_List
+}
+func (_List_StageDetails__Repr) LookupByString(string) (ipld.Node, error) {
+	return mixins.List{"tasks.List_StageDetails.Repr"}.LookupByString("")
+}
+func (nr *_List_StageDetails__Repr) LookupByNode(k ipld.Node) (ipld.Node, error) {
+	v, err := (List_StageDetails)(nr).LookupByNode(k)
+	if err != nil || v == ipld.Null {
+		return v, err
+	}
+	return v.(StageDetails).Representation(), nil
+}
+func (nr *_List_StageDetails__Repr) LookupByIndex(idx int64) (ipld.Node, error) {
+	v, err := (List_StageDetails)(nr).LookupByIndex(idx)
+	if err != nil || v == ipld.Null {
+		return v, err
+	}
+	return v.(StageDetails).Representation(), nil
+}
+func (n _List_StageDetails__Repr) LookupBySegment(seg ipld.PathSegment) (ipld.Node, error) {
+	i, err := seg.Index()
+	if err != nil {
+		return nil, ipld.ErrInvalidSegmentForList{TypeName: "tasks.List_StageDetails.Repr", TroubleSegment: seg, Reason: err}
+	}
+	return n.LookupByIndex(i)
+}
+func (_List_StageDetails__Repr) MapIterator() ipld.MapIterator {
+	return nil
+}
+func (nr *_List_StageDetails__Repr) ListIterator() ipld.ListIterator {
+	return &_List_StageDetails__ReprListItr{(List_StageDetails)(nr), 0}
+}
+
+type _List_StageDetails__ReprListItr _List_StageDetails__ListItr
+
+func (itr *_List_StageDetails__ReprListItr) Next() (idx int64, v ipld.Node, err error) {
+	idx, v, err = (*_List_StageDetails__ListItr)(itr).Next()
+	if err != nil || v == ipld.Null {
+		return
+	}
+	return idx, v.(StageDetails).Representation(), nil
+}
+func (itr *_List_StageDetails__ReprListItr) Done() bool {
+	return (*_List_StageDetails__ListItr)(itr).Done()
+}
+
+func (rn *_List_StageDetails__Repr) Length() int64 {
+	return int64(len(rn.x))
+}
+func (_List_StageDetails__Repr) IsAbsent() bool {
+	return false
+}
+func (_List_StageDetails__Repr) IsNull() bool {
+	return false
+}
+func (_List_StageDetails__Repr) AsBool() (bool, error) {
+	return mixins.List{"tasks.List_StageDetails.Repr"}.AsBool()
+}
+func (_List_StageDetails__Repr) AsInt() (int64, error) {
+	return mixins.List{"tasks.List_StageDetails.Repr"}.AsInt()
+}
+func (_List_StageDetails__Repr) AsFloat() (float64, error) {
+	return mixins.List{"tasks.List_StageDetails.Repr"}.AsFloat()
+}
+func (_List_StageDetails__Repr) AsString() (string, error) {
+	return mixins.List{"tasks.List_StageDetails.Repr"}.AsString()
+}
+func (_List_StageDetails__Repr) AsBytes() ([]byte, error) {
+	return mixins.List{"tasks.List_StageDetails.Repr"}.AsBytes()
+}
+func (_List_StageDetails__Repr) AsLink() (ipld.Link, error) {
+	return mixins.List{"tasks.List_StageDetails.Repr"}.AsLink()
+}
+func (_List_StageDetails__Repr) Prototype() ipld.NodePrototype {
+	return _List_StageDetails__ReprPrototype{}
+}
+type _List_StageDetails__ReprPrototype struct{}
+
+func (_List_StageDetails__ReprPrototype) NewBuilder() ipld.NodeBuilder {
+	var nb _List_StageDetails__ReprBuilder
+	nb.Reset()
+	return &nb
+}
+type _List_StageDetails__ReprBuilder struct {
+	_List_StageDetails__ReprAssembler
+}
+func (nb *_List_StageDetails__ReprBuilder) Build() ipld.Node {
+	if *nb.m != schema.Maybe_Value {
+		panic("invalid state: cannot call Build on an assembler that's not finished")
+	}
+	return nb.w
+}
+func (nb *_List_StageDetails__ReprBuilder) Reset() {
+	var w _List_StageDetails
+	var m schema.Maybe
+	*nb = _List_StageDetails__ReprBuilder{_List_StageDetails__ReprAssembler{w: &w, m: &m}}
+}
+type _List_StageDetails__ReprAssembler struct {
+	w *_List_StageDetails
+	m *schema.Maybe
+	state laState
+
+	cm schema.Maybe
+	va _StageDetails__ReprAssembler
+}
+
+func (na *_List_StageDetails__ReprAssembler) reset() {
+	na.state = laState_initial
+	na.va.reset()
+}
+func (_List_StageDetails__ReprAssembler) BeginMap(sizeHint int64) (ipld.MapAssembler, error) {
+	return mixins.ListAssembler{"tasks.List_StageDetails.Repr"}.BeginMap(0)
+}
+func (na *_List_StageDetails__ReprAssembler) BeginList(sizeHint int64) (ipld.ListAssembler, error) {
+	switch *na.m {
+	case schema.Maybe_Value, schema.Maybe_Null:
+		panic("invalid state: cannot assign into assembler that's already finished")
+	case midvalue:
+		panic("invalid state: it makes no sense to 'begin' twice on the same assembler!")
+	}
+	*na.m = midvalue
+	if sizeHint < 0 {
+		sizeHint = 0
+	}
+	if na.w == nil {
+		na.w = &_List_StageDetails{}
+	}
+	if sizeHint > 0 {
+		na.w.x = make([]_StageDetails, 0, sizeHint)
+	}
+	return na, nil
+}
+func (na *_List_StageDetails__ReprAssembler) AssignNull() error {
+	switch *na.m {
+	case allowNull:
+		*na.m = schema.Maybe_Null
+		return nil
+	case schema.Maybe_Absent:
+		return mixins.ListAssembler{"tasks.List_StageDetails.Repr.Repr"}.AssignNull()
+	case schema.Maybe_Value, schema.Maybe_Null:
+		panic("invalid state: cannot assign into assembler that's already finished")
+	case midvalue:
+		panic("invalid state: cannot assign null into an assembler that's already begun working on recursive structures!")
+	}
+	panic("unreachable")
+}
+func (_List_StageDetails__ReprAssembler) AssignBool(bool) error {
+	return mixins.ListAssembler{"tasks.List_StageDetails.Repr"}.AssignBool(false)
+}
+func (_List_StageDetails__ReprAssembler) AssignInt(int64) error {
+	return mixins.ListAssembler{"tasks.List_StageDetails.Repr"}.AssignInt(0)
+}
+func (_List_StageDetails__ReprAssembler) AssignFloat(float64) error {
+	return mixins.ListAssembler{"tasks.List_StageDetails.Repr"}.AssignFloat(0)
+}
+func (_List_StageDetails__ReprAssembler) AssignString(string) error {
+	return mixins.ListAssembler{"tasks.List_StageDetails.Repr"}.AssignString("")
+}
+func (_List_StageDetails__ReprAssembler) AssignBytes([]byte) error {
+	return mixins.ListAssembler{"tasks.List_StageDetails.Repr"}.AssignBytes(nil)
+}
+func (_List_StageDetails__ReprAssembler) AssignLink(ipld.Link) error {
+	return mixins.ListAssembler{"tasks.List_StageDetails.Repr"}.AssignLink(nil)
+}
+func (na *_List_StageDetails__ReprAssembler) AssignNode(v ipld.Node) error {
+	if v.IsNull() {
+		return na.AssignNull()
+	}
+	if v2, ok := v.(*_List_StageDetails); ok {
+		switch *na.m {
+		case schema.Maybe_Value, schema.Maybe_Null:
+			panic("invalid state: cannot assign into assembler that's already finished")
+		case midvalue:
+			panic("invalid state: cannot assign null into an assembler that's already begun working on recursive structures!")
+		}
+		if na.w == nil {
+			na.w = v2
+			*na.m = schema.Maybe_Value
+			return nil
+		}
+		*na.w = *v2
+		*na.m = schema.Maybe_Value
+		return nil
+	}
+	if v.Kind() != ipld.Kind_List {
+		return ipld.ErrWrongKind{TypeName: "tasks.List_StageDetails.Repr", MethodName: "AssignNode", AppropriateKind: ipld.KindSet_JustList, ActualKind: v.Kind()}
+	}
+	itr := v.ListIterator()
+	for !itr.Done() {
+		_, v, err := itr.Next()
+		if err != nil {
+			return err
+		}
+		if err := na.AssembleValue().AssignNode(v); err != nil {
+			return err
+		}
+	}
+	return na.Finish()
+}
+func (_List_StageDetails__ReprAssembler) Prototype() ipld.NodePrototype {
+	return _List_StageDetails__ReprPrototype{}
+}
+func (la *_List_StageDetails__ReprAssembler) valueFinishTidy() bool {
+	switch la.cm {
+	case schema.Maybe_Value:
+		la.va.w = nil
+		la.cm = schema.Maybe_Absent
+		la.state = laState_initial
+		la.va.reset()
+		return true
+	default:
+		return false
+	}
+}
+func (la *_List_StageDetails__ReprAssembler) AssembleValue() ipld.NodeAssembler {
+	switch la.state {
+	case laState_initial:
+		// carry on
+	case laState_midValue:
+		if !la.valueFinishTidy() {
+			panic("invalid state: AssembleValue cannot be called when still in the middle of assembling the previous value")
+		} // if tidy success: carry on
+	case laState_finished:
+		panic("invalid state: AssembleValue cannot be called on an assembler that's already finished")
+	}
+	la.w.x = append(la.w.x, _StageDetails{})
+	la.state = laState_midValue
+	row := &la.w.x[len(la.w.x)-1]
+	la.va.w = row
+	la.va.m = &la.cm
+	return &la.va
+}
+func (la *_List_StageDetails__ReprAssembler) Finish() error {
+	switch la.state {
+	case laState_initial:
+		// carry on
+	case laState_midValue:
+		if !la.valueFinishTidy() {
+			panic("invalid state: Finish cannot be called when in the middle of assembling a value")
+		} // if tidy success: carry on
+	case laState_finished:
+		panic("invalid state: Finish cannot be called on an assembler that's already finished")
+	}
+	la.state = laState_finished
+	*la.m = schema.Maybe_Value
+	return nil
+}
+func (la *_List_StageDetails__ReprAssembler) ValuePrototype(_ int64) ipld.NodePrototype {
+	return _StageDetails__ReprPrototype{}
 }
 
 
@@ -9783,6 +12327,9 @@ func (n _Task) FieldStage() String {
 func (n _Task) FieldCurrentStageDetails() MaybeStageDetails {
 	return &n.CurrentStageDetails
 }
+func (n _Task) FieldPastStageDetails() MaybeList_StageDetails {
+	return &n.PastStageDetails
+}
 func (n _Task) FieldStartedAt() MaybeTime {
 	return &n.StartedAt
 }
@@ -9831,6 +12378,7 @@ var (
 	fieldName__Task_WorkedBy = _String{"WorkedBy"}
 	fieldName__Task_Stage = _String{"Stage"}
 	fieldName__Task_CurrentStageDetails = _String{"CurrentStageDetails"}
+	fieldName__Task_PastStageDetails = _String{"PastStageDetails"}
 	fieldName__Task_StartedAt = _String{"StartedAt"}
 	fieldName__Task_RetrievalTask = _String{"RetrievalTask"}
 	fieldName__Task_StorageTask = _String{"StorageTask"}
@@ -9858,6 +12406,11 @@ func (n Task) LookupByString(key string) (ipld.Node, error) {
 			return ipld.Absent, nil
 		}
 		return n.CurrentStageDetails.v, nil
+	case "PastStageDetails":
+		if n.PastStageDetails.m == schema.Maybe_Absent {
+			return ipld.Absent, nil
+		}
+		return n.PastStageDetails.v, nil
 	case "StartedAt":
 		if n.StartedAt.m == schema.Maybe_Absent {
 			return ipld.Absent, nil
@@ -9900,7 +12453,7 @@ type _Task__MapItr struct {
 }
 
 func (itr *_Task__MapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
-	if itr.idx >= 8 {
+	if itr.idx >= 9 {
 		return nil, nil, ipld.ErrIteratorOverread{}
 	}
 	switch itr.idx {
@@ -9928,20 +12481,27 @@ func (itr *_Task__MapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
 		}
 		v = itr.n.CurrentStageDetails.v
 	case 5:
+		k = &fieldName__Task_PastStageDetails
+		if itr.n.PastStageDetails.m == schema.Maybe_Absent {
+			v = ipld.Absent
+			break
+		}
+		v = itr.n.PastStageDetails.v
+	case 6:
 		k = &fieldName__Task_StartedAt
 		if itr.n.StartedAt.m == schema.Maybe_Absent {
 			v = ipld.Absent
 			break
 		}
 		v = itr.n.StartedAt.v
-	case 6:
+	case 7:
 		k = &fieldName__Task_RetrievalTask
 		if itr.n.RetrievalTask.m == schema.Maybe_Absent {
 			v = ipld.Absent
 			break
 		}
 		v = itr.n.RetrievalTask.v
-	case 7:
+	case 8:
 		k = &fieldName__Task_StorageTask
 		if itr.n.StorageTask.m == schema.Maybe_Absent {
 			v = ipld.Absent
@@ -9955,14 +12515,14 @@ func (itr *_Task__MapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
 	return
 }
 func (itr *_Task__MapItr) Done() bool {
-	return itr.idx >= 8
+	return itr.idx >= 9
 }
 
 func (Task) ListIterator() ipld.ListIterator {
 	return nil
 }
 func (Task) Length() int64 {
-	return 8
+	return 9
 }
 func (Task) IsAbsent() bool {
 	return false
@@ -10025,6 +12585,7 @@ type _Task__Assembler struct {
 	ca_WorkedBy _String__Assembler
 	ca_Stage _String__Assembler
 	ca_CurrentStageDetails _StageDetails__Assembler
+	ca_PastStageDetails _List_StageDetails__Assembler
 	ca_StartedAt _Time__Assembler
 	ca_RetrievalTask _RetrievalTask__Assembler
 	ca_StorageTask _StorageTask__Assembler
@@ -10038,6 +12599,7 @@ func (na *_Task__Assembler) reset() {
 	na.ca_WorkedBy.reset()
 	na.ca_Stage.reset()
 	na.ca_CurrentStageDetails.reset()
+	na.ca_PastStageDetails.reset()
 	na.ca_StartedAt.reset()
 	na.ca_RetrievalTask.reset()
 	na.ca_StorageTask.reset()
@@ -10049,9 +12611,10 @@ var (
 	fieldBit__Task_WorkedBy = 1 << 2
 	fieldBit__Task_Stage = 1 << 3
 	fieldBit__Task_CurrentStageDetails = 1 << 4
-	fieldBit__Task_StartedAt = 1 << 5
-	fieldBit__Task_RetrievalTask = 1 << 6
-	fieldBit__Task_StorageTask = 1 << 7
+	fieldBit__Task_PastStageDetails = 1 << 5
+	fieldBit__Task_StartedAt = 1 << 6
+	fieldBit__Task_RetrievalTask = 1 << 7
+	fieldBit__Task_StorageTask = 1 << 8
 	fieldBits__Task_sufficient = 0 + 1 << 0 + 1 << 1 + 1 << 3
 )
 func (na *_Task__Assembler) BeginMap(int64) (ipld.MapAssembler, error) {
@@ -10194,6 +12757,15 @@ func (ma *_Task__Assembler) valueFinishTidy() bool {
 			return false
 		}
 	case 5:
+		switch ma.w.PastStageDetails.m {
+		case schema.Maybe_Value:
+			ma.w.PastStageDetails.v = ma.ca_PastStageDetails.w
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
+	case 6:
 		switch ma.w.StartedAt.m {
 		case schema.Maybe_Value:
 			ma.w.StartedAt.v = ma.ca_StartedAt.w
@@ -10202,7 +12774,7 @@ func (ma *_Task__Assembler) valueFinishTidy() bool {
 		default:
 			return false
 		}
-	case 6:
+	case 7:
 		switch ma.w.RetrievalTask.m {
 		case schema.Maybe_Value:
 			ma.w.RetrievalTask.v = ma.ca_RetrievalTask.w
@@ -10211,7 +12783,7 @@ func (ma *_Task__Assembler) valueFinishTidy() bool {
 		default:
 			return false
 		}
-	case 7:
+	case 8:
 		switch ma.w.StorageTask.m {
 		case schema.Maybe_Value:
 			ma.w.StorageTask.v = ma.ca_StorageTask.w
@@ -10290,13 +12862,23 @@ func (ma *_Task__Assembler) AssembleEntry(k string) (ipld.NodeAssembler, error) 
 		ma.ca_CurrentStageDetails.w = ma.w.CurrentStageDetails.v
 		ma.ca_CurrentStageDetails.m = &ma.w.CurrentStageDetails.m
 		return &ma.ca_CurrentStageDetails, nil
+	case "PastStageDetails":
+		if ma.s & fieldBit__Task_PastStageDetails != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__Task_PastStageDetails}
+		}
+		ma.s += fieldBit__Task_PastStageDetails
+		ma.state = maState_midValue
+		ma.f = 5
+		ma.ca_PastStageDetails.w = ma.w.PastStageDetails.v
+		ma.ca_PastStageDetails.m = &ma.w.PastStageDetails.m
+		return &ma.ca_PastStageDetails, nil
 	case "StartedAt":
 		if ma.s & fieldBit__Task_StartedAt != 0 {
 			return nil, ipld.ErrRepeatedMapKey{&fieldName__Task_StartedAt}
 		}
 		ma.s += fieldBit__Task_StartedAt
 		ma.state = maState_midValue
-		ma.f = 5
+		ma.f = 6
 		ma.ca_StartedAt.w = ma.w.StartedAt.v
 		ma.ca_StartedAt.m = &ma.w.StartedAt.m
 		return &ma.ca_StartedAt, nil
@@ -10306,7 +12888,7 @@ func (ma *_Task__Assembler) AssembleEntry(k string) (ipld.NodeAssembler, error) 
 		}
 		ma.s += fieldBit__Task_RetrievalTask
 		ma.state = maState_midValue
-		ma.f = 6
+		ma.f = 7
 		ma.ca_RetrievalTask.w = ma.w.RetrievalTask.v
 		ma.ca_RetrievalTask.m = &ma.w.RetrievalTask.m
 		return &ma.ca_RetrievalTask, nil
@@ -10316,7 +12898,7 @@ func (ma *_Task__Assembler) AssembleEntry(k string) (ipld.NodeAssembler, error) 
 		}
 		ma.s += fieldBit__Task_StorageTask
 		ma.state = maState_midValue
-		ma.f = 7
+		ma.f = 8
 		ma.ca_StorageTask.w = ma.w.StorageTask.v
 		ma.ca_StorageTask.m = &ma.w.StorageTask.m
 		return &ma.ca_StorageTask, nil
@@ -10378,14 +12960,18 @@ func (ma *_Task__Assembler) AssembleValue() ipld.NodeAssembler {
 		ma.ca_CurrentStageDetails.m = &ma.w.CurrentStageDetails.m
 		return &ma.ca_CurrentStageDetails
 	case 5:
+		ma.ca_PastStageDetails.w = ma.w.PastStageDetails.v
+		ma.ca_PastStageDetails.m = &ma.w.PastStageDetails.m
+		return &ma.ca_PastStageDetails
+	case 6:
 		ma.ca_StartedAt.w = ma.w.StartedAt.v
 		ma.ca_StartedAt.m = &ma.w.StartedAt.m
 		return &ma.ca_StartedAt
-	case 6:
+	case 7:
 		ma.ca_RetrievalTask.w = ma.w.RetrievalTask.v
 		ma.ca_RetrievalTask.m = &ma.w.RetrievalTask.m
 		return &ma.ca_RetrievalTask
-	case 7:
+	case 8:
 		ma.ca_StorageTask.w = ma.w.StorageTask.v
 		ma.ca_StorageTask.m = &ma.w.StorageTask.m
 		return &ma.ca_StorageTask
@@ -10490,27 +13076,34 @@ func (ka *_Task__KeyAssembler) AssignString(k string) error {
 		ka.s += fieldBit__Task_CurrentStageDetails
 		ka.state = maState_expectValue
 		ka.f = 4
+	case "PastStageDetails":
+		if ka.s & fieldBit__Task_PastStageDetails != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__Task_PastStageDetails}
+		}
+		ka.s += fieldBit__Task_PastStageDetails
+		ka.state = maState_expectValue
+		ka.f = 5
 	case "StartedAt":
 		if ka.s & fieldBit__Task_StartedAt != 0 {
 			return ipld.ErrRepeatedMapKey{&fieldName__Task_StartedAt}
 		}
 		ka.s += fieldBit__Task_StartedAt
 		ka.state = maState_expectValue
-		ka.f = 5
+		ka.f = 6
 	case "RetrievalTask":
 		if ka.s & fieldBit__Task_RetrievalTask != 0 {
 			return ipld.ErrRepeatedMapKey{&fieldName__Task_RetrievalTask}
 		}
 		ka.s += fieldBit__Task_RetrievalTask
 		ka.state = maState_expectValue
-		ka.f = 6
+		ka.f = 7
 	case "StorageTask":
 		if ka.s & fieldBit__Task_StorageTask != 0 {
 			return ipld.ErrRepeatedMapKey{&fieldName__Task_StorageTask}
 		}
 		ka.s += fieldBit__Task_StorageTask
 		ka.state = maState_expectValue
-		ka.f = 7
+		ka.f = 8
 	default:
 		return ipld.ErrInvalidKey{TypeName:"tasks.Task", Key:&_String{k}}
 	}
@@ -10545,6 +13138,7 @@ var (
 	fieldName__Task_WorkedBy_serial = _String{"WorkedBy"}
 	fieldName__Task_Stage_serial = _String{"Stage"}
 	fieldName__Task_CurrentStageDetails_serial = _String{"CurrentStageDetails"}
+	fieldName__Task_PastStageDetails_serial = _String{"PastStageDetails"}
 	fieldName__Task_StartedAt_serial = _String{"StartedAt"}
 	fieldName__Task_RetrievalTask_serial = _String{"RetrievalTask"}
 	fieldName__Task_StorageTask_serial = _String{"StorageTask"}
@@ -10571,6 +13165,11 @@ func (n *_Task__Repr) LookupByString(key string) (ipld.Node, error) {
 			return ipld.Absent, ipld.ErrNotExists{ipld.PathSegmentOfString(key)}
 		}
 		return n.CurrentStageDetails.v.Representation(), nil
+	case "PastStageDetails":
+		if n.PastStageDetails.m == schema.Maybe_Absent {
+			return ipld.Absent, ipld.ErrNotExists{ipld.PathSegmentOfString(key)}
+		}
+		return n.PastStageDetails.v.Representation(), nil
 	case "StartedAt":
 		if n.StartedAt.m == schema.Maybe_Absent {
 			return ipld.Absent, ipld.ErrNotExists{ipld.PathSegmentOfString(key)}
@@ -10604,18 +13203,23 @@ func (n _Task__Repr) LookupBySegment(seg ipld.PathSegment) (ipld.Node, error) {
 	return n.LookupByString(seg.String())
 }
 func (n *_Task__Repr) MapIterator() ipld.MapIterator {
-	end := 8
+	end := 9
 	if n.StorageTask.m == schema.Maybe_Absent {
-		end = 7
+		end = 8
 	} else {
 		goto done
 	}
 	if n.RetrievalTask.m == schema.Maybe_Absent {
-		end = 6
+		end = 7
 	} else {
 		goto done
 	}
 	if n.StartedAt.m == schema.Maybe_Absent {
+		end = 6
+	} else {
+		goto done
+	}
+	if n.PastStageDetails.m == schema.Maybe_Absent {
 		end = 5
 	} else {
 		goto done
@@ -10636,7 +13240,7 @@ type _Task__ReprMapItr struct {
 }
 
 func (itr *_Task__ReprMapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
-advance:if itr.idx >= 8 {
+advance:if itr.idx >= 9 {
 		return nil, nil, ipld.ErrIteratorOverread{}
 	}
 	switch itr.idx {
@@ -10664,20 +13268,27 @@ advance:if itr.idx >= 8 {
 		}
 		v = itr.n.CurrentStageDetails.v.Representation()
 	case 5:
+		k = &fieldName__Task_PastStageDetails_serial
+		if itr.n.PastStageDetails.m == schema.Maybe_Absent {
+			itr.idx++
+			goto advance
+		}
+		v = itr.n.PastStageDetails.v.Representation()
+	case 6:
 		k = &fieldName__Task_StartedAt_serial
 		if itr.n.StartedAt.m == schema.Maybe_Absent {
 			itr.idx++
 			goto advance
 		}
 		v = itr.n.StartedAt.v.Representation()
-	case 6:
+	case 7:
 		k = &fieldName__Task_RetrievalTask_serial
 		if itr.n.RetrievalTask.m == schema.Maybe_Absent {
 			itr.idx++
 			goto advance
 		}
 		v = itr.n.RetrievalTask.v.Representation()
-	case 7:
+	case 8:
 		k = &fieldName__Task_StorageTask_serial
 		if itr.n.StorageTask.m == schema.Maybe_Absent {
 			itr.idx++
@@ -10697,11 +13308,14 @@ func (_Task__Repr) ListIterator() ipld.ListIterator {
 	return nil
 }
 func (rn *_Task__Repr) Length() int64 {
-	l := 8
+	l := 9
 	if rn.WorkedBy.m == schema.Maybe_Absent {
 		l--
 	}
 	if rn.CurrentStageDetails.m == schema.Maybe_Absent {
+		l--
+	}
+	if rn.PastStageDetails.m == schema.Maybe_Absent {
 		l--
 	}
 	if rn.StartedAt.m == schema.Maybe_Absent {
@@ -10776,6 +13390,7 @@ type _Task__ReprAssembler struct {
 	ca_WorkedBy _String__ReprAssembler
 	ca_Stage _String__ReprAssembler
 	ca_CurrentStageDetails _StageDetails__ReprAssembler
+	ca_PastStageDetails _List_StageDetails__ReprAssembler
 	ca_StartedAt _Time__ReprAssembler
 	ca_RetrievalTask _RetrievalTask__ReprAssembler
 	ca_StorageTask _StorageTask__ReprAssembler
@@ -10789,6 +13404,7 @@ func (na *_Task__ReprAssembler) reset() {
 	na.ca_WorkedBy.reset()
 	na.ca_Stage.reset()
 	na.ca_CurrentStageDetails.reset()
+	na.ca_PastStageDetails.reset()
 	na.ca_StartedAt.reset()
 	na.ca_RetrievalTask.reset()
 	na.ca_StorageTask.reset()
@@ -10927,6 +13543,15 @@ func (ma *_Task__ReprAssembler) valueFinishTidy() bool {
 			return false
 		}
 	case 5:
+		switch ma.w.PastStageDetails.m {
+		case schema.Maybe_Value:
+			ma.w.PastStageDetails.v = ma.ca_PastStageDetails.w
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
+	case 6:
 		switch ma.w.StartedAt.m {
 		case schema.Maybe_Value:
 			ma.w.StartedAt.v = ma.ca_StartedAt.w
@@ -10935,7 +13560,7 @@ func (ma *_Task__ReprAssembler) valueFinishTidy() bool {
 		default:
 			return false
 		}
-	case 6:
+	case 7:
 		switch ma.w.RetrievalTask.m {
 		case schema.Maybe_Value:
 			ma.w.RetrievalTask.v = ma.ca_RetrievalTask.w
@@ -10944,7 +13569,7 @@ func (ma *_Task__ReprAssembler) valueFinishTidy() bool {
 		default:
 			return false
 		}
-	case 7:
+	case 8:
 		switch ma.w.StorageTask.m {
 		case schema.Maybe_Value:
 			ma.w.StorageTask.v = ma.ca_StorageTask.w
@@ -11025,13 +13650,24 @@ func (ma *_Task__ReprAssembler) AssembleEntry(k string) (ipld.NodeAssembler, err
 		ma.ca_CurrentStageDetails.m = &ma.w.CurrentStageDetails.m
 		
 		return &ma.ca_CurrentStageDetails, nil
+	case "PastStageDetails":
+		if ma.s & fieldBit__Task_PastStageDetails != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__Task_PastStageDetails_serial}
+		}
+		ma.s += fieldBit__Task_PastStageDetails
+		ma.state = maState_midValue
+		ma.f = 5
+		ma.ca_PastStageDetails.w = ma.w.PastStageDetails.v
+		ma.ca_PastStageDetails.m = &ma.w.PastStageDetails.m
+		
+		return &ma.ca_PastStageDetails, nil
 	case "StartedAt":
 		if ma.s & fieldBit__Task_StartedAt != 0 {
 			return nil, ipld.ErrRepeatedMapKey{&fieldName__Task_StartedAt_serial}
 		}
 		ma.s += fieldBit__Task_StartedAt
 		ma.state = maState_midValue
-		ma.f = 5
+		ma.f = 6
 		ma.ca_StartedAt.w = ma.w.StartedAt.v
 		ma.ca_StartedAt.m = &ma.w.StartedAt.m
 		
@@ -11042,7 +13678,7 @@ func (ma *_Task__ReprAssembler) AssembleEntry(k string) (ipld.NodeAssembler, err
 		}
 		ma.s += fieldBit__Task_RetrievalTask
 		ma.state = maState_midValue
-		ma.f = 6
+		ma.f = 7
 		ma.ca_RetrievalTask.w = ma.w.RetrievalTask.v
 		ma.ca_RetrievalTask.m = &ma.w.RetrievalTask.m
 		
@@ -11053,7 +13689,7 @@ func (ma *_Task__ReprAssembler) AssembleEntry(k string) (ipld.NodeAssembler, err
 		}
 		ma.s += fieldBit__Task_StorageTask
 		ma.state = maState_midValue
-		ma.f = 7
+		ma.f = 8
 		ma.ca_StorageTask.w = ma.w.StorageTask.v
 		ma.ca_StorageTask.m = &ma.w.StorageTask.m
 		
@@ -11118,16 +13754,21 @@ func (ma *_Task__ReprAssembler) AssembleValue() ipld.NodeAssembler {
 		
 		return &ma.ca_CurrentStageDetails
 	case 5:
+		ma.ca_PastStageDetails.w = ma.w.PastStageDetails.v
+		ma.ca_PastStageDetails.m = &ma.w.PastStageDetails.m
+		
+		return &ma.ca_PastStageDetails
+	case 6:
 		ma.ca_StartedAt.w = ma.w.StartedAt.v
 		ma.ca_StartedAt.m = &ma.w.StartedAt.m
 		
 		return &ma.ca_StartedAt
-	case 6:
+	case 7:
 		ma.ca_RetrievalTask.w = ma.w.RetrievalTask.v
 		ma.ca_RetrievalTask.m = &ma.w.RetrievalTask.m
 		
 		return &ma.ca_RetrievalTask
-	case 7:
+	case 8:
 		ma.ca_StorageTask.w = ma.w.StorageTask.v
 		ma.ca_StorageTask.m = &ma.w.StorageTask.m
 		
@@ -11233,27 +13874,34 @@ func (ka *_Task__ReprKeyAssembler) AssignString(k string) error {
 		ka.s += fieldBit__Task_CurrentStageDetails
 		ka.state = maState_expectValue
 		ka.f = 4
+	case "PastStageDetails":
+		if ka.s & fieldBit__Task_PastStageDetails != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__Task_PastStageDetails_serial}
+		}
+		ka.s += fieldBit__Task_PastStageDetails
+		ka.state = maState_expectValue
+		ka.f = 5
 	case "StartedAt":
 		if ka.s & fieldBit__Task_StartedAt != 0 {
 			return ipld.ErrRepeatedMapKey{&fieldName__Task_StartedAt_serial}
 		}
 		ka.s += fieldBit__Task_StartedAt
 		ka.state = maState_expectValue
-		ka.f = 5
+		ka.f = 6
 	case "RetrievalTask":
 		if ka.s & fieldBit__Task_RetrievalTask != 0 {
 			return ipld.ErrRepeatedMapKey{&fieldName__Task_RetrievalTask_serial}
 		}
 		ka.s += fieldBit__Task_RetrievalTask
 		ka.state = maState_expectValue
-		ka.f = 6
+		ka.f = 7
 	case "StorageTask":
 		if ka.s & fieldBit__Task_StorageTask != 0 {
 			return ipld.ErrRepeatedMapKey{&fieldName__Task_StorageTask_serial}
 		}
 		ka.s += fieldBit__Task_StorageTask
 		ka.state = maState_expectValue
-		ka.f = 7
+		ka.f = 8
 	default:
 		return ipld.ErrInvalidKey{TypeName:"tasks.Task.Repr", Key:&_String{k}}
 	}

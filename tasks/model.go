@@ -1,5 +1,7 @@
 package tasks
 
+//go:generate go run gen.go .
+
 import (
 	"errors"
 	"time"
@@ -7,6 +9,9 @@ import (
 	"github.com/filecoin-project/go-address"
 	"github.com/google/uuid"
 	"github.com/ipld/go-ipld-prime/schema"
+
+	// Require graphql generation here so that it is included in go.mod and available for go:generate above.
+	_ "github.com/ipld/go-ipld-graphql/gen"
 )
 
 // LogStatus is a function that logs messages

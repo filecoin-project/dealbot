@@ -16,6 +16,7 @@ require (
 	github.com/graphql-go/graphql v0.7.9
 	github.com/ipfs/go-cid v0.0.7
 	github.com/ipfs/go-log/v2 v2.1.2
+	github.com/ipld/go-ipld-graphql v0.0.0-20210425153336-bd6fb64874b6
 	github.com/ipld/go-ipld-prime v0.7.0
 	github.com/lib/pq v1.9.0
 	github.com/libp2p/go-libp2p-core v0.7.0
