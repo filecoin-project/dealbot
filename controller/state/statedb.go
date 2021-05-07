@@ -13,6 +13,7 @@ import (
 
 	"github.com/filecoin-project/dealbot/metrics"
 	"github.com/filecoin-project/dealbot/tasks"
+	"github.com/ipfs/go-cid"
 	logging "github.com/ipfs/go-log/v2"
 	dagjson "github.com/ipld/go-ipld-prime/codec/dagjson"
 	crypto "github.com/libp2p/go-libp2p-crypto"
@@ -133,6 +134,21 @@ func (s *stateDB) db() *sql.DB {
 func (s *stateDB) Get(ctx context.Context, taskID string) (tasks.Task, error) {
 	var serialized string
 	err := s.db().QueryRowContext(ctx, getTaskSQL, taskID).Scan(&serialized)
+	if err != nil {
+		return nil, err
+	}
+
+	tp := tasks.Type.Task.NewBuilder()
+	if err := dagjson.Decoder(tp, bytes.NewBufferString(serialized)); err != nil {
+		return nil, err
+	}
+	return tp.Build().(tasks.Task), nil
+}
+
+// Get returns a specific task identified by CID
+func (s *stateDB) GetByCID(ctx context.Context, taskCID cid.Cid) (tasks.Task, error) {
+	var serialized string
+	err := s.db().QueryRowContext(ctx, getTaskByCidSQL, taskCID.Bytes()).Scan(&serialized)
 	if err != nil {
 		return nil, err
 	}
@@ -273,7 +289,8 @@ func (s *stateDB) Update(ctx context.Context, taskID string, req tasks.UpdateTas
 		}
 
 		// save the update back to DB
-		_, err = tx.ExecContext(ctx, updateTaskDataSQL, taskID, data.Bytes())
+		var cid []byte // TODO: Get from task
+		_, err = tx.ExecContext(ctx, updateTaskDataSQL, taskID, data.Bytes(), cid)
 		if err != nil {
 			return err
 		}
