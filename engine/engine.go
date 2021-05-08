@@ -70,7 +70,7 @@ func (e *Engine) worker(n int) {
 
 		// pop a task
 		ctx := context.Background()
-		task, err := e.client.PopTask(ctx, tasks.Type.PopTask.Of(e.host, tasks.Available))
+		task, err := e.client.PopTask(ctx, tasks.Type.PopTask.Of(e.host, tasks.InProgress))
 		if err != nil {
 			log.Warnw("pop-task returned error", "err", err)
 			continue

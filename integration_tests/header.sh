@@ -3,7 +3,6 @@
 my_dir="$(dirname "$0")"
 
 #set -o errexit ... re-enable when we fix the storage deal bug on Lotus side
-set -x
 
 # go install dealbot and devnet
 pushd $my_dir/../
@@ -18,7 +17,8 @@ export HOME=$TEMPDIR
 # We return instead of exiting, since this is a source-d script.
 if [[ -z $FULLNODE_API_INFO ]]; then
 	function finish {
-		kill -9 $DEVNETPID
+		# Just a SIGTERM, to let it clean up lotus sub-processes.
+		kill $DEVNETPID
 	}
 	trap finish EXIT
 	LOTUS_PATH=$TEMPDIR/.lotus
