@@ -3,12 +3,12 @@ package state
 // Define state database DML.  Any DDL is located in migrations.
 const (
 	assignTaskSQL = `
-		UPDATE tasks SET data = $2, worked_by = $3
+		UPDATE tasks SET data = $2, worked_by = $3, cid = $4
 		WHERE uuid = $1
 	`
 
 	createTaskSQL = `
-		INSERT INTO tasks (uuid, data, created) VALUES($1, $2, $3)
+		INSERT INTO tasks (uuid, data, created, cid) VALUES($1, $2, $3, $4)
 	`
 
 	setTaskStatusSQL = `

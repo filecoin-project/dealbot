@@ -7,6 +7,7 @@ import (
 	"embed"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"sync"
 	"time"
@@ -15,7 +16,9 @@ import (
 	"github.com/filecoin-project/dealbot/tasks"
 	"github.com/ipfs/go-cid"
 	logging "github.com/ipfs/go-log/v2"
+	"github.com/ipld/go-ipld-prime"
 	dagjson "github.com/ipld/go-ipld-prime/codec/dagjson"
+	linksystem "github.com/ipld/go-ipld-prime/linking/cid"
 	crypto "github.com/libp2p/go-libp2p-crypto"
 
 	// DB interfaces
@@ -45,6 +48,32 @@ func (e errorString) Error() string {
 
 const ErrNotAssigned = errorString("tasks must be acquired through pop task")
 const ErrWrongWorker = errorString("task already acquired by other worker")
+
+var linkProto = linksystem.LinkBuilder{cid.Prefix{
+	Version:  1,
+	Codec:    0x0129, //dagjson
+	MhType:   0x12,   // sha2-256
+	MhLength: 32,
+}}
+
+func serializeToJSON(ctx context.Context, n ipld.Node) (cid.Cid, []byte, error) {
+	var data []byte
+
+	storer := func(ipld.LinkContext) (io.Writer, ipld.StoreCommitter, error) {
+		buf := bytes.Buffer{}
+		return &buf, func(lnk ipld.Link) error {
+			data = buf.Bytes()
+			return nil
+		}, nil
+	}
+
+	link, err := linkProto.Build(ctx, ipld.LinkContext{}, n, storer)
+	if err != nil {
+		return cid.Undef, nil, err
+	}
+
+	return link.(linksystem.Link).Cid, data, nil
+}
 
 // stateDB is a persisted implementation of the State interface
 type stateDB struct {
@@ -218,13 +247,13 @@ func (s *stateDB) AssignTask(ctx context.Context, req tasks.PopTask) (tasks.Task
 
 		assigned = task.Assign(req.WorkedBy.String(), &req.Status)
 
-		data := bytes.NewBuffer([]byte{})
-		if err := dagjson.Encoder(assigned.Representation(), data); err != nil {
+		lnk, data, err := serializeToJSON(ctx, assigned.Representation())
+		if err != nil {
 			return err
 		}
 
 		// Assign task to worker
-		_, err = tx.ExecContext(ctx, assignTaskSQL, taskID, data.Bytes(), req.WorkedBy.String())
+		_, err = tx.ExecContext(ctx, assignTaskSQL, taskID, data, req.WorkedBy.String(), lnk.String())
 		if err != nil {
 			return fmt.Errorf("could not assign task: %w", err)
 		}
@@ -283,15 +312,13 @@ func (s *stateDB) Update(ctx context.Context, taskID string, req tasks.UpdateTas
 			return err
 		}
 
-		data := bytes.NewBuffer([]byte{})
-		if err := dagjson.Encoder(updatedTask.Representation(), data); err != nil {
+		lnk, data, err := serializeToJSON(ctx, updatedTask.Representation())
+		if err != nil {
 			return err
 		}
 
 		// save the update back to DB
-		//taskCID := task.CID().KeyString()
-		var taskCID string
-		_, err = tx.ExecContext(ctx, updateTaskDataSQL, taskID, data.Bytes(), taskCID)
+		_, err = tx.ExecContext(ctx, updateTaskDataSQL, taskID, data, lnk.String())
 		if err != nil {
 			return err
 		}
@@ -394,14 +421,14 @@ func (s *stateDB) transact(ctx context.Context, retries int, f func(*sql.Tx) err
 
 // createTask inserts a new task and new task status into the database
 func (s *stateDB) saveTask(ctx context.Context, task tasks.Task) error {
-	data := bytes.NewBuffer([]byte{})
-	if err := dagjson.Encoder(task.Representation(), data); err != nil {
+	lnk, data, err := serializeToJSON(ctx, task.Representation())
+	if err != nil {
 		return err
 	}
 
 	return s.transact(ctx, 0, func(tx *sql.Tx) error {
 		now := time.Now()
-		if _, err := tx.ExecContext(ctx, createTaskSQL, task.UUID.String(), data.Bytes(), now); err != nil {
+		if _, err := tx.ExecContext(ctx, createTaskSQL, task.UUID.String(), data, now, lnk.String()); err != nil {
 			return err
 		}
 
