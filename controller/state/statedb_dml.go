@@ -20,7 +20,7 @@ const (
 	`
 
 	updateTaskDataSQL = `
-		UPDATE tasks SET data = $2 WHERE uuid = $1
+		UPDATE tasks SET data = $2, cid = $3 WHERE uuid = $1
 	`
 
 	countAllTasksSQL = `
@@ -33,6 +33,10 @@ const (
 
 	getTaskSQL = `
 		SELECT data FROM tasks WHERE uuid = $1
+	`
+
+	getTaskByCidSQL = `
+		SELECT data FROM tasks WHERE cid = $1
 	`
 
 	currentTaskStatusSQL = `
