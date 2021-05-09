@@ -200,10 +200,10 @@ func (s *stateDB) AssignTask(ctx context.Context, req tasks.PopTask) (tasks.Task
 		}
 		task := tp.Build().(tasks.Task)
 
-		task.Assign(req.WorkedBy.String(), &req.Status)
+		assigned = task.Assign(req.WorkedBy.String(), &req.Status)
 
 		data := bytes.NewBuffer([]byte{})
-		if err := dagjson.Encoder(task.Representation(), data); err != nil {
+		if err := dagjson.Encoder(assigned.Representation(), data); err != nil {
 			return err
 		}
 
@@ -219,7 +219,6 @@ func (s *stateDB) AssignTask(ctx context.Context, req tasks.PopTask) (tasks.Task
 			return fmt.Errorf("could not update status task: %w", err)
 		}
 
-		assigned = task
 		return nil
 	})
 	if err != nil {
@@ -263,12 +262,13 @@ func (s *stateDB) Update(ctx context.Context, taskID string, req tasks.UpdateTas
 			return ErrWrongWorker
 		}
 
-		if err := task.UpdateTask(req); err != nil {
+		updatedTask, err := task.UpdateTask(req)
+		if err != nil {
 			return err
 		}
 
 		data := bytes.NewBuffer([]byte{})
-		if err := dagjson.Encoder(task.Representation(), data); err != nil {
+		if err := dagjson.Encoder(updatedTask.Representation(), data); err != nil {
 			return err
 		}
 
@@ -283,7 +283,8 @@ func (s *stateDB) Update(ctx context.Context, taskID string, req tasks.UpdateTas
 		if req.CurrentStageDetails.Exists() && req.CurrentStageDetails.Must().UpdatedAt.Exists() {
 			now = req.CurrentStageDetails.Must().UpdatedAt.Must().Time()
 		}
-		_, err = tx.ExecContext(ctx, upsertTaskStatusSQL, taskID, task.Status.Int(), task.Stage.String(), now)
+		_, err = tx.ExecContext(ctx, upsertTaskStatusSQL, taskID, updatedTask.Status.Int(), updatedTask.Stage.String(), now)
+		task = updatedTask
 		return nil
 	})
 
