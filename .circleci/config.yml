@@ -37,7 +37,7 @@ commands:
 
 jobs:
   build-and-test:
-    executor: golang
+    executor: golang-with-postgres
     environment:
       POSTGRES_USER=postgres
       POSTGRES_DB=circle_test
