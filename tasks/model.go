@@ -14,6 +14,7 @@ import (
 	"github.com/ipld/go-ipld-prime"
 	linksystem "github.com/ipld/go-ipld-prime/linking/cid"
 	"github.com/ipld/go-ipld-prime/schema"
+	"github.com/multiformats/go-multicodec"
 
 	// Require graphql generation here so that it is included in go.mod and available for go:generate above.
 	_ "github.com/ipld/go-ipld-graphql/gen"
@@ -105,8 +106,8 @@ var RetrievalStages = map[string]StageDetails{
 // the multi-codec and hash we use for cid links by default
 var linkProto = linksystem.LinkBuilder{cid.Prefix{
 	Version:  1,
-	Codec:    0x0129, //dagjson
-	MhType:   0x12,   // sha2-256
+	Codec:    uint64(multicodec.DagJson),
+	MhType:   uint64(multicodec.Sha2_256),
 	MhLength: 32,
 }}
 

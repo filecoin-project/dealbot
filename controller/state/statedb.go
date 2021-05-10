@@ -20,6 +20,7 @@ import (
 	dagjson "github.com/ipld/go-ipld-prime/codec/dagjson"
 	linksystem "github.com/ipld/go-ipld-prime/linking/cid"
 	crypto "github.com/libp2p/go-libp2p-crypto"
+	"github.com/multiformats/go-multicodec"
 
 	// DB interfaces
 	"github.com/filecoin-project/dealbot/controller/state/postgresdb"
@@ -51,8 +52,8 @@ const ErrWrongWorker = errorString("task already acquired by other worker")
 
 var linkProto = linksystem.LinkBuilder{cid.Prefix{
 	Version:  1,
-	Codec:    0x0129, //dagjson
-	MhType:   0x12,   // sha2-256
+	Codec:    uint64(multicodec.DagJson),
+	MhType:   uint64(multicodec.Sha2_256),
 	MhLength: 32,
 }}
 
@@ -325,11 +326,11 @@ func (s *stateDB) Update(ctx context.Context, taskID string, req tasks.UpdateTas
 
 		// publish a task event update as neccesary
 		if (req.Stage.Exists() && req.Stage.Must().String() != task.Stage.String()) || (req.Status.Int() != task.Status.Int()) {
-			now := time.Now()
+			lastUpdated := time.Now()
 			if req.CurrentStageDetails.Exists() && req.CurrentStageDetails.Must().UpdatedAt.Exists() {
-				now = req.CurrentStageDetails.Must().UpdatedAt.Must().Time()
+				lastUpdated = req.CurrentStageDetails.Must().UpdatedAt.Must().Time()
 			}
-			_, err = tx.ExecContext(ctx, upsertTaskStatusSQL, taskID, updatedTask.Status.Int(), updatedTask.Stage.String(), now)
+			_, err = tx.ExecContext(ctx, upsertTaskStatusSQL, taskID, updatedTask.Status.Int(), updatedTask.Stage.String(), lastUpdated)
 			if err != nil {
 				return err
 			}
