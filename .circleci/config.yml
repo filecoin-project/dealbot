@@ -97,7 +97,7 @@ workflows:
     jobs:
       - build-and-test
       - build-push-deploy:
-          filters:
-            branches:
-              only:
-                - main
+          # filters:
+          #   branches:
+          #     only:
+          #       - main
