@@ -57,6 +57,8 @@ jobs:
             docker build -t "${DOCKER_REPO}:${DOCKER_TAG}" .
             docker push "${DOCKER_REPO}:${DOCKER_TAG}"
   deploy-lotusinfra:
+    docker:
+      image: cimg/base:latest
     steps:
       - run:
           name: submit deploy job
