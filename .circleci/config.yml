@@ -39,8 +39,11 @@ jobs:
   build-and-test:
     executor: golang-with-postgres
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_DB: circle_test
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: ""
+      PGDATABASE: circle_test
     steps:
       - run:
           name: install dockerize
