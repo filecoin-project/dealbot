@@ -246,16 +246,16 @@ func (t *_Task) Update(status Status, stage string, details StageDetails) (Task,
 	// On stage transitions, archive the current stage.
 	if stage != t.Stage.x && t.CurrentStageDetails.Exists() {
 		if !t.PastStageDetails.Exists() {
-			t.PastStageDetails = _List_StageDetails__Maybe{m: schema.Maybe_Value, v: &_List_StageDetails{x: []_StageDetails{*t.CurrentStageDetails.v}}}
+			updatedTask.PastStageDetails = _List_StageDetails__Maybe{m: schema.Maybe_Value, v: &_List_StageDetails{x: []_StageDetails{*t.CurrentStageDetails.v}}}
 		} else {
-			t.PastStageDetails.v.x = append(t.PastStageDetails.v.x, *t.CurrentStageDetails.v)
+			updatedTask.PastStageDetails = _List_StageDetails__Maybe{m: schema.Maybe_Value, v: &_List_StageDetails{x: append(t.PastStageDetails.v.x, *t.CurrentStageDetails.v)}}
 		}
 	}
 
 	if details == nil {
-		t.CurrentStageDetails = _StageDetails__Maybe{m: schema.Maybe_Absent}
+		updatedTask.CurrentStageDetails = _StageDetails__Maybe{m: schema.Maybe_Absent}
 	} else {
-		t.CurrentStageDetails = _StageDetails__Maybe{m: schema.Maybe_Value, v: details}
+		updatedTask.CurrentStageDetails = _StageDetails__Maybe{m: schema.Maybe_Value, v: details}
 	}
 
 	//todo: sign
@@ -307,6 +307,7 @@ func (t *_Task) UpdateTask(tsk UpdateTask) (Task, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	nt.WorkedBy = _String__Maybe{m: schema.Maybe_Value, v: &tsk.WorkedBy}
 	//todo: sign
 	return nt, nil
