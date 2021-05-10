@@ -4,4 +4,6 @@ DROP INDEX ix_tasks_cid;
 
 ALTER TABLE tasks DROP COLUMN cid;
 
+DROP TABLE IF EXISTS finalizedData;
+
 COMMIT;

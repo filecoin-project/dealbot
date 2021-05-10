@@ -3,11 +3,16 @@ package tasks
 //go:generate go run gen.go .
 
 import (
+	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/filecoin-project/go-address"
 	"github.com/google/uuid"
+	"github.com/ipfs/go-cid"
+	"github.com/ipld/go-ipld-prime"
+	linksystem "github.com/ipld/go-ipld-prime/linking/cid"
 	"github.com/ipld/go-ipld-prime/schema"
 
 	// Require graphql generation here so that it is included in go.mod and available for go:generate above.
@@ -96,6 +101,14 @@ var RetrievalStages = map[string]StageDetails{
 	"FirstByteReceived": asStageDetails("First byte of data received from miner", "a few seconds, or several hours when unsealing"),
 	"DealComplete":      asStageDetails("All bytes received and deal is completed", "a few seconds"),
 }
+
+// the multi-codec and hash we use for cid links by default
+var linkProto = linksystem.LinkBuilder{cid.Prefix{
+	Version:  1,
+	Codec:    0x0129, //dagjson
+	MhType:   0x12,   // sha2-256
+	MhLength: 32,
+}}
 
 // AddLog adds a log message to details about the current stage
 func AddLog(stageDetails StageDetails, log string) StageDetails {
@@ -247,6 +260,42 @@ func (t *_Task) Update(status Status, stage string, details StageDetails) (Task,
 
 	//todo: sign
 	return &updatedTask, nil
+}
+
+func (t *_Task) Finalize(ctx context.Context, s ipld.Storer) (FinishedTask, error) {
+	if t.Status != *Failed && t.Status != *Successful {
+		return nil, fmt.Errorf("task cannot be finalized as it is not in a finished state")
+	}
+
+	dealID, minerAddr, clientAddr, minerLatency, timeFirstByte, timeLastByte := parseFinalLogs(t)
+	ft := _FinishedTask{
+		Status:             t.Status,
+		StartedAt:          *t.StartedAt.v,
+		RetrievalTask:      t.RetrievalTask,
+		StorageTask:        t.StorageTask,
+		DealID:             _Int{int64(dealID)},
+		MinerMultiAddr:     _String{minerAddr},
+		ClientApparentAddr: _String{clientAddr},
+		MinerLatencyMS:     minerLatency,
+		TimeToFirstByteMS:  timeFirstByte,
+		TimeToLastByteMS:   timeLastByte,
+	}
+	// events to dag item
+	logList := &_List_StageDetails{}
+	if t.PastStageDetails.Exists() {
+		logList = t.PastStageDetails.Must()
+	}
+	logLnk, err := linkProto.Build(ctx, ipld.LinkContext{}, logList, s)
+	if err != nil {
+		return nil, err
+	}
+	ft.Events = _Link_List_StageDetails{logLnk}
+
+	return &ft, nil
+}
+
+func parseFinalLogs(t Task) (int, string, string, _Int__Maybe, _Int__Maybe, _Int__Maybe) {
+	return 0, "", "", _Int__Maybe{}, _Int__Maybe{}, _Int__Maybe{}
 }
 
 func (t *_Task) UpdateTask(tsk UpdateTask) (Task, error) {

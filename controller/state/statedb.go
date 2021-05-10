@@ -329,6 +329,18 @@ func (s *stateDB) Update(ctx context.Context, taskID string, req tasks.UpdateTas
 			now = req.CurrentStageDetails.Must().UpdatedAt.Must().Time()
 		}
 		_, err = tx.ExecContext(ctx, upsertTaskStatusSQL, taskID, updatedTask.Status.Int(), updatedTask.Stage.String(), now)
+		if err != nil {
+			return err
+		}
+
+		// finish if neccesary
+		if updatedTask.Status == *tasks.Successful || updatedTask.Status == *tasks.Failed {
+			_, err = updatedTask.Finalize(ctx, txContextStorer(ctx, tx))
+			if err != nil {
+				return err
+			}
+		}
+
 		task = updatedTask
 		return nil
 	})
@@ -344,6 +356,16 @@ func (s *stateDB) Update(ctx context.Context, taskID string, req tasks.UpdateTas
 	}
 
 	return task, nil
+}
+
+func txContextStorer(ctx context.Context, tx *sql.Tx) ipld.Storer {
+	return func(ipld.LinkContext) (io.Writer, ipld.StoreCommitter, error) {
+		buf := bytes.Buffer{}
+		return &buf, func(lnk ipld.Link) error {
+			_, err := tx.ExecContext(ctx, cidArchiveSQL, lnk.(linksystem.Link).Cid.String(), buf.Bytes(), time.Now())
+			return err
+		}, nil
+	}
 }
 
 func (s *stateDB) NewStorageTask(ctx context.Context, storageTask tasks.StorageTask) (tasks.Task, error) {

@@ -53,4 +53,8 @@ const (
 	taskHistorySQL = `
 		SELECT status, stage, ts FROM task_status_ledger WHERE uuid = $1 ORDER BY ts
 	`
+
+	cidArchiveSQL = `
+		INSERT INTO finalizedData (cid, data, created) VALUES($1, $2, $3)
+	`
 )
