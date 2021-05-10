@@ -41,12 +41,7 @@ jobs:
       - checkout-dealbot
       - install-lotus
       - test-dealbot
-  build-push-deploy:
-    parameters:
-      namespace:
-        type: string
-      release:
-        type: string
+  build-push:
     machine:
       image: ubuntu-2004:202010-01
     steps:
@@ -61,6 +56,9 @@ jobs:
             echo "export DOCKER_TAG=$DOCKER_TAG" >> $BASH_ENV
             docker build -t "${DOCKER_REPO}:${DOCKER_TAG}" .
             docker push "${DOCKER_REPO}:${DOCKER_TAG}"
+  deploy-lotusinfra:
+    docker: true
+    steps:
       - run:
           name: submit deploy job
           command: |
@@ -75,8 +73,8 @@ jobs:
                 \"release\": \"<< parameters.release >>\",
                 \"chart\": \"filecoin/dealbot\",
                 \"chart_version\": \"0.0.1\",
-                \"override_repository\": \"$DOCKER_REPO\",
-                \"override_tag\": \"$DOCKER_TAG\"
+                \"override_repository\": \"filecoin/dealbot\",
+                \"override_tag\": \"$CIRCLE_SHA1\"
               }}"
 
 
@@ -85,9 +83,13 @@ workflows:
   ci:
     jobs:
       - build-and-test
-      - build-push-deploy:
+      - build-push
+      - deploy-lotusinfra:
+          name: deploy-nerpanet
           namespace: ntwk-nerpanet-dealbot
           release: dealbot-0
+          requires:
+            - build-push
           # filters:
           #   branches:
           #     only:
