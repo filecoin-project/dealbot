@@ -57,7 +57,6 @@ jobs:
             docker build -t "${DOCKER_REPO}:${DOCKER_TAG}" .
             docker push "${DOCKER_REPO}:${DOCKER_TAG}"
   deploy-lotusinfra:
-    docker: true
     steps:
       - run:
           name: submit deploy job
