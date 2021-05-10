@@ -58,7 +58,7 @@ jobs:
             docker push "${DOCKER_REPO}:${DOCKER_TAG}"
   deploy-lotusinfra:
     docker:
-      - image: cimg/base:latest
+      - image: cimg/base:2021.04
     parameters:
       namespace:
         type: string
@@ -89,7 +89,8 @@ workflows:
   ci:
     jobs:
       - build-and-test
-      - build-push
+      - build-push:
+          requires: build-and-test
       - deploy-lotusinfra:
           name: deploy-nerpanet
           namespace: ntwk-nerpanet-dealbot
