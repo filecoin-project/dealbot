@@ -90,7 +90,8 @@ workflows:
     jobs:
       - build-and-test
       - build-push:
-          requires: build-and-test
+          requires:
+            - build-and-test
       - deploy-lotusinfra:
           name: deploy-nerpanet
           namespace: ntwk-nerpanet-dealbot
