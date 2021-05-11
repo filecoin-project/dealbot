@@ -28,8 +28,7 @@ commands:
       - run: sudo cp devnet-binary /usr/local/bin/devnet
       - run: sudo cp dealbot-binary /usr/local/bin/dealbot
       - run: ./integration_tests/01_storage_retrieval_ok.sh
-      # TODO(mvdan): reenable once we can get it working on Circle
-      # - run: ./integration_tests/02_controller_daemon.sh
+      - run: ./integration_tests/02_controller_daemon.sh
   docker-login:
     steps:
       - run:
@@ -44,6 +43,7 @@ jobs:
       PGUSER: postgres
       PGPASSWORD: ""
       PGDATABASE: circle_test
+      PGSSLMODE: disable
     steps:
       - run:
           name: install dockerize

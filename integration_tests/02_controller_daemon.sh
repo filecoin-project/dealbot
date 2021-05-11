@@ -15,7 +15,7 @@ trap finish EXIT
 CONTROLLER_LISTEN="localhost:8085"
 CONTROLLER_ENDPOINT="http://${CONTROLLER_LISTEN}"
 
-dealbot controller --listen="${CONTROLLER_LISTEN}" &>dealbot-controller.log &
+dealbot controller --listen="${CONTROLLER_LISTEN}" --driver postgres &>dealbot-controller.log &
 CONTROLLER_PID=$!
 
 tail -f dealbot-controller.log | sed 's/^/dealbot-controller.log: /' &
