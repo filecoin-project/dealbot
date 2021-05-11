@@ -2,8 +2,6 @@
 
 package main
 
-//go:generate go run gen.go .
-
 import (
 	"fmt"
 	"os"
@@ -77,6 +75,8 @@ func main() {
 		schema.SpawnStructField("Logs", "List_Logs", false, false),
 		schema.SpawnStructField("UpdatedAt", "Time", true, false),
 	}, schema.SpawnStructRepresentationMap(map[string]string{})))
+	ts.Accumulate(schema.SpawnList("List_StageDetails", "StageDetails", false))
+	ts.Accumulate(schema.SpawnLinkReference("Link_List_StageDetails", "List_StageDetails"))
 
 	ts.Accumulate(schema.SpawnList("List_Logs", "Logs", false))
 	ts.Accumulate(schema.SpawnStruct("Logs", []schema.StructField{
@@ -105,11 +105,26 @@ func main() {
 		schema.SpawnStructField("WorkedBy", "String", true, false),
 		schema.SpawnStructField("Stage", "String", false, false),
 		schema.SpawnStructField("CurrentStageDetails", "StageDetails", true, false),
+		schema.SpawnStructField("PastStageDetails", "List_StageDetails", true, false),
 		schema.SpawnStructField("StartedAt", "Time", true, false),
 		schema.SpawnStructField("RetrievalTask", "RetrievalTask", true, false),
 		schema.SpawnStructField("StorageTask", "StorageTask", true, false),
 	}, schema.SpawnStructRepresentationMap(map[string]string{})))
 	ts.Accumulate(schema.SpawnList("Tasks", "Task", false))
+
+	ts.Accumulate(schema.SpawnStruct("FinishedTask", []schema.StructField{
+		schema.SpawnStructField("Status", "Status", false, false),
+		schema.SpawnStructField("StartedAt", "Time", false, false),
+		schema.SpawnStructField("RetrievalTask", "RetrievalTask", true, false),
+		schema.SpawnStructField("StorageTask", "StorageTask", true, false),
+		schema.SpawnStructField("DealID", "Int", false, false),
+		schema.SpawnStructField("MinerMultiAddr", "String", false, false),
+		schema.SpawnStructField("ClientApparentAddr", "String", false, false),
+		schema.SpawnStructField("MinerLatencyMS", "Int", true, false),
+		schema.SpawnStructField("TimeToFirstByteMS", "Int", true, false),
+		schema.SpawnStructField("TimeToLastByteMS", "Int", true, false),
+		schema.SpawnStructField("Events", "Link_List_StageDetails", false, false),
+	}, schema.SpawnStructRepresentationMap(map[string]string{})))
 
 	// client api
 	ts.Accumulate(schema.SpawnStruct("PopTask", []schema.StructField{

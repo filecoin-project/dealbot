@@ -1,12 +1,23 @@
 package tasks
 
+//go:generate go run gen.go .
+
 import (
+	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/filecoin-project/go-address"
 	"github.com/google/uuid"
+	"github.com/ipfs/go-cid"
+	"github.com/ipld/go-ipld-prime"
+	linksystem "github.com/ipld/go-ipld-prime/linking/cid"
 	"github.com/ipld/go-ipld-prime/schema"
+	"github.com/multiformats/go-multicodec"
+
+	// Require graphql generation here so that it is included in go.mod and available for go:generate above.
+	_ "github.com/ipld/go-ipld-graphql/gen"
 )
 
 // LogStatus is a function that logs messages
@@ -91,6 +102,14 @@ var RetrievalStages = map[string]StageDetails{
 	"FirstByteReceived": asStageDetails("First byte of data received from miner", "a few seconds, or several hours when unsealing"),
 	"DealComplete":      asStageDetails("All bytes received and deal is completed", "a few seconds"),
 }
+
+// the multi-codec and hash we use for cid links by default
+var linkProto = linksystem.LinkBuilder{cid.Prefix{
+	Version:  1,
+	Codec:    uint64(multicodec.DagJson),
+	MhType:   uint64(multicodec.Sha2_256),
+	MhLength: 32,
+}}
 
 // AddLog adds a log message to details about the current stage
 func AddLog(stageDetails StageDetails, log string) StageDetails {
@@ -197,42 +216,102 @@ func (tp *_Task__Prototype) New(r RetrievalTask, s StorageTask) Task {
 	return &t
 }
 
-func (t *_Task) Assign(worker string, status Status) {
-	t.WorkedBy = _String__Maybe{m: schema.Maybe_Value, v: &_String{worker}}
-	t.StartedAt = _Time__Maybe{m: schema.Maybe_Value, v: &_Time{x: time.Now().UnixNano()}}
-	t.Status = *status
+func (t *_Task) Assign(worker string, status Status) Task {
+	newTask := _Task{
+		UUID:                t.UUID,
+		Status:              *status,
+		WorkedBy:            _String__Maybe{m: schema.Maybe_Value, v: &_String{worker}},
+		Stage:               t.Stage,
+		CurrentStageDetails: t.CurrentStageDetails,
+		PastStageDetails:    t.PastStageDetails,
+		StartedAt:           _Time__Maybe{m: schema.Maybe_Value, v: &_Time{x: time.Now().UnixNano()}},
+		RetrievalTask:       t.RetrievalTask,
+		StorageTask:         t.StorageTask,
+	}
 
 	//todo: sign
+	return &newTask
 }
 
-func (t *_Task) Update(status Status, stage string, details StageDetails) error {
-	t.Status = *status
-	t.Stage = _String{stage}
+func (t *_Task) Update(status Status, stage string, details StageDetails) (Task, error) {
+	updatedTask := _Task{
+		UUID:          t.UUID,
+		Status:        *status,
+		WorkedBy:      t.WorkedBy,
+		Stage:         _String{stage},
+		StartedAt:     t.StartedAt,
+		RetrievalTask: t.RetrievalTask,
+		StorageTask:   t.StorageTask,
+	}
+
+	// On stage transitions, archive the current stage.
+	if stage != t.Stage.x && t.CurrentStageDetails.Exists() {
+		if !t.PastStageDetails.Exists() {
+			updatedTask.PastStageDetails = _List_StageDetails__Maybe{m: schema.Maybe_Value, v: &_List_StageDetails{x: []_StageDetails{*t.CurrentStageDetails.v}}}
+		} else {
+			updatedTask.PastStageDetails = _List_StageDetails__Maybe{m: schema.Maybe_Value, v: &_List_StageDetails{x: append(t.PastStageDetails.v.x, *t.CurrentStageDetails.v)}}
+		}
+	}
+
 	if details == nil {
-		t.CurrentStageDetails = _StageDetails__Maybe{m: schema.Maybe_Absent}
+		updatedTask.CurrentStageDetails = _StageDetails__Maybe{m: schema.Maybe_Absent}
 	} else {
-		t.CurrentStageDetails = _StageDetails__Maybe{m: schema.Maybe_Value, v: details}
+		updatedTask.CurrentStageDetails = _StageDetails__Maybe{m: schema.Maybe_Value, v: details}
 	}
 
 	//todo: sign
-	return nil
+	return &updatedTask, nil
 }
 
-func (t *_Task) UpdateTask(tsk UpdateTask) error {
-	t.Status = tsk.Status
-	if tsk.CurrentStageDetails.Exists() {
-		t.CurrentStageDetails = tsk.CurrentStageDetails
-	} else {
-		t.CurrentStageDetails = _StageDetails__Maybe{m: schema.Maybe_Absent}
-	}
-	if tsk.Stage.Exists() {
-		t.Stage = *tsk.Stage.Must()
-	} else {
-		t.Stage = _String{""}
+func (t *_Task) Finalize(ctx context.Context, s ipld.Storer) (FinishedTask, error) {
+	if t.Status != *Failed && t.Status != *Successful {
+		return nil, fmt.Errorf("task cannot be finalized as it is not in a finished state")
 	}
 
+	dealID, minerAddr, clientAddr, minerLatency, timeFirstByte, timeLastByte := parseFinalLogs(t)
+	ft := _FinishedTask{
+		Status:             t.Status,
+		StartedAt:          *t.StartedAt.v,
+		RetrievalTask:      t.RetrievalTask,
+		StorageTask:        t.StorageTask,
+		DealID:             _Int{int64(dealID)},
+		MinerMultiAddr:     _String{minerAddr},
+		ClientApparentAddr: _String{clientAddr},
+		MinerLatencyMS:     minerLatency,
+		TimeToFirstByteMS:  timeFirstByte,
+		TimeToLastByteMS:   timeLastByte,
+	}
+	// events to dag item
+	logList := &_List_StageDetails{}
+	if t.PastStageDetails.Exists() {
+		logList = t.PastStageDetails.Must()
+	}
+	logLnk, err := linkProto.Build(ctx, ipld.LinkContext{}, logList, s)
+	if err != nil {
+		return nil, err
+	}
+	ft.Events = _Link_List_StageDetails{logLnk}
+
+	return &ft, nil
+}
+
+func parseFinalLogs(t Task) (int, string, string, _Int__Maybe, _Int__Maybe, _Int__Maybe) {
+	return 0, "", "", _Int__Maybe{}, _Int__Maybe{}, _Int__Maybe{}
+}
+
+func (t *_Task) UpdateTask(tsk UpdateTask) (Task, error) {
+	stage := ""
+	if tsk.Stage.Exists() {
+		stage = tsk.Stage.Must().x
+	}
+	nt, err := t.Update(&tsk.Status, stage, tsk.CurrentStageDetails.v)
+	if err != nil {
+		return nil, err
+	}
+
+	nt.WorkedBy = _String__Maybe{m: schema.Maybe_Value, v: &tsk.WorkedBy}
 	//todo: sign
-	return nil
+	return nt, nil
 }
 
 func (t *_Task) GetUUID() string {

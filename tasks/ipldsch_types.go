@@ -25,16 +25,22 @@ type typeSlab struct {
 	Bool__Repr _Bool__ReprPrototype
 	Bytes       _Bytes__Prototype
 	Bytes__Repr _Bytes__ReprPrototype
+	FinishedTask       _FinishedTask__Prototype
+	FinishedTask__Repr _FinishedTask__ReprPrototype
 	Float       _Float__Prototype
 	Float__Repr _Float__ReprPrototype
 	Int       _Int__Prototype
 	Int__Repr _Int__ReprPrototype
 	Link       _Link__Prototype
 	Link__Repr _Link__ReprPrototype
+	Link_List_StageDetails       _Link_List_StageDetails__Prototype
+	Link_List_StageDetails__Repr _Link_List_StageDetails__ReprPrototype
 	List       _List__Prototype
 	List__Repr _List__ReprPrototype
 	List_Logs       _List_Logs__Prototype
 	List_Logs__Repr _List_Logs__ReprPrototype
+	List_StageDetails       _List_StageDetails__Prototype
+	List_StageDetails__Repr _List_StageDetails__ReprPrototype
 	Logs       _Logs__Prototype
 	Logs__Repr _Logs__ReprPrototype
 	Map       _Map__Prototype
@@ -88,6 +94,22 @@ type _Bool struct{ x bool }
 type Bytes = *_Bytes
 type _Bytes struct{ x []byte }
 
+// FinishedTask matches the IPLD Schema type "FinishedTask".  It has Struct type-kind, and may be interrogated like map kind.
+type FinishedTask = *_FinishedTask
+type _FinishedTask struct {
+	Status _Status
+	StartedAt _Time
+	RetrievalTask _RetrievalTask__Maybe
+	StorageTask _StorageTask__Maybe
+	DealID _Int
+	MinerMultiAddr _String
+	ClientApparentAddr _String
+	MinerLatencyMS _Int__Maybe
+	TimeToFirstByteMS _Int__Maybe
+	TimeToLastByteMS _Int__Maybe
+	Events _Link_List_StageDetails
+}
+
 // Float matches the IPLD Schema type "Float".  It has float kind.
 type Float = *_Float
 type _Float struct{ x float64 }
@@ -100,6 +122,10 @@ type _Int struct{ x int64 }
 type Link = *_Link
 type _Link struct{ x ipld.Link }
 
+// Link_List_StageDetails matches the IPLD Schema type "Link_List_StageDetails".  It has link kind.
+type Link_List_StageDetails = *_Link_List_StageDetails
+type _Link_List_StageDetails struct{ x ipld.Link }
+
 // List matches the IPLD Schema type "List".  It has list kind.
 type List = *_List
 type _List struct {
@@ -110,6 +136,12 @@ type _List struct {
 type List_Logs = *_List_Logs
 type _List_Logs struct {
 	x []_Logs
+}
+
+// List_StageDetails matches the IPLD Schema type "List_StageDetails".  It has list kind.
+type List_StageDetails = *_List_StageDetails
+type _List_StageDetails struct {
+	x []_StageDetails
 }
 
 // Logs matches the IPLD Schema type "Logs".  It has Struct type-kind, and may be interrogated like map kind.
@@ -181,6 +213,7 @@ type _Task struct {
 	WorkedBy _String__Maybe
 	Stage _String
 	CurrentStageDetails _StageDetails__Maybe
+	PastStageDetails _List_StageDetails__Maybe
 	StartedAt _Time__Maybe
 	RetrievalTask _RetrievalTask__Maybe
 	StorageTask _StorageTask__Maybe

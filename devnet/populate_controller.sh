@@ -1,12 +1,16 @@
 #!/bin/bash
 
 CONTROLLER_ENDPOINT=$1
+DATAFILE=$2
+if [ -n "$2" ]; then
+  DATAFILE=$2
+fi
 
-LEN=$(cat ./sample_tasks.json | jq "length")
+LEN=$(cat $DATAFILE | jq "length")
 for (( i=0; i<$LEN; i++))
 do
-  DATA=$(cat ./sample_tasks.json | jq ".[$i]")
-  STORAGE=$(cat ./sample_tasks.json | jq ".[$i].size!=null")
+  DATA=$(cat $DATAFILE | jq ".[$i]")
+  STORAGE=$(cat $DATAFILE | jq ".[$i].size!=null")
   if [ "$STORAGE" = "true" ]; then
     curl --header "Content-Type: application/json" \
       --request POST \
@@ -17,5 +21,5 @@ do
       --request POST \
       --data '$DATA' \
       "$CONTROLLER_ENDPOINT/tasks/retrieval"
-  done
+  fi
 done
