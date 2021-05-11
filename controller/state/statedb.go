@@ -82,7 +82,11 @@ func migrateDatabase(dbName string, dbInstance database.Driver) error {
 		return err
 	}
 	//return m.Steps(2) // Migrate 2 versions up at mose
-	return m.Up()
+	err = m.Up()
+	if err == migrate.ErrNoChange {
+		return nil
+	}
+	return err
 }
 
 // NewStateDB creates a state instance with a given driver and identity
