@@ -110,6 +110,12 @@ var DaemonFlags = append(DealFlags, append(CommonFlags, append(EndpointFlags, []
 		Aliases: []string{"l"},
 		EnvVars: []string{"DEALBOT_LISTEN"},
 	}),
+	altsrc.NewIntFlag(&cli.IntFlag{
+		Name:    "workers",
+		Usage:   "number of concurrent task workers",
+		EnvVars: []string{"DEALBOT_WORKERS"},
+		Value:   1,
+	}),
 }...)...)...)
 
 var MockFlags = []cli.Flag{
