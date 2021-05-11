@@ -16,9 +16,9 @@ CREATE TABLE tasks (
 CREATE TABLE task_status_ledger (
     uuid varchar(36) NOT NULL,
     status int,
-    stage string,
+    stage varchar(255),
     ts timestamp NOT NULL,
-    PRIMARY KEY(uuid, ts)
+    PRIMARY KEY(uuid, ts),
     CONSTRAINT fk_status_ledger_uuid FOREIGN KEY (uuid) REFERENCES tasks
 );
 
