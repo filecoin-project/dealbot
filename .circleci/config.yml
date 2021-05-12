@@ -77,7 +77,7 @@ jobs:
                 \"namespace\": \"<< parameters.namespace >>\",
                 \"release\": \"<< parameters.release >>\",
                 \"chart\": \"filecoin/dealbot\",
-                \"chart_version\": \"0.0.1\",
+                \"chart_version\": \"0.0.3\",
                 \"override_repository\": \"filecoin/dealbot\",
                 \"override_tag\": \"$CIRCLE_SHA1\"
               }}"
