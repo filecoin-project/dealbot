@@ -77,7 +77,7 @@ jobs:
                 \"namespace\": \"<< parameters.namespace >>\",
                 \"release\": \"<< parameters.release >>\",
                 \"chart\": \"filecoin/dealbot\",
-                \"chart_version\": \"0.0.1\",
+                \"chart_version\": \"0.0.2\",
                 \"override_repository\": \"filecoin/dealbot\",
                 \"override_tag\": \"$CIRCLE_SHA1\"
               }}"
@@ -97,7 +97,7 @@ workflows:
           release: dealbot-0
           requires:
             - build-push
-          filters:
-            branches:
-              only:
-                - main
+          # filters:
+          #   branches:
+          #     only:
+          #       - main
