@@ -16,11 +16,10 @@ import (
 )
 
 const (
-	nextTaskTimeout = 10 * time.Second
-	noTasksWait     = 5 * time.Second
-	maxTaskLifetime = 24 * time.Hour
-
 	defaultWorkers = 1
+
+	maxTaskLifetime = 24 * time.Hour
+	noTasksWait     = 5 * time.Second
 )
 
 var log = logging.Logger("engine")
@@ -65,6 +64,7 @@ func New(ctx context.Context, cliCtx *cli.Context) (*Engine, error) {
 		host:       uuid.New().String()[:8], // TODO: set from config toml
 	}
 
+	// Create context to cancel workers on Close
 	ctx, e.cancel = context.WithCancel(ctx)
 
 	e.wg.Add(workers)
@@ -82,20 +82,14 @@ func (e *Engine) Close() {
 }
 
 func (e *Engine) popTask(ctx context.Context) tasks.Task {
-	ctx, cancel := context.WithTimeout(ctx, nextTaskTimeout)
-	defer cancel()
-
 	// Pop tasks until a task is found or until no more tasks
 	for {
 		if ctx.Err() != nil {
-			return nil // no task found before deadline
+			return nil
 		}
 		// pop a task
 		task, err := e.client.PopTask(ctx, tasks.Type.PopTask.Of(e.host, tasks.InProgress))
 		if err != nil {
-			if err == context.DeadlineExceeded {
-				return nil // no task found before deadline
-			}
 			log.Warnw("pop-task returned error", "err", err)
 			continue
 		}
@@ -115,36 +109,28 @@ func (e *Engine) worker(ctx context.Context, n int) {
 
 	log.Infow("engine worker started", "worker_id", n)
 
-	var taskCtx context.Context
-	var taskCancel context.CancelFunc
 	for {
-		// Check if there is a new tasks.
+		// Check if there is a new task
 		task := e.popTask(ctx)
 		if task == nil {
 			// No tasks to run, so wait
 			select {
 			case <-ctx.Done():
-				return
+				return // engine closed, worker exits.
 			case <-time.After(noTasksWait):
-				continue
 			}
+			continue
 		}
 
 		log.Infow("successfully acquired task", "uuid", task.UUID)
-
-		// Create a context to manage the lifetime of the current task
-		taskCtx, taskCancel = context.WithTimeout(ctx, maxTaskLifetime)
-
-		e.runTask(taskCtx, task)
-		taskCancel()
+		e.runTask(ctx, task)
 	}
 }
 
 func (e *Engine) runTask(ctx context.Context, task tasks.Task) {
 	var err error
 
-	// Define function to update task stage
-	// TODO: updateState func should task context, passed in by deal executor.
+	// Define function to update task stage.  Use engine context, not tasks context.
 	updateStage := func(stage string, stageDetails tasks.StageDetails) error {
 		task, err = e.client.UpdateTask(ctx, task.UUID.String(),
 			tasks.Type.UpdateTask.OfStage(
@@ -156,14 +142,19 @@ func (e *Engine) runTask(ctx context.Context, task tasks.Task) {
 		return err
 	}
 
+	// Create a context to manage the lifetime of the current task
+	taskCtx, taskCancel := context.WithTimeout(ctx, maxTaskLifetime)
+	defer taskCancel()
+
 	finalStatus := tasks.Successful
 
 	// Start deals
 	if task.RetrievalTask.Exists() {
-		err = tasks.MakeRetrievalDeal(ctx, e.nodeConfig, e.node, task.RetrievalTask.Must(), updateStage, log.Infow)
+		err = tasks.MakeRetrievalDeal(taskCtx, e.nodeConfig, e.node, task.RetrievalTask.Must(), updateStage, log.Infow)
 		if err != nil {
 			if err == context.Canceled {
-				log.Warn("task", task.UUID.String(), "canceled")
+				// Engine closed, do not update final state
+				log.Warn("task", task.UUID.String(), "canceled for shutdown")
 				return
 			}
 			finalStatus = tasks.Failed
@@ -173,10 +164,11 @@ func (e *Engine) runTask(ctx context.Context, task tasks.Task) {
 		}
 	}
 	if task.StorageTask.Exists() {
-		err = tasks.MakeStorageDeal(ctx, e.nodeConfig, e.node, task.StorageTask.Must(), updateStage, log.Infow)
+		err = tasks.MakeStorageDeal(taskCtx, e.nodeConfig, e.node, task.StorageTask.Must(), updateStage, log.Infow)
 		if err != nil {
 			if err == context.Canceled {
-				log.Warn("task", task.UUID.String(), "canceled")
+				// Engine closed, do not update final state
+				log.Warn("task", task.UUID.String(), "canceled for shutdown")
 				return
 			}
 			finalStatus = tasks.Failed
@@ -186,6 +178,7 @@ func (e *Engine) runTask(ctx context.Context, task tasks.Task) {
 		}
 	}
 
+	// Update task final status. Do not use task context.
 	_, err = e.client.UpdateTask(ctx, task.UUID.String(),
 		tasks.Type.UpdateTask.OfStage(
 			e.host,
@@ -196,7 +189,7 @@ func (e *Engine) runTask(ctx context.Context, task tasks.Task) {
 
 	if err != nil {
 		if err == context.Canceled {
-			log.Warn("task", task.UUID.String(), "canceled")
+			log.Warn("task", task.UUID.String(), "canceled for shutdown")
 			return
 		}
 		log.Error("Error updating final status")
