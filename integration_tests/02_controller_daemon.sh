@@ -5,12 +5,13 @@ source "$my_dir/header.sh"
 
 export DEALBOT_MINER_ADDRESS=t01000
 
-function finish {
-	# We replace devnet's finish trap, so kill $DEVNETPID too.
-	kill $DEVNETPID
+function stop_dealbot_and_devnet {
 	kill -9 $CONTROLLER_PID $DAEMON_PID $CONTROLLER_TAIL_PID $DAEMON_TAIL_PID
+
+	# We replace devnet's EXIT trap, so run it too.
+	stop_devnet
 }
-trap finish EXIT
+trap stop_dealbot_and_devnet EXIT
 
 CONTROLLER_LISTEN="localhost:8085"
 CONTROLLER_ENDPOINT="http://${CONTROLLER_LISTEN}"

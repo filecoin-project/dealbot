@@ -13,25 +13,72 @@ popd
 export TEMPDIR=$(mktemp -d)
 export HOME=$TEMPDIR
 
+pushd $TEMPDIR
+
 # If the user specified an existing lotus node, don't start devnet.
 # We return instead of exiting, since this is a source-d script.
 if [[ -z $FULLNODE_API_INFO ]]; then
-	function finish {
+	function stop_devnet {
 		# Just a SIGTERM, to let it clean up lotus sub-processes.
 		kill $DEVNETPID
+
+		# # Then wait for lotus to be down.
+		# sleep 2
+
+		# # For some reason, lotus procs can hang around for many seconds
+		# # even after we kill devnet.
+		# killall -9 lotus
+		# killall -9 lotus-miner
+
+		# Print the tail of both logs, for the sake of debugging.
+		for logf in lotus-daemon.log lotus-miner.log; do
+			echo $logf
+			tail -n 20 $TEMPDIR/$logf
+		done
 	}
-	trap finish EXIT
+	trap stop_devnet EXIT
 	LOTUS_PATH=$TEMPDIR/.lotus
 	LOTUS_MINER_PATH=$TEMPDIR/.lotusminer
 
 	devnet &
 	DEVNETPID=$!
 
-	# TODO: poll/wait for devnet to be ready
-	sleep 60
+	# Wait for both APIs to be up.
+	lotus wait-api
+	lotus-miner wait-api
+
+	echo "Waiting for the default wallet to be set up..."
+	for ((i = 0; ; i++)); do
+		sleep 2
+		if lotus wallet default; then
+			break
+		fi
+		if ((i > 30)); then
+			echo "wallet not ready after 60s"
+			exit 1
+		fi
+	done
+
+	echo "Waiting for the miner to have one peer..."
+	for ((i = 0; ; i++)); do
+		sleep 2
+		if lotus-miner net peers | grep tcp; then
+			break
+		fi
+		if ((i > 30)); then
+			echo "peer not ready after 60s"
+			exit 1
+		fi
+	done
+
+	# We'd sometimes still get weird deal errors after the waits above, like:
+	#
+	#    deal rejected: proposed provider collateral above maximum: 415958 > 0
+	#
+	# Waiting a bit longer seems to avoid this.
+	# TODO: figure out what else we need to wait for.
+	sleep 10
 
 	export DEALBOT_DATA_DIRECTORY=$TEMPDIR
 	export FULLNODE_API_INFO="$(cat $LOTUS_PATH/token):$(cat $LOTUS_PATH/api)"
 fi
-
-pushd $TEMPDIR
