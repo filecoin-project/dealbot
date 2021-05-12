@@ -114,7 +114,7 @@ func (e *Engine) worker(ctx context.Context, n int) {
 			continue
 		}
 
-		log.Infow("successfully acquired task", "uuid", task.UUID, "worker_id", n)
+		log.Infow("successfully acquired task", "uuid", task.UUID.String(), "worker_id", n)
 		e.runTask(ctx, task)
 	}
 }
@@ -140,35 +140,37 @@ func (e *Engine) runTask(ctx context.Context, task tasks.Task) {
 
 	finalStatus := tasks.Successful
 
+	tlog := log.With("uuid", task.UUID.String())
+
 	// Start deals
 	if task.RetrievalTask.Exists() {
 		err = tasks.MakeRetrievalDeal(taskCtx, e.nodeConfig, e.node, task.RetrievalTask.Must(), updateStage, log.Infow)
 		if err != nil {
 			if err == context.Canceled {
 				// Engine closed, do not update final state
-				log.Warn("task canceled for shutdown", "uuid", task.UUID)
+				tlog.Warn("task canceled for shutdown")
 				return
 			}
 			finalStatus = tasks.Failed
-			log.Errorw("retrieval task returned error", "err", err, "uuid", task.UUID)
+			tlog.Errorw("retrieval task returned error", "err", err)
 		} else {
-			log.Info("successfully retrieved data", "uuid", task.UUID)
+			tlog.Info("successfully retrieved data")
 		}
 	} else if task.StorageTask.Exists() {
 		err = tasks.MakeStorageDeal(taskCtx, e.nodeConfig, e.node, task.StorageTask.Must(), updateStage, log.Infow)
 		if err != nil {
 			if err == context.Canceled {
 				// Engine closed, do not update final state
-				log.Warn("task canceled for shutdown", "uuid", task.UUID)
+				tlog.Warn("task canceled for shutdown")
 				return
 			}
 			finalStatus = tasks.Failed
-			log.Errorw("storage task returned error", "err", err, "uuid", task.UUID)
+			tlog.Errorw("storage task returned error", "err", err)
 		} else {
-			log.Info("successfully stored data", "uuid", task.UUID)
+			tlog.Info("successfully stored data")
 		}
 	} else {
-		log.Error("task has unknown deal type", "uuid", task.UUID)
+		tlog.Error("task has unknown deal type")
 		return
 	}
 
@@ -183,9 +185,9 @@ func (e *Engine) runTask(ctx context.Context, task tasks.Task) {
 
 	if err != nil {
 		if err == context.Canceled {
-			log.Warn("task canceled for shutdown", "uuid", task.UUID)
+			tlog.Warn("task canceled for shutdown")
 			return
 		}
-		log.Error("error updating final status", "uuid", task.UUID)
+		tlog.Error("error updating final status")
 	}
 }
