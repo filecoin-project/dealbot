@@ -234,8 +234,18 @@ func (s *stateDB) AssignTask(ctx context.Context, req tasks.PopTask) (tasks.Task
 
 	var assigned tasks.Task
 	err := s.transact(ctx, 13, func(tx *sql.Tx) error {
+		var cnt int
+		err := tx.QueryRowContext(ctx, drainedQuerySQL, req.WorkedBy.String()).Scan(&cnt)
+		if err != nil {
+			return err
+		}
+		if cnt > 0 {
+			// worker is being drained
+			return nil
+		}
+
 		var taskID, serialized string
-		err := tx.QueryRowContext(ctx, oldestAvailableTaskSQL).Scan(&taskID, &serialized)
+		err = tx.QueryRowContext(ctx, oldestAvailableTaskSQL).Scan(&taskID, &serialized)
 		if err != nil {
 			if err == sql.ErrNoRows {
 				// There are no available tasks
@@ -475,4 +485,12 @@ func (s *stateDB) countTasks(ctx context.Context) (int, error) {
 		return 0, err
 	}
 	return count, nil
+}
+
+// drainWorker adds a worker to the list of workers to not give work to.
+func (s *stateDB) DrainWorker(ctx context.Context, worker string) error {
+	if _, err := s.db().ExecContext(ctx, drainedAddSQL, worker); err != nil {
+		return err
+	}
+	return nil
 }

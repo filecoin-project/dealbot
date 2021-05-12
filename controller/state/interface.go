@@ -14,4 +14,5 @@ type State interface {
 	Update(ctx context.Context, uuid string, req tasks.UpdateTask) (tasks.Task, error)
 	NewStorageTask(ctx context.Context, storageTask tasks.StorageTask) (tasks.Task, error)
 	NewRetrievalTask(ctx context.Context, retrievalTask tasks.RetrievalTask) (tasks.Task, error)
+	DrainWorker(ctx context.Context, worker string) error
 }
