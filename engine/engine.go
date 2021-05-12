@@ -16,8 +16,6 @@ import (
 )
 
 const (
-	defaultWorkers = 1
-
 	maxTaskLifetime = 24 * time.Hour
 	noTasksWait     = 5 * time.Second
 )
@@ -38,8 +36,8 @@ type Engine struct {
 
 func New(ctx context.Context, cliCtx *cli.Context) (*Engine, error) {
 	workers := cliCtx.Int("workers")
-	if workers == 0 {
-		workers = defaultWorkers
+	if workers < 1 {
+		workers = 1
 	}
 
 	client := client.New(cliCtx)
@@ -82,26 +80,20 @@ func (e *Engine) Close() {
 }
 
 func (e *Engine) popTask(ctx context.Context) tasks.Task {
-	// Pop tasks until a task is found or until no more tasks
-	for {
-		if ctx.Err() != nil {
-			return nil
-		}
-		// pop a task
-		task, err := e.client.PopTask(ctx, tasks.Type.PopTask.Of(e.host, tasks.InProgress))
-		if err != nil {
-			log.Warnw("pop-task returned error", "err", err)
-			continue
-		}
-		if task == nil {
-			return nil // no task available
-		}
-		if task.WorkedBy.Must().String() != e.host {
-			log.Warnw("pop-task returned task that is not for this host", "err", err)
-			continue
-		}
-		return task // found a runable task
+	// pop a task
+	task, err := e.client.PopTask(ctx, tasks.Type.PopTask.Of(e.host, tasks.InProgress))
+	if err != nil {
+		log.Warnw("pop-task returned error", "err", err)
+		return nil
 	}
+	if task == nil {
+		return nil // no task available
+	}
+	if task.WorkedBy.Must().String() != e.host {
+		log.Warnw("pop-task returned task that is not for this host", "err", err)
+		return nil
+	}
+	return task // found a runable task
 }
 
 func (e *Engine) worker(ctx context.Context, n int) {
@@ -122,7 +114,7 @@ func (e *Engine) worker(ctx context.Context, n int) {
 			continue
 		}
 
-		log.Infow("successfully acquired task", "uuid", task.UUID)
+		log.Infow("worker", n, "successfully acquired task", "uuid", task.UUID)
 		e.runTask(ctx, task)
 	}
 }
@@ -162,8 +154,7 @@ func (e *Engine) runTask(ctx context.Context, task tasks.Task) {
 		} else {
 			log.Info("successfully retrieved data")
 		}
-	}
-	if task.StorageTask.Exists() {
+	} else if task.StorageTask.Exists() {
 		err = tasks.MakeStorageDeal(taskCtx, e.nodeConfig, e.node, task.StorageTask.Must(), updateStage, log.Infow)
 		if err != nil {
 			if err == context.Canceled {
@@ -176,6 +167,9 @@ func (e *Engine) runTask(ctx context.Context, task tasks.Task) {
 		} else {
 			log.Info("successfully stored data")
 		}
+	} else {
+		log.Error("task", task.UUID.String(), "has unknown deal type")
+		return
 	}
 
 	// Update task final status. Do not use task context.
