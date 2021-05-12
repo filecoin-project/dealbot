@@ -97,7 +97,7 @@ workflows:
           release: dealbot-0
           requires:
             - build-push
-          # filters:
-          #   branches:
-          #     only:
-          #       - main
+          filters:
+            branches:
+              only:
+                - main
