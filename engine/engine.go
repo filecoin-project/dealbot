@@ -148,7 +148,7 @@ func (e *Engine) runTask(ctx context.Context, task tasks.Task) {
 		if err != nil {
 			if err == context.Canceled {
 				// Engine closed, do not update final state
-				tlog.Warn("task canceled for shutdown")
+				tlog.Warn("task abandoned for shutdown")
 				return
 			}
 			finalStatus = tasks.Failed
@@ -161,7 +161,7 @@ func (e *Engine) runTask(ctx context.Context, task tasks.Task) {
 		if err != nil {
 			if err == context.Canceled {
 				// Engine closed, do not update final state
-				tlog.Warn("task canceled for shutdown")
+				tlog.Warn("task abandoned for shutdown")
 				return
 			}
 			finalStatus = tasks.Failed
@@ -185,9 +185,9 @@ func (e *Engine) runTask(ctx context.Context, task tasks.Task) {
 
 	if err != nil {
 		if err == context.Canceled {
-			tlog.Warn("task canceled for shutdown")
+			tlog.Warn("task abandoned for shutdown")
 			return
 		}
-		tlog.Error("error updating final status")
+		tlog.Errorw("error updating final status", "err", err)
 	}
 }
