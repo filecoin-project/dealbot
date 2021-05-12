@@ -114,7 +114,7 @@ func (e *Engine) worker(ctx context.Context, n int) {
 			continue
 		}
 
-		log.Infow("worker", n, "successfully acquired task", "uuid", task.UUID)
+		log.Infow("successfully acquired task", "uuid", task.UUID, "worker_id", n)
 		e.runTask(ctx, task)
 	}
 }
@@ -146,29 +146,29 @@ func (e *Engine) runTask(ctx context.Context, task tasks.Task) {
 		if err != nil {
 			if err == context.Canceled {
 				// Engine closed, do not update final state
-				log.Warn("task", task.UUID.String(), "canceled for shutdown")
+				log.Warn("task canceled for shutdown", "uuid", task.UUID)
 				return
 			}
 			finalStatus = tasks.Failed
-			log.Errorw("retrieval task returned error", "err", err)
+			log.Errorw("retrieval task returned error", "err", err, "uuid", task.UUID)
 		} else {
-			log.Info("successfully retrieved data")
+			log.Info("successfully retrieved data", "uuid", task.UUID)
 		}
 	} else if task.StorageTask.Exists() {
 		err = tasks.MakeStorageDeal(taskCtx, e.nodeConfig, e.node, task.StorageTask.Must(), updateStage, log.Infow)
 		if err != nil {
 			if err == context.Canceled {
 				// Engine closed, do not update final state
-				log.Warn("task", task.UUID.String(), "canceled for shutdown")
+				log.Warn("task canceled for shutdown", "uuid", task.UUID)
 				return
 			}
 			finalStatus = tasks.Failed
-			log.Errorw("storage task returned error", "err", err)
+			log.Errorw("storage task returned error", "err", err, "uuid", task.UUID)
 		} else {
-			log.Info("successfully stored data")
+			log.Info("successfully stored data", "uuid", task.UUID)
 		}
 	} else {
-		log.Error("task", task.UUID.String(), "has unknown deal type")
+		log.Error("task has unknown deal type", "uuid", task.UUID)
 		return
 	}
 
@@ -183,9 +183,9 @@ func (e *Engine) runTask(ctx context.Context, task tasks.Task) {
 
 	if err != nil {
 		if err == context.Canceled {
-			log.Warn("task", task.UUID.String(), "canceled for shutdown")
+			log.Warn("task canceled for shutdown", "uuid", task.UUID)
 			return
 		}
-		log.Error("Error updating final status")
+		log.Error("error updating final status", "uuid", task.UUID)
 	}
 }
