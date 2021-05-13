@@ -61,6 +61,27 @@ func (c *Controller) drainHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("\"OK\""))
 }
 
+func (c *Controller) completeHandler(w http.ResponseWriter, r *http.Request) {
+	logger := log.With("req_id", r.Header.Get("X-Request-ID"))
+
+	logger.Debugw("handle request", "command", "complete")
+	defer logger.Debugw("request handled", "command", "complete")
+
+	enableCors(&w, r)
+	vars := mux.Vars(r)
+	workedBy := vars["workedby"]
+
+	err := c.db.PublishRecordsFrom(r.Context(), workedBy)
+	if err != nil {
+		log.Errorw("complete worker DB error", "err", err.Error())
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("\"OK\""))
+}
+
 func (c *Controller) popTaskHandler(w http.ResponseWriter, r *http.Request) {
 	// TODO: use a single SQL transaction to remove the need for a mutex here
 	c.popTaskLk.Lock()

@@ -10244,6 +10244,9 @@ func (_PopTask__ReprKeyAssembler) Prototype() ipld.NodePrototype {
 func (n _RecordUpdate) FieldRecords() List_AuthenticatedRecord {
 	return &n.Records
 }
+func (n _RecordUpdate) FieldSigPrev() Bytes {
+	return &n.SigPrev
+}
 func (n _RecordUpdate) FieldPrevious() Link {
 	return &n.Previous
 }
@@ -10282,6 +10285,7 @@ func (m MaybeRecordUpdate) Must() RecordUpdate {
 }
 var (
 	fieldName__RecordUpdate_Records = _String{"Records"}
+	fieldName__RecordUpdate_SigPrev = _String{"SigPrev"}
 	fieldName__RecordUpdate_Previous = _String{"Previous"}
 )
 var _ ipld.Node = (RecordUpdate)(&_RecordUpdate{})
@@ -10293,6 +10297,8 @@ func (n RecordUpdate) LookupByString(key string) (ipld.Node, error) {
 	switch key {
 	case "Records":
 		return &n.Records, nil
+	case "SigPrev":
+		return &n.SigPrev, nil
 	case "Previous":
 		return &n.Previous, nil
 	default:
@@ -10322,7 +10328,7 @@ type _RecordUpdate__MapItr struct {
 }
 
 func (itr *_RecordUpdate__MapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
-	if itr.idx >= 2 {
+	if itr.idx >= 3 {
 		return nil, nil, ipld.ErrIteratorOverread{}
 	}
 	switch itr.idx {
@@ -10330,6 +10336,9 @@ func (itr *_RecordUpdate__MapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
 		k = &fieldName__RecordUpdate_Records
 		v = &itr.n.Records
 	case 1:
+		k = &fieldName__RecordUpdate_SigPrev
+		v = &itr.n.SigPrev
+	case 2:
 		k = &fieldName__RecordUpdate_Previous
 		v = &itr.n.Previous
 	default:
@@ -10339,14 +10348,14 @@ func (itr *_RecordUpdate__MapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
 	return
 }
 func (itr *_RecordUpdate__MapItr) Done() bool {
-	return itr.idx >= 2
+	return itr.idx >= 3
 }
 
 func (RecordUpdate) ListIterator() ipld.ListIterator {
 	return nil
 }
 func (RecordUpdate) Length() int64 {
-	return 2
+	return 3
 }
 func (RecordUpdate) IsAbsent() bool {
 	return false
@@ -10405,6 +10414,7 @@ type _RecordUpdate__Assembler struct {
 
 	cm schema.Maybe
 	ca_Records _List_AuthenticatedRecord__Assembler
+	ca_SigPrev _Bytes__Assembler
 	ca_Previous _Link__Assembler
 	}
 
@@ -10412,13 +10422,15 @@ func (na *_RecordUpdate__Assembler) reset() {
 	na.state = maState_initial
 	na.s = 0
 	na.ca_Records.reset()
+	na.ca_SigPrev.reset()
 	na.ca_Previous.reset()
 }
 
 var (
 	fieldBit__RecordUpdate_Records = 1 << 0
-	fieldBit__RecordUpdate_Previous = 1 << 1
-	fieldBits__RecordUpdate_sufficient = 0 + 1 << 0 + 1 << 1
+	fieldBit__RecordUpdate_SigPrev = 1 << 1
+	fieldBit__RecordUpdate_Previous = 1 << 2
+	fieldBits__RecordUpdate_sufficient = 0 + 1 << 0 + 1 << 1 + 1 << 2
 )
 func (na *_RecordUpdate__Assembler) BeginMap(int64) (ipld.MapAssembler, error) {
 	switch *na.m {
@@ -10524,6 +10536,16 @@ func (ma *_RecordUpdate__Assembler) valueFinishTidy() bool {
 	case 1:
 		switch ma.cm {
 		case schema.Maybe_Value:
+			ma.ca_SigPrev.w = nil
+			ma.cm = schema.Maybe_Absent
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
+	case 2:
+		switch ma.cm {
+		case schema.Maybe_Value:
 			ma.ca_Previous.w = nil
 			ma.cm = schema.Maybe_Absent
 			ma.state = maState_initial
@@ -10561,13 +10583,23 @@ func (ma *_RecordUpdate__Assembler) AssembleEntry(k string) (ipld.NodeAssembler,
 		ma.ca_Records.w = &ma.w.Records
 		ma.ca_Records.m = &ma.cm
 		return &ma.ca_Records, nil
+	case "SigPrev":
+		if ma.s & fieldBit__RecordUpdate_SigPrev != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__RecordUpdate_SigPrev}
+		}
+		ma.s += fieldBit__RecordUpdate_SigPrev
+		ma.state = maState_midValue
+		ma.f = 1
+		ma.ca_SigPrev.w = &ma.w.SigPrev
+		ma.ca_SigPrev.m = &ma.cm
+		return &ma.ca_SigPrev, nil
 	case "Previous":
 		if ma.s & fieldBit__RecordUpdate_Previous != 0 {
 			return nil, ipld.ErrRepeatedMapKey{&fieldName__RecordUpdate_Previous}
 		}
 		ma.s += fieldBit__RecordUpdate_Previous
 		ma.state = maState_midValue
-		ma.f = 1
+		ma.f = 2
 		ma.ca_Previous.w = &ma.w.Previous
 		ma.ca_Previous.m = &ma.cm
 		return &ma.ca_Previous, nil
@@ -10613,6 +10645,10 @@ func (ma *_RecordUpdate__Assembler) AssembleValue() ipld.NodeAssembler {
 		ma.ca_Records.m = &ma.cm
 		return &ma.ca_Records
 	case 1:
+		ma.ca_SigPrev.w = &ma.w.SigPrev
+		ma.ca_SigPrev.m = &ma.cm
+		return &ma.ca_SigPrev
+	case 2:
 		ma.ca_Previous.w = &ma.w.Previous
 		ma.ca_Previous.m = &ma.cm
 		return &ma.ca_Previous
@@ -10639,6 +10675,9 @@ func (ma *_RecordUpdate__Assembler) Finish() error {
 		err := ipld.ErrMissingRequiredField{Missing: make([]string, 0)}
 		if ma.s & fieldBit__RecordUpdate_Records == 0 {
 			err.Missing = append(err.Missing, "Records")
+		}
+		if ma.s & fieldBit__RecordUpdate_SigPrev == 0 {
+			err.Missing = append(err.Missing, "SigPrev")
 		}
 		if ma.s & fieldBit__RecordUpdate_Previous == 0 {
 			err.Missing = append(err.Missing, "Previous")
@@ -10686,13 +10725,20 @@ func (ka *_RecordUpdate__KeyAssembler) AssignString(k string) error {
 		ka.s += fieldBit__RecordUpdate_Records
 		ka.state = maState_expectValue
 		ka.f = 0
+	case "SigPrev":
+		if ka.s & fieldBit__RecordUpdate_SigPrev != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__RecordUpdate_SigPrev}
+		}
+		ka.s += fieldBit__RecordUpdate_SigPrev
+		ka.state = maState_expectValue
+		ka.f = 1
 	case "Previous":
 		if ka.s & fieldBit__RecordUpdate_Previous != 0 {
 			return ipld.ErrRepeatedMapKey{&fieldName__RecordUpdate_Previous}
 		}
 		ka.s += fieldBit__RecordUpdate_Previous
 		ka.state = maState_expectValue
-		ka.f = 1
+		ka.f = 2
 	default:
 		return ipld.ErrInvalidKey{TypeName:"tasks.RecordUpdate", Key:&_String{k}}
 	}
@@ -10723,6 +10769,7 @@ func (n RecordUpdate) Representation() ipld.Node {
 type _RecordUpdate__Repr _RecordUpdate
 var (
 	fieldName__RecordUpdate_Records_serial = _String{"Records"}
+	fieldName__RecordUpdate_SigPrev_serial = _String{"SigPrev"}
 	fieldName__RecordUpdate_Previous_serial = _String{"Previous"}
 )
 var _ ipld.Node = &_RecordUpdate__Repr{}
@@ -10733,6 +10780,8 @@ func (n *_RecordUpdate__Repr) LookupByString(key string) (ipld.Node, error) {
 	switch key {
 	case "Records":
 		return n.Records.Representation(), nil
+	case "SigPrev":
+		return n.SigPrev.Representation(), nil
 	case "Previous":
 		return n.Previous.Representation(), nil
 	default:
@@ -10763,7 +10812,7 @@ type _RecordUpdate__ReprMapItr struct {
 }
 
 func (itr *_RecordUpdate__ReprMapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
-if itr.idx >= 2 {
+if itr.idx >= 3 {
 		return nil, nil, ipld.ErrIteratorOverread{}
 	}
 	switch itr.idx {
@@ -10771,6 +10820,9 @@ if itr.idx >= 2 {
 		k = &fieldName__RecordUpdate_Records_serial
 		v = itr.n.Records.Representation()
 	case 1:
+		k = &fieldName__RecordUpdate_SigPrev_serial
+		v = itr.n.SigPrev.Representation()
+	case 2:
 		k = &fieldName__RecordUpdate_Previous_serial
 		v = itr.n.Previous.Representation()
 	default:
@@ -10780,13 +10832,13 @@ if itr.idx >= 2 {
 	return
 }
 func (itr *_RecordUpdate__ReprMapItr) Done() bool {
-	return itr.idx >= 2
+	return itr.idx >= 3
 }
 func (_RecordUpdate__Repr) ListIterator() ipld.ListIterator {
 	return nil
 }
 func (rn *_RecordUpdate__Repr) Length() int64 {
-	l := 2
+	l := 3
 	return int64(l)
 }
 func (_RecordUpdate__Repr) IsAbsent() bool {
@@ -10846,6 +10898,7 @@ type _RecordUpdate__ReprAssembler struct {
 
 	cm schema.Maybe
 	ca_Records _List_AuthenticatedRecord__ReprAssembler
+	ca_SigPrev _Bytes__ReprAssembler
 	ca_Previous _Link__ReprAssembler
 	}
 
@@ -10853,6 +10906,7 @@ func (na *_RecordUpdate__ReprAssembler) reset() {
 	na.state = maState_initial
 	na.s = 0
 	na.ca_Records.reset()
+	na.ca_SigPrev.reset()
 	na.ca_Previous.reset()
 }
 func (na *_RecordUpdate__ReprAssembler) BeginMap(int64) (ipld.MapAssembler, error) {
@@ -10962,6 +11016,14 @@ func (ma *_RecordUpdate__ReprAssembler) valueFinishTidy() bool {
 		default:
 			return false
 		}
+	case 2:
+		switch ma.cm {
+		case schema.Maybe_Value:ma.cm = schema.Maybe_Absent
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
 	default:
 		panic("unreachable")
 	}
@@ -10992,13 +11054,23 @@ func (ma *_RecordUpdate__ReprAssembler) AssembleEntry(k string) (ipld.NodeAssemb
 		ma.ca_Records.w = &ma.w.Records
 		ma.ca_Records.m = &ma.cm
 		return &ma.ca_Records, nil
+	case "SigPrev":
+		if ma.s & fieldBit__RecordUpdate_SigPrev != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__RecordUpdate_SigPrev_serial}
+		}
+		ma.s += fieldBit__RecordUpdate_SigPrev
+		ma.state = maState_midValue
+		ma.f = 1
+		ma.ca_SigPrev.w = &ma.w.SigPrev
+		ma.ca_SigPrev.m = &ma.cm
+		return &ma.ca_SigPrev, nil
 	case "Previous":
 		if ma.s & fieldBit__RecordUpdate_Previous != 0 {
 			return nil, ipld.ErrRepeatedMapKey{&fieldName__RecordUpdate_Previous_serial}
 		}
 		ma.s += fieldBit__RecordUpdate_Previous
 		ma.state = maState_midValue
-		ma.f = 1
+		ma.f = 2
 		ma.ca_Previous.w = &ma.w.Previous
 		ma.ca_Previous.m = &ma.cm
 		return &ma.ca_Previous, nil
@@ -11044,6 +11116,10 @@ func (ma *_RecordUpdate__ReprAssembler) AssembleValue() ipld.NodeAssembler {
 		ma.ca_Records.m = &ma.cm
 		return &ma.ca_Records
 	case 1:
+		ma.ca_SigPrev.w = &ma.w.SigPrev
+		ma.ca_SigPrev.m = &ma.cm
+		return &ma.ca_SigPrev
+	case 2:
 		ma.ca_Previous.w = &ma.w.Previous
 		ma.ca_Previous.m = &ma.cm
 		return &ma.ca_Previous
@@ -11070,6 +11146,9 @@ func (ma *_RecordUpdate__ReprAssembler) Finish() error {
 		err := ipld.ErrMissingRequiredField{Missing: make([]string, 0)}
 		if ma.s & fieldBit__RecordUpdate_Records == 0 {
 			err.Missing = append(err.Missing, "Records")
+		}
+		if ma.s & fieldBit__RecordUpdate_SigPrev == 0 {
+			err.Missing = append(err.Missing, "SigPrev")
 		}
 		if ma.s & fieldBit__RecordUpdate_Previous == 0 {
 			err.Missing = append(err.Missing, "Previous")
@@ -11117,13 +11196,20 @@ func (ka *_RecordUpdate__ReprKeyAssembler) AssignString(k string) error {
 		ka.s += fieldBit__RecordUpdate_Records
 		ka.state = maState_expectValue
 		ka.f = 0
+	case "SigPrev":
+		if ka.s & fieldBit__RecordUpdate_SigPrev != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__RecordUpdate_SigPrev_serial}
+		}
+		ka.s += fieldBit__RecordUpdate_SigPrev
+		ka.state = maState_expectValue
+		ka.f = 1
 	case "Previous":
 		if ka.s & fieldBit__RecordUpdate_Previous != 0 {
 			return ipld.ErrRepeatedMapKey{&fieldName__RecordUpdate_Previous_serial}
 		}
 		ka.s += fieldBit__RecordUpdate_Previous
 		ka.state = maState_expectValue
-		ka.f = 1
+		ka.f = 2
 	default:
 		return ipld.ErrInvalidKey{TypeName:"tasks.RecordUpdate.Repr", Key:&_String{k}}
 	}

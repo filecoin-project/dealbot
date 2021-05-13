@@ -58,11 +58,27 @@ const (
 		INSERT INTO finalizedData (cid, data, created) VALUES($1, $2, $3)
 	`
 
+	cidGetArchiveSQL = `
+		SELECT data FROM finalizedData WHERE cid = $1
+	`
+
 	drainedAddSQL = `
 		INSERT INTO drained_workers (worked_by) VALUES ($1)
 	`
 
 	drainedQuerySQL = `
 		SELECT COUNT(*) as cnt FROM drained_workers WHERE worked_by = $1
+	`
+
+	addHeadSQL = `
+		INSERT INTO record_updates (cid, created, worked_by, status) VALUES ($1, $2, $3, $4)
+	`
+
+	updateHeadSQL = `
+		UPDATE record_updates SET status = $1 WHERE cid = $2
+	`
+
+	queryHeadSQL = `
+		SELECT cid FROM record_updates WHERE status = $1 AND worked_by = $2
 	`
 )

@@ -113,6 +113,7 @@ func NewWithDependencies(listener, graphqlListener net.Listener, recorder metric
 	})
 
 	r.HandleFunc("/drain/{workedby}", srv.drainHandler).Methods("POST")
+	r.HandleFunc("/complete/{workedby}", srv.completeHandler).Methods("POST")
 	r.HandleFunc("/pop-task", srv.popTaskHandler).Methods("POST")
 	r.HandleFunc("/tasks", srv.getTasksHandler).Methods("GET")
 	r.HandleFunc("/tasks/storage", srv.newStorageTaskHandler).Methods("POST")

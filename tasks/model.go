@@ -337,3 +337,30 @@ func (ts *_Tasks) List() []Task {
 	}
 	return itms
 }
+
+func (arp *_AuthenticatedRecord__Prototype) Of(c cid.Cid, sig []byte) *_AuthenticatedRecord {
+	ar := _AuthenticatedRecord{
+		Record:    _Link_FinishedTask{x: linksystem.Link{Cid: c}},
+		Signature: _Bytes{x: sig},
+	}
+	return &ar
+}
+
+func (alp *_List_AuthenticatedRecord__Prototype) Of(ars []*_AuthenticatedRecord) *_List_AuthenticatedRecord {
+	al := _List_AuthenticatedRecord{
+		x: []_AuthenticatedRecord{},
+	}
+	for _, a := range ars {
+		al.x = append(al.x, *a)
+	}
+	return &al
+}
+
+func (rup *_RecordUpdate__Prototype) Of(rcrds *_List_AuthenticatedRecord, previous cid.Cid, previousSig []byte) *_RecordUpdate {
+	ru := _RecordUpdate{
+		Records:  *rcrds,
+		SigPrev:  _Bytes{x: previousSig},
+		Previous: _Link{linksystem.Link{Cid: previous}},
+	}
+	return &ru
+}

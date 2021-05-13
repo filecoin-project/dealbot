@@ -147,6 +147,7 @@ func main() {
 	ts.Accumulate(schema.SpawnList("List_AuthenticatedRecord", "AuthenticatedRecord", false))
 	ts.Accumulate(schema.SpawnStruct("RecordUpdate", []schema.StructField{
 		schema.SpawnStructField("Records", "List_AuthenticatedRecord", false, false),
+		schema.SpawnStructField("SigPrev", "Bytes", false, false),
 		schema.SpawnStructField("Previous", "Link", false, false),
 	}, schema.SpawnStructRepresentationMap(map[string]string{})))
 

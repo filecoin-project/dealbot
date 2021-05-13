@@ -348,8 +348,16 @@ func (s *stateDB) Update(ctx context.Context, taskID string, req tasks.UpdateTas
 
 		// finish if neccesary
 		if updatedTask.Status == *tasks.Successful || updatedTask.Status == *tasks.Failed {
-			_, err = updatedTask.Finalize(ctx, txContextStorer(ctx, tx))
+			finalized, err := updatedTask.Finalize(ctx, txContextStorer(ctx, tx))
 			if err != nil {
+				return err
+			}
+			flink, err := linkProto.Build(ctx, ipld.LinkContext{}, finalized, txContextStorer(ctx, tx))
+			if err != nil {
+				return err
+			}
+
+			if _, err = tx.ExecContext(ctx, addHeadSQL, flink.(linksystem.Link).Cid.String(), time.Now(), req.WorkedBy.String(), UNATTACHED_RECORD); err != nil {
 				return err
 			}
 		}
@@ -378,6 +386,16 @@ func txContextStorer(ctx context.Context, tx *sql.Tx) ipld.Storer {
 			_, err := tx.ExecContext(ctx, cidArchiveSQL, lnk.(linksystem.Link).Cid.String(), buf.Bytes(), time.Now())
 			return err
 		}, nil
+	}
+}
+func txContextLoader(ctx context.Context, tx *sql.Tx) ipld.Loader {
+	return func(lnk ipld.Link, lnkCtx ipld.LinkContext) (io.Reader, error) {
+		lc := lnk.(linksystem.Link).Cid.String()
+		buf := []byte{}
+		if err := tx.QueryRowContext(ctx, cidGetArchiveSQL, lc).Scan(&buf); err != nil {
+			return nil, err
+		}
+		return bytes.NewBuffer(buf), nil
 	}
 }
 
@@ -485,7 +503,105 @@ func (s *stateDB) countTasks(ctx context.Context) (int, error) {
 
 // GetHead gets the latest record update from the controller.
 func (s *stateDB) GetHead(ctx context.Context) (tasks.RecordUpdate, error) {
-	return nil, nil
+	tx, err := s.db().Begin()
+	if err != nil {
+		return nil, err
+	}
+
+	var c string
+	if err := tx.QueryRowContext(ctx, queryHeadSQL, LATEST_UPDATE, "").Scan(&c); err != nil {
+		return nil, err
+	}
+	cidLink, err := cid.Decode(c)
+	if err != nil {
+		return nil, err
+	}
+
+	loader := txContextLoader(ctx, tx)
+	na := tasks.Type.RecordUpdate.NewBuilder()
+	if err = (linksystem.Link{Cid: cidLink}).Load(ctx, ipld.LinkContext{}, na, loader); err != nil {
+		return nil, err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	return na.Build().(tasks.RecordUpdate), nil
+}
+
+// find all unattached records from worker, collect them into a new record update, and make it the new head.
+func (s *stateDB) PublishRecordsFrom(ctx context.Context, worker string) error {
+	tx, err := s.db().Begin()
+	if err != nil {
+		return err
+	}
+
+	var head string
+	var headCid cid.Cid
+	err = tx.QueryRowContext(ctx, queryHeadSQL, LATEST_UPDATE, "").Scan(&head)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			head = ""
+			headCid = cid.Undef
+		} else {
+			return err
+		}
+	} else {
+		headCid, err = cid.Decode(head)
+		if err != nil {
+			return err
+		}
+	}
+	headCidSig, err := s.PrivKey.Sign([]byte(head))
+	if err != nil {
+		return err
+	}
+
+	itms, err := tx.QueryContext(ctx, queryHeadSQL, UNATTACHED_RECORD, worker)
+	if err != nil {
+		return err
+	}
+
+	rcrds := []tasks.AuthenticatedRecord{}
+
+	for itms.Next() {
+		var lnk string
+		if err := itms.Scan(&lnk); err != nil {
+			return err
+		}
+		if _, err = tx.ExecContext(ctx, updateHeadSQL, ATTACHED_RECORD, lnk); err != nil {
+			return err
+		}
+		sig, err := s.PrivKey.Sign([]byte(lnk))
+		if err != nil {
+			return err
+		}
+		c, err := cid.Decode(lnk)
+		if err != nil {
+			return err
+		}
+		rcrd := tasks.Type.AuthenticatedRecord.Of(c, sig)
+		rcrds = append(rcrds, rcrd)
+	}
+	rcrdlst := tasks.Type.List_AuthenticatedRecord.Of(rcrds)
+
+	update := tasks.Type.RecordUpdate.Of(rcrdlst, headCid, headCidSig)
+	updateCid, err := linkProto.Build(ctx, ipld.LinkContext{}, update, txContextStorer(ctx, tx))
+	if err != nil {
+		return err
+	}
+
+	if _, err := tx.ExecContext(ctx, addHeadSQL, updateCid, time.Now(), "", LATEST_UPDATE); err != nil {
+		return err
+	}
+	if head != "" {
+		if _, err := tx.ExecContext(ctx, updateHeadSQL, PREVIOUS_UPDATE, head); err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit()
 }
 
 // drainWorker adds a worker to the list of workers to not give work to.

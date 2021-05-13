@@ -198,6 +198,7 @@ type _PopTask struct {
 type RecordUpdate = *_RecordUpdate
 type _RecordUpdate struct {
 	Records _List_AuthenticatedRecord
+	SigPrev _Bytes
 	Previous _Link
 }
 
