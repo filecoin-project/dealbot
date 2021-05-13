@@ -1,5 +1,5 @@
 BEGIN;
 
-DROP TABLE IF EXISTS drainedWorkers;
+DROP TABLE IF EXISTS drained_workers;
 
 COMMIT;

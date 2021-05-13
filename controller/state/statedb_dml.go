@@ -59,10 +59,10 @@ const (
 	`
 
 	drainedAddSQL = `
-		INSERT INTO drainedWorkers (worked_by) VALUES ($1)
+		INSERT INTO drained_workers (worked_by) VALUES ($1)
 	`
 
 	drainedQuerySQL = `
-		SELECT COUNT(*) as cnt FROM drainedWorkers WHERE worked_by = $1
+		SELECT COUNT(*) as cnt FROM drained_workers WHERE worked_by = $1
 	`
 )
