@@ -10,7 +10,7 @@ go install ./...
 popd
 
 # set HOME *after* "go install", to not nuke Go's caches
-export TEMPDIR=$(mktemp -d)
+export TEMPDIR=$(mktemp -d --suffix="-dealbot-test")
 export HOME=$TEMPDIR
 
 pushd $TEMPDIR
@@ -21,14 +21,6 @@ if [[ -z $FULLNODE_API_INFO ]]; then
 	function stop_devnet {
 		# Just a SIGTERM, to let it clean up lotus sub-processes.
 		kill $DEVNETPID
-
-		# # Then wait for lotus to be down.
-		# sleep 2
-
-		# # For some reason, lotus procs can hang around for many seconds
-		# # even after we kill devnet.
-		# killall -9 lotus
-		# killall -9 lotus-miner
 
 		# Print the tail of both logs, for the sake of debugging.
 		for logf in lotus-daemon.log lotus-miner.log; do
