@@ -148,7 +148,7 @@ func main() {
 	ts.Accumulate(schema.SpawnStruct("RecordUpdate", []schema.StructField{
 		schema.SpawnStructField("Records", "List_AuthenticatedRecord", false, false),
 		schema.SpawnStructField("SigPrev", "Bytes", false, false),
-		schema.SpawnStructField("Previous", "Link", false, false),
+		schema.SpawnStructField("Previous", "Link", false, true),
 	}, schema.SpawnStructRepresentationMap(map[string]string{})))
 
 	if errs := ts.ValidateGraph(); errs != nil {

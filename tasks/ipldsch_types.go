@@ -199,7 +199,7 @@ type RecordUpdate = *_RecordUpdate
 type _RecordUpdate struct {
 	Records _List_AuthenticatedRecord
 	SigPrev _Bytes
-	Previous _Link
+	Previous _Link__Maybe
 }
 
 // RetrievalTask matches the IPLD Schema type "RetrievalTask".  It has Struct type-kind, and may be interrogated like map kind.

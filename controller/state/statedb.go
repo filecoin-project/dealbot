@@ -357,7 +357,11 @@ func (s *stateDB) Update(ctx context.Context, taskID string, req tasks.UpdateTas
 				return err
 			}
 
-			if _, err = tx.ExecContext(ctx, addHeadSQL, flink.(linksystem.Link).Cid.String(), time.Now(), req.WorkedBy.String(), UNATTACHED_RECORD); err != nil {
+			if _, err := tx.ExecContext(ctx, addHeadSQL,
+				flink.(linksystem.Link).Cid.String(),
+				time.Now(),
+				req.WorkedBy.String(),
+				UNATTACHED_RECORD); err != nil {
 				return err
 			}
 		}
@@ -570,7 +574,7 @@ func (s *stateDB) PublishRecordsFrom(ctx context.Context, worker string) error {
 		if err := itms.Scan(&lnk); err != nil {
 			return err
 		}
-		if _, err = tx.ExecContext(ctx, updateHeadSQL, ATTACHED_RECORD, lnk); err != nil {
+		if _, err := tx.ExecContext(ctx, updateHeadSQL, ATTACHED_RECORD, lnk); err != nil {
 			return err
 		}
 		sig, err := s.PrivKey.Sign([]byte(lnk))

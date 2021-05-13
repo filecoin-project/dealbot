@@ -357,10 +357,15 @@ func (alp *_List_AuthenticatedRecord__Prototype) Of(ars []*_AuthenticatedRecord)
 }
 
 func (rup *_RecordUpdate__Prototype) Of(rcrds *_List_AuthenticatedRecord, previous cid.Cid, previousSig []byte) *_RecordUpdate {
+	lrm := _Link__Maybe{m: schema.Maybe_Null, v: nil}
+	if previous != cid.Undef {
+		lrm.m = schema.Maybe_Value
+		lrm.v = &_Link{x: linksystem.Link{Cid: previous}}
+	}
 	ru := _RecordUpdate{
 		Records:  *rcrds,
 		SigPrev:  _Bytes{x: previousSig},
-		Previous: _Link{linksystem.Link{Cid: previous}},
+		Previous: lrm,
 	}
 	return &ru
 }
