@@ -61,14 +61,20 @@ curl --header "Content-Type: application/json" \
 
 # On average, the storage deal takes about four minutes.
 # Use a timeout of ten minutes, just in case.
-for ((i = 0; i < 10*60; i++)); do
+for ((i = 0; ; i++)); do
 	if grep -q StorageDealActive dealbot-daemon.log; then
 		echo "Storage deal is active!"
+		break
+	fi
+	if ((i > 10*60)); then
+		# The logs are already being printed out.
+		echo "Timed out waiting for storage deal to be active."
 		exit 0
 	fi
 	sleep 1
 done
 
-# The logs are already being printed out.
-echo "Timed out waiting for storage deal to be active."
-exit 0
+if ! grep -q 'INFO.*controller.*storage task.*"miner": "t01000",.*"size": 1024,.*"status": 2,' dealbot-controller.log; then
+	echo "The controller doesn't seem to be logging tasks correctly."
+	exit 1
+fi

@@ -8,6 +8,7 @@ import (
 	"github.com/filecoin-project/dealbot/metrics"
 	"github.com/filecoin-project/dealbot/tasks"
 	logging "github.com/ipfs/go-log/v2"
+	"github.com/ipld/go-ipld-prime"
 )
 
 type logRecorder struct {
@@ -23,8 +24,23 @@ func (lr *logRecorder) Handler() http.Handler {
 	return nil
 }
 
-func mustString(s string, _ error) string {
-	return s
+func simpleGoValue(node ipld.Node) interface{} {
+	var val interface{}
+	var err error
+	switch kind := node.Kind(); kind {
+	case ipld.Kind_String:
+		val, err = node.AsString()
+	case ipld.Kind_Int:
+		val, err = node.AsInt()
+	case ipld.Kind_Bool:
+		val, err = node.AsBool()
+	default:
+		panic(kind.String())
+	}
+	if err != nil {
+		panic(err)
+	}
+	return val
 }
 
 func (lr *logRecorder) ObserveTask(task tasks.Task) error {
@@ -33,25 +49,25 @@ func (lr *logRecorder) ObserveTask(task tasks.Task) error {
 	if task.RetrievalTask.Exists() {
 		rt := task.RetrievalTask.Must()
 		lr.log.Infow("retrieval task",
-			metrics.UUID, task.UUID,
-			metrics.Miner, rt.Miner,
-			metrics.PayloadCID, rt.PayloadCID,
-			metrics.CARExport, rt.CARExport,
-			metrics.Status, mustString(task.Status.AsString()),
+			metrics.UUID, simpleGoValue(&task.UUID),
+			metrics.Miner, simpleGoValue(&rt.Miner),
+			metrics.PayloadCID, simpleGoValue(&rt.PayloadCID),
+			metrics.CARExport, simpleGoValue(&rt.CARExport),
+			metrics.Status, simpleGoValue(&task.Status),
 			"duration (ms)", duration)
 		return nil
 	}
 	if task.StorageTask.Exists() {
 		st := task.StorageTask.Must()
 		lr.log.Infow("storage task",
-			metrics.UUID, mustString(task.UUID.AsString()),
-			metrics.Miner, st.Miner,
-			metrics.MaxPriceAttoFIL, st.MaxPriceAttoFIL,
-			metrics.Size, st.Size,
-			metrics.StartOffset, st.StartOffset,
-			metrics.FastRetrieval, st.FastRetrieval,
-			metrics.Verified, st.Verified,
-			metrics.Status, mustString(task.Status.AsString()),
+			metrics.UUID, simpleGoValue(&task.UUID),
+			metrics.Miner, simpleGoValue(&st.Miner),
+			metrics.MaxPriceAttoFIL, simpleGoValue(&st.MaxPriceAttoFIL),
+			metrics.Size, simpleGoValue(&st.Size),
+			metrics.StartOffset, simpleGoValue(&st.StartOffset),
+			metrics.FastRetrieval, simpleGoValue(&st.FastRetrieval),
+			metrics.Verified, simpleGoValue(&st.Verified),
+			metrics.Status, simpleGoValue(&task.Status),
 			"duration (ms)", duration)
 		return nil
 	}
