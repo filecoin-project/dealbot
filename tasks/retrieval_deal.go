@@ -123,7 +123,7 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(updateStage UpdateStage) 
 			retrievalmarket.DealStatusRejected,
 			retrievalmarket.DealStatusDealNotFound:
 
-			return errors.New("storage deal failed")
+			return errors.New("retrieval deal failed")
 
 		// deal is on chain, exit successfully
 		case retrievalmarket.DealStatusCompleted:
