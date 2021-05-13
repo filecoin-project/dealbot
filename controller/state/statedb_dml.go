@@ -57,4 +57,12 @@ const (
 	cidArchiveSQL = `
 		INSERT INTO finalizedData (cid, data, created) VALUES($1, $2, $3)
 	`
+
+	drainedAddSQL = `
+		INSERT INTO drained_workers (worked_by) VALUES ($1)
+	`
+
+	drainedQuerySQL = `
+		SELECT COUNT(*) as cnt FROM drained_workers WHERE worked_by = $1
+	`
 )
