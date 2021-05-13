@@ -134,15 +134,13 @@ func NewWithDependencies(listener, graphqlListener net.Listener, recorder metric
 	}
 
 	if graphqlListener != nil {
-		gm := mux.NewRouter().StrictSlash(true)
 		gqlHandler, err := graphql.GetHandler(srv.db)
 		if err != nil {
 			return nil, err
 		}
-		gm.Handle("/", gqlHandler)
 
 		srv.gserver = &http.Server{
-			Handler:      handlers.LoggingHandler(os.Stdout, gm),
+			Handler:      handlers.LoggingHandler(os.Stdout, gqlHandler),
 			WriteTimeout: 30 * time.Second,
 			ReadTimeout:  30 * time.Second,
 		}

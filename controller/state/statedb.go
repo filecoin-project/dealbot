@@ -472,3 +472,8 @@ func (s *stateDB) countTasks(ctx context.Context) (int, error) {
 	}
 	return count, nil
 }
+
+// GetHead gets the latest record update from the controller.
+func (s *stateDB) GetHead(ctx context.Context) (tasks.RecordUpdate, error) {
+	return nil, nil
+}
