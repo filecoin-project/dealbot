@@ -21,6 +21,8 @@ var Type typeSlab
 type typeSlab struct {
 	Any       _Any__Prototype
 	Any__Repr _Any__ReprPrototype
+	AuthenticatedRecord       _AuthenticatedRecord__Prototype
+	AuthenticatedRecord__Repr _AuthenticatedRecord__ReprPrototype
 	Bool       _Bool__Prototype
 	Bool__Repr _Bool__ReprPrototype
 	Bytes       _Bytes__Prototype
@@ -33,10 +35,14 @@ type typeSlab struct {
 	Int__Repr _Int__ReprPrototype
 	Link       _Link__Prototype
 	Link__Repr _Link__ReprPrototype
+	Link_FinishedTask       _Link_FinishedTask__Prototype
+	Link_FinishedTask__Repr _Link_FinishedTask__ReprPrototype
 	Link_List_StageDetails       _Link_List_StageDetails__Prototype
 	Link_List_StageDetails__Repr _Link_List_StageDetails__ReprPrototype
 	List       _List__Prototype
 	List__Repr _List__ReprPrototype
+	List_AuthenticatedRecord       _List_AuthenticatedRecord__Prototype
+	List_AuthenticatedRecord__Repr _List_AuthenticatedRecord__ReprPrototype
 	List_Logs       _List_Logs__Prototype
 	List_Logs__Repr _List_Logs__ReprPrototype
 	List_StageDetails       _List_StageDetails__Prototype
@@ -47,6 +53,8 @@ type typeSlab struct {
 	Map__Repr _Map__ReprPrototype
 	PopTask       _PopTask__Prototype
 	PopTask__Repr _PopTask__ReprPrototype
+	RecordUpdate       _RecordUpdate__Prototype
+	RecordUpdate__Repr _RecordUpdate__ReprPrototype
 	RetrievalTask       _RetrievalTask__Prototype
 	RetrievalTask__Repr _RetrievalTask__ReprPrototype
 	StageDetails       _StageDetails__Prototype
@@ -86,6 +94,13 @@ func (_Map) _Any__member() {}
 func (_List) _Any__member() {}
 func (_Link) _Any__member() {}
 
+// AuthenticatedRecord matches the IPLD Schema type "AuthenticatedRecord".  It has Struct type-kind, and may be interrogated like map kind.
+type AuthenticatedRecord = *_AuthenticatedRecord
+type _AuthenticatedRecord struct {
+	Record _Link_FinishedTask
+	Signature _Bytes
+}
+
 // Bool matches the IPLD Schema type "Bool".  It has bool kind.
 type Bool = *_Bool
 type _Bool struct{ x bool }
@@ -122,6 +137,10 @@ type _Int struct{ x int64 }
 type Link = *_Link
 type _Link struct{ x ipld.Link }
 
+// Link_FinishedTask matches the IPLD Schema type "Link_FinishedTask".  It has link kind.
+type Link_FinishedTask = *_Link_FinishedTask
+type _Link_FinishedTask struct{ x ipld.Link }
+
 // Link_List_StageDetails matches the IPLD Schema type "Link_List_StageDetails".  It has link kind.
 type Link_List_StageDetails = *_Link_List_StageDetails
 type _Link_List_StageDetails struct{ x ipld.Link }
@@ -130,6 +149,12 @@ type _Link_List_StageDetails struct{ x ipld.Link }
 type List = *_List
 type _List struct {
 	x []_Any__Maybe
+}
+
+// List_AuthenticatedRecord matches the IPLD Schema type "List_AuthenticatedRecord".  It has list kind.
+type List_AuthenticatedRecord = *_List_AuthenticatedRecord
+type _List_AuthenticatedRecord struct {
+	x []_AuthenticatedRecord
 }
 
 // List_Logs matches the IPLD Schema type "List_Logs".  It has list kind.
@@ -167,6 +192,14 @@ type PopTask = *_PopTask
 type _PopTask struct {
 	Status _Status
 	WorkedBy _String
+}
+
+// RecordUpdate matches the IPLD Schema type "RecordUpdate".  It has Struct type-kind, and may be interrogated like map kind.
+type RecordUpdate = *_RecordUpdate
+type _RecordUpdate struct {
+	Records _List_AuthenticatedRecord
+	SigPrev _Bytes
+	Previous _Link__Maybe
 }
 
 // RetrievalTask matches the IPLD Schema type "RetrievalTask".  It has Struct type-kind, and may be interrogated like map kind.

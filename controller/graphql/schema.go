@@ -36,104 +36,18 @@ func resolve_map_at(p graphql.ResolveParams) (interface{}, error) {
         return nil, fmt.Errorf("unknown key type: %T", arg)
     }
 }
-func StageDetails__Description__resolve(p graphql.ResolveParams) (interface{}, error) {
-    ts, ok := p.Source.(tasks.StageDetails)
-    if !ok {
-        return nil, errNotNode
-    }
-    
-    f := ts.FieldDescription()
-    if f.Exists() {
-        
-        return f.Must().AsString()
-        
-    } else {
-        return nil, nil
-    }
-    
-}
-func StageDetails__ExpectedDuration__resolve(p graphql.ResolveParams) (interface{}, error) {
-    ts, ok := p.Source.(tasks.StageDetails)
-    if !ok {
-        return nil, errNotNode
-    }
-    
-    f := ts.FieldExpectedDuration()
-    if f.Exists() {
-        
-        return f.Must().AsString()
-        
-    } else {
-        return nil, nil
-    }
-    
-}
-func StageDetails__Logs__resolve(p graphql.ResolveParams) (interface{}, error) {
-    ts, ok := p.Source.(tasks.StageDetails)
-    if !ok {
-        return nil, errNotNode
-    }
-    
-    return ts.FieldLogs(), nil
-    
-}
-func StageDetails__UpdatedAt__resolve(p graphql.ResolveParams) (interface{}, error) {
-    ts, ok := p.Source.(tasks.StageDetails)
-    if !ok {
-        return nil, errNotNode
-    }
-    
-    f := ts.FieldUpdatedAt()
-    if f.Exists() {
-        
-        return f.Must(), nil
-        
-    } else {
-        return nil, nil
-    }
-    
-}
-var StageDetails__type = graphql.NewObject(graphql.ObjectConfig{
-    Name: "StageDetails",
-    Fields: graphql.Fields{
-        "Description": &graphql.Field{
-            
-            Type: graphql.String,
-            
-            Resolve: StageDetails__Description__resolve,
-        },
-        "ExpectedDuration": &graphql.Field{
-            
-            Type: graphql.String,
-            
-            Resolve: StageDetails__ExpectedDuration__resolve,
-        },
-        "Logs": &graphql.Field{
-            
-            Type: graphql.NewNonNull(List_Logs__type),
-            
-            Resolve: StageDetails__Logs__resolve,
-        },
-        "UpdatedAt": &graphql.Field{
-            
-            Type: Time__type,
-            
-            Resolve: StageDetails__UpdatedAt__resolve,
-        },
-    },
-})
-var List_StageDetails__type = graphql.NewObject(graphql.ObjectConfig{
-    Name: "List_StageDetails",
+var List_AuthenticatedRecord__type = graphql.NewObject(graphql.ObjectConfig{
+    Name: "List_AuthenticatedRecord",
     Fields: graphql.Fields{
         "At": &graphql.Field{
-            Type: StageDetails__type,
+            Type: AuthenticatedRecord__type,
             Args: graphql.FieldConfigArgument{
                 "key": &graphql.ArgumentConfig{
                     Type: graphql.NewNonNull(graphql.Int),
                 },
             },
             Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-                ts, ok := p.Source.(tasks.List_StageDetails)
+                ts, ok := p.Source.(tasks.List_AuthenticatedRecord)
                 if !ok {
                     return nil, errNotNode
                 }
@@ -155,9 +69,9 @@ var List_StageDetails__type = graphql.NewObject(graphql.ObjectConfig{
             },
         },
         "All": &graphql.Field{
-            Type: graphql.NewList(StageDetails__type),
+            Type: graphql.NewList(AuthenticatedRecord__type),
             Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-                ts, ok := p.Source.(tasks.List_StageDetails)
+                ts, ok := p.Source.(tasks.List_AuthenticatedRecord)
                 if !ok {
                     return nil, errNotNode
                 }
@@ -175,7 +89,7 @@ var List_StageDetails__type = graphql.NewObject(graphql.ObjectConfig{
             },
         },
         "Range": &graphql.Field{
-            Type: graphql.NewList(StageDetails__type),
+            Type: graphql.NewList(AuthenticatedRecord__type),
             Args: graphql.FieldConfigArgument{
                 "skip": &graphql.ArgumentConfig{
                     Type: graphql.NewNonNull(graphql.Int),
@@ -185,7 +99,7 @@ var List_StageDetails__type = graphql.NewObject(graphql.ObjectConfig{
                 },
             },
             Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-                ts, ok := p.Source.(tasks.List_StageDetails)
+                ts, ok := p.Source.(tasks.List_AuthenticatedRecord)
                 if !ok {
                     return nil, errNotNode
                 }
@@ -206,7 +120,7 @@ var List_StageDetails__type = graphql.NewObject(graphql.ObjectConfig{
         "Count": &graphql.Field{
             Type: graphql.NewNonNull(graphql.Int),
             Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-                ts, ok := p.Source.(tasks.List_StageDetails)
+                ts, ok := p.Source.(tasks.List_AuthenticatedRecord)
                 if !ok {
                     return nil, errNotNode
                 }
@@ -215,8 +129,17 @@ var List_StageDetails__type = graphql.NewObject(graphql.ObjectConfig{
         },
     },
 })	
-func UpdateTask__Status__resolve(p graphql.ResolveParams) (interface{}, error) {
-    ts, ok := p.Source.(tasks.UpdateTask)
+func Task__UUID__resolve(p graphql.ResolveParams) (interface{}, error) {
+    ts, ok := p.Source.(tasks.Task)
+    if !ok {
+        return nil, errNotNode
+    }
+    
+    return ts.FieldUUID().AsString()
+    
+}
+func Task__Status__resolve(p graphql.ResolveParams) (interface{}, error) {
+    ts, ok := p.Source.(tasks.Task)
     if !ok {
         return nil, errNotNode
     }
@@ -224,13 +147,13 @@ func UpdateTask__Status__resolve(p graphql.ResolveParams) (interface{}, error) {
     return ts.FieldStatus(), nil
     
 }
-func UpdateTask__Stage__resolve(p graphql.ResolveParams) (interface{}, error) {
-    ts, ok := p.Source.(tasks.UpdateTask)
+func Task__WorkedBy__resolve(p graphql.ResolveParams) (interface{}, error) {
+    ts, ok := p.Source.(tasks.Task)
     if !ok {
         return nil, errNotNode
     }
     
-    f := ts.FieldStage()
+    f := ts.FieldWorkedBy()
     if f.Exists() {
         
         return f.Must().AsString()
@@ -240,8 +163,17 @@ func UpdateTask__Stage__resolve(p graphql.ResolveParams) (interface{}, error) {
     }
     
 }
-func UpdateTask__CurrentStageDetails__resolve(p graphql.ResolveParams) (interface{}, error) {
-    ts, ok := p.Source.(tasks.UpdateTask)
+func Task__Stage__resolve(p graphql.ResolveParams) (interface{}, error) {
+    ts, ok := p.Source.(tasks.Task)
+    if !ok {
+        return nil, errNotNode
+    }
+    
+    return ts.FieldStage().AsString()
+    
+}
+func Task__CurrentStageDetails__resolve(p graphql.ResolveParams) (interface{}, error) {
+    ts, ok := p.Source.(tasks.Task)
     if !ok {
         return nil, errNotNode
     }
@@ -256,137 +188,229 @@ func UpdateTask__CurrentStageDetails__resolve(p graphql.ResolveParams) (interfac
     }
     
 }
-func UpdateTask__WorkedBy__resolve(p graphql.ResolveParams) (interface{}, error) {
-    ts, ok := p.Source.(tasks.UpdateTask)
+func Task__PastStageDetails__resolve(p graphql.ResolveParams) (interface{}, error) {
+    ts, ok := p.Source.(tasks.Task)
     if !ok {
         return nil, errNotNode
     }
     
-    return ts.FieldWorkedBy().AsString()
+    f := ts.FieldPastStageDetails()
+    if f.Exists() {
+        
+        return f.Must(), nil
+        
+    } else {
+        return nil, nil
+    }
     
 }
-var UpdateTask__type = graphql.NewObject(graphql.ObjectConfig{
-    Name: "UpdateTask",
+func Task__StartedAt__resolve(p graphql.ResolveParams) (interface{}, error) {
+    ts, ok := p.Source.(tasks.Task)
+    if !ok {
+        return nil, errNotNode
+    }
+    
+    f := ts.FieldStartedAt()
+    if f.Exists() {
+        
+        return f.Must(), nil
+        
+    } else {
+        return nil, nil
+    }
+    
+}
+func Task__RetrievalTask__resolve(p graphql.ResolveParams) (interface{}, error) {
+    ts, ok := p.Source.(tasks.Task)
+    if !ok {
+        return nil, errNotNode
+    }
+    
+    f := ts.FieldRetrievalTask()
+    if f.Exists() {
+        
+        return f.Must(), nil
+        
+    } else {
+        return nil, nil
+    }
+    
+}
+func Task__StorageTask__resolve(p graphql.ResolveParams) (interface{}, error) {
+    ts, ok := p.Source.(tasks.Task)
+    if !ok {
+        return nil, errNotNode
+    }
+    
+    f := ts.FieldStorageTask()
+    if f.Exists() {
+        
+        return f.Must(), nil
+        
+    } else {
+        return nil, nil
+    }
+    
+}
+var Task__type = graphql.NewObject(graphql.ObjectConfig{
+    Name: "Task",
     Fields: graphql.Fields{
+        "UUID": &graphql.Field{
+            
+            Type: graphql.NewNonNull(graphql.String),
+            
+            Resolve: Task__UUID__resolve,
+        },
         "Status": &graphql.Field{
             
             Type: graphql.NewNonNull(Status__type),
             
-            Resolve: UpdateTask__Status__resolve,
+            Resolve: Task__Status__resolve,
         },
-        "Stage": &graphql.Field{
+        "WorkedBy": &graphql.Field{
             
             Type: graphql.String,
             
-            Resolve: UpdateTask__Stage__resolve,
+            Resolve: Task__WorkedBy__resolve,
+        },
+        "Stage": &graphql.Field{
+            
+            Type: graphql.NewNonNull(graphql.String),
+            
+            Resolve: Task__Stage__resolve,
         },
         "CurrentStageDetails": &graphql.Field{
             
             Type: StageDetails__type,
             
-            Resolve: UpdateTask__CurrentStageDetails__resolve,
+            Resolve: Task__CurrentStageDetails__resolve,
         },
-        "WorkedBy": &graphql.Field{
+        "PastStageDetails": &graphql.Field{
             
-            Type: graphql.NewNonNull(graphql.String),
+            Type: List_StageDetails__type,
             
-            Resolve: UpdateTask__WorkedBy__resolve,
+            Resolve: Task__PastStageDetails__resolve,
+        },
+        "StartedAt": &graphql.Field{
+            
+            Type: Time__type,
+            
+            Resolve: Task__StartedAt__resolve,
+        },
+        "RetrievalTask": &graphql.Field{
+            
+            Type: RetrievalTask__type,
+            
+            Resolve: Task__RetrievalTask__resolve,
+        },
+        "StorageTask": &graphql.Field{
+            
+            Type: StorageTask__type,
+            
+            Resolve: Task__StorageTask__resolve,
         },
     },
 })
-var List__type = graphql.NewObject(graphql.ObjectConfig{
-    Name: "List",
+var Map__type = graphql.NewObject(graphql.ObjectConfig{
+    Name: "Map",
     Fields: graphql.Fields{
         "At": &graphql.Field{
             Type: Any__type,
             Args: graphql.FieldConfigArgument{
                 "key": &graphql.ArgumentConfig{
-                    Type: graphql.NewNonNull(graphql.Int),
+                    Type: graphql.NewNonNull(graphql.String),
                 },
-            },
+            },	
+            Resolve: resolve_map_at,
+        },
+        "Keys": &graphql.Field{
+            Type: graphql.NewList(graphql.String),
             Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-                ts, ok := p.Source.(tasks.List)
+                ts, ok := p.Source.(ipld.Node)
                 if !ok {
                     return nil, errNotNode
                 }
+                it := ts.MapIterator()
+                children := make([]ipld.Node, 0)
 
-                arg := p.Args["key"]
-                var out ipld.Node
-                var err error
-                switch ta := arg.(type) {
-                case ipld.Node:
-                    out, err = ts.LookupByNode(ta)
-                case int64:
-                    out, err = ts.LookupByIndex(ta)
-                default:
-                    return nil, fmt.Errorf("unknown key type: %T", arg)
+                for !it.Done() {
+                    node, _, err := it.Next()
+                    if err != nil {
+                        return nil, err
+                    }
+                    children = append(children, node)
                 }
-                
-                return out, err
-                
+                return children, nil
+            },
+        },
+        "Values": &graphql.Field{
+            Type: graphql.NewList(Any__type),
+            Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+                ts, ok := p.Source.(ipld.Node)
+                if !ok {
+                    return nil, errNotNode
+                }
+                it := ts.MapIterator()
+                children := make([]ipld.Node, 0)
+
+                for !it.Done() {
+                    _, node, err := it.Next()
+                    if err != nil {
+                        return nil, err
+                    }
+                    
+                    children = append(children, node)
+                }
+                return children, nil
             },
         },
         "All": &graphql.Field{
-            Type: graphql.NewList(Any__type),
+            Type: graphql.NewList(Map__type__entry),
             Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-                ts, ok := p.Source.(tasks.List)
+                ts, ok := p.Source.(ipld.Node)
                 if !ok {
                     return nil, errNotNode
                 }
-                it := ts.ListIterator()
-                children := make([]ipld.Node, 0)
-                for !it.Done() {
-                    _, node, err := it.Next()
-                    if err != nil {
-                        return nil, err
-                    }
-                    
-                    children = append(children, node)
-                }
-                return children, nil	
-            },
-        },
-        "Range": &graphql.Field{
-            Type: graphql.NewList(Any__type),
-            Args: graphql.FieldConfigArgument{
-                "skip": &graphql.ArgumentConfig{
-                    Type: graphql.NewNonNull(graphql.Int),
-                },
-                "take": &graphql.ArgumentConfig{
-                    Type: graphql.NewNonNull(graphql.Int),
-                },
-            },
-            Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-                ts, ok := p.Source.(tasks.List)
-                if !ok {
-                    return nil, errNotNode
-                }
-                it := ts.ListIterator()
-                children := make([]ipld.Node, 0)
+                it := ts.MapIterator()
+                children := make([][]ipld.Node, 0)
 
                 for !it.Done() {
-                    _, node, err := it.Next()
+                    k, v, err := it.Next()
                     if err != nil {
                         return nil, err
                     }
-                    
-                    children = append(children, node)
+                    children = append(children, []ipld.Node{k, v})
                 }
-                return children, nil	
+                return children, nil
             },
         },
-        "Count": &graphql.Field{
-            Type: graphql.NewNonNull(graphql.Int),
+    },	
+})
+var Map__type__entry = graphql.NewObject(graphql.ObjectConfig{
+    Name: "Map_Entry",
+    Fields: graphql.Fields{
+        "Key": &graphql.Field{
+            Type: graphql.String,
             Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-                ts, ok := p.Source.(tasks.List)
+                kv, ok := p.Source.([]ipld.Node)
                 if !ok {
                     return nil, errNotNode
                 }
-                return ts.Length(), nil
+                return kv[0], nil
+            },
+        },
+        "Value": &graphql.Field{
+            Type: Any__type,
+            Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+                kv, ok := p.Source.([]ipld.Node)
+                if !ok {
+                    return nil, errNotNode
+                }
+                return kv[1], nil
             },
         },
     },
-})	
+})
 var Any__type = graphql.NewUnion(graphql.UnionConfig{
     Name: "Any",
     Types: []*graphql.Object{
@@ -588,8 +612,244 @@ var union__Any__Link = graphql.NewObject(graphql.ObjectConfig{
     },
 })
 
-func RetrievalTask__Miner__resolve(p graphql.ResolveParams) (interface{}, error) {
-    ts, ok := p.Source.(tasks.RetrievalTask)
+func Time__type__serialize(value interface{}) interface{} {
+    switch value := value.(type) {
+    case ipld.Node:
+        
+        i, err := value.AsInt()
+        if err != nil {
+            return err
+        }
+        return i
+        
+    default:
+        return nil
+    }
+}
+func Time__type__parse(value interface{}) interface{} {
+    builder := tasks.Type.Time__Repr.NewBuilder()
+    switch v2 := value.(type) {
+    case string:
+        builder.AssignString(v2)
+    case *string:
+        builder.AssignString(*v2)
+    default:
+        return nil
+    }
+    return builder.Build()
+}
+func Time__type__parseLiteral(valueAST ast.Value) interface{} {
+    builder := tasks.Type.Time__Repr.NewBuilder()
+    switch valueAST := valueAST.(type) {
+    case *ast.StringValue:
+        builder.AssignString(valueAST.Value)
+    default:
+        return nil
+    }
+    return builder.Build()
+}
+var Time__type = graphql.NewScalar(graphql.ScalarConfig{
+    Name:        "Time",
+    Description: "Time",
+    Serialize: Time__type__serialize,
+    ParseValue: Time__type__parse,
+    ParseLiteral: Time__type__parseLiteral,
+})
+func RecordUpdate__Records__resolve(p graphql.ResolveParams) (interface{}, error) {
+    ts, ok := p.Source.(tasks.RecordUpdate)
+    if !ok {
+        return nil, errNotNode
+    }
+    
+    return ts.FieldRecords(), nil
+    
+}
+func RecordUpdate__SigPrev__resolve(p graphql.ResolveParams) (interface{}, error) {
+    ts, ok := p.Source.(tasks.RecordUpdate)
+    if !ok {
+        return nil, errNotNode
+    }
+    
+    return ts.FieldSigPrev(), nil
+    
+}
+func RecordUpdate__Previous__resolve(p graphql.ResolveParams) (interface{}, error) {
+    ts, ok := p.Source.(tasks.RecordUpdate)
+    if !ok {
+        return nil, errNotNode
+    }
+    
+    f := ts.FieldPrevious()
+    if f.Exists() {
+        
+        return "IS a link", nil
+        
+    } else {
+        return nil, nil
+    }
+    
+}
+var RecordUpdate__type = graphql.NewObject(graphql.ObjectConfig{
+    Name: "RecordUpdate",
+    Fields: graphql.Fields{
+        "Records": &graphql.Field{
+            
+            Type: graphql.NewNonNull(List_AuthenticatedRecord__type),
+            
+            Resolve: RecordUpdate__Records__resolve,
+        },
+        "SigPrev": &graphql.Field{
+            
+            Type: graphql.NewNonNull(Bytes__type),
+            
+            Resolve: RecordUpdate__SigPrev__resolve,
+        },
+        "Previous": &graphql.Field{
+            
+            Type: graphql.ID,
+            
+            Resolve: RecordUpdate__Previous__resolve,
+        },
+    },
+})
+func Bytes__type__serialize(value interface{}) interface{} {
+    switch value := value.(type) {
+    case ipld.Node:
+        
+        b, err := value.AsBytes()
+        if err != nil {
+            return err
+        }
+        return b
+        
+    default:
+        return nil
+    }
+}
+func Bytes__type__parse(value interface{}) interface{} {
+    builder := tasks.Type.Bytes__Repr.NewBuilder()
+    switch v2 := value.(type) {
+    case string:
+        builder.AssignString(v2)
+    case *string:
+        builder.AssignString(*v2)
+    default:
+        return nil
+    }
+    return builder.Build()
+}
+func Bytes__type__parseLiteral(valueAST ast.Value) interface{} {
+    builder := tasks.Type.Bytes__Repr.NewBuilder()
+    switch valueAST := valueAST.(type) {
+    case *ast.StringValue:
+        builder.AssignString(valueAST.Value)
+    default:
+        return nil
+    }
+    return builder.Build()
+}
+var Bytes__type = graphql.NewScalar(graphql.ScalarConfig{
+    Name:        "Bytes",
+    Description: "Bytes",
+    Serialize: Bytes__type__serialize,
+    ParseValue: Bytes__type__parse,
+    ParseLiteral: Bytes__type__parseLiteral,
+})
+var List_Logs__type = graphql.NewObject(graphql.ObjectConfig{
+    Name: "List_Logs",
+    Fields: graphql.Fields{
+        "At": &graphql.Field{
+            Type: Logs__type,
+            Args: graphql.FieldConfigArgument{
+                "key": &graphql.ArgumentConfig{
+                    Type: graphql.NewNonNull(graphql.Int),
+                },
+            },
+            Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+                ts, ok := p.Source.(tasks.List_Logs)
+                if !ok {
+                    return nil, errNotNode
+                }
+
+                arg := p.Args["key"]
+                var out ipld.Node
+                var err error
+                switch ta := arg.(type) {
+                case ipld.Node:
+                    out, err = ts.LookupByNode(ta)
+                case int64:
+                    out, err = ts.LookupByIndex(ta)
+                default:
+                    return nil, fmt.Errorf("unknown key type: %T", arg)
+                }
+                
+                return out, err
+                
+            },
+        },
+        "All": &graphql.Field{
+            Type: graphql.NewList(Logs__type),
+            Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+                ts, ok := p.Source.(tasks.List_Logs)
+                if !ok {
+                    return nil, errNotNode
+                }
+                it := ts.ListIterator()
+                children := make([]ipld.Node, 0)
+                for !it.Done() {
+                    _, node, err := it.Next()
+                    if err != nil {
+                        return nil, err
+                    }
+                    
+                    children = append(children, node)
+                }
+                return children, nil	
+            },
+        },
+        "Range": &graphql.Field{
+            Type: graphql.NewList(Logs__type),
+            Args: graphql.FieldConfigArgument{
+                "skip": &graphql.ArgumentConfig{
+                    Type: graphql.NewNonNull(graphql.Int),
+                },
+                "take": &graphql.ArgumentConfig{
+                    Type: graphql.NewNonNull(graphql.Int),
+                },
+            },
+            Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+                ts, ok := p.Source.(tasks.List_Logs)
+                if !ok {
+                    return nil, errNotNode
+                }
+                it := ts.ListIterator()
+                children := make([]ipld.Node, 0)
+
+                for !it.Done() {
+                    _, node, err := it.Next()
+                    if err != nil {
+                        return nil, err
+                    }
+                    
+                    children = append(children, node)
+                }
+                return children, nil	
+            },
+        },
+        "Count": &graphql.Field{
+            Type: graphql.NewNonNull(graphql.Int),
+            Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+                ts, ok := p.Source.(tasks.List_Logs)
+                if !ok {
+                    return nil, errNotNode
+                }
+                return ts.Length(), nil
+            },
+        },
+    },
+})	
+func StorageTask__Miner__resolve(p graphql.ResolveParams) (interface{}, error) {
+    ts, ok := p.Source.(tasks.StorageTask)
     if !ok {
         return nil, errNotNode
     }
@@ -597,44 +857,184 @@ func RetrievalTask__Miner__resolve(p graphql.ResolveParams) (interface{}, error)
     return ts.FieldMiner().AsString()
     
 }
-func RetrievalTask__PayloadCID__resolve(p graphql.ResolveParams) (interface{}, error) {
-    ts, ok := p.Source.(tasks.RetrievalTask)
+func StorageTask__MaxPriceAttoFIL__resolve(p graphql.ResolveParams) (interface{}, error) {
+    ts, ok := p.Source.(tasks.StorageTask)
     if !ok {
         return nil, errNotNode
     }
     
-    return ts.FieldPayloadCID().AsString()
+    return ts.FieldMaxPriceAttoFIL().AsInt()
     
 }
-func RetrievalTask__CARExport__resolve(p graphql.ResolveParams) (interface{}, error) {
-    ts, ok := p.Source.(tasks.RetrievalTask)
+func StorageTask__Size__resolve(p graphql.ResolveParams) (interface{}, error) {
+    ts, ok := p.Source.(tasks.StorageTask)
     if !ok {
         return nil, errNotNode
     }
     
-    return ts.FieldCARExport().AsBool()
+    return ts.FieldSize().AsInt()
     
 }
-var RetrievalTask__type = graphql.NewObject(graphql.ObjectConfig{
-    Name: "RetrievalTask",
+func StorageTask__StartOffset__resolve(p graphql.ResolveParams) (interface{}, error) {
+    ts, ok := p.Source.(tasks.StorageTask)
+    if !ok {
+        return nil, errNotNode
+    }
+    
+    return ts.FieldStartOffset().AsInt()
+    
+}
+func StorageTask__FastRetrieval__resolve(p graphql.ResolveParams) (interface{}, error) {
+    ts, ok := p.Source.(tasks.StorageTask)
+    if !ok {
+        return nil, errNotNode
+    }
+    
+    return ts.FieldFastRetrieval().AsBool()
+    
+}
+func StorageTask__Verified__resolve(p graphql.ResolveParams) (interface{}, error) {
+    ts, ok := p.Source.(tasks.StorageTask)
+    if !ok {
+        return nil, errNotNode
+    }
+    
+    return ts.FieldVerified().AsBool()
+    
+}
+var StorageTask__type = graphql.NewObject(graphql.ObjectConfig{
+    Name: "StorageTask",
     Fields: graphql.Fields{
         "Miner": &graphql.Field{
             
             Type: graphql.NewNonNull(graphql.String),
             
-            Resolve: RetrievalTask__Miner__resolve,
+            Resolve: StorageTask__Miner__resolve,
         },
-        "PayloadCID": &graphql.Field{
+        "MaxPriceAttoFIL": &graphql.Field{
             
-            Type: graphql.NewNonNull(graphql.String),
+            Type: graphql.NewNonNull(graphql.Int),
             
-            Resolve: RetrievalTask__PayloadCID__resolve,
+            Resolve: StorageTask__MaxPriceAttoFIL__resolve,
         },
-        "CARExport": &graphql.Field{
+        "Size": &graphql.Field{
+            
+            Type: graphql.NewNonNull(graphql.Int),
+            
+            Resolve: StorageTask__Size__resolve,
+        },
+        "StartOffset": &graphql.Field{
+            
+            Type: graphql.NewNonNull(graphql.Int),
+            
+            Resolve: StorageTask__StartOffset__resolve,
+        },
+        "FastRetrieval": &graphql.Field{
             
             Type: graphql.NewNonNull(graphql.Boolean),
             
-            Resolve: RetrievalTask__CARExport__resolve,
+            Resolve: StorageTask__FastRetrieval__resolve,
+        },
+        "Verified": &graphql.Field{
+            
+            Type: graphql.NewNonNull(graphql.Boolean),
+            
+            Resolve: StorageTask__Verified__resolve,
+        },
+    },
+})
+func AuthenticatedRecord__Record__resolve(p graphql.ResolveParams) (interface{}, error) {
+    ts, ok := p.Source.(tasks.AuthenticatedRecord)
+    if !ok {
+        return nil, errNotNode
+    }
+    
+    targetCid := ts.FieldRecord().Link()
+    
+			var node ipld.Node
+			
+	if cl, ok := targetCid.(cidlink.Link); ok {
+		v := p.Context.Value(nodeLoaderCtxKey)
+		if v == nil {
+			return cl.Cid, nil
+		}
+		loader, ok := v.(func(context.Context, cidlink.Link, ipld.NodeBuilder) (ipld.Node, error))
+		if !ok {
+			return nil, errInvalidLoader
+		}
+
+		builder := tasks.Type.FinishedTask__Repr.NewBuilder()
+		n, err := loader(p.Context, cl, builder);
+		if err != nil {
+			return nil, err
+		}
+		node = n
+	} else {
+		return nil, errInvalidLink
+	}
+	
+			return node, nil
+			
+    
+}
+func AuthenticatedRecord__Signature__resolve(p graphql.ResolveParams) (interface{}, error) {
+    ts, ok := p.Source.(tasks.AuthenticatedRecord)
+    if !ok {
+        return nil, errNotNode
+    }
+    
+    return ts.FieldSignature(), nil
+    
+}
+var AuthenticatedRecord__type = graphql.NewObject(graphql.ObjectConfig{
+    Name: "AuthenticatedRecord",
+    Fields: graphql.Fields{
+        "Record": &graphql.Field{
+            
+            Type: graphql.NewNonNull(FinishedTask__type),
+            
+            Resolve: AuthenticatedRecord__Record__resolve,
+        },
+        "Signature": &graphql.Field{
+            
+            Type: graphql.NewNonNull(Bytes__type),
+            
+            Resolve: AuthenticatedRecord__Signature__resolve,
+        },
+    },
+})
+func Logs__Log__resolve(p graphql.ResolveParams) (interface{}, error) {
+    ts, ok := p.Source.(tasks.Logs)
+    if !ok {
+        return nil, errNotNode
+    }
+    
+    return ts.FieldLog().AsString()
+    
+}
+func Logs__UpdatedAt__resolve(p graphql.ResolveParams) (interface{}, error) {
+    ts, ok := p.Source.(tasks.Logs)
+    if !ok {
+        return nil, errNotNode
+    }
+    
+    return ts.FieldUpdatedAt(), nil
+    
+}
+var Logs__type = graphql.NewObject(graphql.ObjectConfig{
+    Name: "Logs",
+    Fields: graphql.Fields{
+        "Log": &graphql.Field{
+            
+            Type: graphql.NewNonNull(graphql.String),
+            
+            Resolve: Logs__Log__resolve,
+        },
+        "UpdatedAt": &graphql.Field{
+            
+            Type: graphql.NewNonNull(Time__type),
+            
+            Resolve: Logs__UpdatedAt__resolve,
         },
     },
 })
@@ -731,236 +1131,6 @@ var Tasks__type = graphql.NewObject(graphql.ObjectConfig{
         },
     },
 })	
-func Logs__Log__resolve(p graphql.ResolveParams) (interface{}, error) {
-    ts, ok := p.Source.(tasks.Logs)
-    if !ok {
-        return nil, errNotNode
-    }
-    
-    return ts.FieldLog().AsString()
-    
-}
-func Logs__UpdatedAt__resolve(p graphql.ResolveParams) (interface{}, error) {
-    ts, ok := p.Source.(tasks.Logs)
-    if !ok {
-        return nil, errNotNode
-    }
-    
-    return ts.FieldUpdatedAt(), nil
-    
-}
-var Logs__type = graphql.NewObject(graphql.ObjectConfig{
-    Name: "Logs",
-    Fields: graphql.Fields{
-        "Log": &graphql.Field{
-            
-            Type: graphql.NewNonNull(graphql.String),
-            
-            Resolve: Logs__Log__resolve,
-        },
-        "UpdatedAt": &graphql.Field{
-            
-            Type: graphql.NewNonNull(Time__type),
-            
-            Resolve: Logs__UpdatedAt__resolve,
-        },
-    },
-})
-var Map__type = graphql.NewObject(graphql.ObjectConfig{
-    Name: "Map",
-    Fields: graphql.Fields{
-        "At": &graphql.Field{
-            Type: Any__type,
-            Args: graphql.FieldConfigArgument{
-                "key": &graphql.ArgumentConfig{
-                    Type: graphql.NewNonNull(graphql.String),
-                },
-            },	
-            Resolve: resolve_map_at,
-        },
-        "Keys": &graphql.Field{
-            Type: graphql.NewList(graphql.String),
-            Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-                ts, ok := p.Source.(ipld.Node)
-                if !ok {
-                    return nil, errNotNode
-                }
-                it := ts.MapIterator()
-                children := make([]ipld.Node, 0)
-
-                for !it.Done() {
-                    node, _, err := it.Next()
-                    if err != nil {
-                        return nil, err
-                    }
-                    children = append(children, node)
-                }
-                return children, nil
-            },
-        },
-        "Values": &graphql.Field{
-            Type: graphql.NewList(Any__type),
-            Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-                ts, ok := p.Source.(ipld.Node)
-                if !ok {
-                    return nil, errNotNode
-                }
-                it := ts.MapIterator()
-                children := make([]ipld.Node, 0)
-
-                for !it.Done() {
-                    _, node, err := it.Next()
-                    if err != nil {
-                        return nil, err
-                    }
-                    
-                    children = append(children, node)
-                }
-                return children, nil
-            },
-        },
-        "All": &graphql.Field{
-            Type: graphql.NewList(Map__type__entry),
-            Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-                ts, ok := p.Source.(ipld.Node)
-                if !ok {
-                    return nil, errNotNode
-                }
-                it := ts.MapIterator()
-                children := make([][]ipld.Node, 0)
-
-                for !it.Done() {
-                    k, v, err := it.Next()
-                    if err != nil {
-                        return nil, err
-                    }
-                    children = append(children, []ipld.Node{k, v})
-                }
-                return children, nil
-            },
-        },
-    },	
-})
-var Map__type__entry = graphql.NewObject(graphql.ObjectConfig{
-    Name: "Map_Entry",
-    Fields: graphql.Fields{
-        "Key": &graphql.Field{
-            Type: graphql.String,
-            Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-                kv, ok := p.Source.([]ipld.Node)
-                if !ok {
-                    return nil, errNotNode
-                }
-                return kv[0], nil
-            },
-        },
-        "Value": &graphql.Field{
-            Type: Any__type,
-            Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-                kv, ok := p.Source.([]ipld.Node)
-                if !ok {
-                    return nil, errNotNode
-                }
-                return kv[1], nil
-            },
-        },
-    },
-})
-func StorageTask__Miner__resolve(p graphql.ResolveParams) (interface{}, error) {
-    ts, ok := p.Source.(tasks.StorageTask)
-    if !ok {
-        return nil, errNotNode
-    }
-    
-    return ts.FieldMiner().AsString()
-    
-}
-func StorageTask__MaxPriceAttoFIL__resolve(p graphql.ResolveParams) (interface{}, error) {
-    ts, ok := p.Source.(tasks.StorageTask)
-    if !ok {
-        return nil, errNotNode
-    }
-    
-    return ts.FieldMaxPriceAttoFIL().AsInt()
-    
-}
-func StorageTask__Size__resolve(p graphql.ResolveParams) (interface{}, error) {
-    ts, ok := p.Source.(tasks.StorageTask)
-    if !ok {
-        return nil, errNotNode
-    }
-    
-    return ts.FieldSize().AsInt()
-    
-}
-func StorageTask__StartOffset__resolve(p graphql.ResolveParams) (interface{}, error) {
-    ts, ok := p.Source.(tasks.StorageTask)
-    if !ok {
-        return nil, errNotNode
-    }
-    
-    return ts.FieldStartOffset().AsInt()
-    
-}
-func StorageTask__FastRetrieval__resolve(p graphql.ResolveParams) (interface{}, error) {
-    ts, ok := p.Source.(tasks.StorageTask)
-    if !ok {
-        return nil, errNotNode
-    }
-    
-    return ts.FieldFastRetrieval().AsBool()
-    
-}
-func StorageTask__Verified__resolve(p graphql.ResolveParams) (interface{}, error) {
-    ts, ok := p.Source.(tasks.StorageTask)
-    if !ok {
-        return nil, errNotNode
-    }
-    
-    return ts.FieldVerified().AsBool()
-    
-}
-var StorageTask__type = graphql.NewObject(graphql.ObjectConfig{
-    Name: "StorageTask",
-    Fields: graphql.Fields{
-        "Miner": &graphql.Field{
-            
-            Type: graphql.NewNonNull(graphql.String),
-            
-            Resolve: StorageTask__Miner__resolve,
-        },
-        "MaxPriceAttoFIL": &graphql.Field{
-            
-            Type: graphql.NewNonNull(graphql.Int),
-            
-            Resolve: StorageTask__MaxPriceAttoFIL__resolve,
-        },
-        "Size": &graphql.Field{
-            
-            Type: graphql.NewNonNull(graphql.Int),
-            
-            Resolve: StorageTask__Size__resolve,
-        },
-        "StartOffset": &graphql.Field{
-            
-            Type: graphql.NewNonNull(graphql.Int),
-            
-            Resolve: StorageTask__StartOffset__resolve,
-        },
-        "FastRetrieval": &graphql.Field{
-            
-            Type: graphql.NewNonNull(graphql.Boolean),
-            
-            Resolve: StorageTask__FastRetrieval__resolve,
-        },
-        "Verified": &graphql.Field{
-            
-            Type: graphql.NewNonNull(graphql.Boolean),
-            
-            Resolve: StorageTask__Verified__resolve,
-        },
-    },
-})
 func PopTask__Status__resolve(p graphql.ResolveParams) (interface{}, error) {
     ts, ok := p.Source.(tasks.PopTask)
     if !ok {
@@ -996,92 +1166,192 @@ var PopTask__type = graphql.NewObject(graphql.ObjectConfig{
         },
     },
 })
-func Bytes__type__serialize(value interface{}) interface{} {
-    switch value := value.(type) {
-    case ipld.Node:
-        
-        b, err := value.AsBytes()
-        if err != nil {
-            return err
-        }
-        return b
-        
-    default:
-        return nil
-    }
-}
-func Bytes__type__parse(value interface{}) interface{} {
-    builder := tasks.Type.Bytes__Repr.NewBuilder()
-    switch v2 := value.(type) {
-    case string:
-        builder.AssignString(v2)
-    case *string:
-        builder.AssignString(*v2)
-    default:
-        return nil
-    }
-    return builder.Build()
-}
-func Bytes__type__parseLiteral(valueAST ast.Value) interface{} {
-    builder := tasks.Type.Bytes__Repr.NewBuilder()
-    switch valueAST := valueAST.(type) {
-    case *ast.StringValue:
-        builder.AssignString(valueAST.Value)
-    default:
-        return nil
-    }
-    return builder.Build()
-}
-var Bytes__type = graphql.NewScalar(graphql.ScalarConfig{
-    Name:        "Bytes",
-    Description: "Bytes",
-    Serialize: Bytes__type__serialize,
-    ParseValue: Bytes__type__parse,
-    ParseLiteral: Bytes__type__parseLiteral,
-})
-func Time__type__serialize(value interface{}) interface{} {
-    switch value := value.(type) {
-    case ipld.Node:
-        
-        i, err := value.AsInt()
-        if err != nil {
-            return err
-        }
-        return i
-        
-    default:
-        return nil
-    }
-}
-func Time__type__parse(value interface{}) interface{} {
-    builder := tasks.Type.Time__Repr.NewBuilder()
-    switch v2 := value.(type) {
-    case string:
-        builder.AssignString(v2)
-    case *string:
-        builder.AssignString(*v2)
-    default:
-        return nil
-    }
-    return builder.Build()
-}
-func Time__type__parseLiteral(valueAST ast.Value) interface{} {
-    builder := tasks.Type.Time__Repr.NewBuilder()
-    switch valueAST := valueAST.(type) {
-    case *ast.StringValue:
-        builder.AssignString(valueAST.Value)
-    default:
-        return nil
-    }
-    return builder.Build()
-}
-var Time__type = graphql.NewScalar(graphql.ScalarConfig{
-    Name:        "Time",
-    Description: "Time",
-    Serialize: Time__type__serialize,
-    ParseValue: Time__type__parse,
-    ParseLiteral: Time__type__parseLiteral,
-})
+var List__type = graphql.NewObject(graphql.ObjectConfig{
+    Name: "List",
+    Fields: graphql.Fields{
+        "At": &graphql.Field{
+            Type: Any__type,
+            Args: graphql.FieldConfigArgument{
+                "key": &graphql.ArgumentConfig{
+                    Type: graphql.NewNonNull(graphql.Int),
+                },
+            },
+            Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+                ts, ok := p.Source.(tasks.List)
+                if !ok {
+                    return nil, errNotNode
+                }
+
+                arg := p.Args["key"]
+                var out ipld.Node
+                var err error
+                switch ta := arg.(type) {
+                case ipld.Node:
+                    out, err = ts.LookupByNode(ta)
+                case int64:
+                    out, err = ts.LookupByIndex(ta)
+                default:
+                    return nil, fmt.Errorf("unknown key type: %T", arg)
+                }
+                
+                return out, err
+                
+            },
+        },
+        "All": &graphql.Field{
+            Type: graphql.NewList(Any__type),
+            Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+                ts, ok := p.Source.(tasks.List)
+                if !ok {
+                    return nil, errNotNode
+                }
+                it := ts.ListIterator()
+                children := make([]ipld.Node, 0)
+                for !it.Done() {
+                    _, node, err := it.Next()
+                    if err != nil {
+                        return nil, err
+                    }
+                    
+                    children = append(children, node)
+                }
+                return children, nil	
+            },
+        },
+        "Range": &graphql.Field{
+            Type: graphql.NewList(Any__type),
+            Args: graphql.FieldConfigArgument{
+                "skip": &graphql.ArgumentConfig{
+                    Type: graphql.NewNonNull(graphql.Int),
+                },
+                "take": &graphql.ArgumentConfig{
+                    Type: graphql.NewNonNull(graphql.Int),
+                },
+            },
+            Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+                ts, ok := p.Source.(tasks.List)
+                if !ok {
+                    return nil, errNotNode
+                }
+                it := ts.ListIterator()
+                children := make([]ipld.Node, 0)
+
+                for !it.Done() {
+                    _, node, err := it.Next()
+                    if err != nil {
+                        return nil, err
+                    }
+                    
+                    children = append(children, node)
+                }
+                return children, nil	
+            },
+        },
+        "Count": &graphql.Field{
+            Type: graphql.NewNonNull(graphql.Int),
+            Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+                ts, ok := p.Source.(tasks.List)
+                if !ok {
+                    return nil, errNotNode
+                }
+                return ts.Length(), nil
+            },
+        },
+    },
+})	
+var List_StageDetails__type = graphql.NewObject(graphql.ObjectConfig{
+    Name: "List_StageDetails",
+    Fields: graphql.Fields{
+        "At": &graphql.Field{
+            Type: StageDetails__type,
+            Args: graphql.FieldConfigArgument{
+                "key": &graphql.ArgumentConfig{
+                    Type: graphql.NewNonNull(graphql.Int),
+                },
+            },
+            Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+                ts, ok := p.Source.(tasks.List_StageDetails)
+                if !ok {
+                    return nil, errNotNode
+                }
+
+                arg := p.Args["key"]
+                var out ipld.Node
+                var err error
+                switch ta := arg.(type) {
+                case ipld.Node:
+                    out, err = ts.LookupByNode(ta)
+                case int64:
+                    out, err = ts.LookupByIndex(ta)
+                default:
+                    return nil, fmt.Errorf("unknown key type: %T", arg)
+                }
+                
+                return out, err
+                
+            },
+        },
+        "All": &graphql.Field{
+            Type: graphql.NewList(StageDetails__type),
+            Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+                ts, ok := p.Source.(tasks.List_StageDetails)
+                if !ok {
+                    return nil, errNotNode
+                }
+                it := ts.ListIterator()
+                children := make([]ipld.Node, 0)
+                for !it.Done() {
+                    _, node, err := it.Next()
+                    if err != nil {
+                        return nil, err
+                    }
+                    
+                    children = append(children, node)
+                }
+                return children, nil	
+            },
+        },
+        "Range": &graphql.Field{
+            Type: graphql.NewList(StageDetails__type),
+            Args: graphql.FieldConfigArgument{
+                "skip": &graphql.ArgumentConfig{
+                    Type: graphql.NewNonNull(graphql.Int),
+                },
+                "take": &graphql.ArgumentConfig{
+                    Type: graphql.NewNonNull(graphql.Int),
+                },
+            },
+            Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+                ts, ok := p.Source.(tasks.List_StageDetails)
+                if !ok {
+                    return nil, errNotNode
+                }
+                it := ts.ListIterator()
+                children := make([]ipld.Node, 0)
+
+                for !it.Done() {
+                    _, node, err := it.Next()
+                    if err != nil {
+                        return nil, err
+                    }
+                    
+                    children = append(children, node)
+                }
+                return children, nil	
+            },
+        },
+        "Count": &graphql.Field{
+            Type: graphql.NewNonNull(graphql.Int),
+            Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+                ts, ok := p.Source.(tasks.List_StageDetails)
+                if !ok {
+                    return nil, errNotNode
+                }
+                return ts.Length(), nil
+            },
+        },
+    },
+})	
 func Status__type__serialize(value interface{}) interface{} {
     switch value := value.(type) {
     case ipld.Node:
@@ -1125,124 +1395,13 @@ var Status__type = graphql.NewScalar(graphql.ScalarConfig{
     ParseValue: Status__type__parse,
     ParseLiteral: Status__type__parseLiteral,
 })
-var List_Logs__type = graphql.NewObject(graphql.ObjectConfig{
-    Name: "List_Logs",
-    Fields: graphql.Fields{
-        "At": &graphql.Field{
-            Type: Logs__type,
-            Args: graphql.FieldConfigArgument{
-                "key": &graphql.ArgumentConfig{
-                    Type: graphql.NewNonNull(graphql.Int),
-                },
-            },
-            Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-                ts, ok := p.Source.(tasks.List_Logs)
-                if !ok {
-                    return nil, errNotNode
-                }
-
-                arg := p.Args["key"]
-                var out ipld.Node
-                var err error
-                switch ta := arg.(type) {
-                case ipld.Node:
-                    out, err = ts.LookupByNode(ta)
-                case int64:
-                    out, err = ts.LookupByIndex(ta)
-                default:
-                    return nil, fmt.Errorf("unknown key type: %T", arg)
-                }
-                
-                return out, err
-                
-            },
-        },
-        "All": &graphql.Field{
-            Type: graphql.NewList(Logs__type),
-            Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-                ts, ok := p.Source.(tasks.List_Logs)
-                if !ok {
-                    return nil, errNotNode
-                }
-                it := ts.ListIterator()
-                children := make([]ipld.Node, 0)
-                for !it.Done() {
-                    _, node, err := it.Next()
-                    if err != nil {
-                        return nil, err
-                    }
-                    
-                    children = append(children, node)
-                }
-                return children, nil	
-            },
-        },
-        "Range": &graphql.Field{
-            Type: graphql.NewList(Logs__type),
-            Args: graphql.FieldConfigArgument{
-                "skip": &graphql.ArgumentConfig{
-                    Type: graphql.NewNonNull(graphql.Int),
-                },
-                "take": &graphql.ArgumentConfig{
-                    Type: graphql.NewNonNull(graphql.Int),
-                },
-            },
-            Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-                ts, ok := p.Source.(tasks.List_Logs)
-                if !ok {
-                    return nil, errNotNode
-                }
-                it := ts.ListIterator()
-                children := make([]ipld.Node, 0)
-
-                for !it.Done() {
-                    _, node, err := it.Next()
-                    if err != nil {
-                        return nil, err
-                    }
-                    
-                    children = append(children, node)
-                }
-                return children, nil	
-            },
-        },
-        "Count": &graphql.Field{
-            Type: graphql.NewNonNull(graphql.Int),
-            Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-                ts, ok := p.Source.(tasks.List_Logs)
-                if !ok {
-                    return nil, errNotNode
-                }
-                return ts.Length(), nil
-            },
-        },
-    },
-})	
-func Task__UUID__resolve(p graphql.ResolveParams) (interface{}, error) {
-    ts, ok := p.Source.(tasks.Task)
+func StageDetails__Description__resolve(p graphql.ResolveParams) (interface{}, error) {
+    ts, ok := p.Source.(tasks.StageDetails)
     if !ok {
         return nil, errNotNode
     }
     
-    return ts.FieldUUID().AsString()
-    
-}
-func Task__Status__resolve(p graphql.ResolveParams) (interface{}, error) {
-    ts, ok := p.Source.(tasks.Task)
-    if !ok {
-        return nil, errNotNode
-    }
-    
-    return ts.FieldStatus(), nil
-    
-}
-func Task__WorkedBy__resolve(p graphql.ResolveParams) (interface{}, error) {
-    ts, ok := p.Source.(tasks.Task)
-    if !ok {
-        return nil, errNotNode
-    }
-    
-    f := ts.FieldWorkedBy()
+    f := ts.FieldDescription()
     if f.Exists() {
         
         return f.Must().AsString()
@@ -1252,22 +1411,38 @@ func Task__WorkedBy__resolve(p graphql.ResolveParams) (interface{}, error) {
     }
     
 }
-func Task__Stage__resolve(p graphql.ResolveParams) (interface{}, error) {
-    ts, ok := p.Source.(tasks.Task)
+func StageDetails__ExpectedDuration__resolve(p graphql.ResolveParams) (interface{}, error) {
+    ts, ok := p.Source.(tasks.StageDetails)
     if !ok {
         return nil, errNotNode
     }
     
-    return ts.FieldStage().AsString()
+    f := ts.FieldExpectedDuration()
+    if f.Exists() {
+        
+        return f.Must().AsString()
+        
+    } else {
+        return nil, nil
+    }
     
 }
-func Task__CurrentStageDetails__resolve(p graphql.ResolveParams) (interface{}, error) {
-    ts, ok := p.Source.(tasks.Task)
+func StageDetails__Logs__resolve(p graphql.ResolveParams) (interface{}, error) {
+    ts, ok := p.Source.(tasks.StageDetails)
     if !ok {
         return nil, errNotNode
     }
     
-    f := ts.FieldCurrentStageDetails()
+    return ts.FieldLogs(), nil
+    
+}
+func StageDetails__UpdatedAt__resolve(p graphql.ResolveParams) (interface{}, error) {
+    ts, ok := p.Source.(tasks.StageDetails)
+    if !ok {
+        return nil, errNotNode
+    }
+    
+    f := ts.FieldUpdatedAt()
     if f.Exists() {
         
         return f.Must(), nil
@@ -1277,126 +1452,82 @@ func Task__CurrentStageDetails__resolve(p graphql.ResolveParams) (interface{}, e
     }
     
 }
-func Task__PastStageDetails__resolve(p graphql.ResolveParams) (interface{}, error) {
-    ts, ok := p.Source.(tasks.Task)
-    if !ok {
-        return nil, errNotNode
-    }
-    
-    f := ts.FieldPastStageDetails()
-    if f.Exists() {
-        
-        return f.Must(), nil
-        
-    } else {
-        return nil, nil
-    }
-    
-}
-func Task__StartedAt__resolve(p graphql.ResolveParams) (interface{}, error) {
-    ts, ok := p.Source.(tasks.Task)
-    if !ok {
-        return nil, errNotNode
-    }
-    
-    f := ts.FieldStartedAt()
-    if f.Exists() {
-        
-        return f.Must(), nil
-        
-    } else {
-        return nil, nil
-    }
-    
-}
-func Task__RetrievalTask__resolve(p graphql.ResolveParams) (interface{}, error) {
-    ts, ok := p.Source.(tasks.Task)
-    if !ok {
-        return nil, errNotNode
-    }
-    
-    f := ts.FieldRetrievalTask()
-    if f.Exists() {
-        
-        return f.Must(), nil
-        
-    } else {
-        return nil, nil
-    }
-    
-}
-func Task__StorageTask__resolve(p graphql.ResolveParams) (interface{}, error) {
-    ts, ok := p.Source.(tasks.Task)
-    if !ok {
-        return nil, errNotNode
-    }
-    
-    f := ts.FieldStorageTask()
-    if f.Exists() {
-        
-        return f.Must(), nil
-        
-    } else {
-        return nil, nil
-    }
-    
-}
-var Task__type = graphql.NewObject(graphql.ObjectConfig{
-    Name: "Task",
+var StageDetails__type = graphql.NewObject(graphql.ObjectConfig{
+    Name: "StageDetails",
     Fields: graphql.Fields{
-        "UUID": &graphql.Field{
-            
-            Type: graphql.NewNonNull(graphql.String),
-            
-            Resolve: Task__UUID__resolve,
-        },
-        "Status": &graphql.Field{
-            
-            Type: graphql.NewNonNull(Status__type),
-            
-            Resolve: Task__Status__resolve,
-        },
-        "WorkedBy": &graphql.Field{
+        "Description": &graphql.Field{
             
             Type: graphql.String,
             
-            Resolve: Task__WorkedBy__resolve,
+            Resolve: StageDetails__Description__resolve,
         },
-        "Stage": &graphql.Field{
+        "ExpectedDuration": &graphql.Field{
             
-            Type: graphql.NewNonNull(graphql.String),
+            Type: graphql.String,
             
-            Resolve: Task__Stage__resolve,
+            Resolve: StageDetails__ExpectedDuration__resolve,
         },
-        "CurrentStageDetails": &graphql.Field{
+        "Logs": &graphql.Field{
             
-            Type: StageDetails__type,
+            Type: graphql.NewNonNull(List_Logs__type),
             
-            Resolve: Task__CurrentStageDetails__resolve,
+            Resolve: StageDetails__Logs__resolve,
         },
-        "PastStageDetails": &graphql.Field{
-            
-            Type: List_StageDetails__type,
-            
-            Resolve: Task__PastStageDetails__resolve,
-        },
-        "StartedAt": &graphql.Field{
+        "UpdatedAt": &graphql.Field{
             
             Type: Time__type,
             
-            Resolve: Task__StartedAt__resolve,
+            Resolve: StageDetails__UpdatedAt__resolve,
         },
-        "RetrievalTask": &graphql.Field{
+    },
+})
+func RetrievalTask__Miner__resolve(p graphql.ResolveParams) (interface{}, error) {
+    ts, ok := p.Source.(tasks.RetrievalTask)
+    if !ok {
+        return nil, errNotNode
+    }
+    
+    return ts.FieldMiner().AsString()
+    
+}
+func RetrievalTask__PayloadCID__resolve(p graphql.ResolveParams) (interface{}, error) {
+    ts, ok := p.Source.(tasks.RetrievalTask)
+    if !ok {
+        return nil, errNotNode
+    }
+    
+    return ts.FieldPayloadCID().AsString()
+    
+}
+func RetrievalTask__CARExport__resolve(p graphql.ResolveParams) (interface{}, error) {
+    ts, ok := p.Source.(tasks.RetrievalTask)
+    if !ok {
+        return nil, errNotNode
+    }
+    
+    return ts.FieldCARExport().AsBool()
+    
+}
+var RetrievalTask__type = graphql.NewObject(graphql.ObjectConfig{
+    Name: "RetrievalTask",
+    Fields: graphql.Fields{
+        "Miner": &graphql.Field{
             
-            Type: RetrievalTask__type,
+            Type: graphql.NewNonNull(graphql.String),
             
-            Resolve: Task__RetrievalTask__resolve,
+            Resolve: RetrievalTask__Miner__resolve,
         },
-        "StorageTask": &graphql.Field{
+        "PayloadCID": &graphql.Field{
             
-            Type: StorageTask__type,
+            Type: graphql.NewNonNull(graphql.String),
             
-            Resolve: Task__StorageTask__resolve,
+            Resolve: RetrievalTask__PayloadCID__resolve,
+        },
+        "CARExport": &graphql.Field{
+            
+            Type: graphql.NewNonNull(graphql.Boolean),
+            
+            Resolve: RetrievalTask__CARExport__resolve,
         },
     },
 })
@@ -1627,6 +1758,85 @@ var FinishedTask__type = graphql.NewObject(graphql.ObjectConfig{
             Type: graphql.NewNonNull(List_StageDetails__type),
             
             Resolve: FinishedTask__Events__resolve,
+        },
+    },
+})
+func UpdateTask__Status__resolve(p graphql.ResolveParams) (interface{}, error) {
+    ts, ok := p.Source.(tasks.UpdateTask)
+    if !ok {
+        return nil, errNotNode
+    }
+    
+    return ts.FieldStatus(), nil
+    
+}
+func UpdateTask__Stage__resolve(p graphql.ResolveParams) (interface{}, error) {
+    ts, ok := p.Source.(tasks.UpdateTask)
+    if !ok {
+        return nil, errNotNode
+    }
+    
+    f := ts.FieldStage()
+    if f.Exists() {
+        
+        return f.Must().AsString()
+        
+    } else {
+        return nil, nil
+    }
+    
+}
+func UpdateTask__CurrentStageDetails__resolve(p graphql.ResolveParams) (interface{}, error) {
+    ts, ok := p.Source.(tasks.UpdateTask)
+    if !ok {
+        return nil, errNotNode
+    }
+    
+    f := ts.FieldCurrentStageDetails()
+    if f.Exists() {
+        
+        return f.Must(), nil
+        
+    } else {
+        return nil, nil
+    }
+    
+}
+func UpdateTask__WorkedBy__resolve(p graphql.ResolveParams) (interface{}, error) {
+    ts, ok := p.Source.(tasks.UpdateTask)
+    if !ok {
+        return nil, errNotNode
+    }
+    
+    return ts.FieldWorkedBy().AsString()
+    
+}
+var UpdateTask__type = graphql.NewObject(graphql.ObjectConfig{
+    Name: "UpdateTask",
+    Fields: graphql.Fields{
+        "Status": &graphql.Field{
+            
+            Type: graphql.NewNonNull(Status__type),
+            
+            Resolve: UpdateTask__Status__resolve,
+        },
+        "Stage": &graphql.Field{
+            
+            Type: graphql.String,
+            
+            Resolve: UpdateTask__Stage__resolve,
+        },
+        "CurrentStageDetails": &graphql.Field{
+            
+            Type: StageDetails__type,
+            
+            Resolve: UpdateTask__CurrentStageDetails__resolve,
+        },
+        "WorkedBy": &graphql.Field{
+            
+            Type: graphql.NewNonNull(graphql.String),
+            
+            Resolve: UpdateTask__WorkedBy__resolve,
         },
     },
 })

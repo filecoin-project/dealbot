@@ -125,6 +125,7 @@ func main() {
 		schema.SpawnStructField("TimeToLastByteMS", "Int", true, false),
 		schema.SpawnStructField("Events", "Link_List_StageDetails", false, false),
 	}, schema.SpawnStructRepresentationMap(map[string]string{})))
+	ts.Accumulate(schema.SpawnLinkReference("Link_FinishedTask", "FinishedTask"))
 
 	// client api
 	ts.Accumulate(schema.SpawnStruct("PopTask", []schema.StructField{
@@ -136,6 +137,18 @@ func main() {
 		schema.SpawnStructField("Stage", "String", true, false),
 		schema.SpawnStructField("CurrentStageDetails", "StageDetails", true, false),
 		schema.SpawnStructField("WorkedBy", "String", false, false),
+	}, schema.SpawnStructRepresentationMap(map[string]string{})))
+
+	// reputation api
+	ts.Accumulate(schema.SpawnStruct("AuthenticatedRecord", []schema.StructField{
+		schema.SpawnStructField("Record", "Link_FinishedTask", false, false),
+		schema.SpawnStructField("Signature", "Bytes", false, false),
+	}, schema.SpawnStructRepresentationMap(map[string]string{})))
+	ts.Accumulate(schema.SpawnList("List_AuthenticatedRecord", "AuthenticatedRecord", false))
+	ts.Accumulate(schema.SpawnStruct("RecordUpdate", []schema.StructField{
+		schema.SpawnStructField("Records", "List_AuthenticatedRecord", false, false),
+		schema.SpawnStructField("SigPrev", "Bytes", false, false),
+		schema.SpawnStructField("Previous", "Link", false, true),
 	}, schema.SpawnStructRepresentationMap(map[string]string{})))
 
 	if errs := ts.ValidateGraph(); errs != nil {

@@ -40,6 +40,16 @@ func GetHandler(db state.State) (*http.ServeMux, error) {
 						return tasks.Type.Tasks.Of(tsks), nil
 					},
 				},
+				"RecordUpdate": &graphql.Field{
+					Type: RecordUpdate__type,
+					Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+						hd, err := db.GetHead(p.Context)
+						if err != nil {
+							return nil, err
+						}
+						return hd, nil
+					},
+				},
 			},
 		}),
 	})

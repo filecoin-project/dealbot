@@ -113,6 +113,7 @@ func NewWithDependencies(listener, graphqlListener net.Listener, recorder metric
 	})
 
 	r.HandleFunc("/drain/{workedby}", srv.drainHandler).Methods("POST")
+	r.HandleFunc("/complete/{workedby}", srv.completeHandler).Methods("POST")
 	r.HandleFunc("/pop-task", srv.popTaskHandler).Methods("POST")
 	r.HandleFunc("/tasks", srv.getTasksHandler).Methods("GET")
 	r.HandleFunc("/tasks/storage", srv.newStorageTaskHandler).Methods("POST")
@@ -135,15 +136,13 @@ func NewWithDependencies(listener, graphqlListener net.Listener, recorder metric
 	}
 
 	if graphqlListener != nil {
-		gm := mux.NewRouter().StrictSlash(true)
 		gqlHandler, err := graphql.GetHandler(srv.db)
 		if err != nil {
 			return nil, err
 		}
-		gm.Handle("/", gqlHandler)
 
 		srv.gserver = &http.Server{
-			Handler:      handlers.LoggingHandler(os.Stdout, gm),
+			Handler:      handlers.LoggingHandler(os.Stdout, gqlHandler),
 			WriteTimeout: 30 * time.Second,
 			ReadTimeout:  30 * time.Second,
 		}
