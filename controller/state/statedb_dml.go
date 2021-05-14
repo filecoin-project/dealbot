@@ -55,7 +55,7 @@ const (
 	`
 
 	cidArchiveSQL = `
-		INSERT INTO finalizedData (cid, data, created) VALUES($1, $2, $3)
+		INSERT INTO finalizedData (cid, data, created) VALUES($1, $2, $3) ON CONFLICT (cid) DO NOTHING
 	`
 
 	cidGetArchiveSQL = `
