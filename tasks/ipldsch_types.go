@@ -208,6 +208,8 @@ type _RetrievalTask struct {
 	Miner _String
 	PayloadCID _String
 	CARExport _Bool
+	Schedule _String__Maybe
+	ScheduleLimit _String__Maybe
 }
 
 // StageDetails matches the IPLD Schema type "StageDetails".  It has Struct type-kind, and may be interrogated like map kind.
@@ -232,6 +234,8 @@ type _StorageTask struct {
 	StartOffset _Int
 	FastRetrieval _Bool
 	Verified _Bool
+	Schedule _String__Maybe
+	ScheduleLimit _String__Maybe
 }
 
 // String matches the IPLD Schema type "String".  It has string kind.

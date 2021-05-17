@@ -11260,6 +11260,12 @@ func (n _RetrievalTask) FieldPayloadCID() String {
 func (n _RetrievalTask) FieldCARExport() Bool {
 	return &n.CARExport
 }
+func (n _RetrievalTask) FieldSchedule() MaybeString {
+	return &n.Schedule
+}
+func (n _RetrievalTask) FieldScheduleLimit() MaybeString {
+	return &n.ScheduleLimit
+}
 type _RetrievalTask__Maybe struct {
 	m schema.Maybe
 	v RetrievalTask
@@ -11297,6 +11303,8 @@ var (
 	fieldName__RetrievalTask_Miner = _String{"Miner"}
 	fieldName__RetrievalTask_PayloadCID = _String{"PayloadCID"}
 	fieldName__RetrievalTask_CARExport = _String{"CARExport"}
+	fieldName__RetrievalTask_Schedule = _String{"Schedule"}
+	fieldName__RetrievalTask_ScheduleLimit = _String{"ScheduleLimit"}
 )
 var _ ipld.Node = (RetrievalTask)(&_RetrievalTask{})
 var _ schema.TypedNode = (RetrievalTask)(&_RetrievalTask{})
@@ -11311,6 +11319,16 @@ func (n RetrievalTask) LookupByString(key string) (ipld.Node, error) {
 		return &n.PayloadCID, nil
 	case "CARExport":
 		return &n.CARExport, nil
+	case "Schedule":
+		if n.Schedule.m == schema.Maybe_Absent {
+			return ipld.Absent, nil
+		}
+		return n.Schedule.v, nil
+	case "ScheduleLimit":
+		if n.ScheduleLimit.m == schema.Maybe_Absent {
+			return ipld.Absent, nil
+		}
+		return n.ScheduleLimit.v, nil
 	default:
 		return nil, schema.ErrNoSuchField{Type: nil /*TODO*/, Field: ipld.PathSegmentOfString(key)}
 	}
@@ -11338,7 +11356,7 @@ type _RetrievalTask__MapItr struct {
 }
 
 func (itr *_RetrievalTask__MapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
-	if itr.idx >= 3 {
+	if itr.idx >= 5 {
 		return nil, nil, ipld.ErrIteratorOverread{}
 	}
 	switch itr.idx {
@@ -11351,6 +11369,20 @@ func (itr *_RetrievalTask__MapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
 	case 2:
 		k = &fieldName__RetrievalTask_CARExport
 		v = &itr.n.CARExport
+	case 3:
+		k = &fieldName__RetrievalTask_Schedule
+		if itr.n.Schedule.m == schema.Maybe_Absent {
+			v = ipld.Absent
+			break
+		}
+		v = itr.n.Schedule.v
+	case 4:
+		k = &fieldName__RetrievalTask_ScheduleLimit
+		if itr.n.ScheduleLimit.m == schema.Maybe_Absent {
+			v = ipld.Absent
+			break
+		}
+		v = itr.n.ScheduleLimit.v
 	default:
 		panic("unreachable")
 	}
@@ -11358,14 +11390,14 @@ func (itr *_RetrievalTask__MapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
 	return
 }
 func (itr *_RetrievalTask__MapItr) Done() bool {
-	return itr.idx >= 3
+	return itr.idx >= 5
 }
 
 func (RetrievalTask) ListIterator() ipld.ListIterator {
 	return nil
 }
 func (RetrievalTask) Length() int64 {
-	return 3
+	return 5
 }
 func (RetrievalTask) IsAbsent() bool {
 	return false
@@ -11426,6 +11458,8 @@ type _RetrievalTask__Assembler struct {
 	ca_Miner _String__Assembler
 	ca_PayloadCID _String__Assembler
 	ca_CARExport _Bool__Assembler
+	ca_Schedule _String__Assembler
+	ca_ScheduleLimit _String__Assembler
 	}
 
 func (na *_RetrievalTask__Assembler) reset() {
@@ -11434,12 +11468,16 @@ func (na *_RetrievalTask__Assembler) reset() {
 	na.ca_Miner.reset()
 	na.ca_PayloadCID.reset()
 	na.ca_CARExport.reset()
+	na.ca_Schedule.reset()
+	na.ca_ScheduleLimit.reset()
 }
 
 var (
 	fieldBit__RetrievalTask_Miner = 1 << 0
 	fieldBit__RetrievalTask_PayloadCID = 1 << 1
 	fieldBit__RetrievalTask_CARExport = 1 << 2
+	fieldBit__RetrievalTask_Schedule = 1 << 3
+	fieldBit__RetrievalTask_ScheduleLimit = 1 << 4
 	fieldBits__RetrievalTask_sufficient = 0 + 1 << 0 + 1 << 1 + 1 << 2
 )
 func (na *_RetrievalTask__Assembler) BeginMap(int64) (ipld.MapAssembler, error) {
@@ -11563,6 +11601,24 @@ func (ma *_RetrievalTask__Assembler) valueFinishTidy() bool {
 		default:
 			return false
 		}
+	case 3:
+		switch ma.w.Schedule.m {
+		case schema.Maybe_Value:
+			ma.w.Schedule.v = ma.ca_Schedule.w
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
+	case 4:
+		switch ma.w.ScheduleLimit.m {
+		case schema.Maybe_Value:
+			ma.w.ScheduleLimit.v = ma.ca_ScheduleLimit.w
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
 	default:
 		panic("unreachable")
 	}
@@ -11613,6 +11669,26 @@ func (ma *_RetrievalTask__Assembler) AssembleEntry(k string) (ipld.NodeAssembler
 		ma.ca_CARExport.w = &ma.w.CARExport
 		ma.ca_CARExport.m = &ma.cm
 		return &ma.ca_CARExport, nil
+	case "Schedule":
+		if ma.s & fieldBit__RetrievalTask_Schedule != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__RetrievalTask_Schedule}
+		}
+		ma.s += fieldBit__RetrievalTask_Schedule
+		ma.state = maState_midValue
+		ma.f = 3
+		ma.ca_Schedule.w = ma.w.Schedule.v
+		ma.ca_Schedule.m = &ma.w.Schedule.m
+		return &ma.ca_Schedule, nil
+	case "ScheduleLimit":
+		if ma.s & fieldBit__RetrievalTask_ScheduleLimit != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__RetrievalTask_ScheduleLimit}
+		}
+		ma.s += fieldBit__RetrievalTask_ScheduleLimit
+		ma.state = maState_midValue
+		ma.f = 4
+		ma.ca_ScheduleLimit.w = ma.w.ScheduleLimit.v
+		ma.ca_ScheduleLimit.m = &ma.w.ScheduleLimit.m
+		return &ma.ca_ScheduleLimit, nil
 	default:
 		return nil, ipld.ErrInvalidKey{TypeName:"tasks.RetrievalTask", Key:&_String{k}}
 	}
@@ -11662,6 +11738,14 @@ func (ma *_RetrievalTask__Assembler) AssembleValue() ipld.NodeAssembler {
 		ma.ca_CARExport.w = &ma.w.CARExport
 		ma.ca_CARExport.m = &ma.cm
 		return &ma.ca_CARExport
+	case 3:
+		ma.ca_Schedule.w = ma.w.Schedule.v
+		ma.ca_Schedule.m = &ma.w.Schedule.m
+		return &ma.ca_Schedule
+	case 4:
+		ma.ca_ScheduleLimit.w = ma.w.ScheduleLimit.v
+		ma.ca_ScheduleLimit.m = &ma.w.ScheduleLimit.m
+		return &ma.ca_ScheduleLimit
 	default:
 		panic("unreachable")
 	}
@@ -11749,6 +11833,20 @@ func (ka *_RetrievalTask__KeyAssembler) AssignString(k string) error {
 		ka.s += fieldBit__RetrievalTask_CARExport
 		ka.state = maState_expectValue
 		ka.f = 2
+	case "Schedule":
+		if ka.s & fieldBit__RetrievalTask_Schedule != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__RetrievalTask_Schedule}
+		}
+		ka.s += fieldBit__RetrievalTask_Schedule
+		ka.state = maState_expectValue
+		ka.f = 3
+	case "ScheduleLimit":
+		if ka.s & fieldBit__RetrievalTask_ScheduleLimit != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__RetrievalTask_ScheduleLimit}
+		}
+		ka.s += fieldBit__RetrievalTask_ScheduleLimit
+		ka.state = maState_expectValue
+		ka.f = 4
 	default:
 		return ipld.ErrInvalidKey{TypeName:"tasks.RetrievalTask", Key:&_String{k}}
 	}
@@ -11781,6 +11879,8 @@ var (
 	fieldName__RetrievalTask_Miner_serial = _String{"Miner"}
 	fieldName__RetrievalTask_PayloadCID_serial = _String{"PayloadCID"}
 	fieldName__RetrievalTask_CARExport_serial = _String{"CARExport"}
+	fieldName__RetrievalTask_Schedule_serial = _String{"Schedule"}
+	fieldName__RetrievalTask_ScheduleLimit_serial = _String{"ScheduleLimit"}
 )
 var _ ipld.Node = &_RetrievalTask__Repr{}
 func (_RetrievalTask__Repr) Kind() ipld.Kind {
@@ -11794,6 +11894,16 @@ func (n *_RetrievalTask__Repr) LookupByString(key string) (ipld.Node, error) {
 		return n.PayloadCID.Representation(), nil
 	case "CARExport":
 		return n.CARExport.Representation(), nil
+	case "Schedule":
+		if n.Schedule.m == schema.Maybe_Absent {
+			return ipld.Absent, ipld.ErrNotExists{ipld.PathSegmentOfString(key)}
+		}
+		return n.Schedule.v.Representation(), nil
+	case "ScheduleLimit":
+		if n.ScheduleLimit.m == schema.Maybe_Absent {
+			return ipld.Absent, ipld.ErrNotExists{ipld.PathSegmentOfString(key)}
+		}
+		return n.ScheduleLimit.v.Representation(), nil
 	default:
 		return nil, schema.ErrNoSuchField{Type: nil /*TODO*/, Field: ipld.PathSegmentOfString(key)}
 	}
@@ -11812,17 +11922,29 @@ func (n _RetrievalTask__Repr) LookupBySegment(seg ipld.PathSegment) (ipld.Node, 
 	return n.LookupByString(seg.String())
 }
 func (n *_RetrievalTask__Repr) MapIterator() ipld.MapIterator {
-	return &_RetrievalTask__ReprMapItr{n, 0}
+	end := 5
+	if n.ScheduleLimit.m == schema.Maybe_Absent {
+		end = 4
+	} else {
+		goto done
+	}
+	if n.Schedule.m == schema.Maybe_Absent {
+		end = 3
+	} else {
+		goto done
+	}
+done:
+	return &_RetrievalTask__ReprMapItr{n, 0, end}
 }
 
 type _RetrievalTask__ReprMapItr struct {
 	n   *_RetrievalTask__Repr
 	idx int
-	
+	end int
 }
 
 func (itr *_RetrievalTask__ReprMapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
-if itr.idx >= 3 {
+advance:if itr.idx >= 5 {
 		return nil, nil, ipld.ErrIteratorOverread{}
 	}
 	switch itr.idx {
@@ -11835,6 +11957,20 @@ if itr.idx >= 3 {
 	case 2:
 		k = &fieldName__RetrievalTask_CARExport_serial
 		v = itr.n.CARExport.Representation()
+	case 3:
+		k = &fieldName__RetrievalTask_Schedule_serial
+		if itr.n.Schedule.m == schema.Maybe_Absent {
+			itr.idx++
+			goto advance
+		}
+		v = itr.n.Schedule.v.Representation()
+	case 4:
+		k = &fieldName__RetrievalTask_ScheduleLimit_serial
+		if itr.n.ScheduleLimit.m == schema.Maybe_Absent {
+			itr.idx++
+			goto advance
+		}
+		v = itr.n.ScheduleLimit.v.Representation()
 	default:
 		panic("unreachable")
 	}
@@ -11842,13 +11978,19 @@ if itr.idx >= 3 {
 	return
 }
 func (itr *_RetrievalTask__ReprMapItr) Done() bool {
-	return itr.idx >= 3
+	return itr.idx >= itr.end
 }
 func (_RetrievalTask__Repr) ListIterator() ipld.ListIterator {
 	return nil
 }
 func (rn *_RetrievalTask__Repr) Length() int64 {
-	l := 3
+	l := 5
+	if rn.Schedule.m == schema.Maybe_Absent {
+		l--
+	}
+	if rn.ScheduleLimit.m == schema.Maybe_Absent {
+		l--
+	}
 	return int64(l)
 }
 func (_RetrievalTask__Repr) IsAbsent() bool {
@@ -11910,6 +12052,8 @@ type _RetrievalTask__ReprAssembler struct {
 	ca_Miner _String__ReprAssembler
 	ca_PayloadCID _String__ReprAssembler
 	ca_CARExport _Bool__ReprAssembler
+	ca_Schedule _String__ReprAssembler
+	ca_ScheduleLimit _String__ReprAssembler
 	}
 
 func (na *_RetrievalTask__ReprAssembler) reset() {
@@ -11918,6 +12062,8 @@ func (na *_RetrievalTask__ReprAssembler) reset() {
 	na.ca_Miner.reset()
 	na.ca_PayloadCID.reset()
 	na.ca_CARExport.reset()
+	na.ca_Schedule.reset()
+	na.ca_ScheduleLimit.reset()
 }
 func (na *_RetrievalTask__ReprAssembler) BeginMap(int64) (ipld.MapAssembler, error) {
 	switch *na.m {
@@ -12034,6 +12180,24 @@ func (ma *_RetrievalTask__ReprAssembler) valueFinishTidy() bool {
 		default:
 			return false
 		}
+	case 3:
+		switch ma.w.Schedule.m {
+		case schema.Maybe_Value:
+			ma.w.Schedule.v = ma.ca_Schedule.w
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
+	case 4:
+		switch ma.w.ScheduleLimit.m {
+		case schema.Maybe_Value:
+			ma.w.ScheduleLimit.v = ma.ca_ScheduleLimit.w
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
 	default:
 		panic("unreachable")
 	}
@@ -12084,6 +12248,28 @@ func (ma *_RetrievalTask__ReprAssembler) AssembleEntry(k string) (ipld.NodeAssem
 		ma.ca_CARExport.w = &ma.w.CARExport
 		ma.ca_CARExport.m = &ma.cm
 		return &ma.ca_CARExport, nil
+	case "Schedule":
+		if ma.s & fieldBit__RetrievalTask_Schedule != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__RetrievalTask_Schedule_serial}
+		}
+		ma.s += fieldBit__RetrievalTask_Schedule
+		ma.state = maState_midValue
+		ma.f = 3
+		ma.ca_Schedule.w = ma.w.Schedule.v
+		ma.ca_Schedule.m = &ma.w.Schedule.m
+		
+		return &ma.ca_Schedule, nil
+	case "ScheduleLimit":
+		if ma.s & fieldBit__RetrievalTask_ScheduleLimit != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__RetrievalTask_ScheduleLimit_serial}
+		}
+		ma.s += fieldBit__RetrievalTask_ScheduleLimit
+		ma.state = maState_midValue
+		ma.f = 4
+		ma.ca_ScheduleLimit.w = ma.w.ScheduleLimit.v
+		ma.ca_ScheduleLimit.m = &ma.w.ScheduleLimit.m
+		
+		return &ma.ca_ScheduleLimit, nil
 	default:
 		return nil, ipld.ErrInvalidKey{TypeName:"tasks.RetrievalTask.Repr", Key:&_String{k}}
 	}
@@ -12133,6 +12319,16 @@ func (ma *_RetrievalTask__ReprAssembler) AssembleValue() ipld.NodeAssembler {
 		ma.ca_CARExport.w = &ma.w.CARExport
 		ma.ca_CARExport.m = &ma.cm
 		return &ma.ca_CARExport
+	case 3:
+		ma.ca_Schedule.w = ma.w.Schedule.v
+		ma.ca_Schedule.m = &ma.w.Schedule.m
+		
+		return &ma.ca_Schedule
+	case 4:
+		ma.ca_ScheduleLimit.w = ma.w.ScheduleLimit.v
+		ma.ca_ScheduleLimit.m = &ma.w.ScheduleLimit.m
+		
+		return &ma.ca_ScheduleLimit
 	default:
 		panic("unreachable")
 	}
@@ -12220,6 +12416,20 @@ func (ka *_RetrievalTask__ReprKeyAssembler) AssignString(k string) error {
 		ka.s += fieldBit__RetrievalTask_CARExport
 		ka.state = maState_expectValue
 		ka.f = 2
+	case "Schedule":
+		if ka.s & fieldBit__RetrievalTask_Schedule != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__RetrievalTask_Schedule_serial}
+		}
+		ka.s += fieldBit__RetrievalTask_Schedule
+		ka.state = maState_expectValue
+		ka.f = 3
+	case "ScheduleLimit":
+		if ka.s & fieldBit__RetrievalTask_ScheduleLimit != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__RetrievalTask_ScheduleLimit_serial}
+		}
+		ka.s += fieldBit__RetrievalTask_ScheduleLimit
+		ka.state = maState_expectValue
+		ka.f = 4
 	default:
 		return ipld.ErrInvalidKey{TypeName:"tasks.RetrievalTask.Repr", Key:&_String{k}}
 	}
@@ -13588,6 +13798,12 @@ func (n _StorageTask) FieldFastRetrieval() Bool {
 func (n _StorageTask) FieldVerified() Bool {
 	return &n.Verified
 }
+func (n _StorageTask) FieldSchedule() MaybeString {
+	return &n.Schedule
+}
+func (n _StorageTask) FieldScheduleLimit() MaybeString {
+	return &n.ScheduleLimit
+}
 type _StorageTask__Maybe struct {
 	m schema.Maybe
 	v StorageTask
@@ -13628,6 +13844,8 @@ var (
 	fieldName__StorageTask_StartOffset = _String{"StartOffset"}
 	fieldName__StorageTask_FastRetrieval = _String{"FastRetrieval"}
 	fieldName__StorageTask_Verified = _String{"Verified"}
+	fieldName__StorageTask_Schedule = _String{"Schedule"}
+	fieldName__StorageTask_ScheduleLimit = _String{"ScheduleLimit"}
 )
 var _ ipld.Node = (StorageTask)(&_StorageTask{})
 var _ schema.TypedNode = (StorageTask)(&_StorageTask{})
@@ -13648,6 +13866,16 @@ func (n StorageTask) LookupByString(key string) (ipld.Node, error) {
 		return &n.FastRetrieval, nil
 	case "Verified":
 		return &n.Verified, nil
+	case "Schedule":
+		if n.Schedule.m == schema.Maybe_Absent {
+			return ipld.Absent, nil
+		}
+		return n.Schedule.v, nil
+	case "ScheduleLimit":
+		if n.ScheduleLimit.m == schema.Maybe_Absent {
+			return ipld.Absent, nil
+		}
+		return n.ScheduleLimit.v, nil
 	default:
 		return nil, schema.ErrNoSuchField{Type: nil /*TODO*/, Field: ipld.PathSegmentOfString(key)}
 	}
@@ -13675,7 +13903,7 @@ type _StorageTask__MapItr struct {
 }
 
 func (itr *_StorageTask__MapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
-	if itr.idx >= 6 {
+	if itr.idx >= 8 {
 		return nil, nil, ipld.ErrIteratorOverread{}
 	}
 	switch itr.idx {
@@ -13697,6 +13925,20 @@ func (itr *_StorageTask__MapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
 	case 5:
 		k = &fieldName__StorageTask_Verified
 		v = &itr.n.Verified
+	case 6:
+		k = &fieldName__StorageTask_Schedule
+		if itr.n.Schedule.m == schema.Maybe_Absent {
+			v = ipld.Absent
+			break
+		}
+		v = itr.n.Schedule.v
+	case 7:
+		k = &fieldName__StorageTask_ScheduleLimit
+		if itr.n.ScheduleLimit.m == schema.Maybe_Absent {
+			v = ipld.Absent
+			break
+		}
+		v = itr.n.ScheduleLimit.v
 	default:
 		panic("unreachable")
 	}
@@ -13704,14 +13946,14 @@ func (itr *_StorageTask__MapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
 	return
 }
 func (itr *_StorageTask__MapItr) Done() bool {
-	return itr.idx >= 6
+	return itr.idx >= 8
 }
 
 func (StorageTask) ListIterator() ipld.ListIterator {
 	return nil
 }
 func (StorageTask) Length() int64 {
-	return 6
+	return 8
 }
 func (StorageTask) IsAbsent() bool {
 	return false
@@ -13775,6 +14017,8 @@ type _StorageTask__Assembler struct {
 	ca_StartOffset _Int__Assembler
 	ca_FastRetrieval _Bool__Assembler
 	ca_Verified _Bool__Assembler
+	ca_Schedule _String__Assembler
+	ca_ScheduleLimit _String__Assembler
 	}
 
 func (na *_StorageTask__Assembler) reset() {
@@ -13786,6 +14030,8 @@ func (na *_StorageTask__Assembler) reset() {
 	na.ca_StartOffset.reset()
 	na.ca_FastRetrieval.reset()
 	na.ca_Verified.reset()
+	na.ca_Schedule.reset()
+	na.ca_ScheduleLimit.reset()
 }
 
 var (
@@ -13795,6 +14041,8 @@ var (
 	fieldBit__StorageTask_StartOffset = 1 << 3
 	fieldBit__StorageTask_FastRetrieval = 1 << 4
 	fieldBit__StorageTask_Verified = 1 << 5
+	fieldBit__StorageTask_Schedule = 1 << 6
+	fieldBit__StorageTask_ScheduleLimit = 1 << 7
 	fieldBits__StorageTask_sufficient = 0 + 1 << 0 + 1 << 1 + 1 << 2 + 1 << 3 + 1 << 4 + 1 << 5
 )
 func (na *_StorageTask__Assembler) BeginMap(int64) (ipld.MapAssembler, error) {
@@ -13948,6 +14196,24 @@ func (ma *_StorageTask__Assembler) valueFinishTidy() bool {
 		default:
 			return false
 		}
+	case 6:
+		switch ma.w.Schedule.m {
+		case schema.Maybe_Value:
+			ma.w.Schedule.v = ma.ca_Schedule.w
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
+	case 7:
+		switch ma.w.ScheduleLimit.m {
+		case schema.Maybe_Value:
+			ma.w.ScheduleLimit.v = ma.ca_ScheduleLimit.w
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
 	default:
 		panic("unreachable")
 	}
@@ -14028,6 +14294,26 @@ func (ma *_StorageTask__Assembler) AssembleEntry(k string) (ipld.NodeAssembler, 
 		ma.ca_Verified.w = &ma.w.Verified
 		ma.ca_Verified.m = &ma.cm
 		return &ma.ca_Verified, nil
+	case "Schedule":
+		if ma.s & fieldBit__StorageTask_Schedule != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__StorageTask_Schedule}
+		}
+		ma.s += fieldBit__StorageTask_Schedule
+		ma.state = maState_midValue
+		ma.f = 6
+		ma.ca_Schedule.w = ma.w.Schedule.v
+		ma.ca_Schedule.m = &ma.w.Schedule.m
+		return &ma.ca_Schedule, nil
+	case "ScheduleLimit":
+		if ma.s & fieldBit__StorageTask_ScheduleLimit != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__StorageTask_ScheduleLimit}
+		}
+		ma.s += fieldBit__StorageTask_ScheduleLimit
+		ma.state = maState_midValue
+		ma.f = 7
+		ma.ca_ScheduleLimit.w = ma.w.ScheduleLimit.v
+		ma.ca_ScheduleLimit.m = &ma.w.ScheduleLimit.m
+		return &ma.ca_ScheduleLimit, nil
 	default:
 		return nil, ipld.ErrInvalidKey{TypeName:"tasks.StorageTask", Key:&_String{k}}
 	}
@@ -14089,6 +14375,14 @@ func (ma *_StorageTask__Assembler) AssembleValue() ipld.NodeAssembler {
 		ma.ca_Verified.w = &ma.w.Verified
 		ma.ca_Verified.m = &ma.cm
 		return &ma.ca_Verified
+	case 6:
+		ma.ca_Schedule.w = ma.w.Schedule.v
+		ma.ca_Schedule.m = &ma.w.Schedule.m
+		return &ma.ca_Schedule
+	case 7:
+		ma.ca_ScheduleLimit.w = ma.w.ScheduleLimit.v
+		ma.ca_ScheduleLimit.m = &ma.w.ScheduleLimit.m
+		return &ma.ca_ScheduleLimit
 	default:
 		panic("unreachable")
 	}
@@ -14206,6 +14500,20 @@ func (ka *_StorageTask__KeyAssembler) AssignString(k string) error {
 		ka.s += fieldBit__StorageTask_Verified
 		ka.state = maState_expectValue
 		ka.f = 5
+	case "Schedule":
+		if ka.s & fieldBit__StorageTask_Schedule != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__StorageTask_Schedule}
+		}
+		ka.s += fieldBit__StorageTask_Schedule
+		ka.state = maState_expectValue
+		ka.f = 6
+	case "ScheduleLimit":
+		if ka.s & fieldBit__StorageTask_ScheduleLimit != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__StorageTask_ScheduleLimit}
+		}
+		ka.s += fieldBit__StorageTask_ScheduleLimit
+		ka.state = maState_expectValue
+		ka.f = 7
 	default:
 		return ipld.ErrInvalidKey{TypeName:"tasks.StorageTask", Key:&_String{k}}
 	}
@@ -14241,6 +14549,8 @@ var (
 	fieldName__StorageTask_StartOffset_serial = _String{"StartOffset"}
 	fieldName__StorageTask_FastRetrieval_serial = _String{"FastRetrieval"}
 	fieldName__StorageTask_Verified_serial = _String{"Verified"}
+	fieldName__StorageTask_Schedule_serial = _String{"Schedule"}
+	fieldName__StorageTask_ScheduleLimit_serial = _String{"ScheduleLimit"}
 )
 var _ ipld.Node = &_StorageTask__Repr{}
 func (_StorageTask__Repr) Kind() ipld.Kind {
@@ -14260,6 +14570,16 @@ func (n *_StorageTask__Repr) LookupByString(key string) (ipld.Node, error) {
 		return n.FastRetrieval.Representation(), nil
 	case "Verified":
 		return n.Verified.Representation(), nil
+	case "Schedule":
+		if n.Schedule.m == schema.Maybe_Absent {
+			return ipld.Absent, ipld.ErrNotExists{ipld.PathSegmentOfString(key)}
+		}
+		return n.Schedule.v.Representation(), nil
+	case "ScheduleLimit":
+		if n.ScheduleLimit.m == schema.Maybe_Absent {
+			return ipld.Absent, ipld.ErrNotExists{ipld.PathSegmentOfString(key)}
+		}
+		return n.ScheduleLimit.v.Representation(), nil
 	default:
 		return nil, schema.ErrNoSuchField{Type: nil /*TODO*/, Field: ipld.PathSegmentOfString(key)}
 	}
@@ -14278,17 +14598,29 @@ func (n _StorageTask__Repr) LookupBySegment(seg ipld.PathSegment) (ipld.Node, er
 	return n.LookupByString(seg.String())
 }
 func (n *_StorageTask__Repr) MapIterator() ipld.MapIterator {
-	return &_StorageTask__ReprMapItr{n, 0}
+	end := 8
+	if n.ScheduleLimit.m == schema.Maybe_Absent {
+		end = 7
+	} else {
+		goto done
+	}
+	if n.Schedule.m == schema.Maybe_Absent {
+		end = 6
+	} else {
+		goto done
+	}
+done:
+	return &_StorageTask__ReprMapItr{n, 0, end}
 }
 
 type _StorageTask__ReprMapItr struct {
 	n   *_StorageTask__Repr
 	idx int
-	
+	end int
 }
 
 func (itr *_StorageTask__ReprMapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
-if itr.idx >= 6 {
+advance:if itr.idx >= 8 {
 		return nil, nil, ipld.ErrIteratorOverread{}
 	}
 	switch itr.idx {
@@ -14310,6 +14642,20 @@ if itr.idx >= 6 {
 	case 5:
 		k = &fieldName__StorageTask_Verified_serial
 		v = itr.n.Verified.Representation()
+	case 6:
+		k = &fieldName__StorageTask_Schedule_serial
+		if itr.n.Schedule.m == schema.Maybe_Absent {
+			itr.idx++
+			goto advance
+		}
+		v = itr.n.Schedule.v.Representation()
+	case 7:
+		k = &fieldName__StorageTask_ScheduleLimit_serial
+		if itr.n.ScheduleLimit.m == schema.Maybe_Absent {
+			itr.idx++
+			goto advance
+		}
+		v = itr.n.ScheduleLimit.v.Representation()
 	default:
 		panic("unreachable")
 	}
@@ -14317,13 +14663,19 @@ if itr.idx >= 6 {
 	return
 }
 func (itr *_StorageTask__ReprMapItr) Done() bool {
-	return itr.idx >= 6
+	return itr.idx >= itr.end
 }
 func (_StorageTask__Repr) ListIterator() ipld.ListIterator {
 	return nil
 }
 func (rn *_StorageTask__Repr) Length() int64 {
-	l := 6
+	l := 8
+	if rn.Schedule.m == schema.Maybe_Absent {
+		l--
+	}
+	if rn.ScheduleLimit.m == schema.Maybe_Absent {
+		l--
+	}
 	return int64(l)
 }
 func (_StorageTask__Repr) IsAbsent() bool {
@@ -14388,6 +14740,8 @@ type _StorageTask__ReprAssembler struct {
 	ca_StartOffset _Int__ReprAssembler
 	ca_FastRetrieval _Bool__ReprAssembler
 	ca_Verified _Bool__ReprAssembler
+	ca_Schedule _String__ReprAssembler
+	ca_ScheduleLimit _String__ReprAssembler
 	}
 
 func (na *_StorageTask__ReprAssembler) reset() {
@@ -14399,6 +14753,8 @@ func (na *_StorageTask__ReprAssembler) reset() {
 	na.ca_StartOffset.reset()
 	na.ca_FastRetrieval.reset()
 	na.ca_Verified.reset()
+	na.ca_Schedule.reset()
+	na.ca_ScheduleLimit.reset()
 }
 func (na *_StorageTask__ReprAssembler) BeginMap(int64) (ipld.MapAssembler, error) {
 	switch *na.m {
@@ -14539,6 +14895,24 @@ func (ma *_StorageTask__ReprAssembler) valueFinishTidy() bool {
 		default:
 			return false
 		}
+	case 6:
+		switch ma.w.Schedule.m {
+		case schema.Maybe_Value:
+			ma.w.Schedule.v = ma.ca_Schedule.w
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
+	case 7:
+		switch ma.w.ScheduleLimit.m {
+		case schema.Maybe_Value:
+			ma.w.ScheduleLimit.v = ma.ca_ScheduleLimit.w
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
 	default:
 		panic("unreachable")
 	}
@@ -14619,6 +14993,28 @@ func (ma *_StorageTask__ReprAssembler) AssembleEntry(k string) (ipld.NodeAssembl
 		ma.ca_Verified.w = &ma.w.Verified
 		ma.ca_Verified.m = &ma.cm
 		return &ma.ca_Verified, nil
+	case "Schedule":
+		if ma.s & fieldBit__StorageTask_Schedule != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__StorageTask_Schedule_serial}
+		}
+		ma.s += fieldBit__StorageTask_Schedule
+		ma.state = maState_midValue
+		ma.f = 6
+		ma.ca_Schedule.w = ma.w.Schedule.v
+		ma.ca_Schedule.m = &ma.w.Schedule.m
+		
+		return &ma.ca_Schedule, nil
+	case "ScheduleLimit":
+		if ma.s & fieldBit__StorageTask_ScheduleLimit != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__StorageTask_ScheduleLimit_serial}
+		}
+		ma.s += fieldBit__StorageTask_ScheduleLimit
+		ma.state = maState_midValue
+		ma.f = 7
+		ma.ca_ScheduleLimit.w = ma.w.ScheduleLimit.v
+		ma.ca_ScheduleLimit.m = &ma.w.ScheduleLimit.m
+		
+		return &ma.ca_ScheduleLimit, nil
 	default:
 		return nil, ipld.ErrInvalidKey{TypeName:"tasks.StorageTask.Repr", Key:&_String{k}}
 	}
@@ -14680,6 +15076,16 @@ func (ma *_StorageTask__ReprAssembler) AssembleValue() ipld.NodeAssembler {
 		ma.ca_Verified.w = &ma.w.Verified
 		ma.ca_Verified.m = &ma.cm
 		return &ma.ca_Verified
+	case 6:
+		ma.ca_Schedule.w = ma.w.Schedule.v
+		ma.ca_Schedule.m = &ma.w.Schedule.m
+		
+		return &ma.ca_Schedule
+	case 7:
+		ma.ca_ScheduleLimit.w = ma.w.ScheduleLimit.v
+		ma.ca_ScheduleLimit.m = &ma.w.ScheduleLimit.m
+		
+		return &ma.ca_ScheduleLimit
 	default:
 		panic("unreachable")
 	}
@@ -14797,6 +15203,20 @@ func (ka *_StorageTask__ReprKeyAssembler) AssignString(k string) error {
 		ka.s += fieldBit__StorageTask_Verified
 		ka.state = maState_expectValue
 		ka.f = 5
+	case "Schedule":
+		if ka.s & fieldBit__StorageTask_Schedule != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__StorageTask_Schedule_serial}
+		}
+		ka.s += fieldBit__StorageTask_Schedule
+		ka.state = maState_expectValue
+		ka.f = 6
+	case "ScheduleLimit":
+		if ka.s & fieldBit__StorageTask_ScheduleLimit != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__StorageTask_ScheduleLimit_serial}
+		}
+		ka.s += fieldBit__StorageTask_ScheduleLimit
+		ka.state = maState_expectValue
+		ka.f = 7
 	default:
 		return ipld.ErrInvalidKey{TypeName:"tasks.StorageTask.Repr", Key:&_String{k}}
 	}

@@ -12,7 +12,7 @@ type State interface {
 	Get(ctx context.Context, uuid string) (tasks.Task, error)
 	GetAll(ctx context.Context) ([]tasks.Task, error)
 	GetHead(ctx context.Context) (tasks.RecordUpdate, error)
-	Update(ctx context.Context, uuid string, req tasks.UpdateTask) (tasks.Task, error)
+	Update(ctx context.Context, uuid string, req tasks.UpdateTask, run int) (tasks.Task, error)
 	NewStorageTask(ctx context.Context, storageTask tasks.StorageTask) (tasks.Task, error)
 	NewRetrievalTask(ctx context.Context, retrievalTask tasks.RetrievalTask) (tasks.Task, error)
 	DrainWorker(ctx context.Context, worker string) error

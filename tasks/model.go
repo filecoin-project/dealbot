@@ -38,6 +38,7 @@ type NodeConfig struct {
 type TaskEvent struct {
 	Status Status
 	Stage  string
+	Run    int
 	At     time.Time
 }
 

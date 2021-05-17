@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 	"github.com/ipld/go-ipld-prime/codec/dagjson"
@@ -132,7 +133,26 @@ func (c *Controller) updateTaskHandler(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 	uuid := vars["uuid"]
-	task, err := c.db.Update(r.Context(), uuid, utp.Build().(tasks.UpdateTask))
+	runVal := r.URL.Query().Get("run")
+	var run int
+	if runVal != "" {
+		run, err = strconv.Atoi(runVal)
+		if err != nil {
+			log.Errorw("cannot parse run", "err", err.Error())
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		if run < 1 {
+			log.Error("run must be at least 1")
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+	} else {
+		log.Error("run is not specified")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	task, err := c.db.Update(r.Context(), uuid, utp.Build().(tasks.UpdateTask), run)
 	if err != nil {
 		log.Errorw("UpdateTaskRequest db update", "err", err.Error())
 		if errors.Is(err, sql.ErrNoRows) {

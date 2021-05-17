@@ -105,14 +105,14 @@ func (c *Client) PopTask(ctx context.Context, r tasks.PopTask) (tasks.Task, erro
 	return rp.Build().(tasks.Task), nil
 }
 
-func (c *Client) UpdateTask(ctx context.Context, uuid string, r tasks.UpdateTask) (tasks.Task, error) {
+func (c *Client) UpdateTask(ctx context.Context, uuid string, r tasks.UpdateTask, run int) (tasks.Task, error) {
 	var body bytes.Buffer
 	err := dagjson.Encoder(r.Representation(), &body)
 	if err != nil {
 		return nil, err
 	}
 
-	resp, err := c.request(ctx, "PATCH", "/tasks/"+uuid, &body)
+	resp, err := c.request(ctx, "PATCH", fmt.Sprintf("/tasks/%s?run=%d", uuid, run), &body)
 	if err != nil {
 		return nil, err
 	}

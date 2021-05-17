@@ -145,7 +145,7 @@ func (md *MockDaemon) worker(n int) {
 				stageDetails,
 			)
 
-			task, err = md.client.UpdateTask(ctx, task.GetUUID(), req)
+			task, err = md.client.UpdateTask(ctx, task.GetUUID(), req, 1)
 			if err != nil {
 				log.Warnw("update task returned error", "err", err)
 				continue

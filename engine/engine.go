@@ -7,6 +7,7 @@ import (
 
 	"github.com/filecoin-project/dealbot/controller/client"
 	"github.com/filecoin-project/dealbot/lotus"
+	"github.com/filecoin-project/dealbot/scheduler"
 	"github.com/filecoin-project/dealbot/tasks"
 	"github.com/filecoin-project/lotus/api"
 	"github.com/google/uuid"
@@ -16,8 +17,8 @@ import (
 )
 
 const (
-	maxTaskLifetime = 24 * time.Hour
-	noTasksWait     = 5 * time.Second
+	maxTaskRunTime = 24 * time.Hour
+	noTasksWait    = 5 * time.Second
 )
 
 var log = logging.Logger("engine")
@@ -30,8 +31,9 @@ type Engine struct {
 	node       api.FullNode
 	closer     lotus.NodeCloser
 
-	cancel context.CancelFunc
-	wg     sync.WaitGroup
+	closeWait context.Context
+	stop      context.CancelFunc
+	stopped   chan struct{}
 }
 
 func New(ctx context.Context, cliCtx *cli.Context) (*Engine, error) {
@@ -60,22 +62,73 @@ func New(ctx context.Context, cliCtx *cli.Context) (*Engine, error) {
 		node:       node,
 		closer:     closer,
 		host:       uuid.New().String()[:8], // TODO: set from config toml
+		stopped:    make(chan struct{}),
 	}
 
-	// Create context to cancel workers on Close
-	ctx, e.cancel = context.WithCancel(ctx)
+	// Create context to cancel workers on shutdown, letting them finish
+	// currently executing tasks
+	ctx, e.stop = context.WithCancel(ctx)
 
-	e.wg.Add(workers)
-	for i := 0; i < workers; i++ {
-		go e.worker(ctx, i)
-	}
-
+	go e.run(ctx, workers)
 	return e, nil
 }
 
-func (e *Engine) Close() {
-	e.cancel()  // stop workers
-	e.wg.Wait() // wait for workers to stop
+func (e *Engine) run(ctx context.Context, workers int) {
+	defer close(e.stopped)
+	var wg sync.WaitGroup
+
+	sched := scheduler.New(ctx)
+
+	// Start workers
+	wg.Add(workers)
+	for i := 0; i < workers; i++ {
+		go e.worker(ctx, i, &wg, sched.RunChan())
+	}
+
+	popTimer := time.NewTimer(noTasksWait)
+	for {
+		if ctx.Err() != nil {
+			break
+		}
+
+		// Check if there is a new task
+		task := e.popTask(ctx)
+		if task != nil {
+			taskSchedule, limit := getTaskSchedule(task)
+
+			// If task has no schedule, run now
+			if taskSchedule == "" {
+				taskSchedule = scheduler.RunNow
+			}
+			// Add task to scheduler
+			log.Infow("scheduling task", "uuid", task.UUID.String(), "schedule", taskSchedule, "schedule_limit", limit)
+			sched.Add(taskSchedule, task, maxTaskRunTime, limit)
+			continue
+		}
+
+		// No tasks to run now, so wait for scheduler or timer
+		select {
+		case <-popTimer.C:
+			// Time to check for more new tasks
+			popTimer.Reset(noTasksWait)
+		case <-ctx.Done():
+			// Engine shutdown
+			break
+		}
+	}
+
+	// Stop scheduler and wait for all currently running tasks to stop
+	sched.Stop(e.closeWait)
+
+	// Stop workers and wait for all workers to exit
+	wg.Wait()
+	return
+}
+
+func (e *Engine) Close(ctx context.Context) {
+	e.closeWait = ctx // false to let workers finish current task
+	e.stop()          // stop workers and scheduler
+	<-e.stopped       // wait for workers to stop
 	e.closer()
 }
 
@@ -93,36 +146,30 @@ func (e *Engine) popTask(ctx context.Context) tasks.Task {
 		log.Warnw("pop-task returned task that is not for this host", "err", err)
 		return nil
 	}
+
+	log.Infow("successfully acquired task", "uuid", task.UUID.String())
 	return task // found a runable task
 }
 
-func (e *Engine) worker(ctx context.Context, n int) {
-	defer e.wg.Done()
-
+func (e *Engine) worker(ctx context.Context, n int, wg *sync.WaitGroup, runNow <-chan *scheduler.Job) {
+	defer wg.Done()
 	log.Infow("engine worker started", "worker_id", n)
-
-	for {
-		// Check if there is a new task
-		task := e.popTask(ctx)
-		if task == nil {
-			// No tasks to run, so wait
-			select {
-			case <-ctx.Done():
-				return // engine closed, worker exits.
-			case <-time.After(noTasksWait):
-			}
-			continue
-		}
-
-		log.Infow("successfully acquired task", "uuid", task.UUID.String(), "worker_id", n)
-		e.runTask(ctx, task)
+	for job := range runNow {
+		e.runTask(ctx, job, n)
 	}
 }
 
-func (e *Engine) runTask(ctx context.Context, task tasks.Task) {
-	var err error
+func (e *Engine) runTask(ctx context.Context, job *scheduler.Job, n int) {
+	defer job.End()
 
-	// Define function to update task stage.  Use engine context, not tasks context.
+	var err error
+	task := job.Task()
+
+	log.Infow("worker running task", "uuid", task.UUID.String(), "run", job.RunCount(), "worker_id", n)
+
+	// Define function to update task stage.  Use shutdown context, not task
+	// context, so that if task is canceled after completing a stage, the
+	// completion is still recodred.
 	updateStage := func(stage string, stageDetails tasks.StageDetails) error {
 		task, err = e.client.UpdateTask(ctx, task.UUID.String(),
 			tasks.Type.UpdateTask.OfStage(
@@ -130,13 +177,9 @@ func (e *Engine) runTask(ctx context.Context, task tasks.Task) {
 				tasks.InProgress,
 				stage,
 				stageDetails,
-			))
+			), job.RunCount())
 		return err
 	}
-
-	// Create a context to manage the lifetime of the current task
-	taskCtx, taskCancel := context.WithTimeout(ctx, maxTaskLifetime)
-	defer taskCancel()
 
 	finalStatus := tasks.Successful
 
@@ -144,7 +187,7 @@ func (e *Engine) runTask(ctx context.Context, task tasks.Task) {
 
 	// Start deals
 	if task.RetrievalTask.Exists() {
-		err = tasks.MakeRetrievalDeal(taskCtx, e.nodeConfig, e.node, task.RetrievalTask.Must(), updateStage, log.Infow)
+		err = tasks.MakeRetrievalDeal(job.RunContext(), e.nodeConfig, e.node, task.RetrievalTask.Must(), updateStage, log.Infow)
 		if err != nil {
 			if err == context.Canceled {
 				// Engine closed, do not update final state
@@ -157,7 +200,7 @@ func (e *Engine) runTask(ctx context.Context, task tasks.Task) {
 			tlog.Info("successfully retrieved data")
 		}
 	} else if task.StorageTask.Exists() {
-		err = tasks.MakeStorageDeal(taskCtx, e.nodeConfig, e.node, task.StorageTask.Must(), updateStage, log.Infow)
+		err = tasks.MakeStorageDeal(job.RunContext(), e.nodeConfig, e.node, task.StorageTask.Must(), updateStage, log.Infow)
 		if err != nil {
 			if err == context.Canceled {
 				// Engine closed, do not update final state
@@ -181,7 +224,7 @@ func (e *Engine) runTask(ctx context.Context, task tasks.Task) {
 			finalStatus,
 			task.Stage.String(),
 			task.CurrentStageDetails.Must(),
-		))
+		), job.RunCount())
 
 	if err != nil {
 		if err == context.Canceled {
@@ -190,4 +233,29 @@ func (e *Engine) runTask(ctx context.Context, task tasks.Task) {
 		}
 		tlog.Errorw("error updating final status", "err", err)
 	}
+}
+
+func getTaskSchedule(task tasks.Task) (string, time.Duration) {
+	var schedule, limit string
+	var duration time.Duration
+
+	if task.RetrievalTask.Exists() {
+		schedule = task.RetrievalTask.Must().Schedule.Must().String()
+		limit = task.StorageTask.Must().ScheduleLimit.Must().String()
+	}
+
+	if task.StorageTask.Exists() {
+		schedule = task.StorageTask.Must().Schedule.Must().String()
+		limit = task.StorageTask.Must().ScheduleLimit.Must().String()
+	}
+
+	if schedule != "" && limit != "" {
+		var err error
+		duration, err = time.ParseDuration(limit)
+		if err != nil {
+			log.Errorw("task has invalid value for ScheduleLimit", "uuid", task.UUID.String(), "err", err)
+		}
+	}
+
+	return schedule, duration
 }

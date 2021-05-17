@@ -297,7 +297,7 @@ func mustString(s string, _ error) string {
 	return s
 }
 
-func (s *stateDB) Update(ctx context.Context, taskID string, req tasks.UpdateTask) (tasks.Task, error) {
+func (s *stateDB) Update(ctx context.Context, taskID string, req tasks.UpdateTask, run int) (tasks.Task, error) {
 	var task tasks.Task
 	err := s.transact(ctx, 3, func(tx *sql.Tx) error {
 		var serialized string
@@ -340,7 +340,7 @@ func (s *stateDB) Update(ctx context.Context, taskID string, req tasks.UpdateTas
 
 		// publish a task event update as neccesary
 		if (req.Stage.Exists() && req.Stage.Must().String() != task.Stage.String()) || (req.Status.Int() != task.Status.Int()) {
-			_, err = tx.ExecContext(ctx, upsertTaskStatusSQL, taskID, updatedTask.Status.Int(), updatedTask.Stage.String(), time.Now())
+			_, err = tx.ExecContext(ctx, upsertTaskStatusSQL, taskID, updatedTask.Status.Int(), updatedTask.Stage.String(), run, time.Now())
 			if err != nil {
 				return err
 			}
@@ -434,13 +434,13 @@ func (s *stateDB) TaskHistory(ctx context.Context, taskID string) ([]tasks.TaskE
 
 	var history []tasks.TaskEvent
 	for rows.Next() {
-		var status int
+		var status, run int
 		var ts time.Time
 		var stage string
-		if err = rows.Scan(&status, &stage, &ts); err != nil {
+		if err = rows.Scan(&status, &stage, &run, &ts); err != nil {
 			return nil, err
 		}
-		history = append(history, tasks.TaskEvent{tasks.Type.Status.Of(status), stage, ts})
+		history = append(history, tasks.TaskEvent{tasks.Type.Status.Of(status), stage, run, ts})
 	}
 	return history, nil
 }
