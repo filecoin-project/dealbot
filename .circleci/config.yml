@@ -16,16 +16,12 @@ commands:
     steps:
       - run: sudo apt-get update
       - run: sudo apt-get install ocl-icd-opencl-dev libhwloc-dev
-      - run: git clone https://github.com/filecoin-project/lotus.git /tmp/lotus
-      - run: cd /tmp/lotus && git submodule sync && git submodule update --init
+      - run: git clone --depth=1 https://github.com/filecoin-project/lotus /tmp/lotus
+      - run: cd /tmp/lotus && git submodule update --init --depth=1
       - run: cd /tmp/lotus && make debug && sudo make install
       - run: cd /tmp/lotus && sudo cp lotus-seed /usr/local/bin
-  test-dealbot:
+  test-integration-dealbot:
     steps:
-      - run: go build -o ./devnet-binary cmd/devnet/*.go
-      - run: go build -o dealbot-binary
-      - run: sudo cp devnet-binary /usr/local/bin/devnet
-      - run: sudo cp dealbot-binary /usr/local/bin/dealbot
       - run: ./integration_tests/01_storage_retrieval_ok.sh
       - run: ./integration_tests/02_controller_daemon.sh
   docker-login:
@@ -39,7 +35,7 @@ jobs:
     steps:
       - checkout-dealbot
       - install-lotus
-      - test-dealbot
+      - test-integration-dealbot
   build-push:
     machine:
       image: ubuntu-2004:202010-01

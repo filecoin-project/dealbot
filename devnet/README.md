@@ -5,8 +5,13 @@ Runs a Lotus daemon and miner, ready to be used for dealbot's integration tests.
 To run it locally, install ./cmd/devnet and the lotus binaries into your $PATH, and
 simply run one of the integration tests - it should start devnet automatically.
 
-Note that devnet consumes significant CPU and memory while it runs, as it
-constantly publishes deals. Below is how we run it on a remote machine.
+### Building and installing Lotus
+
+	git clone https://github.com/filecoin-project/lotus
+	cd lotus
+	git checkout master # or whichever version
+	make debug
+	sudo make install # or "cp lotus lotus-*" into your $PATH
 
 ### Running devnet on a remote host
 
@@ -26,13 +31,10 @@ As root:
 	apt install build-essential mesa-opencl-icd ocl-icd-opencl-dev gcc git bzr jq pkg-config curl clang build-essential hwloc libhwloc-dev wget
 	snap install --classic go # apt has older versions
 
-Then, as the regular user:
+Then, as the regular user, build and install lotus as per the instructions
+above.
 
-	git clone https://github.com/filecoin-project/lotus
-	cd lotus
-	git checkout master # or whichever version
-	make debug
-	cd ..
+Finally:
 
 	git clone https://github.com/filecoin-project/dealbot
 	cd dealbot
@@ -45,7 +47,7 @@ Then, as the regular user:
 
 Finally, to run devnet, we run the command below inside the default `tmux` session:
 
-	PATH=$HOME/lotus:$PATH ./go/bin/devnet
+	devnet
 
 You can attach to it via `tmux a`, or create it via just `tmux`.
 
