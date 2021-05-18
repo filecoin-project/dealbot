@@ -60,15 +60,25 @@ curl --header "Content-Type: application/json" \
 # seeing that every daemon picks up at least one of them.
 
 # On average, the storage deal takes about four minutes.
-# Use a timeout of ten minutes, just in case.
+#
+# Allowing 6 minutes for each deal to complete, running scheduled deal for a
+# total of 20m, timing out after 30 minutes.
+prev_active="0"
+active="0"
 for ((i = 0; i < 30*60; i++)); do
-	if grep -q StorageDealActive dealbot-daemon.log; then
-		echo "Storage deal is active!"
-		exit 0
+	active=$(grep -c StorageDealActive dealbot-daemon.log)
+	if [ "$active" != "$prev_active" ]; then
+		echo "Storage deal is active! Deals active: $active"
+		prev_active="$active"
 	fi
 	sleep 1
 done
 
+if [ "$active" != "0" ]; then
+	echo "Completed $active storage deals"
+	exit 0
+fi
+
 # The logs are already being printed out.
 echo "Timed out waiting for storage deal to be active."
-exit 0
+exit 1
