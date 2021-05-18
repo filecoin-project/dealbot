@@ -11,7 +11,7 @@ import (
 const (
 	everySecond   = "* * * * * *"
 	maxRunTime    = 200 * time.Millisecond
-	scheduleLimit = 2 * time.Second
+	scheduleLimit = 5 * time.Second
 )
 
 func TestScheduleTask(t *testing.T) {
@@ -137,9 +137,14 @@ func TestScheduleLimit(t *testing.T) {
 	deadline := time.After(scheduleLimit + time.Second)
 	var hitDeadline bool
 	var job *Job
+	var lastRun int
 	for !hitDeadline {
 		select {
 		case job = <-s.RunChan():
+			if job.RunCount() != lastRun+1 {
+				t.Error("expected run = last + 1")
+			}
+			lastRun++
 			t.Log("ran", job.ID(), "run", job.RunCount())
 			job.End()
 		case <-deadline:
