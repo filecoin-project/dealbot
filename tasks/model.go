@@ -234,13 +234,14 @@ func (t *_Task) Assign(worker string, status Status) Task {
 	return &newTask
 }
 
-func (t *_Task) Update(status Status, stage string, details StageDetails) (Task, error) {
+func (t *_Task) Update(status Status, stage string, details StageDetails, runCount int) (Task, error) {
 	updatedTask := _Task{
 		UUID:          t.UUID,
 		Status:        *status,
 		WorkedBy:      t.WorkedBy,
 		Stage:         _String{stage},
 		StartedAt:     t.StartedAt,
+		RunCount:      _Int{int64(runCount)},
 		RetrievalTask: t.RetrievalTask,
 		StorageTask:   t.StorageTask,
 	}
@@ -305,7 +306,7 @@ func (t *_Task) UpdateTask(tsk UpdateTask) (Task, error) {
 	if tsk.Stage.Exists() {
 		stage = tsk.Stage.Must().x
 	}
-	nt, err := t.Update(&tsk.Status, stage, tsk.CurrentStageDetails.v)
+	nt, err := t.Update(&tsk.Status, stage, tsk.CurrentStageDetails.v, int(tsk.RunCount.Int()))
 	if err != nil {
 		return nil, err
 	}

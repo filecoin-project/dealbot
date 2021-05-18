@@ -101,7 +101,7 @@ taskLoop:
 			}
 			// Add task to scheduler
 			log.Infow("scheduling task", "uuid", task.UUID.String(), "schedule", taskSchedule, "schedule_limit", limit)
-			e.sched.Add(taskSchedule, task, maxTaskRunTime, limit)
+			e.sched.Add(taskSchedule, task, maxTaskRunTime, limit, 0)
 			continue
 		}
 
@@ -155,14 +155,14 @@ func (e *Engine) worker(n int, wg *sync.WaitGroup) {
 	defer wg.Done()
 	runNow := e.sched.RunChan()
 	for job := range runNow {
-		e.runTask(job.RunContext(), job.Task(), job.RunCount(), n)
+		e.runTask(job.Context, job.Task, job.RunCount, n)
 		job.End()
 	}
 }
 
-func (e *Engine) runTask(ctx context.Context, task tasks.Task, run, worker int) {
+func (e *Engine) runTask(ctx context.Context, task tasks.Task, runCount, worker int) {
 	var err error
-	log.Infow("worker running task", "uuid", task.UUID.String(), "run", run, "worker_id", worker)
+	log.Infow("worker running task", "uuid", task.UUID.String(), "run_count", runCount, "worker_id", worker)
 
 	// Define function to update task stage.  Use shutdown context, not task
 	updateStage := func(stage string, stageDetails tasks.StageDetails) error {
@@ -172,7 +172,8 @@ func (e *Engine) runTask(ctx context.Context, task tasks.Task, run, worker int) 
 				tasks.InProgress,
 				stage,
 				stageDetails,
-			), run)
+				runCount,
+			))
 		return err
 	}
 
@@ -219,7 +220,8 @@ func (e *Engine) runTask(ctx context.Context, task tasks.Task, run, worker int) 
 			finalStatus,
 			task.Stage.String(),
 			task.CurrentStageDetails.Must(),
-		), run)
+			runCount,
+		))
 
 	if err != nil {
 		if err == context.Canceled {
@@ -234,14 +236,14 @@ func getTaskSchedule(task tasks.Task) (string, time.Duration) {
 	var schedule, limit string
 	var duration time.Duration
 
-	if task.RetrievalTask.Exists() {
-		schedule = task.RetrievalTask.Must().Schedule.Must().String()
-		limit = task.StorageTask.Must().ScheduleLimit.Must().String()
+	if t := task.RetrievalTask; t.Exists() {
+		schedule = t.Must().Schedule.Must().String()
+		limit = t.Must().ScheduleLimit.Must().String()
 	}
 
-	if task.StorageTask.Exists() {
-		schedule = task.StorageTask.Must().Schedule.Must().String()
-		limit = task.StorageTask.Must().ScheduleLimit.Must().String()
+	if t := task.StorageTask; t.Exists() {
+		schedule = t.Must().Schedule.Must().String()
+		limit = t.Must().ScheduleLimit.Must().String()
 	}
 
 	if schedule != "" && limit != "" {

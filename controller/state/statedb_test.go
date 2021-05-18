@@ -223,7 +223,7 @@ func TestUpdateTasks(t *testing.T) {
 
 	// add a stage name to the last in progress task
 	_, err = state.Update(ctx, inProgressTasks[2].GetUUID(),
-		tasks.Type.UpdateTask.OfStage(inProgressTasks[2].WorkedBy.Must().String(), tasks.InProgress, "Stuff", exStageDetail), 1)
+		tasks.Type.UpdateTask.OfStage(inProgressTasks[2].WorkedBy.Must().String(), tasks.InProgress, "Stuff", exStageDetail, 1))
 	require.NoError(t, err)
 
 	type statusHistory struct {
@@ -235,7 +235,6 @@ func TestUpdateTasks(t *testing.T) {
 	testCases := map[string]struct {
 		uuid                 string
 		updateTaskRequest    tasks.UpdateTask
-		run                  int
 		expectedStatus       tasks.Status
 		expectedStage        string
 		expectedStageDetails tasks.StageDetails
@@ -245,20 +244,17 @@ func TestUpdateTasks(t *testing.T) {
 	}{
 		"attempting to work on unassigned task": {
 			uuid:              unassignedTask.GetUUID(),
-			updateTaskRequest: tasks.Type.UpdateTask.Of("tester", tasks.InProgress),
-			run:               1,
+			updateTaskRequest: tasks.Type.UpdateTask.Of("tester", tasks.InProgress, 1),
 			expectedError:     ErrNotAssigned,
 		},
 		"attempting to work on task with another worker": {
 			uuid:              inProgressTasks[0].GetUUID(),
-			updateTaskRequest: tasks.Type.UpdateTask.Of("tester 2", tasks.Successful),
-			run:               1,
+			updateTaskRequest: tasks.Type.UpdateTask.Of("tester 2", tasks.Successful, 1),
 			expectedError:     ErrWrongWorker,
 		},
 		"update task status": {
 			uuid:              inProgressTasks[0].GetUUID(),
-			updateTaskRequest: tasks.Type.UpdateTask.Of(inProgressTasks[0].WorkedBy.Must().String(), tasks.Successful),
-			run:               1,
+			updateTaskRequest: tasks.Type.UpdateTask.Of(inProgressTasks[0].WorkedBy.Must().String(), tasks.Successful, 1),
 			expectedStatus:    tasks.Successful,
 			expectedTaskHistory: []statusHistory{
 				{tasks.Available, "", 0},
@@ -269,8 +265,7 @@ func TestUpdateTasks(t *testing.T) {
 		},
 		"update stage": {
 			uuid:                 inProgressTasks[1].GetUUID(),
-			updateTaskRequest:    tasks.Type.UpdateTask.OfStage(inProgressTasks[1].WorkedBy.Must().String(), tasks.InProgress, "Stuff", exStageDetail),
-			run:                  1,
+			updateTaskRequest:    tasks.Type.UpdateTask.OfStage(inProgressTasks[1].WorkedBy.Must().String(), tasks.InProgress, "Stuff", exStageDetail, 1),
 			expectedStage:        "Stuff",
 			expectedStageDetails: exStageDetail,
 			expectedStatus:       tasks.InProgress,
@@ -283,8 +278,7 @@ func TestUpdateTasks(t *testing.T) {
 		},
 		"update stage data within stage": {
 			uuid:                 inProgressTasks[2].GetUUID(),
-			updateTaskRequest:    tasks.Type.UpdateTask.OfStage(inProgressTasks[2].WorkedBy.Must().String(), tasks.InProgress, "Stuff", workedStageDetail),
-			run:                  1,
+			updateTaskRequest:    tasks.Type.UpdateTask.OfStage(inProgressTasks[2].WorkedBy.Must().String(), tasks.InProgress, "Stuff", workedStageDetail, 1),
 			expectedStage:        "Stuff",
 			expectedStageDetails: workedStageDetail,
 			expectedStatus:       tasks.InProgress,
@@ -301,7 +295,7 @@ func TestUpdateTasks(t *testing.T) {
 		t.Run(testCase, func(t *testing.T) {
 			ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 			defer cancel()
-			task, err := state.Update(ctx, data.uuid, data.updateTaskRequest, data.run)
+			task, err := state.Update(ctx, data.uuid, data.updateTaskRequest)
 			if data.expectedError != nil {
 				require.Nil(t, task)
 				require.EqualError(t, err, data.expectedError.Error())

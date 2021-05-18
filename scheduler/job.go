@@ -2,68 +2,68 @@ package scheduler
 
 import (
 	"context"
-	"sync/atomic"
 	"time"
 
 	"github.com/filecoin-project/dealbot/tasks"
 	"github.com/robfig/cron/v3"
 )
 
-// Job is a set of parameters for running a job
-type Job struct {
-	shutdown  <-chan struct{}
+// job is the scheduler's internal record of a scheduled job
+type job struct {
+	cronSched *cron.Cron
 	entryID   cron.EntryID
 	expireAt  time.Time
-	runtime   time.Duration
-	run       int32
-	runChan   chan<- *Job
-	runCtx    context.Context
-	runCancel context.CancelFunc
-	sched     *cron.Cron
+	runTime   time.Duration
+	runCount  int
+	runChan   chan<- Job
 	task      tasks.Task
-	taskCtx   context.Context
+
+	// Signals used for shutdown
+	cancelJobs chan struct{}
+	shutdown   <-chan struct{}
+}
+
+// Job is information that is output when a job runs
+type Job struct {
+	Context  context.Context
+	End      context.CancelFunc
+	ID       cron.EntryID
+	RunCount int
+	Task     tasks.Task
 }
 
 // Send job to worker, wait for worker to signal it is finished.
-func (j *Job) Run() {
+func (j *job) Run() {
 	// If the schedule has expired remove job from scheduler.
 	if !j.expireAt.IsZero() && time.Now().After(j.expireAt) {
-		j.sched.Remove(j.entryID)
+		j.cronSched.Remove(j.entryID)
 		return
 	}
 
-	atomic.AddInt32(&j.run, 1)
+	j.runCount++
+
 	// Create a context to manage the running time of the current task
-	j.runCtx, j.runCancel = context.WithTimeout(j.taskCtx, j.runtime)
-	defer j.runCancel()
+	runCtx, runCancel := context.WithTimeout(context.Background(), j.runTime)
+	defer runCancel()
+
+	jobInfo := Job{
+		Context:  runCtx,
+		End:      runCancel,
+		ID:       j.entryID,
+		RunCount: j.runCount,
+		Task:     j.task,
+	}
 
 	// Wait for worker to run this job, or shutdown signal
 	select {
-	case j.runChan <- j:
+	case j.runChan <- jobInfo:
 	case <-j.shutdown:
 		return
 	}
-	// Wait for worker to signal that job is completed
-	<-j.runCtx.Done()
-}
-
-func (j *Job) ID() cron.EntryID {
-	return j.entryID
-}
-
-func (j *Job) RunContext() context.Context {
-	return j.runCtx
-}
-
-// Tells the scheduler the job is done
-func (j *Job) End() {
-	j.runCancel()
-}
-
-func (j *Job) RunCount() int {
-	return int(atomic.LoadInt32(&j.run))
-}
-
-func (j *Job) Task() tasks.Task {
-	return j.task
+	// Wait for worker to signal that job is completed or jobs to be
+	// canceled. Do not wait for shutdown here so that running jobs can finish.
+	select {
+	case <-runCtx.Done():
+	case <-j.cancelJobs:
+	}
 }

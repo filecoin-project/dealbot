@@ -297,7 +297,7 @@ func mustString(s string, _ error) string {
 	return s
 }
 
-func (s *stateDB) Update(ctx context.Context, taskID string, req tasks.UpdateTask, run int) (tasks.Task, error) {
+func (s *stateDB) Update(ctx context.Context, taskID string, req tasks.UpdateTask) (tasks.Task, error) {
 	var task tasks.Task
 	err := s.transact(ctx, 3, func(tx *sql.Tx) error {
 		var serialized string
@@ -340,7 +340,12 @@ func (s *stateDB) Update(ctx context.Context, taskID string, req tasks.UpdateTas
 
 		// publish a task event update as neccesary
 		if (req.Stage.Exists() && req.Stage.Must().String() != task.Stage.String()) || (req.Status.Int() != task.Status.Int()) {
-			_, err = tx.ExecContext(ctx, upsertTaskStatusSQL, taskID, updatedTask.Status.Int(), updatedTask.Stage.String(), run, time.Now())
+			runCount := updatedTask.RunCount.Int()
+			if runCount < 1 {
+				return errors.New("runCount must be at least 1")
+			}
+
+			_, err = tx.ExecContext(ctx, upsertTaskStatusSQL, taskID, updatedTask.Status.Int(), updatedTask.Stage.String(), runCount, time.Now())
 			if err != nil {
 				return err
 			}

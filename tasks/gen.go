@@ -111,6 +111,7 @@ func main() {
 		schema.SpawnStructField("CurrentStageDetails", "StageDetails", true, false),
 		schema.SpawnStructField("PastStageDetails", "List_StageDetails", true, false),
 		schema.SpawnStructField("StartedAt", "Time", true, false),
+		schema.SpawnStructField("RunCount", "Int", false, false),
 		schema.SpawnStructField("RetrievalTask", "RetrievalTask", true, false),
 		schema.SpawnStructField("StorageTask", "StorageTask", true, false),
 	}, schema.SpawnStructRepresentationMap(map[string]string{})))
@@ -141,6 +142,7 @@ func main() {
 		schema.SpawnStructField("Stage", "String", true, false),
 		schema.SpawnStructField("CurrentStageDetails", "StageDetails", true, false),
 		schema.SpawnStructField("WorkedBy", "String", false, false),
+		schema.SpawnStructField("RunCount", "Int", false, false),
 	}, schema.SpawnStructRepresentationMap(map[string]string{})))
 
 	// reputation api

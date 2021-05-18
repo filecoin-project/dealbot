@@ -20,14 +20,16 @@ const (
 	RunNow = "NOW"
 )
 
+var noEnt cron.EntryID
+
 // Scheduler signals when items start and stop
 type Scheduler struct {
-	shutdown chan struct{}
-	runChan  chan *Job
-	sched    *cron.Cron
+	cronSched *cron.Cron
+	runChan   chan Job
 
-	taskCtx     context.Context
-	cancelTasks context.CancelFunc
+	// Signals used for shutdown
+	cancelJobs chan struct{}
+	shutdown   chan struct{}
 }
 
 // New returns a new Scheduler instance
@@ -35,71 +37,73 @@ func New() *Scheduler {
 	return newScheduler(cron.New(cron.WithChain(cron.DelayIfStillRunning(cron.DefaultLogger))))
 }
 
+// Create a new scheduler that uses a non-standard cron schedule spec that
+// contains seconds.
 func NewWithSeconds() *Scheduler {
 	return newScheduler(cron.New(cron.WithSeconds(), cron.WithChain(cron.DelayIfStillRunning(cron.DefaultLogger))))
 }
 
-func newScheduler(sched *cron.Cron) *Scheduler {
-	sched.Start()
-	s := &Scheduler{
-		shutdown: make(chan struct{}),
-		runChan:  make(chan *Job),
-		sched:    sched,
+func newScheduler(cronSched *cron.Cron) *Scheduler {
+	cronSched.Start()
+	return &Scheduler{
+		cronSched:  cronSched,
+		runChan:    make(chan Job),
+		cancelJobs: make(chan struct{}),
+		shutdown:   make(chan struct{}),
 	}
-	s.taskCtx, s.cancelTasks = context.WithCancel(context.Background())
-	return s
 }
 
 // RunChan returns a channel that sends jobs to be run
-func (s *Scheduler) RunChan() <-chan *Job {
+func (s *Scheduler) RunChan() <-chan Job {
 	return s.runChan
 }
 
 // Add adds a Task to be scheduled.
-func (s *Scheduler) Add(cronExp string, task tasks.Task, maxRunTime, scheduleLife time.Duration) (cron.EntryID, error) {
-	job := &Job{
-		shutdown: s.shutdown,
-		runtime:  maxRunTime,
+func (s *Scheduler) Add(cronExp string, task tasks.Task, maxRunTime, scheduleLimit time.Duration, lastRunCount int) (cron.EntryID, error) {
+	j := &job{
 		runChan:  s.runChan,
+		runCount: lastRunCount,
+		runTime:  maxRunTime,
 		task:     task,
-		taskCtx:  s.taskCtx,
+
+		cancelJobs: s.cancelJobs,
+		shutdown:   s.shutdown,
 	}
 	if cronExp == RunNow {
-		job.Run()
-		var noEnt cron.EntryID
+		j.Run()
 		return noEnt, nil
 	}
-	if scheduleLife != 0 {
-		job.sched = s.sched
-		job.expireAt = time.Now().Add(scheduleLife)
+	if scheduleLimit != 0 {
+		j.expireAt = time.Now().Add(scheduleLimit)
+		j.cronSched = s.cronSched
 	}
-	entID, err := s.sched.AddJob(cronExp, job)
+	entID, err := s.cronSched.AddJob(cronExp, j)
 	if err != nil {
 		return entID, err
 	}
-	job.entryID = entID
+	j.entryID = entID
 	return entID, nil
 }
 
 // Remove removes a Task from the scheduler and stops it if it is running.
 func (s *Scheduler) Remove(jobID cron.EntryID) {
-	s.sched.Remove(jobID)
+	s.cronSched.Remove(jobID)
 }
 
 // CLose stops the scheduler, and all its running jobs.  The context passed to
 // Stop determines how long the scheduler will wait for it currently running
-// tasks to complete before it cancels them.  A nil context means no wait.
+// tasks to complete before it cancels them.  A nil context means do not wait.
 func (s *Scheduler) Close(ctx context.Context) {
 	close(s.shutdown)
-	stopCtx := s.sched.Stop()
+	stopCtx := s.cronSched.Stop()
 	if ctx == nil {
-		s.cancelTasks()
+		close(s.cancelJobs)
 		<-stopCtx.Done()
 	} else {
 		select {
 		case <-stopCtx.Done():
 		case <-ctx.Done():
-			s.cancelTasks()
+			close(s.cancelJobs)
 			<-stopCtx.Done()
 		}
 	}

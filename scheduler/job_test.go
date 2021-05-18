@@ -1,26 +1,21 @@
 package scheduler
 
 import (
-	"context"
 	"testing"
 	"time"
 )
 
 func TestRunEndJob(t *testing.T) {
-	taskCtx, taskCancel := context.WithCancel(context.Background())
-	defer taskCancel()
+	runChan := make(chan Job)
 
-	runChan := make(chan *Job)
-
-	job := &Job{
+	jobInternal := &job{
 		entryID: 42,
-		runtime: time.Minute,
+		runTime: time.Minute,
 		runChan: runChan,
-		taskCtx: taskCtx,
 	}
 
-	go job.Run()
-	var j *Job
+	go jobInternal.Run()
+	var j Job
 
 	select {
 	case j = <-runChan:
@@ -29,16 +24,16 @@ func TestRunEndJob(t *testing.T) {
 	}
 
 	select {
-	case <-j.RunContext().Done():
+	case <-j.Context.Done():
 		t.Fatal("job should not have ended")
-	case <-time.After(time.Millisecond):
+	default:
 	}
 
 	j.End()
 
 	select {
-	case <-j.RunContext().Done():
-	case <-time.After(time.Millisecond):
-		t.Fatal("timed out waiting for job to end")
+	case <-j.Context.Done():
+	default:
+		t.Fatal("job should have ended")
 	}
 }

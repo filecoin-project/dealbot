@@ -252,6 +252,7 @@ type _Task struct {
 	CurrentStageDetails _StageDetails__Maybe
 	PastStageDetails _List_StageDetails__Maybe
 	StartedAt _Time__Maybe
+	RunCount _Int
 	RetrievalTask _RetrievalTask__Maybe
 	StorageTask _StorageTask__Maybe
 }
@@ -273,5 +274,6 @@ type _UpdateTask struct {
 	Stage _String__Maybe
 	CurrentStageDetails _StageDetails__Maybe
 	WorkedBy _String
+	RunCount _Int
 }
 
