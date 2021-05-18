@@ -11,7 +11,7 @@ import (
 
 // Job is a set of parameters for running a job
 type Job struct {
-	ctx       context.Context
+	shutdown  <-chan struct{}
 	entryID   cron.EntryID
 	expireAt  time.Time
 	runtime   time.Duration
@@ -37,10 +37,10 @@ func (j *Job) Run() {
 	j.runCtx, j.runCancel = context.WithTimeout(j.taskCtx, j.runtime)
 	defer j.runCancel()
 
-	// Wait for worker to run this job, or context to cancel
+	// Wait for worker to run this job, or shutdown signal
 	select {
 	case j.runChan <- j:
-	case <-j.ctx.Done():
+	case <-j.shutdown:
 		return
 	}
 	// Wait for worker to signal that job is completed

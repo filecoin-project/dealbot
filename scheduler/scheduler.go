@@ -22,29 +22,29 @@ const (
 
 // Scheduler signals when items start and stop
 type Scheduler struct {
-	ctx     context.Context
-	runChan chan *Job
-	sched   *cron.Cron
+	shutdown chan struct{}
+	runChan  chan *Job
+	sched    *cron.Cron
 
 	taskCtx     context.Context
 	cancelTasks context.CancelFunc
 }
 
 // New returns a new Scheduler instance
-func New(ctx context.Context) *Scheduler {
-	return newScheduler(ctx, cron.New(cron.WithChain(cron.DelayIfStillRunning(cron.DefaultLogger))))
+func New() *Scheduler {
+	return newScheduler(cron.New(cron.WithChain(cron.DelayIfStillRunning(cron.DefaultLogger))))
 }
 
-func NewWithSeconds(ctx context.Context) *Scheduler {
-	return newScheduler(ctx, cron.New(cron.WithSeconds(), cron.WithChain(cron.DelayIfStillRunning(cron.DefaultLogger))))
+func NewWithSeconds() *Scheduler {
+	return newScheduler(cron.New(cron.WithSeconds(), cron.WithChain(cron.DelayIfStillRunning(cron.DefaultLogger))))
 }
 
-func newScheduler(ctx context.Context, sched *cron.Cron) *Scheduler {
+func newScheduler(sched *cron.Cron) *Scheduler {
 	sched.Start()
 	s := &Scheduler{
-		ctx:     ctx,
-		runChan: make(chan *Job),
-		sched:   sched,
+		shutdown: make(chan struct{}),
+		runChan:  make(chan *Job),
+		sched:    sched,
 	}
 	s.taskCtx, s.cancelTasks = context.WithCancel(context.Background())
 	return s
@@ -58,11 +58,11 @@ func (s *Scheduler) RunChan() <-chan *Job {
 // Add adds a Task to be scheduled.
 func (s *Scheduler) Add(cronExp string, task tasks.Task, maxRunTime, scheduleLife time.Duration) (cron.EntryID, error) {
 	job := &Job{
-		ctx:     s.ctx,
-		runtime: maxRunTime,
-		runChan: s.runChan,
-		task:    task,
-		taskCtx: s.taskCtx,
+		shutdown: s.shutdown,
+		runtime:  maxRunTime,
+		runChan:  s.runChan,
+		task:     task,
+		taskCtx:  s.taskCtx,
 	}
 	if cronExp == RunNow {
 		job.Run()
@@ -86,10 +86,11 @@ func (s *Scheduler) Remove(jobID cron.EntryID) {
 	s.sched.Remove(jobID)
 }
 
-// Stop stops the scheduler, and all its running jobs.  The context passed to
+// CLose stops the scheduler, and all its running jobs.  The context passed to
 // Stop determines how long the scheduler will wait for it currently running
 // tasks to complete before it cancels them.  A nil context means no wait.
-func (s *Scheduler) Stop(ctx context.Context) {
+func (s *Scheduler) Close(ctx context.Context) {
+	close(s.shutdown)
 	stopCtx := s.sched.Stop()
 	if ctx == nil {
 		s.cancelTasks()

@@ -1,7 +1,6 @@
 package scheduler
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -15,10 +14,7 @@ const (
 )
 
 func TestScheduleTask(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	s := NewWithSeconds(ctx)
+	s := NewWithSeconds()
 
 	// Add task to scheduler
 	jid, err := s.Add(everySecond, nil, maxRunTime, 0)
@@ -109,7 +105,7 @@ func TestScheduleTask(t *testing.T) {
 
 	// Shutdown with task cancellation
 	t.Log("shutting down scheduler")
-	s.Stop(nil)
+	s.Close(nil)
 	t.Log("scheduler is shutdown")
 
 	select {
@@ -121,10 +117,7 @@ func TestScheduleTask(t *testing.T) {
 }
 
 func TestScheduleLimit(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	s := NewWithSeconds(ctx)
+	s := NewWithSeconds()
 
 	// Add job to scheduler
 	jid, err := s.Add(everySecond, nil, maxRunTime, scheduleLimit)
@@ -162,7 +155,7 @@ func TestScheduleLimit(t *testing.T) {
 
 	// Shutdown with task cancellation
 	t.Log("shutting down scheduler")
-	s.Stop(nil)
+	s.Close(nil)
 	t.Log("scheduler is shutdown")
 
 	select {

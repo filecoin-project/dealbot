@@ -13,7 +13,6 @@ func TestRunEndJob(t *testing.T) {
 	runChan := make(chan *Job)
 
 	job := &Job{
-		ctx:     context.Background(),
 		entryID: 42,
 		runtime: time.Minute,
 		runChan: runChan,
