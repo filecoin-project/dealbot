@@ -35,6 +35,8 @@ import (
 	//"github.com/golang-migrate/migrate/v4/source/iofs"
 )
 
+const maxTransactionRetries = 7
+
 // Embed all the *.sql files in migrations.
 //go:embed migrations/*.sql
 var migrations embed.FS
@@ -233,7 +235,7 @@ func (s *stateDB) AssignTask(ctx context.Context, req tasks.PopTask) (tasks.Task
 	}
 
 	var assigned tasks.Task
-	err := s.transact(ctx, 13, func(tx *sql.Tx) error {
+	err := s.transact(ctx, func(tx *sql.Tx) error {
 		var cnt int
 		err := tx.QueryRowContext(ctx, drainedQuerySQL, req.WorkedBy.String()).Scan(&cnt)
 		if err != nil {
@@ -299,7 +301,7 @@ func mustString(s string, _ error) string {
 
 func (s *stateDB) Update(ctx context.Context, taskID string, req tasks.UpdateTask) (tasks.Task, error) {
 	var task tasks.Task
-	err := s.transact(ctx, 3, func(tx *sql.Tx) error {
+	err := s.transact(ctx, func(tx *sql.Tx) error {
 		var serialized string
 		err := tx.QueryRowContext(ctx, getTaskSQL, taskID).Scan(&serialized)
 		if err != nil {
@@ -450,21 +452,46 @@ func (s *stateDB) TaskHistory(ctx context.Context, taskID string) ([]tasks.TaskE
 	return history, nil
 }
 
-func (s *stateDB) transact(ctx context.Context, retries int, f func(*sql.Tx) error) (err error) {
+func (s *stateDB) transact(ctx context.Context, f func(*sql.Tx) error) error {
 	// Check connection and reconnect if down
-	err = s.dbconn.Connect()
+	err := s.dbconn.Connect()
+	if err != nil {
+		return err
+	}
+
+	// SQLite is not safe to use un multiple goroutines concurrently, so mutex
+	// around transaction is needed.
+	var needLock bool
+	if s.dbconn.Name() == "sqlite" {
+		needLock = true
+	}
+
+	retries := maxTransactionRetries
+	for {
+		if needLock {
+			s.txlock.Lock()
+		}
+		err = withTransaction(ctx, s.db(), f)
+		if needLock {
+			s.txlock.Unlock()
+		}
+		if err != nil {
+			if s.dbconn.RetryableError(err) && retries > 0 {
+				retries--
+				continue
+			}
+			return err
+		}
+		return nil
+	}
+}
+
+func withTransaction(ctx context.Context, db *sql.DB, f func(*sql.Tx) error) (err error) {
+	var tx *sql.Tx
+	tx, err = db.BeginTx(ctx, nil)
 	if err != nil {
 		return
 	}
-
-	s.txlock.Lock()
-	defer s.txlock.Unlock()
-
-	var tx *sql.Tx
-	if tx, err = s.db().BeginTx(ctx, nil); err != nil {
-		return
-	}
-
 	defer func() {
 		if p := recover(); p != nil {
 			tx.Rollback()
@@ -476,7 +503,6 @@ func (s *stateDB) transact(ctx context.Context, retries int, f func(*sql.Tx) err
 			err = tx.Commit()
 		}
 	}()
-
 	err = f(tx)
 	return
 }
@@ -488,7 +514,7 @@ func (s *stateDB) saveTask(ctx context.Context, task tasks.Task) error {
 		return err
 	}
 
-	return s.transact(ctx, 0, func(tx *sql.Tx) error {
+	return s.transact(ctx, func(tx *sql.Tx) error {
 		now := time.Now()
 		if _, err := tx.ExecContext(ctx, createTaskSQL, task.UUID.String(), data, now, lnk.String()); err != nil {
 			return err
