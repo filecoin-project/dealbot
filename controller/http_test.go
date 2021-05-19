@@ -150,7 +150,7 @@ func TestControllerHTTPInterface(t *testing.T) {
 			carContents, closer, err := apiClient.CARExport(ctx)
 			require.NoError(t, err)
 			defer closer()
-			require.Len(t, len(carContents.Header.Roots), 1)
+			require.Len(t, carContents.Header.Roots, 1)
 			_, err = carContents.Next()
 			require.NoError(t, err)
 		},

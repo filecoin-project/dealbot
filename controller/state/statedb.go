@@ -20,6 +20,7 @@ import (
 	logging "github.com/ipfs/go-log/v2"
 	"github.com/ipld/go-ipld-prime"
 	dagjson "github.com/ipld/go-ipld-prime/codec/dagjson"
+	cidlink "github.com/ipld/go-ipld-prime/linking/cid"
 	linksystem "github.com/ipld/go-ipld-prime/linking/cid"
 	crypto "github.com/libp2p/go-libp2p-crypto"
 	"github.com/multiformats/go-multicodec"
@@ -637,7 +638,7 @@ func (s *stateDB) PublishRecordsFrom(ctx context.Context, worker string) error {
 		return err
 	}
 
-	if _, err := tx.ExecContext(ctx, addHeadSQL, updateCid, time.Now(), "", LATEST_UPDATE); err != nil {
+	if _, err := tx.ExecContext(ctx, addHeadSQL, updateCid.(cidlink.Link).Cid.String(), time.Now(), "", LATEST_UPDATE); err != nil {
 		return err
 	}
 	if head != "" {
