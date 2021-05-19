@@ -7,6 +7,7 @@ data_dir      = "/Users/smth/code/src/github.com/filecoin-project/dealbot"
 node_data_dir = "/Users/smth/code/src/github.com/filecoin-project/dealbot"
 api           = "token:/ip4/127.0.0.1/tcp/1234/http"
 wallet        = ""
+workers       = 4
 
 [client]
 endpoint = "http://localhost:8764"

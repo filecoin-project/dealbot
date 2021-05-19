@@ -16,7 +16,7 @@ const (
 	`
 
 	upsertTaskStatusSQL = `
-		INSERT INTO task_status_ledger (uuid, status, stage, ts) VALUES($1, $2, $3, $4)
+		INSERT INTO task_status_ledger (uuid, status, stage, run, ts) VALUES($1, $2, $3, $4, $5)
 	`
 
 	updateTaskDataSQL = `
@@ -51,7 +51,7 @@ const (
 	`
 
 	taskHistorySQL = `
-		SELECT status, stage, ts FROM task_status_ledger WHERE uuid = $1 ORDER BY ts
+		SELECT status, stage, run, ts FROM task_status_ledger WHERE uuid = $1 ORDER BY ts
 	`
 
 	cidArchiveSQL = `
