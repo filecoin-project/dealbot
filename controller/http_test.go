@@ -131,6 +131,29 @@ func TestControllerHTTPInterface(t *testing.T) {
 			require.NoError(t, err)
 			require.Len(t, currentTasks, 6)
 		},
+		"export finished tasks": func(ctx context.Context, t *testing.T, apiClient *client.Client, recorder *testrecorder.TestMetricsRecorder) {
+			// dealbot1 takes a task.
+			task, err := apiClient.PopTask(ctx, tasks.Type.PopTask.Of("dealbot1", tasks.InProgress))
+			require.NoError(t, err)
+			require.Equal(t, *tasks.InProgress, task.Status)
+
+			// succeed task.
+			task, err = apiClient.UpdateTask(ctx, task.GetUUID(), tasks.Type.UpdateTask.Of("dealbot1", tasks.Successful))
+			require.NoError(t, err)
+			require.Equal(t, *tasks.Successful, task.Status)
+
+			// drain the dealbot / finalize the task.
+			require.NoError(t, apiClient.Drain(ctx, "dealbot1"))
+			require.NoError(t, apiClient.Complete(ctx, "dealbot1"))
+
+			// get the car. expect it to be non-empty at this point.
+			carContents, closer, err := apiClient.CARExport(ctx)
+			require.NoError(t, err)
+			defer closer()
+			require.Len(t, len(carContents.Header.Roots), 1)
+			_, err = carContents.Next()
+			require.NoError(t, err)
+		},
 	}
 
 	for testCase, run := range testCases {

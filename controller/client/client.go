@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/filecoin-project/dealbot/tasks"
+	"github.com/ipld/go-car"
 	dagjson "github.com/ipld/go-ipld-prime/codec/dagjson"
 	"github.com/urfave/cli/v2"
 
@@ -146,6 +147,50 @@ func (c *Client) GetTask(ctx context.Context, uuid string) (tasks.Task, error) {
 		return nil, err
 	}
 	return tp.Build().(tasks.Task), nil
+}
+
+func (c *Client) Drain(ctx context.Context, worker string) error {
+	resp, err := c.request(ctx, "POST", "/drain/"+worker, nil)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return ErrRequestFailed{resp.StatusCode}
+	}
+	return nil
+}
+
+func (c *Client) Complete(ctx context.Context, worker string) error {
+	resp, err := c.request(ctx, "POST", "/complete/"+worker, nil)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return ErrRequestFailed{resp.StatusCode}
+	}
+	return nil
+}
+
+func (c *Client) CARExport(ctx context.Context) (*car.CarReader, func() error, error) {
+	resp, err := c.request(ctx, "GET", "/car", nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		resp.Body.Close()
+		return nil, nil, ErrRequestFailed{resp.StatusCode}
+	}
+	rdr, err := car.NewCarReader(resp.Body)
+	if err != nil {
+		resp.Body.Close()
+		return nil, nil, err
+	}
+	return rdr, resp.Body.Close, nil
 }
 
 func (c *Client) CreateStorageTask(ctx context.Context, storageTask tasks.StorageTask) (tasks.Task, error) {
