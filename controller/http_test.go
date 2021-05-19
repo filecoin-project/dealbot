@@ -139,7 +139,7 @@ func TestControllerHTTPInterface(t *testing.T) {
 			require.Equal(t, *tasks.InProgress, task.Status)
 
 			// succeed task.
-			task, err = apiClient.UpdateTask(ctx, task.GetUUID(), tasks.Type.UpdateTask.Of("dealbot1", tasks.Successful))
+			task, err = apiClient.UpdateTask(ctx, task.GetUUID(), tasks.Type.UpdateTask.Of("dealbot1", tasks.Successful, 1))
 			require.NoError(t, err)
 			require.Equal(t, *tasks.Successful, task.Status)
 
