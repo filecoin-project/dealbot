@@ -23,5 +23,6 @@ type State interface {
 }
 
 type Store interface {
+	Head() (cid.Cid, error)
 	Get(cid.Cid) (blockformat.Block, error)
 }

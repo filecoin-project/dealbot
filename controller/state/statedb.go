@@ -176,6 +176,7 @@ func (s *sdbstore) Get(c cid.Cid) (blockformat.Block, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer tx.Commit()
 	loader := txContextLoader(s.Context, tx)
 	blkReader, err := loader(linksystem.Link{c}, ipld.LinkContext{})
 	if err != nil {
@@ -186,6 +187,18 @@ func (s *sdbstore) Get(c cid.Cid) (blockformat.Block, error) {
 		return nil, err
 	}
 	return blockformat.NewBlockWithCid(data, c)
+}
+
+func (s *sdbstore) Head() (cid.Cid, error) {
+	var head string
+	var headCid cid.Cid
+	err := s.db().QueryRowContext(s.Context, queryHeadSQL, LATEST_UPDATE, "").Scan(&head)
+	if err != nil {
+		return cid.Undef, err
+	} else {
+		headCid, err = cid.Decode(head)
+		return headCid, nil
+	}
 }
 
 func (s *stateDB) db() *sql.DB {

@@ -8,6 +8,9 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/ipld/go-car"
 	"github.com/ipld/go-ipld-prime/codec/dagjson"
+	basicnode "github.com/ipld/go-ipld-prime/node/basic"
+	"github.com/ipld/go-ipld-prime/traversal/selector"
+	"github.com/ipld/go-ipld-prime/traversal/selector/builder"
 
 	"github.com/filecoin-project/dealbot/tasks"
 )
@@ -250,10 +253,27 @@ func (c *Controller) carHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/octet-stream")
 
+	store := c.db.Store(r.Context())
+	rootCid, err := store.Head()
+	if err != nil {
+		log.Errorw("get task DB error", "err", err.Error())
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
 	w.WriteHeader(http.StatusOK)
 
-	sc := car.NewSelectiveCar(r.Context(), nil, []car.Dag{})
-	err := sc.Write(w)
+	ssb := builder.NewSelectorSpecBuilder(basicnode.Prototype__Any{})
+	ss := ssb.ExploreRecursive(selector.RecursionLimitNone(), ssb.ExploreUnion(
+		ssb.Matcher(),
+		ssb.ExploreAll(ssb.ExploreRecursiveEdge()),
+	))
+	root := car.Dag{
+		Root:     rootCid,
+		Selector: ss.Node(),
+	}
+	sc := car.NewSelectiveCar(r.Context(), store, []car.Dag{root})
+	err = sc.Write(w)
 	if err != nil {
 		logger.Info("car write failed", "err", err)
 	}
