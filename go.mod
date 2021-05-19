@@ -21,6 +21,7 @@ require (
 	github.com/ipld/go-car v0.1.1-0.20201119040415-11b6074b6d4d
 	github.com/ipld/go-ipld-graphql v0.0.0-20210425153336-bd6fb64874b6
 	github.com/ipld/go-ipld-prime v0.7.0
+	github.com/ipld/go-ipld-prime-proto v0.1.1 // indirect
 	github.com/lib/pq v1.9.0
 	github.com/libp2p/go-libp2p-core v0.7.0
 	github.com/libp2p/go-libp2p-crypto v0.1.0
