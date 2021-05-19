@@ -8,16 +8,19 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"sync"
 	"time"
 
 	"github.com/filecoin-project/dealbot/metrics"
 	"github.com/filecoin-project/dealbot/tasks"
+	blockformat "github.com/ipfs/go-block-format"
 	"github.com/ipfs/go-cid"
 	logging "github.com/ipfs/go-log/v2"
 	"github.com/ipld/go-ipld-prime"
 	dagjson "github.com/ipld/go-ipld-prime/codec/dagjson"
+	cidlink "github.com/ipld/go-ipld-prime/linking/cid"
 	linksystem "github.com/ipld/go-ipld-prime/linking/cid"
 	crypto "github.com/libp2p/go-libp2p-crypto"
 	"github.com/multiformats/go-multicodec"
@@ -158,6 +161,45 @@ func NewStateDB(ctx context.Context, driver, conn string, identity crypto.PrivKe
 	}
 
 	return st, nil
+}
+
+func (s *stateDB) Store(ctx context.Context) Store {
+	return &sdbstore{ctx, s}
+}
+
+type sdbstore struct {
+	context.Context
+	*stateDB
+}
+
+func (s *sdbstore) Get(c cid.Cid) (blockformat.Block, error) {
+	tx, err := s.stateDB.db().Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Commit()
+	loader := txContextLoader(s.Context, tx)
+	blkReader, err := loader(linksystem.Link{c}, ipld.LinkContext{})
+	if err != nil {
+		return nil, err
+	}
+	data, err := ioutil.ReadAll(blkReader)
+	if err != nil {
+		return nil, err
+	}
+	return blockformat.NewBlockWithCid(data, c)
+}
+
+func (s *sdbstore) Head() (cid.Cid, error) {
+	var head string
+	var headCid cid.Cid
+	err := s.db().QueryRowContext(s.Context, queryHeadSQL, LATEST_UPDATE, "").Scan(&head)
+	if err != nil {
+		return cid.Undef, err
+	} else {
+		headCid, err = cid.Decode(head)
+		return headCid, nil
+	}
 }
 
 func (s *stateDB) db() *sql.DB {
@@ -601,7 +643,7 @@ func (s *stateDB) PublishRecordsFrom(ctx context.Context, worker string) error {
 		return err
 	}
 
-	if _, err := tx.ExecContext(ctx, addHeadSQL, updateCid, time.Now(), "", LATEST_UPDATE); err != nil {
+	if _, err := tx.ExecContext(ctx, addHeadSQL, updateCid.(cidlink.Link).Cid.String(), time.Now(), "", LATEST_UPDATE); err != nil {
 		return err
 	}
 	if head != "" {

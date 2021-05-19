@@ -4,6 +4,8 @@ import (
 	"context"
 
 	"github.com/filecoin-project/dealbot/tasks"
+	blockformat "github.com/ipfs/go-block-format"
+	"github.com/ipfs/go-cid"
 )
 
 // State provides an interface for presistence.
@@ -17,4 +19,10 @@ type State interface {
 	NewRetrievalTask(ctx context.Context, retrievalTask tasks.RetrievalTask) (tasks.Task, error)
 	DrainWorker(ctx context.Context, worker string) error
 	PublishRecordsFrom(ctx context.Context, worker string) error
+	Store(ctx context.Context) Store
+}
+
+type Store interface {
+	Head() (cid.Cid, error)
+	Get(cid.Cid) (blockformat.Block, error)
 }

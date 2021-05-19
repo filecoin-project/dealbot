@@ -6,7 +6,11 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/ipld/go-car"
 	"github.com/ipld/go-ipld-prime/codec/dagjson"
+	basicnode "github.com/ipld/go-ipld-prime/node/basic"
+	"github.com/ipld/go-ipld-prime/traversal/selector"
+	"github.com/ipld/go-ipld-prime/traversal/selector/builder"
 
 	"github.com/filecoin-project/dealbot/tasks"
 )
@@ -239,6 +243,40 @@ func (c *Controller) getTaskHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	dagjson.Encoder(task.Representation(), w)
+}
+
+func (c *Controller) carHandler(w http.ResponseWriter, r *http.Request) {
+	logger := log.With("req_id", r.Header.Get("X-Request-ID"))
+
+	logger.Debugw("handle request", "command", "car")
+	defer logger.Debugw("request handled", "command", "car")
+
+	w.Header().Set("Content-Type", "application/octet-stream")
+
+	store := c.db.Store(r.Context())
+	rootCid, err := store.Head()
+	if err != nil {
+		log.Errorw("get task DB error", "err", err.Error())
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+
+	ssb := builder.NewSelectorSpecBuilder(basicnode.Prototype__Any{})
+	ss := ssb.ExploreRecursive(selector.RecursionLimitNone(), ssb.ExploreUnion(
+		ssb.Matcher(),
+		ssb.ExploreAll(ssb.ExploreRecursiveEdge()),
+	))
+	root := car.Dag{
+		Root:     rootCid,
+		Selector: ss.Node(),
+	}
+	sc := car.NewSelectiveCar(r.Context(), store, []car.Dag{root})
+	err = sc.Write(w)
+	if err != nil {
+		logger.Info("car write failed", "err", err)
+	}
 }
 
 func (c *Controller) sendCORSHeaders(w http.ResponseWriter, r *http.Request) {
