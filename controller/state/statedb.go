@@ -478,6 +478,7 @@ func (s *stateDB) transact(ctx context.Context, f func(*sql.Tx) error) error {
 		if err != nil {
 			if s.dbconn.RetryableError(err) && retries > 0 {
 				retries--
+				log.Warnw("retrying transaction after error", "err", err)
 				continue
 			}
 			return err
