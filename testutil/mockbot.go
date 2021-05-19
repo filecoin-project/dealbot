@@ -143,6 +143,7 @@ func (md *MockDaemon) worker(n int) {
 				result,
 				stage,
 				stageDetails,
+				1,
 			)
 
 			task, err = md.client.UpdateTask(ctx, task.GetUUID(), req)

@@ -84,7 +84,7 @@ func (d *Daemon) Port() int {
 func (d *Daemon) Shutdown(ctx context.Context) error {
 	defer func() {
 		close(d.doneCh)
-		d.e.Close()
+		d.e.Close(ctx)
 	}()
 	return d.server.Shutdown(ctx)
 }

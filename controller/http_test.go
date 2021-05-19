@@ -48,7 +48,7 @@ func TestControllerHTTPInterface(t *testing.T) {
 			require.Equal(t, "dealbot 1", refetchTask.WorkedBy.Must().String())
 
 			// update but from the wrong dealbot
-			task, err = apiClient.UpdateTask(ctx, taskUUID, tasks.Type.UpdateTask.Of("dealbot 2", tasks.Successful))
+			task, err = apiClient.UpdateTask(ctx, taskUUID, tasks.Type.UpdateTask.Of("dealbot 2", tasks.Successful, 1))
 			// request fails
 			require.EqualError(t, err, client.ErrRequestFailed{Code: http.StatusBadRequest}.Error())
 			require.Nil(t, task)
@@ -59,13 +59,14 @@ func TestControllerHTTPInterface(t *testing.T) {
 			require.Equal(t, "dealbot 1", refetchTask.WorkedBy.Must().String())
 
 			// update again
-			task, err = apiClient.UpdateTask(ctx, taskUUID, tasks.Type.UpdateTask.Of("dealbot 1", tasks.Successful))
+			task, err = apiClient.UpdateTask(ctx, taskUUID, tasks.Type.UpdateTask.Of("dealbot 1", tasks.Successful, 1))
 			require.NoError(t, err)
 			require.Equal(t, *tasks.Successful, task.Status)
 			refetchTask, err = apiClient.GetTask(ctx, taskUUID)
 			require.NoError(t, err)
 			require.Equal(t, *tasks.Successful, refetchTask.Status)
 			require.Equal(t, "dealbot 1", refetchTask.WorkedBy.Must().String())
+			require.Equal(t, 1, int(refetchTask.RunCount.Int()))
 
 			// update a different
 			pt = tasks.Type.PopTask.Of("dealbot 2", tasks.Successful)
