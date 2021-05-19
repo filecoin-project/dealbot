@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/ipld/go-car"
 	"github.com/ipld/go-ipld-prime/codec/dagjson"
 
 	"github.com/filecoin-project/dealbot/tasks"
@@ -239,6 +240,23 @@ func (c *Controller) getTaskHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	dagjson.Encoder(task.Representation(), w)
+}
+
+func (c *Controller) carHandler(w http.ResponseWriter, r *http.Request) {
+	logger := log.With("req_id", r.Header.Get("X-Request-ID"))
+
+	logger.Debugw("handle request", "command", "car")
+	defer logger.Debugw("request handled", "command", "car")
+
+	w.Header().Set("Content-Type", "application/octet-stream")
+
+	w.WriteHeader(http.StatusOK)
+
+	sc := car.NewSelectiveCar(r.Context(), nil, []car.Dag{})
+	err := sc.Write(w)
+	if err != nil {
+		logger.Info("car write failed", "err", err)
+	}
 }
 
 func (c *Controller) sendCORSHeaders(w http.ResponseWriter, r *http.Request) {

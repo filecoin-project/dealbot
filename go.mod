@@ -15,8 +15,10 @@ require (
 	github.com/gorilla/handlers v1.4.2
 	github.com/gorilla/mux v1.7.4
 	github.com/graphql-go/graphql v0.7.9
+	github.com/ipfs/go-block-format v0.0.3
 	github.com/ipfs/go-cid v0.0.7
 	github.com/ipfs/go-log/v2 v2.1.2
+	github.com/ipld/go-car v0.1.1-0.20201119040415-11b6074b6d4d
 	github.com/ipld/go-ipld-graphql v0.0.0-20210425153336-bd6fb64874b6
 	github.com/ipld/go-ipld-prime v0.7.0
 	github.com/lib/pq v1.9.0
@@ -26,7 +28,6 @@ require (
 	github.com/multiformats/go-multiaddr v0.3.1
 	github.com/multiformats/go-multicodec v0.2.0
 	github.com/multiformats/go-multihash v0.0.15 // indirect
-	github.com/polydawn/refmt v0.0.0-20190809202753-05966cbd336a
 	github.com/prometheus/client_golang v1.6.0
 	github.com/stretchr/testify v1.7.0
 	github.com/urfave/cli/v2 v2.3.0

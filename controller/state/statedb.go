@@ -8,12 +8,14 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"sync"
 	"time"
 
 	"github.com/filecoin-project/dealbot/metrics"
 	"github.com/filecoin-project/dealbot/tasks"
+	blockformat "github.com/ipfs/go-block-format"
 	"github.com/ipfs/go-cid"
 	logging "github.com/ipfs/go-log/v2"
 	"github.com/ipld/go-ipld-prime"
@@ -158,6 +160,32 @@ func NewStateDB(ctx context.Context, driver, conn string, identity crypto.PrivKe
 	}
 
 	return st, nil
+}
+
+func (s *stateDB) Store(ctx context.Context) Store {
+	return &sdbstore{ctx, s}
+}
+
+type sdbstore struct {
+	context.Context
+	*stateDB
+}
+
+func (s *sdbstore) Get(c cid.Cid) (blockformat.Block, error) {
+	tx, err := s.stateDB.db().Begin()
+	if err != nil {
+		return nil, err
+	}
+	loader := txContextLoader(s.Context, tx)
+	blkReader, err := loader(linksystem.Link{c}, ipld.LinkContext{})
+	if err != nil {
+		return nil, err
+	}
+	data, err := ioutil.ReadAll(blkReader)
+	if err != nil {
+		return nil, err
+	}
+	return blockformat.NewBlockWithCid(data, c)
 }
 
 func (s *stateDB) db() *sql.DB {

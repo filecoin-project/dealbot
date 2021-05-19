@@ -121,6 +121,7 @@ func NewWithDependencies(listener, graphqlListener net.Listener, recorder metric
 	r.HandleFunc("/status", srv.reportStatusHandler).Methods("POST")
 	r.HandleFunc("/tasks/{uuid}", srv.updateTaskHandler).Methods("PATCH")
 	r.HandleFunc("/tasks/{uuid}", srv.getTaskHandler).Methods("GET")
+	r.HandleFunc("/car", srv.carHandler).Methods("GET")
 	r.Methods("OPTIONS").HandlerFunc(srv.sendCORSHeaders)
 	metricsHandler := recorder.Handler()
 	if metricsHandler != nil {
