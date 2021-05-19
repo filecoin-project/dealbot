@@ -86,8 +86,8 @@ taskLoop:
 	for {
 		select {
 		case <-e.shutdown:
-		default:
 			break taskLoop
+		default:
 		}
 
 		// Check if there is a new task
@@ -237,13 +237,21 @@ func getTaskSchedule(task tasks.Task) (string, time.Duration) {
 	var duration time.Duration
 
 	if t := task.RetrievalTask; t.Exists() {
-		schedule = t.Must().Schedule.Must().String()
-		limit = t.Must().ScheduleLimit.Must().String()
+		if sch := t.Must().Schedule; sch.Exists() {
+			schedule = sch.Must().String()
+			if lim := t.Must().ScheduleLimit; lim.Exists() {
+				limit = lim.Must().String()
+			}
+		}
 	}
 
 	if t := task.StorageTask; t.Exists() {
-		schedule = t.Must().Schedule.Must().String()
-		limit = t.Must().ScheduleLimit.Must().String()
+		if sch := t.Must().Schedule; sch.Exists() {
+			schedule = sch.Must().String()
+			if lim := t.Must().ScheduleLimit; lim.Exists() {
+				limit = lim.Must().String()
+			}
+		}
 	}
 
 	if schedule != "" && limit != "" {
