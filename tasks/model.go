@@ -234,40 +234,6 @@ func (t *_Task) Assign(worker string, status Status) Task {
 	return &newTask
 }
 
-func (t *_Task) Update(status Status, stage string, errorMessage string, details StageDetails, runCount int) (Task, error) {
-	updatedTask := _Task{
-		UUID:          t.UUID,
-		Status:        *status,
-		WorkedBy:      t.WorkedBy,
-		ErrorMessage:  _String{errorMessage},
-		Stage:         _String{stage},
-		StartedAt:     t.StartedAt,
-		RunCount:      _Int{int64(runCount)},
-		RetrievalTask: t.RetrievalTask,
-		StorageTask:   t.StorageTask,
-	}
-
-	// On stage transitions, archive the current stage.
-	if stage != t.Stage.x && t.CurrentStageDetails.Exists() {
-		if !t.PastStageDetails.Exists() {
-			updatedTask.PastStageDetails = _List_StageDetails__Maybe{m: schema.Maybe_Value, v: &_List_StageDetails{x: []_StageDetails{*t.CurrentStageDetails.v}}}
-		} else {
-			updatedTask.PastStageDetails = _List_StageDetails__Maybe{m: schema.Maybe_Value, v: &_List_StageDetails{x: append(t.PastStageDetails.v.x, *t.CurrentStageDetails.v)}}
-		}
-	} else {
-		updatedTask.PastStageDetails = t.PastStageDetails
-	}
-
-	if details == nil {
-		updatedTask.CurrentStageDetails = _StageDetails__Maybe{m: schema.Maybe_Absent}
-	} else {
-		updatedTask.CurrentStageDetails = _StageDetails__Maybe{m: schema.Maybe_Value, v: details}
-	}
-
-	//todo: sign
-	return &updatedTask, nil
-}
-
 func (t *_Task) Finalize(ctx context.Context, s ipld.Storer) (FinishedTask, error) {
 	if t.Status != *Failed && t.Status != *Successful {
 		return nil, fmt.Errorf("task cannot be finalized as it is not in a finished state")
@@ -310,18 +276,31 @@ func (t *_Task) UpdateTask(tsk UpdateTask) (Task, error) {
 	if tsk.Stage.Exists() {
 		stage = tsk.Stage.Must().String()
 	}
-	errorMessage := ""
-	if tsk.ErrorMessage.Exists() {
-		errorMessage = tsk.ErrorMessage.Must().String()
-	}
-	nt, err := t.Update(&tsk.Status, stage, errorMessage, tsk.CurrentStageDetails.v, int(tsk.RunCount.Int()))
-	if err != nil {
-		return nil, err
+	updatedTask := _Task{
+		UUID:                t.UUID,
+		Status:              tsk.Status,
+		WorkedBy:            _String__Maybe{m: schema.Maybe_Value, v: &tsk.WorkedBy},
+		ErrorMessage:        tsk.ErrorMessage,
+		Stage:               _String{stage},
+		StartedAt:           t.StartedAt,
+		RunCount:            tsk.RunCount,
+		CurrentStageDetails: tsk.CurrentStageDetails,
+		RetrievalTask:       t.RetrievalTask,
+		StorageTask:         t.StorageTask,
 	}
 
-	nt.WorkedBy = _String__Maybe{m: schema.Maybe_Value, v: &tsk.WorkedBy}
-	//todo: sign
-	return nt, nil
+	// On stage transitions, archive the current stage.
+	if stage != t.Stage.x && t.CurrentStageDetails.Exists() {
+		if !t.PastStageDetails.Exists() {
+			updatedTask.PastStageDetails = _List_StageDetails__Maybe{m: schema.Maybe_Value, v: &_List_StageDetails{x: []_StageDetails{*t.CurrentStageDetails.v}}}
+		} else {
+			updatedTask.PastStageDetails = _List_StageDetails__Maybe{m: schema.Maybe_Value, v: &_List_StageDetails{x: append(t.PastStageDetails.v.x, *t.CurrentStageDetails.v)}}
+		}
+	} else {
+		updatedTask.PastStageDetails = t.PastStageDetails
+	}
+
+	return &updatedTask, nil
 }
 
 func (t *_Task) GetUUID() string {
