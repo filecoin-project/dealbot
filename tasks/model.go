@@ -254,6 +254,8 @@ func (t *_Task) Update(status Status, stage string, errorMessage string, details
 		} else {
 			updatedTask.PastStageDetails = _List_StageDetails__Maybe{m: schema.Maybe_Value, v: &_List_StageDetails{x: append(t.PastStageDetails.v.x, *t.CurrentStageDetails.v)}}
 		}
+	} else {
+		updatedTask.PastStageDetails = t.PastStageDetails
 	}
 
 	if details == nil {
