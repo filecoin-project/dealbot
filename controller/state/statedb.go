@@ -35,7 +35,8 @@ import (
 	//"github.com/golang-migrate/migrate/v4/source/iofs"
 )
 
-const maxTransactionRetries = 7
+// Maximum time to retry transactions that fail due to temporary error
+const maxRetryTime = time.Minute
 
 // Embed all the *.sql files in migrations.
 //go:embed migrations/*.sql
@@ -466,7 +467,7 @@ func (s *stateDB) transact(ctx context.Context, f func(*sql.Tx) error) error {
 		needLock = true
 	}
 
-	retries := maxTransactionRetries
+	var start time.Time
 	for {
 		if needLock {
 			s.txlock.Lock()
@@ -476,8 +477,10 @@ func (s *stateDB) transact(ctx context.Context, f func(*sql.Tx) error) error {
 			s.txlock.Unlock()
 		}
 		if err != nil {
-			if s.dbconn.RetryableError(err) && retries > 0 {
-				retries--
+			if s.dbconn.RetryableError(err) && time.Since(start) < maxRetryTime {
+				if start.IsZero() {
+					start = time.Now()
+				}
 				log.Warnw("retrying transaction after error", "err", err)
 				continue
 			}
