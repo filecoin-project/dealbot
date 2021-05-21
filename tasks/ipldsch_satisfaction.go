@@ -2507,6 +2507,9 @@ func (n _FinishedTask) FieldStatus() Status {
 func (n _FinishedTask) FieldStartedAt() Time {
 	return &n.StartedAt
 }
+func (n _FinishedTask) FieldErrorMessage() String {
+	return &n.ErrorMessage
+}
 func (n _FinishedTask) FieldRetrievalTask() MaybeRetrievalTask {
 	return &n.RetrievalTask
 }
@@ -2570,6 +2573,7 @@ func (m MaybeFinishedTask) Must() FinishedTask {
 var (
 	fieldName__FinishedTask_Status = _String{"Status"}
 	fieldName__FinishedTask_StartedAt = _String{"StartedAt"}
+	fieldName__FinishedTask_ErrorMessage = _String{"ErrorMessage"}
 	fieldName__FinishedTask_RetrievalTask = _String{"RetrievalTask"}
 	fieldName__FinishedTask_StorageTask = _String{"StorageTask"}
 	fieldName__FinishedTask_DealID = _String{"DealID"}
@@ -2591,6 +2595,8 @@ func (n FinishedTask) LookupByString(key string) (ipld.Node, error) {
 		return &n.Status, nil
 	case "StartedAt":
 		return &n.StartedAt, nil
+	case "ErrorMessage":
+		return &n.ErrorMessage, nil
 	case "RetrievalTask":
 		if n.RetrievalTask.m == schema.Maybe_Absent {
 			return ipld.Absent, nil
@@ -2651,7 +2657,7 @@ type _FinishedTask__MapItr struct {
 }
 
 func (itr *_FinishedTask__MapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
-	if itr.idx >= 11 {
+	if itr.idx >= 12 {
 		return nil, nil, ipld.ErrIteratorOverread{}
 	}
 	switch itr.idx {
@@ -2662,50 +2668,53 @@ func (itr *_FinishedTask__MapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
 		k = &fieldName__FinishedTask_StartedAt
 		v = &itr.n.StartedAt
 	case 2:
+		k = &fieldName__FinishedTask_ErrorMessage
+		v = &itr.n.ErrorMessage
+	case 3:
 		k = &fieldName__FinishedTask_RetrievalTask
 		if itr.n.RetrievalTask.m == schema.Maybe_Absent {
 			v = ipld.Absent
 			break
 		}
 		v = itr.n.RetrievalTask.v
-	case 3:
+	case 4:
 		k = &fieldName__FinishedTask_StorageTask
 		if itr.n.StorageTask.m == schema.Maybe_Absent {
 			v = ipld.Absent
 			break
 		}
 		v = itr.n.StorageTask.v
-	case 4:
+	case 5:
 		k = &fieldName__FinishedTask_DealID
 		v = &itr.n.DealID
-	case 5:
+	case 6:
 		k = &fieldName__FinishedTask_MinerMultiAddr
 		v = &itr.n.MinerMultiAddr
-	case 6:
+	case 7:
 		k = &fieldName__FinishedTask_ClientApparentAddr
 		v = &itr.n.ClientApparentAddr
-	case 7:
+	case 8:
 		k = &fieldName__FinishedTask_MinerLatencyMS
 		if itr.n.MinerLatencyMS.m == schema.Maybe_Absent {
 			v = ipld.Absent
 			break
 		}
 		v = itr.n.MinerLatencyMS.v
-	case 8:
+	case 9:
 		k = &fieldName__FinishedTask_TimeToFirstByteMS
 		if itr.n.TimeToFirstByteMS.m == schema.Maybe_Absent {
 			v = ipld.Absent
 			break
 		}
 		v = itr.n.TimeToFirstByteMS.v
-	case 9:
+	case 10:
 		k = &fieldName__FinishedTask_TimeToLastByteMS
 		if itr.n.TimeToLastByteMS.m == schema.Maybe_Absent {
 			v = ipld.Absent
 			break
 		}
 		v = itr.n.TimeToLastByteMS.v
-	case 10:
+	case 11:
 		k = &fieldName__FinishedTask_Events
 		v = &itr.n.Events
 	default:
@@ -2715,14 +2724,14 @@ func (itr *_FinishedTask__MapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
 	return
 }
 func (itr *_FinishedTask__MapItr) Done() bool {
-	return itr.idx >= 11
+	return itr.idx >= 12
 }
 
 func (FinishedTask) ListIterator() ipld.ListIterator {
 	return nil
 }
 func (FinishedTask) Length() int64 {
-	return 11
+	return 12
 }
 func (FinishedTask) IsAbsent() bool {
 	return false
@@ -2782,6 +2791,7 @@ type _FinishedTask__Assembler struct {
 	cm schema.Maybe
 	ca_Status _Status__Assembler
 	ca_StartedAt _Time__Assembler
+	ca_ErrorMessage _String__Assembler
 	ca_RetrievalTask _RetrievalTask__Assembler
 	ca_StorageTask _StorageTask__Assembler
 	ca_DealID _Int__Assembler
@@ -2798,6 +2808,7 @@ func (na *_FinishedTask__Assembler) reset() {
 	na.s = 0
 	na.ca_Status.reset()
 	na.ca_StartedAt.reset()
+	na.ca_ErrorMessage.reset()
 	na.ca_RetrievalTask.reset()
 	na.ca_StorageTask.reset()
 	na.ca_DealID.reset()
@@ -2812,16 +2823,17 @@ func (na *_FinishedTask__Assembler) reset() {
 var (
 	fieldBit__FinishedTask_Status = 1 << 0
 	fieldBit__FinishedTask_StartedAt = 1 << 1
-	fieldBit__FinishedTask_RetrievalTask = 1 << 2
-	fieldBit__FinishedTask_StorageTask = 1 << 3
-	fieldBit__FinishedTask_DealID = 1 << 4
-	fieldBit__FinishedTask_MinerMultiAddr = 1 << 5
-	fieldBit__FinishedTask_ClientApparentAddr = 1 << 6
-	fieldBit__FinishedTask_MinerLatencyMS = 1 << 7
-	fieldBit__FinishedTask_TimeToFirstByteMS = 1 << 8
-	fieldBit__FinishedTask_TimeToLastByteMS = 1 << 9
-	fieldBit__FinishedTask_Events = 1 << 10
-	fieldBits__FinishedTask_sufficient = 0 + 1 << 0 + 1 << 1 + 1 << 4 + 1 << 5 + 1 << 6 + 1 << 10
+	fieldBit__FinishedTask_ErrorMessage = 1 << 2
+	fieldBit__FinishedTask_RetrievalTask = 1 << 3
+	fieldBit__FinishedTask_StorageTask = 1 << 4
+	fieldBit__FinishedTask_DealID = 1 << 5
+	fieldBit__FinishedTask_MinerMultiAddr = 1 << 6
+	fieldBit__FinishedTask_ClientApparentAddr = 1 << 7
+	fieldBit__FinishedTask_MinerLatencyMS = 1 << 8
+	fieldBit__FinishedTask_TimeToFirstByteMS = 1 << 9
+	fieldBit__FinishedTask_TimeToLastByteMS = 1 << 10
+	fieldBit__FinishedTask_Events = 1 << 11
+	fieldBits__FinishedTask_sufficient = 0 + 1 << 0 + 1 << 1 + 1 << 2 + 1 << 5 + 1 << 6 + 1 << 7 + 1 << 11
 )
 func (na *_FinishedTask__Assembler) BeginMap(int64) (ipld.MapAssembler, error) {
 	switch *na.m {
@@ -2935,6 +2947,16 @@ func (ma *_FinishedTask__Assembler) valueFinishTidy() bool {
 			return false
 		}
 	case 2:
+		switch ma.cm {
+		case schema.Maybe_Value:
+			ma.ca_ErrorMessage.w = nil
+			ma.cm = schema.Maybe_Absent
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
+	case 3:
 		switch ma.w.RetrievalTask.m {
 		case schema.Maybe_Value:
 			ma.w.RetrievalTask.v = ma.ca_RetrievalTask.w
@@ -2943,7 +2965,7 @@ func (ma *_FinishedTask__Assembler) valueFinishTidy() bool {
 		default:
 			return false
 		}
-	case 3:
+	case 4:
 		switch ma.w.StorageTask.m {
 		case schema.Maybe_Value:
 			ma.w.StorageTask.v = ma.ca_StorageTask.w
@@ -2952,7 +2974,7 @@ func (ma *_FinishedTask__Assembler) valueFinishTidy() bool {
 		default:
 			return false
 		}
-	case 4:
+	case 5:
 		switch ma.cm {
 		case schema.Maybe_Value:
 			ma.ca_DealID.w = nil
@@ -2962,7 +2984,7 @@ func (ma *_FinishedTask__Assembler) valueFinishTidy() bool {
 		default:
 			return false
 		}
-	case 5:
+	case 6:
 		switch ma.cm {
 		case schema.Maybe_Value:
 			ma.ca_MinerMultiAddr.w = nil
@@ -2972,7 +2994,7 @@ func (ma *_FinishedTask__Assembler) valueFinishTidy() bool {
 		default:
 			return false
 		}
-	case 6:
+	case 7:
 		switch ma.cm {
 		case schema.Maybe_Value:
 			ma.ca_ClientApparentAddr.w = nil
@@ -2982,7 +3004,7 @@ func (ma *_FinishedTask__Assembler) valueFinishTidy() bool {
 		default:
 			return false
 		}
-	case 7:
+	case 8:
 		switch ma.w.MinerLatencyMS.m {
 		case schema.Maybe_Value:
 			ma.w.MinerLatencyMS.v = ma.ca_MinerLatencyMS.w
@@ -2991,7 +3013,7 @@ func (ma *_FinishedTask__Assembler) valueFinishTidy() bool {
 		default:
 			return false
 		}
-	case 8:
+	case 9:
 		switch ma.w.TimeToFirstByteMS.m {
 		case schema.Maybe_Value:
 			ma.w.TimeToFirstByteMS.v = ma.ca_TimeToFirstByteMS.w
@@ -3000,7 +3022,7 @@ func (ma *_FinishedTask__Assembler) valueFinishTidy() bool {
 		default:
 			return false
 		}
-	case 9:
+	case 10:
 		switch ma.w.TimeToLastByteMS.m {
 		case schema.Maybe_Value:
 			ma.w.TimeToLastByteMS.v = ma.ca_TimeToLastByteMS.w
@@ -3009,7 +3031,7 @@ func (ma *_FinishedTask__Assembler) valueFinishTidy() bool {
 		default:
 			return false
 		}
-	case 10:
+	case 11:
 		switch ma.cm {
 		case schema.Maybe_Value:
 			ma.ca_Events.w = nil
@@ -3059,13 +3081,23 @@ func (ma *_FinishedTask__Assembler) AssembleEntry(k string) (ipld.NodeAssembler,
 		ma.ca_StartedAt.w = &ma.w.StartedAt
 		ma.ca_StartedAt.m = &ma.cm
 		return &ma.ca_StartedAt, nil
+	case "ErrorMessage":
+		if ma.s & fieldBit__FinishedTask_ErrorMessage != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_ErrorMessage}
+		}
+		ma.s += fieldBit__FinishedTask_ErrorMessage
+		ma.state = maState_midValue
+		ma.f = 2
+		ma.ca_ErrorMessage.w = &ma.w.ErrorMessage
+		ma.ca_ErrorMessage.m = &ma.cm
+		return &ma.ca_ErrorMessage, nil
 	case "RetrievalTask":
 		if ma.s & fieldBit__FinishedTask_RetrievalTask != 0 {
 			return nil, ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_RetrievalTask}
 		}
 		ma.s += fieldBit__FinishedTask_RetrievalTask
 		ma.state = maState_midValue
-		ma.f = 2
+		ma.f = 3
 		ma.ca_RetrievalTask.w = ma.w.RetrievalTask.v
 		ma.ca_RetrievalTask.m = &ma.w.RetrievalTask.m
 		return &ma.ca_RetrievalTask, nil
@@ -3075,7 +3107,7 @@ func (ma *_FinishedTask__Assembler) AssembleEntry(k string) (ipld.NodeAssembler,
 		}
 		ma.s += fieldBit__FinishedTask_StorageTask
 		ma.state = maState_midValue
-		ma.f = 3
+		ma.f = 4
 		ma.ca_StorageTask.w = ma.w.StorageTask.v
 		ma.ca_StorageTask.m = &ma.w.StorageTask.m
 		return &ma.ca_StorageTask, nil
@@ -3085,7 +3117,7 @@ func (ma *_FinishedTask__Assembler) AssembleEntry(k string) (ipld.NodeAssembler,
 		}
 		ma.s += fieldBit__FinishedTask_DealID
 		ma.state = maState_midValue
-		ma.f = 4
+		ma.f = 5
 		ma.ca_DealID.w = &ma.w.DealID
 		ma.ca_DealID.m = &ma.cm
 		return &ma.ca_DealID, nil
@@ -3095,7 +3127,7 @@ func (ma *_FinishedTask__Assembler) AssembleEntry(k string) (ipld.NodeAssembler,
 		}
 		ma.s += fieldBit__FinishedTask_MinerMultiAddr
 		ma.state = maState_midValue
-		ma.f = 5
+		ma.f = 6
 		ma.ca_MinerMultiAddr.w = &ma.w.MinerMultiAddr
 		ma.ca_MinerMultiAddr.m = &ma.cm
 		return &ma.ca_MinerMultiAddr, nil
@@ -3105,7 +3137,7 @@ func (ma *_FinishedTask__Assembler) AssembleEntry(k string) (ipld.NodeAssembler,
 		}
 		ma.s += fieldBit__FinishedTask_ClientApparentAddr
 		ma.state = maState_midValue
-		ma.f = 6
+		ma.f = 7
 		ma.ca_ClientApparentAddr.w = &ma.w.ClientApparentAddr
 		ma.ca_ClientApparentAddr.m = &ma.cm
 		return &ma.ca_ClientApparentAddr, nil
@@ -3115,7 +3147,7 @@ func (ma *_FinishedTask__Assembler) AssembleEntry(k string) (ipld.NodeAssembler,
 		}
 		ma.s += fieldBit__FinishedTask_MinerLatencyMS
 		ma.state = maState_midValue
-		ma.f = 7
+		ma.f = 8
 		ma.ca_MinerLatencyMS.w = ma.w.MinerLatencyMS.v
 		ma.ca_MinerLatencyMS.m = &ma.w.MinerLatencyMS.m
 		return &ma.ca_MinerLatencyMS, nil
@@ -3125,7 +3157,7 @@ func (ma *_FinishedTask__Assembler) AssembleEntry(k string) (ipld.NodeAssembler,
 		}
 		ma.s += fieldBit__FinishedTask_TimeToFirstByteMS
 		ma.state = maState_midValue
-		ma.f = 8
+		ma.f = 9
 		ma.ca_TimeToFirstByteMS.w = ma.w.TimeToFirstByteMS.v
 		ma.ca_TimeToFirstByteMS.m = &ma.w.TimeToFirstByteMS.m
 		return &ma.ca_TimeToFirstByteMS, nil
@@ -3135,7 +3167,7 @@ func (ma *_FinishedTask__Assembler) AssembleEntry(k string) (ipld.NodeAssembler,
 		}
 		ma.s += fieldBit__FinishedTask_TimeToLastByteMS
 		ma.state = maState_midValue
-		ma.f = 9
+		ma.f = 10
 		ma.ca_TimeToLastByteMS.w = ma.w.TimeToLastByteMS.v
 		ma.ca_TimeToLastByteMS.m = &ma.w.TimeToLastByteMS.m
 		return &ma.ca_TimeToLastByteMS, nil
@@ -3145,7 +3177,7 @@ func (ma *_FinishedTask__Assembler) AssembleEntry(k string) (ipld.NodeAssembler,
 		}
 		ma.s += fieldBit__FinishedTask_Events
 		ma.state = maState_midValue
-		ma.f = 10
+		ma.f = 11
 		ma.ca_Events.w = &ma.w.Events
 		ma.ca_Events.m = &ma.cm
 		return &ma.ca_Events, nil
@@ -3195,38 +3227,42 @@ func (ma *_FinishedTask__Assembler) AssembleValue() ipld.NodeAssembler {
 		ma.ca_StartedAt.m = &ma.cm
 		return &ma.ca_StartedAt
 	case 2:
+		ma.ca_ErrorMessage.w = &ma.w.ErrorMessage
+		ma.ca_ErrorMessage.m = &ma.cm
+		return &ma.ca_ErrorMessage
+	case 3:
 		ma.ca_RetrievalTask.w = ma.w.RetrievalTask.v
 		ma.ca_RetrievalTask.m = &ma.w.RetrievalTask.m
 		return &ma.ca_RetrievalTask
-	case 3:
+	case 4:
 		ma.ca_StorageTask.w = ma.w.StorageTask.v
 		ma.ca_StorageTask.m = &ma.w.StorageTask.m
 		return &ma.ca_StorageTask
-	case 4:
+	case 5:
 		ma.ca_DealID.w = &ma.w.DealID
 		ma.ca_DealID.m = &ma.cm
 		return &ma.ca_DealID
-	case 5:
+	case 6:
 		ma.ca_MinerMultiAddr.w = &ma.w.MinerMultiAddr
 		ma.ca_MinerMultiAddr.m = &ma.cm
 		return &ma.ca_MinerMultiAddr
-	case 6:
+	case 7:
 		ma.ca_ClientApparentAddr.w = &ma.w.ClientApparentAddr
 		ma.ca_ClientApparentAddr.m = &ma.cm
 		return &ma.ca_ClientApparentAddr
-	case 7:
+	case 8:
 		ma.ca_MinerLatencyMS.w = ma.w.MinerLatencyMS.v
 		ma.ca_MinerLatencyMS.m = &ma.w.MinerLatencyMS.m
 		return &ma.ca_MinerLatencyMS
-	case 8:
+	case 9:
 		ma.ca_TimeToFirstByteMS.w = ma.w.TimeToFirstByteMS.v
 		ma.ca_TimeToFirstByteMS.m = &ma.w.TimeToFirstByteMS.m
 		return &ma.ca_TimeToFirstByteMS
-	case 9:
+	case 10:
 		ma.ca_TimeToLastByteMS.w = ma.w.TimeToLastByteMS.v
 		ma.ca_TimeToLastByteMS.m = &ma.w.TimeToLastByteMS.m
 		return &ma.ca_TimeToLastByteMS
-	case 10:
+	case 11:
 		ma.ca_Events.w = &ma.w.Events
 		ma.ca_Events.m = &ma.cm
 		return &ma.ca_Events
@@ -3256,6 +3292,9 @@ func (ma *_FinishedTask__Assembler) Finish() error {
 		}
 		if ma.s & fieldBit__FinishedTask_StartedAt == 0 {
 			err.Missing = append(err.Missing, "StartedAt")
+		}
+		if ma.s & fieldBit__FinishedTask_ErrorMessage == 0 {
+			err.Missing = append(err.Missing, "ErrorMessage")
 		}
 		if ma.s & fieldBit__FinishedTask_DealID == 0 {
 			err.Missing = append(err.Missing, "DealID")
@@ -3319,69 +3358,76 @@ func (ka *_FinishedTask__KeyAssembler) AssignString(k string) error {
 		ka.s += fieldBit__FinishedTask_StartedAt
 		ka.state = maState_expectValue
 		ka.f = 1
+	case "ErrorMessage":
+		if ka.s & fieldBit__FinishedTask_ErrorMessage != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_ErrorMessage}
+		}
+		ka.s += fieldBit__FinishedTask_ErrorMessage
+		ka.state = maState_expectValue
+		ka.f = 2
 	case "RetrievalTask":
 		if ka.s & fieldBit__FinishedTask_RetrievalTask != 0 {
 			return ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_RetrievalTask}
 		}
 		ka.s += fieldBit__FinishedTask_RetrievalTask
 		ka.state = maState_expectValue
-		ka.f = 2
+		ka.f = 3
 	case "StorageTask":
 		if ka.s & fieldBit__FinishedTask_StorageTask != 0 {
 			return ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_StorageTask}
 		}
 		ka.s += fieldBit__FinishedTask_StorageTask
 		ka.state = maState_expectValue
-		ka.f = 3
+		ka.f = 4
 	case "DealID":
 		if ka.s & fieldBit__FinishedTask_DealID != 0 {
 			return ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_DealID}
 		}
 		ka.s += fieldBit__FinishedTask_DealID
 		ka.state = maState_expectValue
-		ka.f = 4
+		ka.f = 5
 	case "MinerMultiAddr":
 		if ka.s & fieldBit__FinishedTask_MinerMultiAddr != 0 {
 			return ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_MinerMultiAddr}
 		}
 		ka.s += fieldBit__FinishedTask_MinerMultiAddr
 		ka.state = maState_expectValue
-		ka.f = 5
+		ka.f = 6
 	case "ClientApparentAddr":
 		if ka.s & fieldBit__FinishedTask_ClientApparentAddr != 0 {
 			return ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_ClientApparentAddr}
 		}
 		ka.s += fieldBit__FinishedTask_ClientApparentAddr
 		ka.state = maState_expectValue
-		ka.f = 6
+		ka.f = 7
 	case "MinerLatencyMS":
 		if ka.s & fieldBit__FinishedTask_MinerLatencyMS != 0 {
 			return ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_MinerLatencyMS}
 		}
 		ka.s += fieldBit__FinishedTask_MinerLatencyMS
 		ka.state = maState_expectValue
-		ka.f = 7
+		ka.f = 8
 	case "TimeToFirstByteMS":
 		if ka.s & fieldBit__FinishedTask_TimeToFirstByteMS != 0 {
 			return ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_TimeToFirstByteMS}
 		}
 		ka.s += fieldBit__FinishedTask_TimeToFirstByteMS
 		ka.state = maState_expectValue
-		ka.f = 8
+		ka.f = 9
 	case "TimeToLastByteMS":
 		if ka.s & fieldBit__FinishedTask_TimeToLastByteMS != 0 {
 			return ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_TimeToLastByteMS}
 		}
 		ka.s += fieldBit__FinishedTask_TimeToLastByteMS
 		ka.state = maState_expectValue
-		ka.f = 9
+		ka.f = 10
 	case "Events":
 		if ka.s & fieldBit__FinishedTask_Events != 0 {
 			return ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_Events}
 		}
 		ka.s += fieldBit__FinishedTask_Events
 		ka.state = maState_expectValue
-		ka.f = 10
+		ka.f = 11
 	default:
 		return ipld.ErrInvalidKey{TypeName:"tasks.FinishedTask", Key:&_String{k}}
 	}
@@ -3413,6 +3459,7 @@ type _FinishedTask__Repr _FinishedTask
 var (
 	fieldName__FinishedTask_Status_serial = _String{"Status"}
 	fieldName__FinishedTask_StartedAt_serial = _String{"StartedAt"}
+	fieldName__FinishedTask_ErrorMessage_serial = _String{"ErrorMessage"}
 	fieldName__FinishedTask_RetrievalTask_serial = _String{"RetrievalTask"}
 	fieldName__FinishedTask_StorageTask_serial = _String{"StorageTask"}
 	fieldName__FinishedTask_DealID_serial = _String{"DealID"}
@@ -3433,6 +3480,8 @@ func (n *_FinishedTask__Repr) LookupByString(key string) (ipld.Node, error) {
 		return n.Status.Representation(), nil
 	case "StartedAt":
 		return n.StartedAt.Representation(), nil
+	case "ErrorMessage":
+		return n.ErrorMessage.Representation(), nil
 	case "RetrievalTask":
 		if n.RetrievalTask.m == schema.Maybe_Absent {
 			return ipld.Absent, ipld.ErrNotExists{ipld.PathSegmentOfString(key)}
@@ -3494,7 +3543,7 @@ type _FinishedTask__ReprMapItr struct {
 }
 
 func (itr *_FinishedTask__ReprMapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
-advance:if itr.idx >= 11 {
+advance:if itr.idx >= 12 {
 		return nil, nil, ipld.ErrIteratorOverread{}
 	}
 	switch itr.idx {
@@ -3505,50 +3554,53 @@ advance:if itr.idx >= 11 {
 		k = &fieldName__FinishedTask_StartedAt_serial
 		v = itr.n.StartedAt.Representation()
 	case 2:
+		k = &fieldName__FinishedTask_ErrorMessage_serial
+		v = itr.n.ErrorMessage.Representation()
+	case 3:
 		k = &fieldName__FinishedTask_RetrievalTask_serial
 		if itr.n.RetrievalTask.m == schema.Maybe_Absent {
 			itr.idx++
 			goto advance
 		}
 		v = itr.n.RetrievalTask.v.Representation()
-	case 3:
+	case 4:
 		k = &fieldName__FinishedTask_StorageTask_serial
 		if itr.n.StorageTask.m == schema.Maybe_Absent {
 			itr.idx++
 			goto advance
 		}
 		v = itr.n.StorageTask.v.Representation()
-	case 4:
+	case 5:
 		k = &fieldName__FinishedTask_DealID_serial
 		v = itr.n.DealID.Representation()
-	case 5:
+	case 6:
 		k = &fieldName__FinishedTask_MinerMultiAddr_serial
 		v = itr.n.MinerMultiAddr.Representation()
-	case 6:
+	case 7:
 		k = &fieldName__FinishedTask_ClientApparentAddr_serial
 		v = itr.n.ClientApparentAddr.Representation()
-	case 7:
+	case 8:
 		k = &fieldName__FinishedTask_MinerLatencyMS_serial
 		if itr.n.MinerLatencyMS.m == schema.Maybe_Absent {
 			itr.idx++
 			goto advance
 		}
 		v = itr.n.MinerLatencyMS.v.Representation()
-	case 8:
+	case 9:
 		k = &fieldName__FinishedTask_TimeToFirstByteMS_serial
 		if itr.n.TimeToFirstByteMS.m == schema.Maybe_Absent {
 			itr.idx++
 			goto advance
 		}
 		v = itr.n.TimeToFirstByteMS.v.Representation()
-	case 9:
+	case 10:
 		k = &fieldName__FinishedTask_TimeToLastByteMS_serial
 		if itr.n.TimeToLastByteMS.m == schema.Maybe_Absent {
 			itr.idx++
 			goto advance
 		}
 		v = itr.n.TimeToLastByteMS.v.Representation()
-	case 10:
+	case 11:
 		k = &fieldName__FinishedTask_Events_serial
 		v = itr.n.Events.Representation()
 	default:
@@ -3558,13 +3610,13 @@ advance:if itr.idx >= 11 {
 	return
 }
 func (itr *_FinishedTask__ReprMapItr) Done() bool {
-	return itr.idx >= 11
+	return itr.idx >= 12
 }
 func (_FinishedTask__Repr) ListIterator() ipld.ListIterator {
 	return nil
 }
 func (rn *_FinishedTask__Repr) Length() int64 {
-	l := 11
+	l := 12
 	if rn.RetrievalTask.m == schema.Maybe_Absent {
 		l--
 	}
@@ -3640,6 +3692,7 @@ type _FinishedTask__ReprAssembler struct {
 	cm schema.Maybe
 	ca_Status _Status__ReprAssembler
 	ca_StartedAt _Time__ReprAssembler
+	ca_ErrorMessage _String__ReprAssembler
 	ca_RetrievalTask _RetrievalTask__ReprAssembler
 	ca_StorageTask _StorageTask__ReprAssembler
 	ca_DealID _Int__ReprAssembler
@@ -3656,6 +3709,7 @@ func (na *_FinishedTask__ReprAssembler) reset() {
 	na.s = 0
 	na.ca_Status.reset()
 	na.ca_StartedAt.reset()
+	na.ca_ErrorMessage.reset()
 	na.ca_RetrievalTask.reset()
 	na.ca_StorageTask.reset()
 	na.ca_DealID.reset()
@@ -3774,6 +3828,14 @@ func (ma *_FinishedTask__ReprAssembler) valueFinishTidy() bool {
 			return false
 		}
 	case 2:
+		switch ma.cm {
+		case schema.Maybe_Value:ma.cm = schema.Maybe_Absent
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
+	case 3:
 		switch ma.w.RetrievalTask.m {
 		case schema.Maybe_Value:
 			ma.w.RetrievalTask.v = ma.ca_RetrievalTask.w
@@ -3782,18 +3844,10 @@ func (ma *_FinishedTask__ReprAssembler) valueFinishTidy() bool {
 		default:
 			return false
 		}
-	case 3:
+	case 4:
 		switch ma.w.StorageTask.m {
 		case schema.Maybe_Value:
 			ma.w.StorageTask.v = ma.ca_StorageTask.w
-			ma.state = maState_initial
-			return true
-		default:
-			return false
-		}
-	case 4:
-		switch ma.cm {
-		case schema.Maybe_Value:ma.cm = schema.Maybe_Absent
 			ma.state = maState_initial
 			return true
 		default:
@@ -3816,6 +3870,14 @@ func (ma *_FinishedTask__ReprAssembler) valueFinishTidy() bool {
 			return false
 		}
 	case 7:
+		switch ma.cm {
+		case schema.Maybe_Value:ma.cm = schema.Maybe_Absent
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
+	case 8:
 		switch ma.w.MinerLatencyMS.m {
 		case schema.Maybe_Value:
 			ma.w.MinerLatencyMS.v = ma.ca_MinerLatencyMS.w
@@ -3824,7 +3886,7 @@ func (ma *_FinishedTask__ReprAssembler) valueFinishTidy() bool {
 		default:
 			return false
 		}
-	case 8:
+	case 9:
 		switch ma.w.TimeToFirstByteMS.m {
 		case schema.Maybe_Value:
 			ma.w.TimeToFirstByteMS.v = ma.ca_TimeToFirstByteMS.w
@@ -3833,7 +3895,7 @@ func (ma *_FinishedTask__ReprAssembler) valueFinishTidy() bool {
 		default:
 			return false
 		}
-	case 9:
+	case 10:
 		switch ma.w.TimeToLastByteMS.m {
 		case schema.Maybe_Value:
 			ma.w.TimeToLastByteMS.v = ma.ca_TimeToLastByteMS.w
@@ -3842,7 +3904,7 @@ func (ma *_FinishedTask__ReprAssembler) valueFinishTidy() bool {
 		default:
 			return false
 		}
-	case 10:
+	case 11:
 		switch ma.cm {
 		case schema.Maybe_Value:ma.cm = schema.Maybe_Absent
 			ma.state = maState_initial
@@ -3890,13 +3952,23 @@ func (ma *_FinishedTask__ReprAssembler) AssembleEntry(k string) (ipld.NodeAssemb
 		ma.ca_StartedAt.w = &ma.w.StartedAt
 		ma.ca_StartedAt.m = &ma.cm
 		return &ma.ca_StartedAt, nil
+	case "ErrorMessage":
+		if ma.s & fieldBit__FinishedTask_ErrorMessage != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_ErrorMessage_serial}
+		}
+		ma.s += fieldBit__FinishedTask_ErrorMessage
+		ma.state = maState_midValue
+		ma.f = 2
+		ma.ca_ErrorMessage.w = &ma.w.ErrorMessage
+		ma.ca_ErrorMessage.m = &ma.cm
+		return &ma.ca_ErrorMessage, nil
 	case "RetrievalTask":
 		if ma.s & fieldBit__FinishedTask_RetrievalTask != 0 {
 			return nil, ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_RetrievalTask_serial}
 		}
 		ma.s += fieldBit__FinishedTask_RetrievalTask
 		ma.state = maState_midValue
-		ma.f = 2
+		ma.f = 3
 		ma.ca_RetrievalTask.w = ma.w.RetrievalTask.v
 		ma.ca_RetrievalTask.m = &ma.w.RetrievalTask.m
 		
@@ -3907,7 +3979,7 @@ func (ma *_FinishedTask__ReprAssembler) AssembleEntry(k string) (ipld.NodeAssemb
 		}
 		ma.s += fieldBit__FinishedTask_StorageTask
 		ma.state = maState_midValue
-		ma.f = 3
+		ma.f = 4
 		ma.ca_StorageTask.w = ma.w.StorageTask.v
 		ma.ca_StorageTask.m = &ma.w.StorageTask.m
 		
@@ -3918,7 +3990,7 @@ func (ma *_FinishedTask__ReprAssembler) AssembleEntry(k string) (ipld.NodeAssemb
 		}
 		ma.s += fieldBit__FinishedTask_DealID
 		ma.state = maState_midValue
-		ma.f = 4
+		ma.f = 5
 		ma.ca_DealID.w = &ma.w.DealID
 		ma.ca_DealID.m = &ma.cm
 		return &ma.ca_DealID, nil
@@ -3928,7 +4000,7 @@ func (ma *_FinishedTask__ReprAssembler) AssembleEntry(k string) (ipld.NodeAssemb
 		}
 		ma.s += fieldBit__FinishedTask_MinerMultiAddr
 		ma.state = maState_midValue
-		ma.f = 5
+		ma.f = 6
 		ma.ca_MinerMultiAddr.w = &ma.w.MinerMultiAddr
 		ma.ca_MinerMultiAddr.m = &ma.cm
 		return &ma.ca_MinerMultiAddr, nil
@@ -3938,7 +4010,7 @@ func (ma *_FinishedTask__ReprAssembler) AssembleEntry(k string) (ipld.NodeAssemb
 		}
 		ma.s += fieldBit__FinishedTask_ClientApparentAddr
 		ma.state = maState_midValue
-		ma.f = 6
+		ma.f = 7
 		ma.ca_ClientApparentAddr.w = &ma.w.ClientApparentAddr
 		ma.ca_ClientApparentAddr.m = &ma.cm
 		return &ma.ca_ClientApparentAddr, nil
@@ -3948,7 +4020,7 @@ func (ma *_FinishedTask__ReprAssembler) AssembleEntry(k string) (ipld.NodeAssemb
 		}
 		ma.s += fieldBit__FinishedTask_MinerLatencyMS
 		ma.state = maState_midValue
-		ma.f = 7
+		ma.f = 8
 		ma.ca_MinerLatencyMS.w = ma.w.MinerLatencyMS.v
 		ma.ca_MinerLatencyMS.m = &ma.w.MinerLatencyMS.m
 		
@@ -3959,7 +4031,7 @@ func (ma *_FinishedTask__ReprAssembler) AssembleEntry(k string) (ipld.NodeAssemb
 		}
 		ma.s += fieldBit__FinishedTask_TimeToFirstByteMS
 		ma.state = maState_midValue
-		ma.f = 8
+		ma.f = 9
 		ma.ca_TimeToFirstByteMS.w = ma.w.TimeToFirstByteMS.v
 		ma.ca_TimeToFirstByteMS.m = &ma.w.TimeToFirstByteMS.m
 		
@@ -3970,7 +4042,7 @@ func (ma *_FinishedTask__ReprAssembler) AssembleEntry(k string) (ipld.NodeAssemb
 		}
 		ma.s += fieldBit__FinishedTask_TimeToLastByteMS
 		ma.state = maState_midValue
-		ma.f = 9
+		ma.f = 10
 		ma.ca_TimeToLastByteMS.w = ma.w.TimeToLastByteMS.v
 		ma.ca_TimeToLastByteMS.m = &ma.w.TimeToLastByteMS.m
 		
@@ -3981,7 +4053,7 @@ func (ma *_FinishedTask__ReprAssembler) AssembleEntry(k string) (ipld.NodeAssemb
 		}
 		ma.s += fieldBit__FinishedTask_Events
 		ma.state = maState_midValue
-		ma.f = 10
+		ma.f = 11
 		ma.ca_Events.w = &ma.w.Events
 		ma.ca_Events.m = &ma.cm
 		return &ma.ca_Events, nil
@@ -4031,43 +4103,47 @@ func (ma *_FinishedTask__ReprAssembler) AssembleValue() ipld.NodeAssembler {
 		ma.ca_StartedAt.m = &ma.cm
 		return &ma.ca_StartedAt
 	case 2:
+		ma.ca_ErrorMessage.w = &ma.w.ErrorMessage
+		ma.ca_ErrorMessage.m = &ma.cm
+		return &ma.ca_ErrorMessage
+	case 3:
 		ma.ca_RetrievalTask.w = ma.w.RetrievalTask.v
 		ma.ca_RetrievalTask.m = &ma.w.RetrievalTask.m
 		
 		return &ma.ca_RetrievalTask
-	case 3:
+	case 4:
 		ma.ca_StorageTask.w = ma.w.StorageTask.v
 		ma.ca_StorageTask.m = &ma.w.StorageTask.m
 		
 		return &ma.ca_StorageTask
-	case 4:
+	case 5:
 		ma.ca_DealID.w = &ma.w.DealID
 		ma.ca_DealID.m = &ma.cm
 		return &ma.ca_DealID
-	case 5:
+	case 6:
 		ma.ca_MinerMultiAddr.w = &ma.w.MinerMultiAddr
 		ma.ca_MinerMultiAddr.m = &ma.cm
 		return &ma.ca_MinerMultiAddr
-	case 6:
+	case 7:
 		ma.ca_ClientApparentAddr.w = &ma.w.ClientApparentAddr
 		ma.ca_ClientApparentAddr.m = &ma.cm
 		return &ma.ca_ClientApparentAddr
-	case 7:
+	case 8:
 		ma.ca_MinerLatencyMS.w = ma.w.MinerLatencyMS.v
 		ma.ca_MinerLatencyMS.m = &ma.w.MinerLatencyMS.m
 		
 		return &ma.ca_MinerLatencyMS
-	case 8:
+	case 9:
 		ma.ca_TimeToFirstByteMS.w = ma.w.TimeToFirstByteMS.v
 		ma.ca_TimeToFirstByteMS.m = &ma.w.TimeToFirstByteMS.m
 		
 		return &ma.ca_TimeToFirstByteMS
-	case 9:
+	case 10:
 		ma.ca_TimeToLastByteMS.w = ma.w.TimeToLastByteMS.v
 		ma.ca_TimeToLastByteMS.m = &ma.w.TimeToLastByteMS.m
 		
 		return &ma.ca_TimeToLastByteMS
-	case 10:
+	case 11:
 		ma.ca_Events.w = &ma.w.Events
 		ma.ca_Events.m = &ma.cm
 		return &ma.ca_Events
@@ -4097,6 +4173,9 @@ func (ma *_FinishedTask__ReprAssembler) Finish() error {
 		}
 		if ma.s & fieldBit__FinishedTask_StartedAt == 0 {
 			err.Missing = append(err.Missing, "StartedAt")
+		}
+		if ma.s & fieldBit__FinishedTask_ErrorMessage == 0 {
+			err.Missing = append(err.Missing, "ErrorMessage")
 		}
 		if ma.s & fieldBit__FinishedTask_DealID == 0 {
 			err.Missing = append(err.Missing, "DealID")
@@ -4160,69 +4239,76 @@ func (ka *_FinishedTask__ReprKeyAssembler) AssignString(k string) error {
 		ka.s += fieldBit__FinishedTask_StartedAt
 		ka.state = maState_expectValue
 		ka.f = 1
+	case "ErrorMessage":
+		if ka.s & fieldBit__FinishedTask_ErrorMessage != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_ErrorMessage_serial}
+		}
+		ka.s += fieldBit__FinishedTask_ErrorMessage
+		ka.state = maState_expectValue
+		ka.f = 2
 	case "RetrievalTask":
 		if ka.s & fieldBit__FinishedTask_RetrievalTask != 0 {
 			return ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_RetrievalTask_serial}
 		}
 		ka.s += fieldBit__FinishedTask_RetrievalTask
 		ka.state = maState_expectValue
-		ka.f = 2
+		ka.f = 3
 	case "StorageTask":
 		if ka.s & fieldBit__FinishedTask_StorageTask != 0 {
 			return ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_StorageTask_serial}
 		}
 		ka.s += fieldBit__FinishedTask_StorageTask
 		ka.state = maState_expectValue
-		ka.f = 3
+		ka.f = 4
 	case "DealID":
 		if ka.s & fieldBit__FinishedTask_DealID != 0 {
 			return ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_DealID_serial}
 		}
 		ka.s += fieldBit__FinishedTask_DealID
 		ka.state = maState_expectValue
-		ka.f = 4
+		ka.f = 5
 	case "MinerMultiAddr":
 		if ka.s & fieldBit__FinishedTask_MinerMultiAddr != 0 {
 			return ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_MinerMultiAddr_serial}
 		}
 		ka.s += fieldBit__FinishedTask_MinerMultiAddr
 		ka.state = maState_expectValue
-		ka.f = 5
+		ka.f = 6
 	case "ClientApparentAddr":
 		if ka.s & fieldBit__FinishedTask_ClientApparentAddr != 0 {
 			return ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_ClientApparentAddr_serial}
 		}
 		ka.s += fieldBit__FinishedTask_ClientApparentAddr
 		ka.state = maState_expectValue
-		ka.f = 6
+		ka.f = 7
 	case "MinerLatencyMS":
 		if ka.s & fieldBit__FinishedTask_MinerLatencyMS != 0 {
 			return ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_MinerLatencyMS_serial}
 		}
 		ka.s += fieldBit__FinishedTask_MinerLatencyMS
 		ka.state = maState_expectValue
-		ka.f = 7
+		ka.f = 8
 	case "TimeToFirstByteMS":
 		if ka.s & fieldBit__FinishedTask_TimeToFirstByteMS != 0 {
 			return ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_TimeToFirstByteMS_serial}
 		}
 		ka.s += fieldBit__FinishedTask_TimeToFirstByteMS
 		ka.state = maState_expectValue
-		ka.f = 8
+		ka.f = 9
 	case "TimeToLastByteMS":
 		if ka.s & fieldBit__FinishedTask_TimeToLastByteMS != 0 {
 			return ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_TimeToLastByteMS_serial}
 		}
 		ka.s += fieldBit__FinishedTask_TimeToLastByteMS
 		ka.state = maState_expectValue
-		ka.f = 9
+		ka.f = 10
 	case "Events":
 		if ka.s & fieldBit__FinishedTask_Events != 0 {
 			return ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_Events_serial}
 		}
 		ka.s += fieldBit__FinishedTask_Events
 		ka.state = maState_expectValue
-		ka.f = 10
+		ka.f = 11
 	default:
 		return ipld.ErrInvalidKey{TypeName:"tasks.FinishedTask.Repr", Key:&_String{k}}
 	}
@@ -15471,6 +15557,9 @@ func (n _Task) FieldStartedAt() MaybeTime {
 func (n _Task) FieldRunCount() Int {
 	return &n.RunCount
 }
+func (n _Task) FieldErrorMessage() String {
+	return &n.ErrorMessage
+}
 func (n _Task) FieldRetrievalTask() MaybeRetrievalTask {
 	return &n.RetrievalTask
 }
@@ -15519,6 +15608,7 @@ var (
 	fieldName__Task_PastStageDetails = _String{"PastStageDetails"}
 	fieldName__Task_StartedAt = _String{"StartedAt"}
 	fieldName__Task_RunCount = _String{"RunCount"}
+	fieldName__Task_ErrorMessage = _String{"ErrorMessage"}
 	fieldName__Task_RetrievalTask = _String{"RetrievalTask"}
 	fieldName__Task_StorageTask = _String{"StorageTask"}
 )
@@ -15557,6 +15647,8 @@ func (n Task) LookupByString(key string) (ipld.Node, error) {
 		return n.StartedAt.v, nil
 	case "RunCount":
 		return &n.RunCount, nil
+	case "ErrorMessage":
+		return &n.ErrorMessage, nil
 	case "RetrievalTask":
 		if n.RetrievalTask.m == schema.Maybe_Absent {
 			return ipld.Absent, nil
@@ -15594,7 +15686,7 @@ type _Task__MapItr struct {
 }
 
 func (itr *_Task__MapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
-	if itr.idx >= 10 {
+	if itr.idx >= 11 {
 		return nil, nil, ipld.ErrIteratorOverread{}
 	}
 	switch itr.idx {
@@ -15639,13 +15731,16 @@ func (itr *_Task__MapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
 		k = &fieldName__Task_RunCount
 		v = &itr.n.RunCount
 	case 8:
+		k = &fieldName__Task_ErrorMessage
+		v = &itr.n.ErrorMessage
+	case 9:
 		k = &fieldName__Task_RetrievalTask
 		if itr.n.RetrievalTask.m == schema.Maybe_Absent {
 			v = ipld.Absent
 			break
 		}
 		v = itr.n.RetrievalTask.v
-	case 9:
+	case 10:
 		k = &fieldName__Task_StorageTask
 		if itr.n.StorageTask.m == schema.Maybe_Absent {
 			v = ipld.Absent
@@ -15659,14 +15754,14 @@ func (itr *_Task__MapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
 	return
 }
 func (itr *_Task__MapItr) Done() bool {
-	return itr.idx >= 10
+	return itr.idx >= 11
 }
 
 func (Task) ListIterator() ipld.ListIterator {
 	return nil
 }
 func (Task) Length() int64 {
-	return 10
+	return 11
 }
 func (Task) IsAbsent() bool {
 	return false
@@ -15732,6 +15827,7 @@ type _Task__Assembler struct {
 	ca_PastStageDetails _List_StageDetails__Assembler
 	ca_StartedAt _Time__Assembler
 	ca_RunCount _Int__Assembler
+	ca_ErrorMessage _String__Assembler
 	ca_RetrievalTask _RetrievalTask__Assembler
 	ca_StorageTask _StorageTask__Assembler
 	}
@@ -15747,6 +15843,7 @@ func (na *_Task__Assembler) reset() {
 	na.ca_PastStageDetails.reset()
 	na.ca_StartedAt.reset()
 	na.ca_RunCount.reset()
+	na.ca_ErrorMessage.reset()
 	na.ca_RetrievalTask.reset()
 	na.ca_StorageTask.reset()
 }
@@ -15760,9 +15857,10 @@ var (
 	fieldBit__Task_PastStageDetails = 1 << 5
 	fieldBit__Task_StartedAt = 1 << 6
 	fieldBit__Task_RunCount = 1 << 7
-	fieldBit__Task_RetrievalTask = 1 << 8
-	fieldBit__Task_StorageTask = 1 << 9
-	fieldBits__Task_sufficient = 0 + 1 << 0 + 1 << 1 + 1 << 3 + 1 << 7
+	fieldBit__Task_ErrorMessage = 1 << 8
+	fieldBit__Task_RetrievalTask = 1 << 9
+	fieldBit__Task_StorageTask = 1 << 10
+	fieldBits__Task_sufficient = 0 + 1 << 0 + 1 << 1 + 1 << 3 + 1 << 7 + 1 << 8
 )
 func (na *_Task__Assembler) BeginMap(int64) (ipld.MapAssembler, error) {
 	switch *na.m {
@@ -15932,6 +16030,16 @@ func (ma *_Task__Assembler) valueFinishTidy() bool {
 			return false
 		}
 	case 8:
+		switch ma.cm {
+		case schema.Maybe_Value:
+			ma.ca_ErrorMessage.w = nil
+			ma.cm = schema.Maybe_Absent
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
+	case 9:
 		switch ma.w.RetrievalTask.m {
 		case schema.Maybe_Value:
 			ma.w.RetrievalTask.v = ma.ca_RetrievalTask.w
@@ -15940,7 +16048,7 @@ func (ma *_Task__Assembler) valueFinishTidy() bool {
 		default:
 			return false
 		}
-	case 9:
+	case 10:
 		switch ma.w.StorageTask.m {
 		case schema.Maybe_Value:
 			ma.w.StorageTask.v = ma.ca_StorageTask.w
@@ -16049,13 +16157,23 @@ func (ma *_Task__Assembler) AssembleEntry(k string) (ipld.NodeAssembler, error) 
 		ma.ca_RunCount.w = &ma.w.RunCount
 		ma.ca_RunCount.m = &ma.cm
 		return &ma.ca_RunCount, nil
+	case "ErrorMessage":
+		if ma.s & fieldBit__Task_ErrorMessage != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__Task_ErrorMessage}
+		}
+		ma.s += fieldBit__Task_ErrorMessage
+		ma.state = maState_midValue
+		ma.f = 8
+		ma.ca_ErrorMessage.w = &ma.w.ErrorMessage
+		ma.ca_ErrorMessage.m = &ma.cm
+		return &ma.ca_ErrorMessage, nil
 	case "RetrievalTask":
 		if ma.s & fieldBit__Task_RetrievalTask != 0 {
 			return nil, ipld.ErrRepeatedMapKey{&fieldName__Task_RetrievalTask}
 		}
 		ma.s += fieldBit__Task_RetrievalTask
 		ma.state = maState_midValue
-		ma.f = 8
+		ma.f = 9
 		ma.ca_RetrievalTask.w = ma.w.RetrievalTask.v
 		ma.ca_RetrievalTask.m = &ma.w.RetrievalTask.m
 		return &ma.ca_RetrievalTask, nil
@@ -16065,7 +16183,7 @@ func (ma *_Task__Assembler) AssembleEntry(k string) (ipld.NodeAssembler, error) 
 		}
 		ma.s += fieldBit__Task_StorageTask
 		ma.state = maState_midValue
-		ma.f = 9
+		ma.f = 10
 		ma.ca_StorageTask.w = ma.w.StorageTask.v
 		ma.ca_StorageTask.m = &ma.w.StorageTask.m
 		return &ma.ca_StorageTask, nil
@@ -16139,10 +16257,14 @@ func (ma *_Task__Assembler) AssembleValue() ipld.NodeAssembler {
 		ma.ca_RunCount.m = &ma.cm
 		return &ma.ca_RunCount
 	case 8:
+		ma.ca_ErrorMessage.w = &ma.w.ErrorMessage
+		ma.ca_ErrorMessage.m = &ma.cm
+		return &ma.ca_ErrorMessage
+	case 9:
 		ma.ca_RetrievalTask.w = ma.w.RetrievalTask.v
 		ma.ca_RetrievalTask.m = &ma.w.RetrievalTask.m
 		return &ma.ca_RetrievalTask
-	case 9:
+	case 10:
 		ma.ca_StorageTask.w = ma.w.StorageTask.v
 		ma.ca_StorageTask.m = &ma.w.StorageTask.m
 		return &ma.ca_StorageTask
@@ -16178,6 +16300,9 @@ func (ma *_Task__Assembler) Finish() error {
 		}
 		if ma.s & fieldBit__Task_RunCount == 0 {
 			err.Missing = append(err.Missing, "RunCount")
+		}
+		if ma.s & fieldBit__Task_ErrorMessage == 0 {
+			err.Missing = append(err.Missing, "ErrorMessage")
 		}
 		return err
 	}
@@ -16271,20 +16396,27 @@ func (ka *_Task__KeyAssembler) AssignString(k string) error {
 		ka.s += fieldBit__Task_RunCount
 		ka.state = maState_expectValue
 		ka.f = 7
+	case "ErrorMessage":
+		if ka.s & fieldBit__Task_ErrorMessage != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__Task_ErrorMessage}
+		}
+		ka.s += fieldBit__Task_ErrorMessage
+		ka.state = maState_expectValue
+		ka.f = 8
 	case "RetrievalTask":
 		if ka.s & fieldBit__Task_RetrievalTask != 0 {
 			return ipld.ErrRepeatedMapKey{&fieldName__Task_RetrievalTask}
 		}
 		ka.s += fieldBit__Task_RetrievalTask
 		ka.state = maState_expectValue
-		ka.f = 8
+		ka.f = 9
 	case "StorageTask":
 		if ka.s & fieldBit__Task_StorageTask != 0 {
 			return ipld.ErrRepeatedMapKey{&fieldName__Task_StorageTask}
 		}
 		ka.s += fieldBit__Task_StorageTask
 		ka.state = maState_expectValue
-		ka.f = 9
+		ka.f = 10
 	default:
 		return ipld.ErrInvalidKey{TypeName:"tasks.Task", Key:&_String{k}}
 	}
@@ -16322,6 +16454,7 @@ var (
 	fieldName__Task_PastStageDetails_serial = _String{"PastStageDetails"}
 	fieldName__Task_StartedAt_serial = _String{"StartedAt"}
 	fieldName__Task_RunCount_serial = _String{"RunCount"}
+	fieldName__Task_ErrorMessage_serial = _String{"ErrorMessage"}
 	fieldName__Task_RetrievalTask_serial = _String{"RetrievalTask"}
 	fieldName__Task_StorageTask_serial = _String{"StorageTask"}
 )
@@ -16359,6 +16492,8 @@ func (n *_Task__Repr) LookupByString(key string) (ipld.Node, error) {
 		return n.StartedAt.v.Representation(), nil
 	case "RunCount":
 		return n.RunCount.Representation(), nil
+	case "ErrorMessage":
+		return n.ErrorMessage.Representation(), nil
 	case "RetrievalTask":
 		if n.RetrievalTask.m == schema.Maybe_Absent {
 			return ipld.Absent, ipld.ErrNotExists{ipld.PathSegmentOfString(key)}
@@ -16387,14 +16522,14 @@ func (n _Task__Repr) LookupBySegment(seg ipld.PathSegment) (ipld.Node, error) {
 	return n.LookupByString(seg.String())
 }
 func (n *_Task__Repr) MapIterator() ipld.MapIterator {
-	end := 10
+	end := 11
 	if n.StorageTask.m == schema.Maybe_Absent {
-		end = 9
+		end = 10
 	} else {
 		goto done
 	}
 	if n.RetrievalTask.m == schema.Maybe_Absent {
-		end = 8
+		end = 9
 	} else {
 		goto done
 	}
@@ -16409,7 +16544,7 @@ type _Task__ReprMapItr struct {
 }
 
 func (itr *_Task__ReprMapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
-advance:if itr.idx >= 10 {
+advance:if itr.idx >= 11 {
 		return nil, nil, ipld.ErrIteratorOverread{}
 	}
 	switch itr.idx {
@@ -16454,13 +16589,16 @@ advance:if itr.idx >= 10 {
 		k = &fieldName__Task_RunCount_serial
 		v = itr.n.RunCount.Representation()
 	case 8:
+		k = &fieldName__Task_ErrorMessage_serial
+		v = itr.n.ErrorMessage.Representation()
+	case 9:
 		k = &fieldName__Task_RetrievalTask_serial
 		if itr.n.RetrievalTask.m == schema.Maybe_Absent {
 			itr.idx++
 			goto advance
 		}
 		v = itr.n.RetrievalTask.v.Representation()
-	case 9:
+	case 10:
 		k = &fieldName__Task_StorageTask_serial
 		if itr.n.StorageTask.m == schema.Maybe_Absent {
 			itr.idx++
@@ -16480,7 +16618,7 @@ func (_Task__Repr) ListIterator() ipld.ListIterator {
 	return nil
 }
 func (rn *_Task__Repr) Length() int64 {
-	l := 10
+	l := 11
 	if rn.WorkedBy.m == schema.Maybe_Absent {
 		l--
 	}
@@ -16565,6 +16703,7 @@ type _Task__ReprAssembler struct {
 	ca_PastStageDetails _List_StageDetails__ReprAssembler
 	ca_StartedAt _Time__ReprAssembler
 	ca_RunCount _Int__ReprAssembler
+	ca_ErrorMessage _String__ReprAssembler
 	ca_RetrievalTask _RetrievalTask__ReprAssembler
 	ca_StorageTask _StorageTask__ReprAssembler
 	}
@@ -16580,6 +16719,7 @@ func (na *_Task__ReprAssembler) reset() {
 	na.ca_PastStageDetails.reset()
 	na.ca_StartedAt.reset()
 	na.ca_RunCount.reset()
+	na.ca_ErrorMessage.reset()
 	na.ca_RetrievalTask.reset()
 	na.ca_StorageTask.reset()
 }
@@ -16743,6 +16883,14 @@ func (ma *_Task__ReprAssembler) valueFinishTidy() bool {
 			return false
 		}
 	case 8:
+		switch ma.cm {
+		case schema.Maybe_Value:ma.cm = schema.Maybe_Absent
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
+	case 9:
 		switch ma.w.RetrievalTask.m {
 		case schema.Maybe_Value:
 			ma.w.RetrievalTask.v = ma.ca_RetrievalTask.w
@@ -16751,7 +16899,7 @@ func (ma *_Task__ReprAssembler) valueFinishTidy() bool {
 		default:
 			return false
 		}
-	case 9:
+	case 10:
 		switch ma.w.StorageTask.m {
 		case schema.Maybe_Value:
 			ma.w.StorageTask.v = ma.ca_StorageTask.w
@@ -16864,13 +17012,23 @@ func (ma *_Task__ReprAssembler) AssembleEntry(k string) (ipld.NodeAssembler, err
 		ma.ca_RunCount.w = &ma.w.RunCount
 		ma.ca_RunCount.m = &ma.cm
 		return &ma.ca_RunCount, nil
+	case "ErrorMessage":
+		if ma.s & fieldBit__Task_ErrorMessage != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__Task_ErrorMessage_serial}
+		}
+		ma.s += fieldBit__Task_ErrorMessage
+		ma.state = maState_midValue
+		ma.f = 8
+		ma.ca_ErrorMessage.w = &ma.w.ErrorMessage
+		ma.ca_ErrorMessage.m = &ma.cm
+		return &ma.ca_ErrorMessage, nil
 	case "RetrievalTask":
 		if ma.s & fieldBit__Task_RetrievalTask != 0 {
 			return nil, ipld.ErrRepeatedMapKey{&fieldName__Task_RetrievalTask_serial}
 		}
 		ma.s += fieldBit__Task_RetrievalTask
 		ma.state = maState_midValue
-		ma.f = 8
+		ma.f = 9
 		ma.ca_RetrievalTask.w = ma.w.RetrievalTask.v
 		ma.ca_RetrievalTask.m = &ma.w.RetrievalTask.m
 		
@@ -16881,7 +17039,7 @@ func (ma *_Task__ReprAssembler) AssembleEntry(k string) (ipld.NodeAssembler, err
 		}
 		ma.s += fieldBit__Task_StorageTask
 		ma.state = maState_midValue
-		ma.f = 9
+		ma.f = 10
 		ma.ca_StorageTask.w = ma.w.StorageTask.v
 		ma.ca_StorageTask.m = &ma.w.StorageTask.m
 		
@@ -16960,11 +17118,15 @@ func (ma *_Task__ReprAssembler) AssembleValue() ipld.NodeAssembler {
 		ma.ca_RunCount.m = &ma.cm
 		return &ma.ca_RunCount
 	case 8:
+		ma.ca_ErrorMessage.w = &ma.w.ErrorMessage
+		ma.ca_ErrorMessage.m = &ma.cm
+		return &ma.ca_ErrorMessage
+	case 9:
 		ma.ca_RetrievalTask.w = ma.w.RetrievalTask.v
 		ma.ca_RetrievalTask.m = &ma.w.RetrievalTask.m
 		
 		return &ma.ca_RetrievalTask
-	case 9:
+	case 10:
 		ma.ca_StorageTask.w = ma.w.StorageTask.v
 		ma.ca_StorageTask.m = &ma.w.StorageTask.m
 		
@@ -17001,6 +17163,9 @@ func (ma *_Task__ReprAssembler) Finish() error {
 		}
 		if ma.s & fieldBit__Task_RunCount == 0 {
 			err.Missing = append(err.Missing, "RunCount")
+		}
+		if ma.s & fieldBit__Task_ErrorMessage == 0 {
+			err.Missing = append(err.Missing, "ErrorMessage")
 		}
 		return err
 	}
@@ -17094,20 +17259,27 @@ func (ka *_Task__ReprKeyAssembler) AssignString(k string) error {
 		ka.s += fieldBit__Task_RunCount
 		ka.state = maState_expectValue
 		ka.f = 7
+	case "ErrorMessage":
+		if ka.s & fieldBit__Task_ErrorMessage != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__Task_ErrorMessage_serial}
+		}
+		ka.s += fieldBit__Task_ErrorMessage
+		ka.state = maState_expectValue
+		ka.f = 8
 	case "RetrievalTask":
 		if ka.s & fieldBit__Task_RetrievalTask != 0 {
 			return ipld.ErrRepeatedMapKey{&fieldName__Task_RetrievalTask_serial}
 		}
 		ka.s += fieldBit__Task_RetrievalTask
 		ka.state = maState_expectValue
-		ka.f = 8
+		ka.f = 9
 	case "StorageTask":
 		if ka.s & fieldBit__Task_StorageTask != 0 {
 			return ipld.ErrRepeatedMapKey{&fieldName__Task_StorageTask_serial}
 		}
 		ka.s += fieldBit__Task_StorageTask
 		ka.state = maState_expectValue
-		ka.f = 9
+		ka.f = 10
 	default:
 		return ipld.ErrInvalidKey{TypeName:"tasks.Task.Repr", Key:&_String{k}}
 	}
@@ -17930,6 +18102,9 @@ type _Time__ReprAssembler = _Time__Assembler
 func (n _UpdateTask) FieldStatus() Status {
 	return &n.Status
 }
+func (n _UpdateTask) FieldErrorMessage() MaybeString {
+	return &n.ErrorMessage
+}
 func (n _UpdateTask) FieldStage() MaybeString {
 	return &n.Stage
 }
@@ -17977,6 +18152,7 @@ func (m MaybeUpdateTask) Must() UpdateTask {
 }
 var (
 	fieldName__UpdateTask_Status = _String{"Status"}
+	fieldName__UpdateTask_ErrorMessage = _String{"ErrorMessage"}
 	fieldName__UpdateTask_Stage = _String{"Stage"}
 	fieldName__UpdateTask_CurrentStageDetails = _String{"CurrentStageDetails"}
 	fieldName__UpdateTask_WorkedBy = _String{"WorkedBy"}
@@ -17991,6 +18167,11 @@ func (n UpdateTask) LookupByString(key string) (ipld.Node, error) {
 	switch key {
 	case "Status":
 		return &n.Status, nil
+	case "ErrorMessage":
+		if n.ErrorMessage.m == schema.Maybe_Absent {
+			return ipld.Absent, nil
+		}
+		return n.ErrorMessage.v, nil
 	case "Stage":
 		if n.Stage.m == schema.Maybe_Absent {
 			return ipld.Absent, nil
@@ -18032,7 +18213,7 @@ type _UpdateTask__MapItr struct {
 }
 
 func (itr *_UpdateTask__MapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
-	if itr.idx >= 5 {
+	if itr.idx >= 6 {
 		return nil, nil, ipld.ErrIteratorOverread{}
 	}
 	switch itr.idx {
@@ -18040,23 +18221,30 @@ func (itr *_UpdateTask__MapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
 		k = &fieldName__UpdateTask_Status
 		v = &itr.n.Status
 	case 1:
+		k = &fieldName__UpdateTask_ErrorMessage
+		if itr.n.ErrorMessage.m == schema.Maybe_Absent {
+			v = ipld.Absent
+			break
+		}
+		v = itr.n.ErrorMessage.v
+	case 2:
 		k = &fieldName__UpdateTask_Stage
 		if itr.n.Stage.m == schema.Maybe_Absent {
 			v = ipld.Absent
 			break
 		}
 		v = itr.n.Stage.v
-	case 2:
+	case 3:
 		k = &fieldName__UpdateTask_CurrentStageDetails
 		if itr.n.CurrentStageDetails.m == schema.Maybe_Absent {
 			v = ipld.Absent
 			break
 		}
 		v = itr.n.CurrentStageDetails.v
-	case 3:
+	case 4:
 		k = &fieldName__UpdateTask_WorkedBy
 		v = &itr.n.WorkedBy
-	case 4:
+	case 5:
 		k = &fieldName__UpdateTask_RunCount
 		v = &itr.n.RunCount
 	default:
@@ -18066,14 +18254,14 @@ func (itr *_UpdateTask__MapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
 	return
 }
 func (itr *_UpdateTask__MapItr) Done() bool {
-	return itr.idx >= 5
+	return itr.idx >= 6
 }
 
 func (UpdateTask) ListIterator() ipld.ListIterator {
 	return nil
 }
 func (UpdateTask) Length() int64 {
-	return 5
+	return 6
 }
 func (UpdateTask) IsAbsent() bool {
 	return false
@@ -18132,6 +18320,7 @@ type _UpdateTask__Assembler struct {
 
 	cm schema.Maybe
 	ca_Status _Status__Assembler
+	ca_ErrorMessage _String__Assembler
 	ca_Stage _String__Assembler
 	ca_CurrentStageDetails _StageDetails__Assembler
 	ca_WorkedBy _String__Assembler
@@ -18142,6 +18331,7 @@ func (na *_UpdateTask__Assembler) reset() {
 	na.state = maState_initial
 	na.s = 0
 	na.ca_Status.reset()
+	na.ca_ErrorMessage.reset()
 	na.ca_Stage.reset()
 	na.ca_CurrentStageDetails.reset()
 	na.ca_WorkedBy.reset()
@@ -18150,11 +18340,12 @@ func (na *_UpdateTask__Assembler) reset() {
 
 var (
 	fieldBit__UpdateTask_Status = 1 << 0
-	fieldBit__UpdateTask_Stage = 1 << 1
-	fieldBit__UpdateTask_CurrentStageDetails = 1 << 2
-	fieldBit__UpdateTask_WorkedBy = 1 << 3
-	fieldBit__UpdateTask_RunCount = 1 << 4
-	fieldBits__UpdateTask_sufficient = 0 + 1 << 0 + 1 << 3 + 1 << 4
+	fieldBit__UpdateTask_ErrorMessage = 1 << 1
+	fieldBit__UpdateTask_Stage = 1 << 2
+	fieldBit__UpdateTask_CurrentStageDetails = 1 << 3
+	fieldBit__UpdateTask_WorkedBy = 1 << 4
+	fieldBit__UpdateTask_RunCount = 1 << 5
+	fieldBits__UpdateTask_sufficient = 0 + 1 << 0 + 1 << 4 + 1 << 5
 )
 func (na *_UpdateTask__Assembler) BeginMap(int64) (ipld.MapAssembler, error) {
 	switch *na.m {
@@ -18258,6 +18449,15 @@ func (ma *_UpdateTask__Assembler) valueFinishTidy() bool {
 			return false
 		}
 	case 1:
+		switch ma.w.ErrorMessage.m {
+		case schema.Maybe_Value:
+			ma.w.ErrorMessage.v = ma.ca_ErrorMessage.w
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
+	case 2:
 		switch ma.w.Stage.m {
 		case schema.Maybe_Value:
 			ma.w.Stage.v = ma.ca_Stage.w
@@ -18266,7 +18466,7 @@ func (ma *_UpdateTask__Assembler) valueFinishTidy() bool {
 		default:
 			return false
 		}
-	case 2:
+	case 3:
 		switch ma.w.CurrentStageDetails.m {
 		case schema.Maybe_Value:
 			ma.w.CurrentStageDetails.v = ma.ca_CurrentStageDetails.w
@@ -18275,7 +18475,7 @@ func (ma *_UpdateTask__Assembler) valueFinishTidy() bool {
 		default:
 			return false
 		}
-	case 3:
+	case 4:
 		switch ma.cm {
 		case schema.Maybe_Value:
 			ma.ca_WorkedBy.w = nil
@@ -18285,7 +18485,7 @@ func (ma *_UpdateTask__Assembler) valueFinishTidy() bool {
 		default:
 			return false
 		}
-	case 4:
+	case 5:
 		switch ma.cm {
 		case schema.Maybe_Value:
 			ma.ca_RunCount.w = nil
@@ -18325,13 +18525,23 @@ func (ma *_UpdateTask__Assembler) AssembleEntry(k string) (ipld.NodeAssembler, e
 		ma.ca_Status.w = &ma.w.Status
 		ma.ca_Status.m = &ma.cm
 		return &ma.ca_Status, nil
+	case "ErrorMessage":
+		if ma.s & fieldBit__UpdateTask_ErrorMessage != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__UpdateTask_ErrorMessage}
+		}
+		ma.s += fieldBit__UpdateTask_ErrorMessage
+		ma.state = maState_midValue
+		ma.f = 1
+		ma.ca_ErrorMessage.w = ma.w.ErrorMessage.v
+		ma.ca_ErrorMessage.m = &ma.w.ErrorMessage.m
+		return &ma.ca_ErrorMessage, nil
 	case "Stage":
 		if ma.s & fieldBit__UpdateTask_Stage != 0 {
 			return nil, ipld.ErrRepeatedMapKey{&fieldName__UpdateTask_Stage}
 		}
 		ma.s += fieldBit__UpdateTask_Stage
 		ma.state = maState_midValue
-		ma.f = 1
+		ma.f = 2
 		ma.ca_Stage.w = ma.w.Stage.v
 		ma.ca_Stage.m = &ma.w.Stage.m
 		return &ma.ca_Stage, nil
@@ -18341,7 +18551,7 @@ func (ma *_UpdateTask__Assembler) AssembleEntry(k string) (ipld.NodeAssembler, e
 		}
 		ma.s += fieldBit__UpdateTask_CurrentStageDetails
 		ma.state = maState_midValue
-		ma.f = 2
+		ma.f = 3
 		ma.ca_CurrentStageDetails.w = ma.w.CurrentStageDetails.v
 		ma.ca_CurrentStageDetails.m = &ma.w.CurrentStageDetails.m
 		return &ma.ca_CurrentStageDetails, nil
@@ -18351,7 +18561,7 @@ func (ma *_UpdateTask__Assembler) AssembleEntry(k string) (ipld.NodeAssembler, e
 		}
 		ma.s += fieldBit__UpdateTask_WorkedBy
 		ma.state = maState_midValue
-		ma.f = 3
+		ma.f = 4
 		ma.ca_WorkedBy.w = &ma.w.WorkedBy
 		ma.ca_WorkedBy.m = &ma.cm
 		return &ma.ca_WorkedBy, nil
@@ -18361,7 +18571,7 @@ func (ma *_UpdateTask__Assembler) AssembleEntry(k string) (ipld.NodeAssembler, e
 		}
 		ma.s += fieldBit__UpdateTask_RunCount
 		ma.state = maState_midValue
-		ma.f = 4
+		ma.f = 5
 		ma.ca_RunCount.w = &ma.w.RunCount
 		ma.ca_RunCount.m = &ma.cm
 		return &ma.ca_RunCount, nil
@@ -18407,18 +18617,22 @@ func (ma *_UpdateTask__Assembler) AssembleValue() ipld.NodeAssembler {
 		ma.ca_Status.m = &ma.cm
 		return &ma.ca_Status
 	case 1:
+		ma.ca_ErrorMessage.w = ma.w.ErrorMessage.v
+		ma.ca_ErrorMessage.m = &ma.w.ErrorMessage.m
+		return &ma.ca_ErrorMessage
+	case 2:
 		ma.ca_Stage.w = ma.w.Stage.v
 		ma.ca_Stage.m = &ma.w.Stage.m
 		return &ma.ca_Stage
-	case 2:
+	case 3:
 		ma.ca_CurrentStageDetails.w = ma.w.CurrentStageDetails.v
 		ma.ca_CurrentStageDetails.m = &ma.w.CurrentStageDetails.m
 		return &ma.ca_CurrentStageDetails
-	case 3:
+	case 4:
 		ma.ca_WorkedBy.w = &ma.w.WorkedBy
 		ma.ca_WorkedBy.m = &ma.cm
 		return &ma.ca_WorkedBy
-	case 4:
+	case 5:
 		ma.ca_RunCount.w = &ma.w.RunCount
 		ma.ca_RunCount.m = &ma.cm
 		return &ma.ca_RunCount
@@ -18495,34 +18709,41 @@ func (ka *_UpdateTask__KeyAssembler) AssignString(k string) error {
 		ka.s += fieldBit__UpdateTask_Status
 		ka.state = maState_expectValue
 		ka.f = 0
+	case "ErrorMessage":
+		if ka.s & fieldBit__UpdateTask_ErrorMessage != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__UpdateTask_ErrorMessage}
+		}
+		ka.s += fieldBit__UpdateTask_ErrorMessage
+		ka.state = maState_expectValue
+		ka.f = 1
 	case "Stage":
 		if ka.s & fieldBit__UpdateTask_Stage != 0 {
 			return ipld.ErrRepeatedMapKey{&fieldName__UpdateTask_Stage}
 		}
 		ka.s += fieldBit__UpdateTask_Stage
 		ka.state = maState_expectValue
-		ka.f = 1
+		ka.f = 2
 	case "CurrentStageDetails":
 		if ka.s & fieldBit__UpdateTask_CurrentStageDetails != 0 {
 			return ipld.ErrRepeatedMapKey{&fieldName__UpdateTask_CurrentStageDetails}
 		}
 		ka.s += fieldBit__UpdateTask_CurrentStageDetails
 		ka.state = maState_expectValue
-		ka.f = 2
+		ka.f = 3
 	case "WorkedBy":
 		if ka.s & fieldBit__UpdateTask_WorkedBy != 0 {
 			return ipld.ErrRepeatedMapKey{&fieldName__UpdateTask_WorkedBy}
 		}
 		ka.s += fieldBit__UpdateTask_WorkedBy
 		ka.state = maState_expectValue
-		ka.f = 3
+		ka.f = 4
 	case "RunCount":
 		if ka.s & fieldBit__UpdateTask_RunCount != 0 {
 			return ipld.ErrRepeatedMapKey{&fieldName__UpdateTask_RunCount}
 		}
 		ka.s += fieldBit__UpdateTask_RunCount
 		ka.state = maState_expectValue
-		ka.f = 4
+		ka.f = 5
 	default:
 		return ipld.ErrInvalidKey{TypeName:"tasks.UpdateTask", Key:&_String{k}}
 	}
@@ -18553,6 +18774,7 @@ func (n UpdateTask) Representation() ipld.Node {
 type _UpdateTask__Repr _UpdateTask
 var (
 	fieldName__UpdateTask_Status_serial = _String{"Status"}
+	fieldName__UpdateTask_ErrorMessage_serial = _String{"ErrorMessage"}
 	fieldName__UpdateTask_Stage_serial = _String{"Stage"}
 	fieldName__UpdateTask_CurrentStageDetails_serial = _String{"CurrentStageDetails"}
 	fieldName__UpdateTask_WorkedBy_serial = _String{"WorkedBy"}
@@ -18566,6 +18788,11 @@ func (n *_UpdateTask__Repr) LookupByString(key string) (ipld.Node, error) {
 	switch key {
 	case "Status":
 		return n.Status.Representation(), nil
+	case "ErrorMessage":
+		if n.ErrorMessage.m == schema.Maybe_Absent {
+			return ipld.Absent, ipld.ErrNotExists{ipld.PathSegmentOfString(key)}
+		}
+		return n.ErrorMessage.v.Representation(), nil
 	case "Stage":
 		if n.Stage.m == schema.Maybe_Absent {
 			return ipld.Absent, ipld.ErrNotExists{ipld.PathSegmentOfString(key)}
@@ -18608,7 +18835,7 @@ type _UpdateTask__ReprMapItr struct {
 }
 
 func (itr *_UpdateTask__ReprMapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
-advance:if itr.idx >= 5 {
+advance:if itr.idx >= 6 {
 		return nil, nil, ipld.ErrIteratorOverread{}
 	}
 	switch itr.idx {
@@ -18616,23 +18843,30 @@ advance:if itr.idx >= 5 {
 		k = &fieldName__UpdateTask_Status_serial
 		v = itr.n.Status.Representation()
 	case 1:
+		k = &fieldName__UpdateTask_ErrorMessage_serial
+		if itr.n.ErrorMessage.m == schema.Maybe_Absent {
+			itr.idx++
+			goto advance
+		}
+		v = itr.n.ErrorMessage.v.Representation()
+	case 2:
 		k = &fieldName__UpdateTask_Stage_serial
 		if itr.n.Stage.m == schema.Maybe_Absent {
 			itr.idx++
 			goto advance
 		}
 		v = itr.n.Stage.v.Representation()
-	case 2:
+	case 3:
 		k = &fieldName__UpdateTask_CurrentStageDetails_serial
 		if itr.n.CurrentStageDetails.m == schema.Maybe_Absent {
 			itr.idx++
 			goto advance
 		}
 		v = itr.n.CurrentStageDetails.v.Representation()
-	case 3:
+	case 4:
 		k = &fieldName__UpdateTask_WorkedBy_serial
 		v = itr.n.WorkedBy.Representation()
-	case 4:
+	case 5:
 		k = &fieldName__UpdateTask_RunCount_serial
 		v = itr.n.RunCount.Representation()
 	default:
@@ -18642,13 +18876,16 @@ advance:if itr.idx >= 5 {
 	return
 }
 func (itr *_UpdateTask__ReprMapItr) Done() bool {
-	return itr.idx >= 5
+	return itr.idx >= 6
 }
 func (_UpdateTask__Repr) ListIterator() ipld.ListIterator {
 	return nil
 }
 func (rn *_UpdateTask__Repr) Length() int64 {
-	l := 5
+	l := 6
+	if rn.ErrorMessage.m == schema.Maybe_Absent {
+		l--
+	}
 	if rn.Stage.m == schema.Maybe_Absent {
 		l--
 	}
@@ -18714,6 +18951,7 @@ type _UpdateTask__ReprAssembler struct {
 
 	cm schema.Maybe
 	ca_Status _Status__ReprAssembler
+	ca_ErrorMessage _String__ReprAssembler
 	ca_Stage _String__ReprAssembler
 	ca_CurrentStageDetails _StageDetails__ReprAssembler
 	ca_WorkedBy _String__ReprAssembler
@@ -18724,6 +18962,7 @@ func (na *_UpdateTask__ReprAssembler) reset() {
 	na.state = maState_initial
 	na.s = 0
 	na.ca_Status.reset()
+	na.ca_ErrorMessage.reset()
 	na.ca_Stage.reset()
 	na.ca_CurrentStageDetails.reset()
 	na.ca_WorkedBy.reset()
@@ -18829,6 +19068,15 @@ func (ma *_UpdateTask__ReprAssembler) valueFinishTidy() bool {
 			return false
 		}
 	case 1:
+		switch ma.w.ErrorMessage.m {
+		case schema.Maybe_Value:
+			ma.w.ErrorMessage.v = ma.ca_ErrorMessage.w
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
+	case 2:
 		switch ma.w.Stage.m {
 		case schema.Maybe_Value:
 			ma.w.Stage.v = ma.ca_Stage.w
@@ -18837,7 +19085,7 @@ func (ma *_UpdateTask__ReprAssembler) valueFinishTidy() bool {
 		default:
 			return false
 		}
-	case 2:
+	case 3:
 		switch ma.w.CurrentStageDetails.m {
 		case schema.Maybe_Value:
 			ma.w.CurrentStageDetails.v = ma.ca_CurrentStageDetails.w
@@ -18846,7 +19094,7 @@ func (ma *_UpdateTask__ReprAssembler) valueFinishTidy() bool {
 		default:
 			return false
 		}
-	case 3:
+	case 4:
 		switch ma.cm {
 		case schema.Maybe_Value:ma.cm = schema.Maybe_Absent
 			ma.state = maState_initial
@@ -18854,7 +19102,7 @@ func (ma *_UpdateTask__ReprAssembler) valueFinishTidy() bool {
 		default:
 			return false
 		}
-	case 4:
+	case 5:
 		switch ma.cm {
 		case schema.Maybe_Value:ma.cm = schema.Maybe_Absent
 			ma.state = maState_initial
@@ -18892,13 +19140,24 @@ func (ma *_UpdateTask__ReprAssembler) AssembleEntry(k string) (ipld.NodeAssemble
 		ma.ca_Status.w = &ma.w.Status
 		ma.ca_Status.m = &ma.cm
 		return &ma.ca_Status, nil
+	case "ErrorMessage":
+		if ma.s & fieldBit__UpdateTask_ErrorMessage != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__UpdateTask_ErrorMessage_serial}
+		}
+		ma.s += fieldBit__UpdateTask_ErrorMessage
+		ma.state = maState_midValue
+		ma.f = 1
+		ma.ca_ErrorMessage.w = ma.w.ErrorMessage.v
+		ma.ca_ErrorMessage.m = &ma.w.ErrorMessage.m
+		
+		return &ma.ca_ErrorMessage, nil
 	case "Stage":
 		if ma.s & fieldBit__UpdateTask_Stage != 0 {
 			return nil, ipld.ErrRepeatedMapKey{&fieldName__UpdateTask_Stage_serial}
 		}
 		ma.s += fieldBit__UpdateTask_Stage
 		ma.state = maState_midValue
-		ma.f = 1
+		ma.f = 2
 		ma.ca_Stage.w = ma.w.Stage.v
 		ma.ca_Stage.m = &ma.w.Stage.m
 		
@@ -18909,7 +19168,7 @@ func (ma *_UpdateTask__ReprAssembler) AssembleEntry(k string) (ipld.NodeAssemble
 		}
 		ma.s += fieldBit__UpdateTask_CurrentStageDetails
 		ma.state = maState_midValue
-		ma.f = 2
+		ma.f = 3
 		ma.ca_CurrentStageDetails.w = ma.w.CurrentStageDetails.v
 		ma.ca_CurrentStageDetails.m = &ma.w.CurrentStageDetails.m
 		
@@ -18920,7 +19179,7 @@ func (ma *_UpdateTask__ReprAssembler) AssembleEntry(k string) (ipld.NodeAssemble
 		}
 		ma.s += fieldBit__UpdateTask_WorkedBy
 		ma.state = maState_midValue
-		ma.f = 3
+		ma.f = 4
 		ma.ca_WorkedBy.w = &ma.w.WorkedBy
 		ma.ca_WorkedBy.m = &ma.cm
 		return &ma.ca_WorkedBy, nil
@@ -18930,7 +19189,7 @@ func (ma *_UpdateTask__ReprAssembler) AssembleEntry(k string) (ipld.NodeAssemble
 		}
 		ma.s += fieldBit__UpdateTask_RunCount
 		ma.state = maState_midValue
-		ma.f = 4
+		ma.f = 5
 		ma.ca_RunCount.w = &ma.w.RunCount
 		ma.ca_RunCount.m = &ma.cm
 		return &ma.ca_RunCount, nil
@@ -18976,20 +19235,25 @@ func (ma *_UpdateTask__ReprAssembler) AssembleValue() ipld.NodeAssembler {
 		ma.ca_Status.m = &ma.cm
 		return &ma.ca_Status
 	case 1:
+		ma.ca_ErrorMessage.w = ma.w.ErrorMessage.v
+		ma.ca_ErrorMessage.m = &ma.w.ErrorMessage.m
+		
+		return &ma.ca_ErrorMessage
+	case 2:
 		ma.ca_Stage.w = ma.w.Stage.v
 		ma.ca_Stage.m = &ma.w.Stage.m
 		
 		return &ma.ca_Stage
-	case 2:
+	case 3:
 		ma.ca_CurrentStageDetails.w = ma.w.CurrentStageDetails.v
 		ma.ca_CurrentStageDetails.m = &ma.w.CurrentStageDetails.m
 		
 		return &ma.ca_CurrentStageDetails
-	case 3:
+	case 4:
 		ma.ca_WorkedBy.w = &ma.w.WorkedBy
 		ma.ca_WorkedBy.m = &ma.cm
 		return &ma.ca_WorkedBy
-	case 4:
+	case 5:
 		ma.ca_RunCount.w = &ma.w.RunCount
 		ma.ca_RunCount.m = &ma.cm
 		return &ma.ca_RunCount
@@ -19066,34 +19330,41 @@ func (ka *_UpdateTask__ReprKeyAssembler) AssignString(k string) error {
 		ka.s += fieldBit__UpdateTask_Status
 		ka.state = maState_expectValue
 		ka.f = 0
+	case "ErrorMessage":
+		if ka.s & fieldBit__UpdateTask_ErrorMessage != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__UpdateTask_ErrorMessage_serial}
+		}
+		ka.s += fieldBit__UpdateTask_ErrorMessage
+		ka.state = maState_expectValue
+		ka.f = 1
 	case "Stage":
 		if ka.s & fieldBit__UpdateTask_Stage != 0 {
 			return ipld.ErrRepeatedMapKey{&fieldName__UpdateTask_Stage_serial}
 		}
 		ka.s += fieldBit__UpdateTask_Stage
 		ka.state = maState_expectValue
-		ka.f = 1
+		ka.f = 2
 	case "CurrentStageDetails":
 		if ka.s & fieldBit__UpdateTask_CurrentStageDetails != 0 {
 			return ipld.ErrRepeatedMapKey{&fieldName__UpdateTask_CurrentStageDetails_serial}
 		}
 		ka.s += fieldBit__UpdateTask_CurrentStageDetails
 		ka.state = maState_expectValue
-		ka.f = 2
+		ka.f = 3
 	case "WorkedBy":
 		if ka.s & fieldBit__UpdateTask_WorkedBy != 0 {
 			return ipld.ErrRepeatedMapKey{&fieldName__UpdateTask_WorkedBy_serial}
 		}
 		ka.s += fieldBit__UpdateTask_WorkedBy
 		ka.state = maState_expectValue
-		ka.f = 3
+		ka.f = 4
 	case "RunCount":
 		if ka.s & fieldBit__UpdateTask_RunCount != 0 {
 			return ipld.ErrRepeatedMapKey{&fieldName__UpdateTask_RunCount_serial}
 		}
 		ka.s += fieldBit__UpdateTask_RunCount
 		ka.state = maState_expectValue
-		ka.f = 4
+		ka.f = 5
 	default:
 		return ipld.ErrInvalidKey{TypeName:"tasks.UpdateTask.Repr", Key:&_String{k}}
 	}

@@ -3,7 +3,6 @@ package tasks
 import (
 	"context"
 	"crypto/rand"
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -260,7 +259,7 @@ func (de *storageDealExecutor) executeAndMonitorDeal(updateStage UpdateStage) er
 			storagemarket.StorageDealError:
 
 			logStages(info, de.log)
-			return errors.New("storage deal failed")
+			return fmt.Errorf("storage deal failed: %s", info.Message)
 
 		// deal is on chain, exit successfully
 		case storagemarket.StorageDealActive:

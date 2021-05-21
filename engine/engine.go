@@ -170,6 +170,7 @@ func (e *Engine) runTask(ctx context.Context, task tasks.Task, runCount, worker 
 			tasks.Type.UpdateTask.OfStage(
 				e.host,
 				tasks.InProgress,
+				"",
 				stage,
 				stageDetails,
 				runCount,
@@ -178,7 +179,7 @@ func (e *Engine) runTask(ctx context.Context, task tasks.Task, runCount, worker 
 	}
 
 	finalStatus := tasks.Successful
-
+	finalErrorMessage := ""
 	tlog := log.With("uuid", task.UUID.String())
 
 	// Start deals
@@ -191,6 +192,7 @@ func (e *Engine) runTask(ctx context.Context, task tasks.Task, runCount, worker 
 				return
 			}
 			finalStatus = tasks.Failed
+			finalErrorMessage = err.Error()
 			tlog.Errorw("retrieval task returned error", "err", err)
 		} else {
 			tlog.Info("successfully retrieved data")
@@ -204,6 +206,7 @@ func (e *Engine) runTask(ctx context.Context, task tasks.Task, runCount, worker 
 				return
 			}
 			finalStatus = tasks.Failed
+			finalErrorMessage = err.Error()
 			tlog.Errorw("storage task returned error", "err", err)
 		} else {
 			tlog.Info("successfully stored data")
@@ -218,6 +221,7 @@ func (e *Engine) runTask(ctx context.Context, task tasks.Task, runCount, worker 
 		tasks.Type.UpdateTask.OfStage(
 			e.host,
 			finalStatus,
+			finalErrorMessage,
 			task.Stage.String(),
 			task.CurrentStageDetails.Must(),
 			runCount,
