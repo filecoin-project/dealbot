@@ -112,7 +112,7 @@ func main() {
 		schema.SpawnStructField("PastStageDetails", "List_StageDetails", true, false),
 		schema.SpawnStructField("StartedAt", "Time", true, false),
 		schema.SpawnStructField("RunCount", "Int", false, false),
-		schema.SpawnStructField("ErrorMessage", "String", false, false),
+		schema.SpawnStructField("ErrorMessage", "String", true, false),
 		schema.SpawnStructField("RetrievalTask", "RetrievalTask", true, false),
 		schema.SpawnStructField("StorageTask", "StorageTask", true, false),
 	}, schema.SpawnStructRepresentationMap(map[string]string{})))
@@ -121,7 +121,7 @@ func main() {
 	ts.Accumulate(schema.SpawnStruct("FinishedTask", []schema.StructField{
 		schema.SpawnStructField("Status", "Status", false, false),
 		schema.SpawnStructField("StartedAt", "Time", false, false),
-		schema.SpawnStructField("ErrorMessage", "String", false, false),
+		schema.SpawnStructField("ErrorMessage", "String", true, false),
 		schema.SpawnStructField("RetrievalTask", "RetrievalTask", true, false),
 		schema.SpawnStructField("StorageTask", "StorageTask", true, false),
 		schema.SpawnStructField("DealID", "Int", false, false),

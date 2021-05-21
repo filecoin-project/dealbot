@@ -318,7 +318,11 @@ func TestUpdateTasks(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 				require.Equal(t, *data.expectedStatus, task.Status)
-				require.Equal(t, data.expectedErrorMessage, task.ErrorMessage.String())
+				if data.expectedErrorMessage == "" {
+					require.False(t, task.ErrorMessage.Exists())
+				} else {
+					require.Equal(t, data.expectedErrorMessage, task.ErrorMessage.Must().String())
+				}
 				require.Equal(t, data.expectedStage, task.Stage.String())
 				if data.expectedStageDetails == nil {
 					require.Equal(t, task.CurrentStageDetails.Exists(), false)

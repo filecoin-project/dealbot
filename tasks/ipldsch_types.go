@@ -114,7 +114,7 @@ type FinishedTask = *_FinishedTask
 type _FinishedTask struct {
 	Status _Status
 	StartedAt _Time
-	ErrorMessage _String
+	ErrorMessage _String__Maybe
 	RetrievalTask _RetrievalTask__Maybe
 	StorageTask _StorageTask__Maybe
 	DealID _Int
@@ -254,7 +254,7 @@ type _Task struct {
 	PastStageDetails _List_StageDetails__Maybe
 	StartedAt _Time__Maybe
 	RunCount _Int
-	ErrorMessage _String
+	ErrorMessage _String__Maybe
 	RetrievalTask _RetrievalTask__Maybe
 	StorageTask _StorageTask__Maybe
 }

@@ -2507,7 +2507,7 @@ func (n _FinishedTask) FieldStatus() Status {
 func (n _FinishedTask) FieldStartedAt() Time {
 	return &n.StartedAt
 }
-func (n _FinishedTask) FieldErrorMessage() String {
+func (n _FinishedTask) FieldErrorMessage() MaybeString {
 	return &n.ErrorMessage
 }
 func (n _FinishedTask) FieldRetrievalTask() MaybeRetrievalTask {
@@ -2596,7 +2596,10 @@ func (n FinishedTask) LookupByString(key string) (ipld.Node, error) {
 	case "StartedAt":
 		return &n.StartedAt, nil
 	case "ErrorMessage":
-		return &n.ErrorMessage, nil
+		if n.ErrorMessage.m == schema.Maybe_Absent {
+			return ipld.Absent, nil
+		}
+		return n.ErrorMessage.v, nil
 	case "RetrievalTask":
 		if n.RetrievalTask.m == schema.Maybe_Absent {
 			return ipld.Absent, nil
@@ -2669,7 +2672,11 @@ func (itr *_FinishedTask__MapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
 		v = &itr.n.StartedAt
 	case 2:
 		k = &fieldName__FinishedTask_ErrorMessage
-		v = &itr.n.ErrorMessage
+		if itr.n.ErrorMessage.m == schema.Maybe_Absent {
+			v = ipld.Absent
+			break
+		}
+		v = itr.n.ErrorMessage.v
 	case 3:
 		k = &fieldName__FinishedTask_RetrievalTask
 		if itr.n.RetrievalTask.m == schema.Maybe_Absent {
@@ -2833,7 +2840,7 @@ var (
 	fieldBit__FinishedTask_TimeToFirstByteMS = 1 << 9
 	fieldBit__FinishedTask_TimeToLastByteMS = 1 << 10
 	fieldBit__FinishedTask_Events = 1 << 11
-	fieldBits__FinishedTask_sufficient = 0 + 1 << 0 + 1 << 1 + 1 << 2 + 1 << 5 + 1 << 6 + 1 << 7 + 1 << 11
+	fieldBits__FinishedTask_sufficient = 0 + 1 << 0 + 1 << 1 + 1 << 5 + 1 << 6 + 1 << 7 + 1 << 11
 )
 func (na *_FinishedTask__Assembler) BeginMap(int64) (ipld.MapAssembler, error) {
 	switch *na.m {
@@ -2947,10 +2954,9 @@ func (ma *_FinishedTask__Assembler) valueFinishTidy() bool {
 			return false
 		}
 	case 2:
-		switch ma.cm {
+		switch ma.w.ErrorMessage.m {
 		case schema.Maybe_Value:
-			ma.ca_ErrorMessage.w = nil
-			ma.cm = schema.Maybe_Absent
+			ma.w.ErrorMessage.v = ma.ca_ErrorMessage.w
 			ma.state = maState_initial
 			return true
 		default:
@@ -3088,8 +3094,8 @@ func (ma *_FinishedTask__Assembler) AssembleEntry(k string) (ipld.NodeAssembler,
 		ma.s += fieldBit__FinishedTask_ErrorMessage
 		ma.state = maState_midValue
 		ma.f = 2
-		ma.ca_ErrorMessage.w = &ma.w.ErrorMessage
-		ma.ca_ErrorMessage.m = &ma.cm
+		ma.ca_ErrorMessage.w = ma.w.ErrorMessage.v
+		ma.ca_ErrorMessage.m = &ma.w.ErrorMessage.m
 		return &ma.ca_ErrorMessage, nil
 	case "RetrievalTask":
 		if ma.s & fieldBit__FinishedTask_RetrievalTask != 0 {
@@ -3227,8 +3233,8 @@ func (ma *_FinishedTask__Assembler) AssembleValue() ipld.NodeAssembler {
 		ma.ca_StartedAt.m = &ma.cm
 		return &ma.ca_StartedAt
 	case 2:
-		ma.ca_ErrorMessage.w = &ma.w.ErrorMessage
-		ma.ca_ErrorMessage.m = &ma.cm
+		ma.ca_ErrorMessage.w = ma.w.ErrorMessage.v
+		ma.ca_ErrorMessage.m = &ma.w.ErrorMessage.m
 		return &ma.ca_ErrorMessage
 	case 3:
 		ma.ca_RetrievalTask.w = ma.w.RetrievalTask.v
@@ -3292,9 +3298,6 @@ func (ma *_FinishedTask__Assembler) Finish() error {
 		}
 		if ma.s & fieldBit__FinishedTask_StartedAt == 0 {
 			err.Missing = append(err.Missing, "StartedAt")
-		}
-		if ma.s & fieldBit__FinishedTask_ErrorMessage == 0 {
-			err.Missing = append(err.Missing, "ErrorMessage")
 		}
 		if ma.s & fieldBit__FinishedTask_DealID == 0 {
 			err.Missing = append(err.Missing, "DealID")
@@ -3481,7 +3484,10 @@ func (n *_FinishedTask__Repr) LookupByString(key string) (ipld.Node, error) {
 	case "StartedAt":
 		return n.StartedAt.Representation(), nil
 	case "ErrorMessage":
-		return n.ErrorMessage.Representation(), nil
+		if n.ErrorMessage.m == schema.Maybe_Absent {
+			return ipld.Absent, ipld.ErrNotExists{ipld.PathSegmentOfString(key)}
+		}
+		return n.ErrorMessage.v.Representation(), nil
 	case "RetrievalTask":
 		if n.RetrievalTask.m == schema.Maybe_Absent {
 			return ipld.Absent, ipld.ErrNotExists{ipld.PathSegmentOfString(key)}
@@ -3555,7 +3561,11 @@ advance:if itr.idx >= 12 {
 		v = itr.n.StartedAt.Representation()
 	case 2:
 		k = &fieldName__FinishedTask_ErrorMessage_serial
-		v = itr.n.ErrorMessage.Representation()
+		if itr.n.ErrorMessage.m == schema.Maybe_Absent {
+			itr.idx++
+			goto advance
+		}
+		v = itr.n.ErrorMessage.v.Representation()
 	case 3:
 		k = &fieldName__FinishedTask_RetrievalTask_serial
 		if itr.n.RetrievalTask.m == schema.Maybe_Absent {
@@ -3617,6 +3627,9 @@ func (_FinishedTask__Repr) ListIterator() ipld.ListIterator {
 }
 func (rn *_FinishedTask__Repr) Length() int64 {
 	l := 12
+	if rn.ErrorMessage.m == schema.Maybe_Absent {
+		l--
+	}
 	if rn.RetrievalTask.m == schema.Maybe_Absent {
 		l--
 	}
@@ -3828,8 +3841,9 @@ func (ma *_FinishedTask__ReprAssembler) valueFinishTidy() bool {
 			return false
 		}
 	case 2:
-		switch ma.cm {
-		case schema.Maybe_Value:ma.cm = schema.Maybe_Absent
+		switch ma.w.ErrorMessage.m {
+		case schema.Maybe_Value:
+			ma.w.ErrorMessage.v = ma.ca_ErrorMessage.w
 			ma.state = maState_initial
 			return true
 		default:
@@ -3959,8 +3973,9 @@ func (ma *_FinishedTask__ReprAssembler) AssembleEntry(k string) (ipld.NodeAssemb
 		ma.s += fieldBit__FinishedTask_ErrorMessage
 		ma.state = maState_midValue
 		ma.f = 2
-		ma.ca_ErrorMessage.w = &ma.w.ErrorMessage
-		ma.ca_ErrorMessage.m = &ma.cm
+		ma.ca_ErrorMessage.w = ma.w.ErrorMessage.v
+		ma.ca_ErrorMessage.m = &ma.w.ErrorMessage.m
+		
 		return &ma.ca_ErrorMessage, nil
 	case "RetrievalTask":
 		if ma.s & fieldBit__FinishedTask_RetrievalTask != 0 {
@@ -4103,8 +4118,9 @@ func (ma *_FinishedTask__ReprAssembler) AssembleValue() ipld.NodeAssembler {
 		ma.ca_StartedAt.m = &ma.cm
 		return &ma.ca_StartedAt
 	case 2:
-		ma.ca_ErrorMessage.w = &ma.w.ErrorMessage
-		ma.ca_ErrorMessage.m = &ma.cm
+		ma.ca_ErrorMessage.w = ma.w.ErrorMessage.v
+		ma.ca_ErrorMessage.m = &ma.w.ErrorMessage.m
+		
 		return &ma.ca_ErrorMessage
 	case 3:
 		ma.ca_RetrievalTask.w = ma.w.RetrievalTask.v
@@ -4173,9 +4189,6 @@ func (ma *_FinishedTask__ReprAssembler) Finish() error {
 		}
 		if ma.s & fieldBit__FinishedTask_StartedAt == 0 {
 			err.Missing = append(err.Missing, "StartedAt")
-		}
-		if ma.s & fieldBit__FinishedTask_ErrorMessage == 0 {
-			err.Missing = append(err.Missing, "ErrorMessage")
 		}
 		if ma.s & fieldBit__FinishedTask_DealID == 0 {
 			err.Missing = append(err.Missing, "DealID")
@@ -15557,7 +15570,7 @@ func (n _Task) FieldStartedAt() MaybeTime {
 func (n _Task) FieldRunCount() Int {
 	return &n.RunCount
 }
-func (n _Task) FieldErrorMessage() String {
+func (n _Task) FieldErrorMessage() MaybeString {
 	return &n.ErrorMessage
 }
 func (n _Task) FieldRetrievalTask() MaybeRetrievalTask {
@@ -15648,7 +15661,10 @@ func (n Task) LookupByString(key string) (ipld.Node, error) {
 	case "RunCount":
 		return &n.RunCount, nil
 	case "ErrorMessage":
-		return &n.ErrorMessage, nil
+		if n.ErrorMessage.m == schema.Maybe_Absent {
+			return ipld.Absent, nil
+		}
+		return n.ErrorMessage.v, nil
 	case "RetrievalTask":
 		if n.RetrievalTask.m == schema.Maybe_Absent {
 			return ipld.Absent, nil
@@ -15732,7 +15748,11 @@ func (itr *_Task__MapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
 		v = &itr.n.RunCount
 	case 8:
 		k = &fieldName__Task_ErrorMessage
-		v = &itr.n.ErrorMessage
+		if itr.n.ErrorMessage.m == schema.Maybe_Absent {
+			v = ipld.Absent
+			break
+		}
+		v = itr.n.ErrorMessage.v
 	case 9:
 		k = &fieldName__Task_RetrievalTask
 		if itr.n.RetrievalTask.m == schema.Maybe_Absent {
@@ -15860,7 +15880,7 @@ var (
 	fieldBit__Task_ErrorMessage = 1 << 8
 	fieldBit__Task_RetrievalTask = 1 << 9
 	fieldBit__Task_StorageTask = 1 << 10
-	fieldBits__Task_sufficient = 0 + 1 << 0 + 1 << 1 + 1 << 3 + 1 << 7 + 1 << 8
+	fieldBits__Task_sufficient = 0 + 1 << 0 + 1 << 1 + 1 << 3 + 1 << 7
 )
 func (na *_Task__Assembler) BeginMap(int64) (ipld.MapAssembler, error) {
 	switch *na.m {
@@ -16030,10 +16050,9 @@ func (ma *_Task__Assembler) valueFinishTidy() bool {
 			return false
 		}
 	case 8:
-		switch ma.cm {
+		switch ma.w.ErrorMessage.m {
 		case schema.Maybe_Value:
-			ma.ca_ErrorMessage.w = nil
-			ma.cm = schema.Maybe_Absent
+			ma.w.ErrorMessage.v = ma.ca_ErrorMessage.w
 			ma.state = maState_initial
 			return true
 		default:
@@ -16164,8 +16183,8 @@ func (ma *_Task__Assembler) AssembleEntry(k string) (ipld.NodeAssembler, error) 
 		ma.s += fieldBit__Task_ErrorMessage
 		ma.state = maState_midValue
 		ma.f = 8
-		ma.ca_ErrorMessage.w = &ma.w.ErrorMessage
-		ma.ca_ErrorMessage.m = &ma.cm
+		ma.ca_ErrorMessage.w = ma.w.ErrorMessage.v
+		ma.ca_ErrorMessage.m = &ma.w.ErrorMessage.m
 		return &ma.ca_ErrorMessage, nil
 	case "RetrievalTask":
 		if ma.s & fieldBit__Task_RetrievalTask != 0 {
@@ -16257,8 +16276,8 @@ func (ma *_Task__Assembler) AssembleValue() ipld.NodeAssembler {
 		ma.ca_RunCount.m = &ma.cm
 		return &ma.ca_RunCount
 	case 8:
-		ma.ca_ErrorMessage.w = &ma.w.ErrorMessage
-		ma.ca_ErrorMessage.m = &ma.cm
+		ma.ca_ErrorMessage.w = ma.w.ErrorMessage.v
+		ma.ca_ErrorMessage.m = &ma.w.ErrorMessage.m
 		return &ma.ca_ErrorMessage
 	case 9:
 		ma.ca_RetrievalTask.w = ma.w.RetrievalTask.v
@@ -16300,9 +16319,6 @@ func (ma *_Task__Assembler) Finish() error {
 		}
 		if ma.s & fieldBit__Task_RunCount == 0 {
 			err.Missing = append(err.Missing, "RunCount")
-		}
-		if ma.s & fieldBit__Task_ErrorMessage == 0 {
-			err.Missing = append(err.Missing, "ErrorMessage")
 		}
 		return err
 	}
@@ -16493,7 +16509,10 @@ func (n *_Task__Repr) LookupByString(key string) (ipld.Node, error) {
 	case "RunCount":
 		return n.RunCount.Representation(), nil
 	case "ErrorMessage":
-		return n.ErrorMessage.Representation(), nil
+		if n.ErrorMessage.m == schema.Maybe_Absent {
+			return ipld.Absent, ipld.ErrNotExists{ipld.PathSegmentOfString(key)}
+		}
+		return n.ErrorMessage.v.Representation(), nil
 	case "RetrievalTask":
 		if n.RetrievalTask.m == schema.Maybe_Absent {
 			return ipld.Absent, ipld.ErrNotExists{ipld.PathSegmentOfString(key)}
@@ -16530,6 +16549,11 @@ func (n *_Task__Repr) MapIterator() ipld.MapIterator {
 	}
 	if n.RetrievalTask.m == schema.Maybe_Absent {
 		end = 9
+	} else {
+		goto done
+	}
+	if n.ErrorMessage.m == schema.Maybe_Absent {
+		end = 8
 	} else {
 		goto done
 	}
@@ -16590,7 +16614,11 @@ advance:if itr.idx >= 11 {
 		v = itr.n.RunCount.Representation()
 	case 8:
 		k = &fieldName__Task_ErrorMessage_serial
-		v = itr.n.ErrorMessage.Representation()
+		if itr.n.ErrorMessage.m == schema.Maybe_Absent {
+			itr.idx++
+			goto advance
+		}
+		v = itr.n.ErrorMessage.v.Representation()
 	case 9:
 		k = &fieldName__Task_RetrievalTask_serial
 		if itr.n.RetrievalTask.m == schema.Maybe_Absent {
@@ -16629,6 +16657,9 @@ func (rn *_Task__Repr) Length() int64 {
 		l--
 	}
 	if rn.StartedAt.m == schema.Maybe_Absent {
+		l--
+	}
+	if rn.ErrorMessage.m == schema.Maybe_Absent {
 		l--
 	}
 	if rn.RetrievalTask.m == schema.Maybe_Absent {
@@ -16883,8 +16914,9 @@ func (ma *_Task__ReprAssembler) valueFinishTidy() bool {
 			return false
 		}
 	case 8:
-		switch ma.cm {
-		case schema.Maybe_Value:ma.cm = schema.Maybe_Absent
+		switch ma.w.ErrorMessage.m {
+		case schema.Maybe_Value:
+			ma.w.ErrorMessage.v = ma.ca_ErrorMessage.w
 			ma.state = maState_initial
 			return true
 		default:
@@ -17019,8 +17051,9 @@ func (ma *_Task__ReprAssembler) AssembleEntry(k string) (ipld.NodeAssembler, err
 		ma.s += fieldBit__Task_ErrorMessage
 		ma.state = maState_midValue
 		ma.f = 8
-		ma.ca_ErrorMessage.w = &ma.w.ErrorMessage
-		ma.ca_ErrorMessage.m = &ma.cm
+		ma.ca_ErrorMessage.w = ma.w.ErrorMessage.v
+		ma.ca_ErrorMessage.m = &ma.w.ErrorMessage.m
+		
 		return &ma.ca_ErrorMessage, nil
 	case "RetrievalTask":
 		if ma.s & fieldBit__Task_RetrievalTask != 0 {
@@ -17118,8 +17151,9 @@ func (ma *_Task__ReprAssembler) AssembleValue() ipld.NodeAssembler {
 		ma.ca_RunCount.m = &ma.cm
 		return &ma.ca_RunCount
 	case 8:
-		ma.ca_ErrorMessage.w = &ma.w.ErrorMessage
-		ma.ca_ErrorMessage.m = &ma.cm
+		ma.ca_ErrorMessage.w = ma.w.ErrorMessage.v
+		ma.ca_ErrorMessage.m = &ma.w.ErrorMessage.m
+		
 		return &ma.ca_ErrorMessage
 	case 9:
 		ma.ca_RetrievalTask.w = ma.w.RetrievalTask.v
@@ -17163,9 +17197,6 @@ func (ma *_Task__ReprAssembler) Finish() error {
 		}
 		if ma.s & fieldBit__Task_RunCount == 0 {
 			err.Missing = append(err.Missing, "RunCount")
-		}
-		if ma.s & fieldBit__Task_ErrorMessage == 0 {
-			err.Missing = append(err.Missing, "ErrorMessage")
 		}
 		return err
 	}

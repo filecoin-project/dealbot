@@ -24,10 +24,16 @@ func (utp *_UpdateTask__Prototype) Of(workedBy string, status Status, runCount i
 }
 
 func (utp *_UpdateTask__Prototype) OfStage(workedBy string, status Status, errorMessage string, stage string, details StageDetails, runCount int) *_UpdateTask {
+	var err _String__Maybe
+	if errorMessage == "" {
+		err = _String__Maybe{m: schema.Maybe_Absent}
+	} else {
+		err = _String__Maybe{m: schema.Maybe_Value, v: &_String{errorMessage}}
+	}
 	ut := _UpdateTask{
 		WorkedBy:            _String{workedBy},
 		Status:              *status,
-		ErrorMessage:        _String__Maybe{m: schema.Maybe_Value, v: &_String{errorMessage}},
+		ErrorMessage:        err,
 		CurrentStageDetails: _StageDetails__Maybe{m: schema.Maybe_Value, v: details},
 		Stage:               _String__Maybe{m: schema.Maybe_Value, v: &_String{stage}},
 		RunCount:            _Int{int64(runCount)},
