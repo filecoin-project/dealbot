@@ -9440,6 +9440,9 @@ func (n _PopTask) FieldStatus() Status {
 func (n _PopTask) FieldWorkedBy() String {
 	return &n.WorkedBy
 }
+func (n _PopTask) FieldTags() MaybeString {
+	return &n.Tags
+}
 type _PopTask__Maybe struct {
 	m schema.Maybe
 	v PopTask
@@ -9476,6 +9479,7 @@ func (m MaybePopTask) Must() PopTask {
 var (
 	fieldName__PopTask_Status = _String{"Status"}
 	fieldName__PopTask_WorkedBy = _String{"WorkedBy"}
+	fieldName__PopTask_Tags = _String{"Tags"}
 )
 var _ ipld.Node = (PopTask)(&_PopTask{})
 var _ schema.TypedNode = (PopTask)(&_PopTask{})
@@ -9488,6 +9492,11 @@ func (n PopTask) LookupByString(key string) (ipld.Node, error) {
 		return &n.Status, nil
 	case "WorkedBy":
 		return &n.WorkedBy, nil
+	case "Tags":
+		if n.Tags.m == schema.Maybe_Absent {
+			return ipld.Absent, nil
+		}
+		return n.Tags.v, nil
 	default:
 		return nil, schema.ErrNoSuchField{Type: nil /*TODO*/, Field: ipld.PathSegmentOfString(key)}
 	}
@@ -9515,7 +9524,7 @@ type _PopTask__MapItr struct {
 }
 
 func (itr *_PopTask__MapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
-	if itr.idx >= 2 {
+	if itr.idx >= 3 {
 		return nil, nil, ipld.ErrIteratorOverread{}
 	}
 	switch itr.idx {
@@ -9525,6 +9534,13 @@ func (itr *_PopTask__MapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
 	case 1:
 		k = &fieldName__PopTask_WorkedBy
 		v = &itr.n.WorkedBy
+	case 2:
+		k = &fieldName__PopTask_Tags
+		if itr.n.Tags.m == schema.Maybe_Absent {
+			v = ipld.Absent
+			break
+		}
+		v = itr.n.Tags.v
 	default:
 		panic("unreachable")
 	}
@@ -9532,14 +9548,14 @@ func (itr *_PopTask__MapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
 	return
 }
 func (itr *_PopTask__MapItr) Done() bool {
-	return itr.idx >= 2
+	return itr.idx >= 3
 }
 
 func (PopTask) ListIterator() ipld.ListIterator {
 	return nil
 }
 func (PopTask) Length() int64 {
-	return 2
+	return 3
 }
 func (PopTask) IsAbsent() bool {
 	return false
@@ -9599,6 +9615,7 @@ type _PopTask__Assembler struct {
 	cm schema.Maybe
 	ca_Status _Status__Assembler
 	ca_WorkedBy _String__Assembler
+	ca_Tags _String__Assembler
 	}
 
 func (na *_PopTask__Assembler) reset() {
@@ -9606,11 +9623,13 @@ func (na *_PopTask__Assembler) reset() {
 	na.s = 0
 	na.ca_Status.reset()
 	na.ca_WorkedBy.reset()
+	na.ca_Tags.reset()
 }
 
 var (
 	fieldBit__PopTask_Status = 1 << 0
 	fieldBit__PopTask_WorkedBy = 1 << 1
+	fieldBit__PopTask_Tags = 1 << 2
 	fieldBits__PopTask_sufficient = 0 + 1 << 0 + 1 << 1
 )
 func (na *_PopTask__Assembler) BeginMap(int64) (ipld.MapAssembler, error) {
@@ -9724,6 +9743,15 @@ func (ma *_PopTask__Assembler) valueFinishTidy() bool {
 		default:
 			return false
 		}
+	case 2:
+		switch ma.w.Tags.m {
+		case schema.Maybe_Value:
+			ma.w.Tags.v = ma.ca_Tags.w
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
 	default:
 		panic("unreachable")
 	}
@@ -9764,6 +9792,16 @@ func (ma *_PopTask__Assembler) AssembleEntry(k string) (ipld.NodeAssembler, erro
 		ma.ca_WorkedBy.w = &ma.w.WorkedBy
 		ma.ca_WorkedBy.m = &ma.cm
 		return &ma.ca_WorkedBy, nil
+	case "Tags":
+		if ma.s & fieldBit__PopTask_Tags != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__PopTask_Tags}
+		}
+		ma.s += fieldBit__PopTask_Tags
+		ma.state = maState_midValue
+		ma.f = 2
+		ma.ca_Tags.w = ma.w.Tags.v
+		ma.ca_Tags.m = &ma.w.Tags.m
+		return &ma.ca_Tags, nil
 	default:
 		return nil, ipld.ErrInvalidKey{TypeName:"tasks.PopTask", Key:&_String{k}}
 	}
@@ -9809,6 +9847,10 @@ func (ma *_PopTask__Assembler) AssembleValue() ipld.NodeAssembler {
 		ma.ca_WorkedBy.w = &ma.w.WorkedBy
 		ma.ca_WorkedBy.m = &ma.cm
 		return &ma.ca_WorkedBy
+	case 2:
+		ma.ca_Tags.w = ma.w.Tags.v
+		ma.ca_Tags.m = &ma.w.Tags.m
+		return &ma.ca_Tags
 	default:
 		panic("unreachable")
 	}
@@ -9886,6 +9928,13 @@ func (ka *_PopTask__KeyAssembler) AssignString(k string) error {
 		ka.s += fieldBit__PopTask_WorkedBy
 		ka.state = maState_expectValue
 		ka.f = 1
+	case "Tags":
+		if ka.s & fieldBit__PopTask_Tags != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__PopTask_Tags}
+		}
+		ka.s += fieldBit__PopTask_Tags
+		ka.state = maState_expectValue
+		ka.f = 2
 	default:
 		return ipld.ErrInvalidKey{TypeName:"tasks.PopTask", Key:&_String{k}}
 	}
@@ -9917,6 +9966,7 @@ type _PopTask__Repr _PopTask
 var (
 	fieldName__PopTask_Status_serial = _String{"Status"}
 	fieldName__PopTask_WorkedBy_serial = _String{"WorkedBy"}
+	fieldName__PopTask_Tags_serial = _String{"Tags"}
 )
 var _ ipld.Node = &_PopTask__Repr{}
 func (_PopTask__Repr) Kind() ipld.Kind {
@@ -9928,6 +9978,11 @@ func (n *_PopTask__Repr) LookupByString(key string) (ipld.Node, error) {
 		return n.Status.Representation(), nil
 	case "WorkedBy":
 		return n.WorkedBy.Representation(), nil
+	case "Tags":
+		if n.Tags.m == schema.Maybe_Absent {
+			return ipld.Absent, ipld.ErrNotExists{ipld.PathSegmentOfString(key)}
+		}
+		return n.Tags.v.Representation(), nil
 	default:
 		return nil, schema.ErrNoSuchField{Type: nil /*TODO*/, Field: ipld.PathSegmentOfString(key)}
 	}
@@ -9946,17 +10001,24 @@ func (n _PopTask__Repr) LookupBySegment(seg ipld.PathSegment) (ipld.Node, error)
 	return n.LookupByString(seg.String())
 }
 func (n *_PopTask__Repr) MapIterator() ipld.MapIterator {
-	return &_PopTask__ReprMapItr{n, 0}
+	end := 3
+	if n.Tags.m == schema.Maybe_Absent {
+		end = 2
+	} else {
+		goto done
+	}
+done:
+	return &_PopTask__ReprMapItr{n, 0, end}
 }
 
 type _PopTask__ReprMapItr struct {
 	n   *_PopTask__Repr
 	idx int
-	
+	end int
 }
 
 func (itr *_PopTask__ReprMapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
-if itr.idx >= 2 {
+advance:if itr.idx >= 3 {
 		return nil, nil, ipld.ErrIteratorOverread{}
 	}
 	switch itr.idx {
@@ -9966,6 +10028,13 @@ if itr.idx >= 2 {
 	case 1:
 		k = &fieldName__PopTask_WorkedBy_serial
 		v = itr.n.WorkedBy.Representation()
+	case 2:
+		k = &fieldName__PopTask_Tags_serial
+		if itr.n.Tags.m == schema.Maybe_Absent {
+			itr.idx++
+			goto advance
+		}
+		v = itr.n.Tags.v.Representation()
 	default:
 		panic("unreachable")
 	}
@@ -9973,13 +10042,16 @@ if itr.idx >= 2 {
 	return
 }
 func (itr *_PopTask__ReprMapItr) Done() bool {
-	return itr.idx >= 2
+	return itr.idx >= itr.end
 }
 func (_PopTask__Repr) ListIterator() ipld.ListIterator {
 	return nil
 }
 func (rn *_PopTask__Repr) Length() int64 {
-	l := 2
+	l := 3
+	if rn.Tags.m == schema.Maybe_Absent {
+		l--
+	}
 	return int64(l)
 }
 func (_PopTask__Repr) IsAbsent() bool {
@@ -10040,6 +10112,7 @@ type _PopTask__ReprAssembler struct {
 	cm schema.Maybe
 	ca_Status _Status__ReprAssembler
 	ca_WorkedBy _String__ReprAssembler
+	ca_Tags _String__ReprAssembler
 	}
 
 func (na *_PopTask__ReprAssembler) reset() {
@@ -10047,6 +10120,7 @@ func (na *_PopTask__ReprAssembler) reset() {
 	na.s = 0
 	na.ca_Status.reset()
 	na.ca_WorkedBy.reset()
+	na.ca_Tags.reset()
 }
 func (na *_PopTask__ReprAssembler) BeginMap(int64) (ipld.MapAssembler, error) {
 	switch *na.m {
@@ -10155,6 +10229,15 @@ func (ma *_PopTask__ReprAssembler) valueFinishTidy() bool {
 		default:
 			return false
 		}
+	case 2:
+		switch ma.w.Tags.m {
+		case schema.Maybe_Value:
+			ma.w.Tags.v = ma.ca_Tags.w
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
 	default:
 		panic("unreachable")
 	}
@@ -10195,6 +10278,17 @@ func (ma *_PopTask__ReprAssembler) AssembleEntry(k string) (ipld.NodeAssembler, 
 		ma.ca_WorkedBy.w = &ma.w.WorkedBy
 		ma.ca_WorkedBy.m = &ma.cm
 		return &ma.ca_WorkedBy, nil
+	case "Tags":
+		if ma.s & fieldBit__PopTask_Tags != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__PopTask_Tags_serial}
+		}
+		ma.s += fieldBit__PopTask_Tags
+		ma.state = maState_midValue
+		ma.f = 2
+		ma.ca_Tags.w = ma.w.Tags.v
+		ma.ca_Tags.m = &ma.w.Tags.m
+		
+		return &ma.ca_Tags, nil
 	default:
 		return nil, ipld.ErrInvalidKey{TypeName:"tasks.PopTask.Repr", Key:&_String{k}}
 	}
@@ -10240,6 +10334,11 @@ func (ma *_PopTask__ReprAssembler) AssembleValue() ipld.NodeAssembler {
 		ma.ca_WorkedBy.w = &ma.w.WorkedBy
 		ma.ca_WorkedBy.m = &ma.cm
 		return &ma.ca_WorkedBy
+	case 2:
+		ma.ca_Tags.w = ma.w.Tags.v
+		ma.ca_Tags.m = &ma.w.Tags.m
+		
+		return &ma.ca_Tags
 	default:
 		panic("unreachable")
 	}
@@ -10317,6 +10416,13 @@ func (ka *_PopTask__ReprKeyAssembler) AssignString(k string) error {
 		ka.s += fieldBit__PopTask_WorkedBy
 		ka.state = maState_expectValue
 		ka.f = 1
+	case "Tags":
+		if ka.s & fieldBit__PopTask_Tags != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__PopTask_Tags_serial}
+		}
+		ka.s += fieldBit__PopTask_Tags
+		ka.state = maState_expectValue
+		ka.f = 2
 	default:
 		return ipld.ErrInvalidKey{TypeName:"tasks.PopTask.Repr", Key:&_String{k}}
 	}
@@ -11365,6 +11471,9 @@ func (n _RetrievalTask) FieldSchedule() MaybeString {
 func (n _RetrievalTask) FieldScheduleLimit() MaybeString {
 	return &n.ScheduleLimit
 }
+func (n _RetrievalTask) FieldTag() MaybeString {
+	return &n.Tag
+}
 type _RetrievalTask__Maybe struct {
 	m schema.Maybe
 	v RetrievalTask
@@ -11404,6 +11513,7 @@ var (
 	fieldName__RetrievalTask_CARExport = _String{"CARExport"}
 	fieldName__RetrievalTask_Schedule = _String{"Schedule"}
 	fieldName__RetrievalTask_ScheduleLimit = _String{"ScheduleLimit"}
+	fieldName__RetrievalTask_Tag = _String{"Tag"}
 )
 var _ ipld.Node = (RetrievalTask)(&_RetrievalTask{})
 var _ schema.TypedNode = (RetrievalTask)(&_RetrievalTask{})
@@ -11428,6 +11538,11 @@ func (n RetrievalTask) LookupByString(key string) (ipld.Node, error) {
 			return ipld.Absent, nil
 		}
 		return n.ScheduleLimit.v, nil
+	case "Tag":
+		if n.Tag.m == schema.Maybe_Absent {
+			return ipld.Absent, nil
+		}
+		return n.Tag.v, nil
 	default:
 		return nil, schema.ErrNoSuchField{Type: nil /*TODO*/, Field: ipld.PathSegmentOfString(key)}
 	}
@@ -11455,7 +11570,7 @@ type _RetrievalTask__MapItr struct {
 }
 
 func (itr *_RetrievalTask__MapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
-	if itr.idx >= 5 {
+	if itr.idx >= 6 {
 		return nil, nil, ipld.ErrIteratorOverread{}
 	}
 	switch itr.idx {
@@ -11482,6 +11597,13 @@ func (itr *_RetrievalTask__MapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
 			break
 		}
 		v = itr.n.ScheduleLimit.v
+	case 5:
+		k = &fieldName__RetrievalTask_Tag
+		if itr.n.Tag.m == schema.Maybe_Absent {
+			v = ipld.Absent
+			break
+		}
+		v = itr.n.Tag.v
 	default:
 		panic("unreachable")
 	}
@@ -11489,14 +11611,14 @@ func (itr *_RetrievalTask__MapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
 	return
 }
 func (itr *_RetrievalTask__MapItr) Done() bool {
-	return itr.idx >= 5
+	return itr.idx >= 6
 }
 
 func (RetrievalTask) ListIterator() ipld.ListIterator {
 	return nil
 }
 func (RetrievalTask) Length() int64 {
-	return 5
+	return 6
 }
 func (RetrievalTask) IsAbsent() bool {
 	return false
@@ -11559,6 +11681,7 @@ type _RetrievalTask__Assembler struct {
 	ca_CARExport _Bool__Assembler
 	ca_Schedule _String__Assembler
 	ca_ScheduleLimit _String__Assembler
+	ca_Tag _String__Assembler
 	}
 
 func (na *_RetrievalTask__Assembler) reset() {
@@ -11569,6 +11692,7 @@ func (na *_RetrievalTask__Assembler) reset() {
 	na.ca_CARExport.reset()
 	na.ca_Schedule.reset()
 	na.ca_ScheduleLimit.reset()
+	na.ca_Tag.reset()
 }
 
 var (
@@ -11577,6 +11701,7 @@ var (
 	fieldBit__RetrievalTask_CARExport = 1 << 2
 	fieldBit__RetrievalTask_Schedule = 1 << 3
 	fieldBit__RetrievalTask_ScheduleLimit = 1 << 4
+	fieldBit__RetrievalTask_Tag = 1 << 5
 	fieldBits__RetrievalTask_sufficient = 0 + 1 << 0 + 1 << 1 + 1 << 2
 )
 func (na *_RetrievalTask__Assembler) BeginMap(int64) (ipld.MapAssembler, error) {
@@ -11718,6 +11843,15 @@ func (ma *_RetrievalTask__Assembler) valueFinishTidy() bool {
 		default:
 			return false
 		}
+	case 5:
+		switch ma.w.Tag.m {
+		case schema.Maybe_Value:
+			ma.w.Tag.v = ma.ca_Tag.w
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
 	default:
 		panic("unreachable")
 	}
@@ -11788,6 +11922,16 @@ func (ma *_RetrievalTask__Assembler) AssembleEntry(k string) (ipld.NodeAssembler
 		ma.ca_ScheduleLimit.w = ma.w.ScheduleLimit.v
 		ma.ca_ScheduleLimit.m = &ma.w.ScheduleLimit.m
 		return &ma.ca_ScheduleLimit, nil
+	case "Tag":
+		if ma.s & fieldBit__RetrievalTask_Tag != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__RetrievalTask_Tag}
+		}
+		ma.s += fieldBit__RetrievalTask_Tag
+		ma.state = maState_midValue
+		ma.f = 5
+		ma.ca_Tag.w = ma.w.Tag.v
+		ma.ca_Tag.m = &ma.w.Tag.m
+		return &ma.ca_Tag, nil
 	default:
 		return nil, ipld.ErrInvalidKey{TypeName:"tasks.RetrievalTask", Key:&_String{k}}
 	}
@@ -11845,6 +11989,10 @@ func (ma *_RetrievalTask__Assembler) AssembleValue() ipld.NodeAssembler {
 		ma.ca_ScheduleLimit.w = ma.w.ScheduleLimit.v
 		ma.ca_ScheduleLimit.m = &ma.w.ScheduleLimit.m
 		return &ma.ca_ScheduleLimit
+	case 5:
+		ma.ca_Tag.w = ma.w.Tag.v
+		ma.ca_Tag.m = &ma.w.Tag.m
+		return &ma.ca_Tag
 	default:
 		panic("unreachable")
 	}
@@ -11946,6 +12094,13 @@ func (ka *_RetrievalTask__KeyAssembler) AssignString(k string) error {
 		ka.s += fieldBit__RetrievalTask_ScheduleLimit
 		ka.state = maState_expectValue
 		ka.f = 4
+	case "Tag":
+		if ka.s & fieldBit__RetrievalTask_Tag != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__RetrievalTask_Tag}
+		}
+		ka.s += fieldBit__RetrievalTask_Tag
+		ka.state = maState_expectValue
+		ka.f = 5
 	default:
 		return ipld.ErrInvalidKey{TypeName:"tasks.RetrievalTask", Key:&_String{k}}
 	}
@@ -11980,6 +12135,7 @@ var (
 	fieldName__RetrievalTask_CARExport_serial = _String{"CARExport"}
 	fieldName__RetrievalTask_Schedule_serial = _String{"Schedule"}
 	fieldName__RetrievalTask_ScheduleLimit_serial = _String{"ScheduleLimit"}
+	fieldName__RetrievalTask_Tag_serial = _String{"Tag"}
 )
 var _ ipld.Node = &_RetrievalTask__Repr{}
 func (_RetrievalTask__Repr) Kind() ipld.Kind {
@@ -12003,6 +12159,11 @@ func (n *_RetrievalTask__Repr) LookupByString(key string) (ipld.Node, error) {
 			return ipld.Absent, ipld.ErrNotExists{ipld.PathSegmentOfString(key)}
 		}
 		return n.ScheduleLimit.v.Representation(), nil
+	case "Tag":
+		if n.Tag.m == schema.Maybe_Absent {
+			return ipld.Absent, ipld.ErrNotExists{ipld.PathSegmentOfString(key)}
+		}
+		return n.Tag.v.Representation(), nil
 	default:
 		return nil, schema.ErrNoSuchField{Type: nil /*TODO*/, Field: ipld.PathSegmentOfString(key)}
 	}
@@ -12021,7 +12182,12 @@ func (n _RetrievalTask__Repr) LookupBySegment(seg ipld.PathSegment) (ipld.Node, 
 	return n.LookupByString(seg.String())
 }
 func (n *_RetrievalTask__Repr) MapIterator() ipld.MapIterator {
-	end := 5
+	end := 6
+	if n.Tag.m == schema.Maybe_Absent {
+		end = 5
+	} else {
+		goto done
+	}
 	if n.ScheduleLimit.m == schema.Maybe_Absent {
 		end = 4
 	} else {
@@ -12043,7 +12209,7 @@ type _RetrievalTask__ReprMapItr struct {
 }
 
 func (itr *_RetrievalTask__ReprMapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
-advance:if itr.idx >= 5 {
+advance:if itr.idx >= 6 {
 		return nil, nil, ipld.ErrIteratorOverread{}
 	}
 	switch itr.idx {
@@ -12070,6 +12236,13 @@ advance:if itr.idx >= 5 {
 			goto advance
 		}
 		v = itr.n.ScheduleLimit.v.Representation()
+	case 5:
+		k = &fieldName__RetrievalTask_Tag_serial
+		if itr.n.Tag.m == schema.Maybe_Absent {
+			itr.idx++
+			goto advance
+		}
+		v = itr.n.Tag.v.Representation()
 	default:
 		panic("unreachable")
 	}
@@ -12083,11 +12256,14 @@ func (_RetrievalTask__Repr) ListIterator() ipld.ListIterator {
 	return nil
 }
 func (rn *_RetrievalTask__Repr) Length() int64 {
-	l := 5
+	l := 6
 	if rn.Schedule.m == schema.Maybe_Absent {
 		l--
 	}
 	if rn.ScheduleLimit.m == schema.Maybe_Absent {
+		l--
+	}
+	if rn.Tag.m == schema.Maybe_Absent {
 		l--
 	}
 	return int64(l)
@@ -12153,6 +12329,7 @@ type _RetrievalTask__ReprAssembler struct {
 	ca_CARExport _Bool__ReprAssembler
 	ca_Schedule _String__ReprAssembler
 	ca_ScheduleLimit _String__ReprAssembler
+	ca_Tag _String__ReprAssembler
 	}
 
 func (na *_RetrievalTask__ReprAssembler) reset() {
@@ -12163,6 +12340,7 @@ func (na *_RetrievalTask__ReprAssembler) reset() {
 	na.ca_CARExport.reset()
 	na.ca_Schedule.reset()
 	na.ca_ScheduleLimit.reset()
+	na.ca_Tag.reset()
 }
 func (na *_RetrievalTask__ReprAssembler) BeginMap(int64) (ipld.MapAssembler, error) {
 	switch *na.m {
@@ -12297,6 +12475,15 @@ func (ma *_RetrievalTask__ReprAssembler) valueFinishTidy() bool {
 		default:
 			return false
 		}
+	case 5:
+		switch ma.w.Tag.m {
+		case schema.Maybe_Value:
+			ma.w.Tag.v = ma.ca_Tag.w
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
 	default:
 		panic("unreachable")
 	}
@@ -12369,6 +12556,17 @@ func (ma *_RetrievalTask__ReprAssembler) AssembleEntry(k string) (ipld.NodeAssem
 		ma.ca_ScheduleLimit.m = &ma.w.ScheduleLimit.m
 		
 		return &ma.ca_ScheduleLimit, nil
+	case "Tag":
+		if ma.s & fieldBit__RetrievalTask_Tag != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__RetrievalTask_Tag_serial}
+		}
+		ma.s += fieldBit__RetrievalTask_Tag
+		ma.state = maState_midValue
+		ma.f = 5
+		ma.ca_Tag.w = ma.w.Tag.v
+		ma.ca_Tag.m = &ma.w.Tag.m
+		
+		return &ma.ca_Tag, nil
 	default:
 		return nil, ipld.ErrInvalidKey{TypeName:"tasks.RetrievalTask.Repr", Key:&_String{k}}
 	}
@@ -12428,6 +12626,11 @@ func (ma *_RetrievalTask__ReprAssembler) AssembleValue() ipld.NodeAssembler {
 		ma.ca_ScheduleLimit.m = &ma.w.ScheduleLimit.m
 		
 		return &ma.ca_ScheduleLimit
+	case 5:
+		ma.ca_Tag.w = ma.w.Tag.v
+		ma.ca_Tag.m = &ma.w.Tag.m
+		
+		return &ma.ca_Tag
 	default:
 		panic("unreachable")
 	}
@@ -12529,6 +12732,13 @@ func (ka *_RetrievalTask__ReprKeyAssembler) AssignString(k string) error {
 		ka.s += fieldBit__RetrievalTask_ScheduleLimit
 		ka.state = maState_expectValue
 		ka.f = 4
+	case "Tag":
+		if ka.s & fieldBit__RetrievalTask_Tag != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__RetrievalTask_Tag_serial}
+		}
+		ka.s += fieldBit__RetrievalTask_Tag
+		ka.state = maState_expectValue
+		ka.f = 5
 	default:
 		return ipld.ErrInvalidKey{TypeName:"tasks.RetrievalTask.Repr", Key:&_String{k}}
 	}
@@ -13903,6 +14113,9 @@ func (n _StorageTask) FieldSchedule() MaybeString {
 func (n _StorageTask) FieldScheduleLimit() MaybeString {
 	return &n.ScheduleLimit
 }
+func (n _StorageTask) FieldTag() MaybeString {
+	return &n.Tag
+}
 type _StorageTask__Maybe struct {
 	m schema.Maybe
 	v StorageTask
@@ -13945,6 +14158,7 @@ var (
 	fieldName__StorageTask_Verified = _String{"Verified"}
 	fieldName__StorageTask_Schedule = _String{"Schedule"}
 	fieldName__StorageTask_ScheduleLimit = _String{"ScheduleLimit"}
+	fieldName__StorageTask_Tag = _String{"Tag"}
 )
 var _ ipld.Node = (StorageTask)(&_StorageTask{})
 var _ schema.TypedNode = (StorageTask)(&_StorageTask{})
@@ -13975,6 +14189,11 @@ func (n StorageTask) LookupByString(key string) (ipld.Node, error) {
 			return ipld.Absent, nil
 		}
 		return n.ScheduleLimit.v, nil
+	case "Tag":
+		if n.Tag.m == schema.Maybe_Absent {
+			return ipld.Absent, nil
+		}
+		return n.Tag.v, nil
 	default:
 		return nil, schema.ErrNoSuchField{Type: nil /*TODO*/, Field: ipld.PathSegmentOfString(key)}
 	}
@@ -14002,7 +14221,7 @@ type _StorageTask__MapItr struct {
 }
 
 func (itr *_StorageTask__MapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
-	if itr.idx >= 8 {
+	if itr.idx >= 9 {
 		return nil, nil, ipld.ErrIteratorOverread{}
 	}
 	switch itr.idx {
@@ -14038,6 +14257,13 @@ func (itr *_StorageTask__MapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
 			break
 		}
 		v = itr.n.ScheduleLimit.v
+	case 8:
+		k = &fieldName__StorageTask_Tag
+		if itr.n.Tag.m == schema.Maybe_Absent {
+			v = ipld.Absent
+			break
+		}
+		v = itr.n.Tag.v
 	default:
 		panic("unreachable")
 	}
@@ -14045,14 +14271,14 @@ func (itr *_StorageTask__MapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
 	return
 }
 func (itr *_StorageTask__MapItr) Done() bool {
-	return itr.idx >= 8
+	return itr.idx >= 9
 }
 
 func (StorageTask) ListIterator() ipld.ListIterator {
 	return nil
 }
 func (StorageTask) Length() int64 {
-	return 8
+	return 9
 }
 func (StorageTask) IsAbsent() bool {
 	return false
@@ -14118,6 +14344,7 @@ type _StorageTask__Assembler struct {
 	ca_Verified _Bool__Assembler
 	ca_Schedule _String__Assembler
 	ca_ScheduleLimit _String__Assembler
+	ca_Tag _String__Assembler
 	}
 
 func (na *_StorageTask__Assembler) reset() {
@@ -14131,6 +14358,7 @@ func (na *_StorageTask__Assembler) reset() {
 	na.ca_Verified.reset()
 	na.ca_Schedule.reset()
 	na.ca_ScheduleLimit.reset()
+	na.ca_Tag.reset()
 }
 
 var (
@@ -14142,6 +14370,7 @@ var (
 	fieldBit__StorageTask_Verified = 1 << 5
 	fieldBit__StorageTask_Schedule = 1 << 6
 	fieldBit__StorageTask_ScheduleLimit = 1 << 7
+	fieldBit__StorageTask_Tag = 1 << 8
 	fieldBits__StorageTask_sufficient = 0 + 1 << 0 + 1 << 1 + 1 << 2 + 1 << 3 + 1 << 4 + 1 << 5
 )
 func (na *_StorageTask__Assembler) BeginMap(int64) (ipld.MapAssembler, error) {
@@ -14313,6 +14542,15 @@ func (ma *_StorageTask__Assembler) valueFinishTidy() bool {
 		default:
 			return false
 		}
+	case 8:
+		switch ma.w.Tag.m {
+		case schema.Maybe_Value:
+			ma.w.Tag.v = ma.ca_Tag.w
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
 	default:
 		panic("unreachable")
 	}
@@ -14413,6 +14651,16 @@ func (ma *_StorageTask__Assembler) AssembleEntry(k string) (ipld.NodeAssembler, 
 		ma.ca_ScheduleLimit.w = ma.w.ScheduleLimit.v
 		ma.ca_ScheduleLimit.m = &ma.w.ScheduleLimit.m
 		return &ma.ca_ScheduleLimit, nil
+	case "Tag":
+		if ma.s & fieldBit__StorageTask_Tag != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__StorageTask_Tag}
+		}
+		ma.s += fieldBit__StorageTask_Tag
+		ma.state = maState_midValue
+		ma.f = 8
+		ma.ca_Tag.w = ma.w.Tag.v
+		ma.ca_Tag.m = &ma.w.Tag.m
+		return &ma.ca_Tag, nil
 	default:
 		return nil, ipld.ErrInvalidKey{TypeName:"tasks.StorageTask", Key:&_String{k}}
 	}
@@ -14482,6 +14730,10 @@ func (ma *_StorageTask__Assembler) AssembleValue() ipld.NodeAssembler {
 		ma.ca_ScheduleLimit.w = ma.w.ScheduleLimit.v
 		ma.ca_ScheduleLimit.m = &ma.w.ScheduleLimit.m
 		return &ma.ca_ScheduleLimit
+	case 8:
+		ma.ca_Tag.w = ma.w.Tag.v
+		ma.ca_Tag.m = &ma.w.Tag.m
+		return &ma.ca_Tag
 	default:
 		panic("unreachable")
 	}
@@ -14613,6 +14865,13 @@ func (ka *_StorageTask__KeyAssembler) AssignString(k string) error {
 		ka.s += fieldBit__StorageTask_ScheduleLimit
 		ka.state = maState_expectValue
 		ka.f = 7
+	case "Tag":
+		if ka.s & fieldBit__StorageTask_Tag != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__StorageTask_Tag}
+		}
+		ka.s += fieldBit__StorageTask_Tag
+		ka.state = maState_expectValue
+		ka.f = 8
 	default:
 		return ipld.ErrInvalidKey{TypeName:"tasks.StorageTask", Key:&_String{k}}
 	}
@@ -14650,6 +14909,7 @@ var (
 	fieldName__StorageTask_Verified_serial = _String{"Verified"}
 	fieldName__StorageTask_Schedule_serial = _String{"Schedule"}
 	fieldName__StorageTask_ScheduleLimit_serial = _String{"ScheduleLimit"}
+	fieldName__StorageTask_Tag_serial = _String{"Tag"}
 )
 var _ ipld.Node = &_StorageTask__Repr{}
 func (_StorageTask__Repr) Kind() ipld.Kind {
@@ -14679,6 +14939,11 @@ func (n *_StorageTask__Repr) LookupByString(key string) (ipld.Node, error) {
 			return ipld.Absent, ipld.ErrNotExists{ipld.PathSegmentOfString(key)}
 		}
 		return n.ScheduleLimit.v.Representation(), nil
+	case "Tag":
+		if n.Tag.m == schema.Maybe_Absent {
+			return ipld.Absent, ipld.ErrNotExists{ipld.PathSegmentOfString(key)}
+		}
+		return n.Tag.v.Representation(), nil
 	default:
 		return nil, schema.ErrNoSuchField{Type: nil /*TODO*/, Field: ipld.PathSegmentOfString(key)}
 	}
@@ -14697,7 +14962,12 @@ func (n _StorageTask__Repr) LookupBySegment(seg ipld.PathSegment) (ipld.Node, er
 	return n.LookupByString(seg.String())
 }
 func (n *_StorageTask__Repr) MapIterator() ipld.MapIterator {
-	end := 8
+	end := 9
+	if n.Tag.m == schema.Maybe_Absent {
+		end = 8
+	} else {
+		goto done
+	}
 	if n.ScheduleLimit.m == schema.Maybe_Absent {
 		end = 7
 	} else {
@@ -14719,7 +14989,7 @@ type _StorageTask__ReprMapItr struct {
 }
 
 func (itr *_StorageTask__ReprMapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
-advance:if itr.idx >= 8 {
+advance:if itr.idx >= 9 {
 		return nil, nil, ipld.ErrIteratorOverread{}
 	}
 	switch itr.idx {
@@ -14755,6 +15025,13 @@ advance:if itr.idx >= 8 {
 			goto advance
 		}
 		v = itr.n.ScheduleLimit.v.Representation()
+	case 8:
+		k = &fieldName__StorageTask_Tag_serial
+		if itr.n.Tag.m == schema.Maybe_Absent {
+			itr.idx++
+			goto advance
+		}
+		v = itr.n.Tag.v.Representation()
 	default:
 		panic("unreachable")
 	}
@@ -14768,11 +15045,14 @@ func (_StorageTask__Repr) ListIterator() ipld.ListIterator {
 	return nil
 }
 func (rn *_StorageTask__Repr) Length() int64 {
-	l := 8
+	l := 9
 	if rn.Schedule.m == schema.Maybe_Absent {
 		l--
 	}
 	if rn.ScheduleLimit.m == schema.Maybe_Absent {
+		l--
+	}
+	if rn.Tag.m == schema.Maybe_Absent {
 		l--
 	}
 	return int64(l)
@@ -14841,6 +15121,7 @@ type _StorageTask__ReprAssembler struct {
 	ca_Verified _Bool__ReprAssembler
 	ca_Schedule _String__ReprAssembler
 	ca_ScheduleLimit _String__ReprAssembler
+	ca_Tag _String__ReprAssembler
 	}
 
 func (na *_StorageTask__ReprAssembler) reset() {
@@ -14854,6 +15135,7 @@ func (na *_StorageTask__ReprAssembler) reset() {
 	na.ca_Verified.reset()
 	na.ca_Schedule.reset()
 	na.ca_ScheduleLimit.reset()
+	na.ca_Tag.reset()
 }
 func (na *_StorageTask__ReprAssembler) BeginMap(int64) (ipld.MapAssembler, error) {
 	switch *na.m {
@@ -15012,6 +15294,15 @@ func (ma *_StorageTask__ReprAssembler) valueFinishTidy() bool {
 		default:
 			return false
 		}
+	case 8:
+		switch ma.w.Tag.m {
+		case schema.Maybe_Value:
+			ma.w.Tag.v = ma.ca_Tag.w
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
 	default:
 		panic("unreachable")
 	}
@@ -15114,6 +15405,17 @@ func (ma *_StorageTask__ReprAssembler) AssembleEntry(k string) (ipld.NodeAssembl
 		ma.ca_ScheduleLimit.m = &ma.w.ScheduleLimit.m
 		
 		return &ma.ca_ScheduleLimit, nil
+	case "Tag":
+		if ma.s & fieldBit__StorageTask_Tag != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__StorageTask_Tag_serial}
+		}
+		ma.s += fieldBit__StorageTask_Tag
+		ma.state = maState_midValue
+		ma.f = 8
+		ma.ca_Tag.w = ma.w.Tag.v
+		ma.ca_Tag.m = &ma.w.Tag.m
+		
+		return &ma.ca_Tag, nil
 	default:
 		return nil, ipld.ErrInvalidKey{TypeName:"tasks.StorageTask.Repr", Key:&_String{k}}
 	}
@@ -15185,6 +15487,11 @@ func (ma *_StorageTask__ReprAssembler) AssembleValue() ipld.NodeAssembler {
 		ma.ca_ScheduleLimit.m = &ma.w.ScheduleLimit.m
 		
 		return &ma.ca_ScheduleLimit
+	case 8:
+		ma.ca_Tag.w = ma.w.Tag.v
+		ma.ca_Tag.m = &ma.w.Tag.m
+		
+		return &ma.ca_Tag
 	default:
 		panic("unreachable")
 	}
@@ -15316,6 +15623,13 @@ func (ka *_StorageTask__ReprKeyAssembler) AssignString(k string) error {
 		ka.s += fieldBit__StorageTask_ScheduleLimit
 		ka.state = maState_expectValue
 		ka.f = 7
+	case "Tag":
+		if ka.s & fieldBit__StorageTask_Tag != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__StorageTask_Tag_serial}
+		}
+		ka.s += fieldBit__StorageTask_Tag
+		ka.state = maState_expectValue
+		ka.f = 8
 	default:
 		return ipld.ErrInvalidKey{TypeName:"tasks.StorageTask.Repr", Key:&_String{k}}
 	}

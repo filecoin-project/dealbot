@@ -21,14 +21,14 @@ func GenerateMockTasks(ctx context.Context, cliCtx *cli.Context) error {
 		return fmt.Errorf("Cannot have more retrievals than total tasks")
 	}
 	for i := 0; i < numRetrievals; i++ {
-		rt := tasks.Type.RetrievalTask.Of(generateRandomMiner(), generateRandomCID(), false)
+		rt := tasks.Type.RetrievalTask.Of(generateRandomMiner(), generateRandomCID(), false, "")
 		_, err := client.CreateRetrievalTask(ctx, rt)
 		if err != nil {
 			return err
 		}
 	}
 	for i := numRetrievals; i < numTasks; i++ {
-		st := tasks.Type.StorageTask.Of(generateRandomMiner(), int64(rand.Uint64()), int64(rand.Uint64()), int64(rand.Uint64()), rand.Intn(2) != 0, rand.Intn(2) != 0)
+		st := tasks.Type.StorageTask.Of(generateRandomMiner(), int64(rand.Uint64()), int64(rand.Uint64()), int64(rand.Uint64()), rand.Intn(2) != 0, rand.Intn(2) != 0, "")
 
 		_, err := client.CreateStorageTask(ctx, st)
 		if err != nil {

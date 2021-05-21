@@ -1,12 +1,21 @@
 package tasks
 
-import "github.com/ipld/go-ipld-prime/schema"
+import (
+	"strings"
+
+	"github.com/ipld/go-ipld-prime/schema"
+)
 
 // accessor methods for working with client structs
-func (ptp *_PopTask__Prototype) Of(workedBy string, status Status) *_PopTask {
+func (ptp *_PopTask__Prototype) Of(workedBy string, status Status, tags ...string) *_PopTask {
+	var csvTags string
+	if len(tags) != 0 {
+		csvTags = strings.Join(tags, ",")
+	}
 	pt := _PopTask{
 		WorkedBy: _String{workedBy},
 		Status:   *status,
+		Tags:     _String__Maybe{m: schema.Maybe_Value, v: &_String{csvTags}},
 	}
 	return &pt
 }

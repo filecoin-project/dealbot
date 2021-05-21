@@ -8,7 +8,7 @@ const (
 	`
 
 	createTaskSQL = `
-		INSERT INTO tasks (uuid, data, created, cid) VALUES($1, $2, $3, $4)
+		INSERT INTO tasks (uuid, data, created, cid, tag) VALUES($1, $2, $3, $4, $5)
 	`
 
 	setTaskStatusSQL = `
@@ -46,6 +46,22 @@ const (
 	oldestAvailableTaskSQL = `
 		SELECT uuid, data FROM tasks
 		WHERE worked_by IS NULL
+		ORDER BY created
+		LIMIT 1
+	`
+
+	oldestAvailableTaskWithTagsSQL = `
+		SELECT uuid, data FROM tasks
+		WHERE worked_by IS NULL
+		AND tag is NULL OR tag IN (?)
+		ORDER BY created
+		LIMIT 1
+	`
+
+	oldestAvailableTaskWithTagsSQLsqlite = `
+		SELECT uuid, data FROM tasks
+		WHERE worked_by IS NULL
+		AND tag is NULL OR tag IN (%s)
 		ORDER BY created
 		LIMIT 1
 	`

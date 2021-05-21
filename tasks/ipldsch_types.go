@@ -193,6 +193,7 @@ type PopTask = *_PopTask
 type _PopTask struct {
 	Status _Status
 	WorkedBy _String
+	Tags _String__Maybe
 }
 
 // RecordUpdate matches the IPLD Schema type "RecordUpdate".  It has Struct type-kind, and may be interrogated like map kind.
@@ -211,6 +212,7 @@ type _RetrievalTask struct {
 	CARExport _Bool
 	Schedule _String__Maybe
 	ScheduleLimit _String__Maybe
+	Tag _String__Maybe
 }
 
 // StageDetails matches the IPLD Schema type "StageDetails".  It has Struct type-kind, and may be interrogated like map kind.
@@ -237,6 +239,7 @@ type _StorageTask struct {
 	Verified _Bool
 	Schedule _String__Maybe
 	ScheduleLimit _String__Maybe
+	Tag _String__Maybe
 }
 
 // String matches the IPLD Schema type "String".  It has string kind.

@@ -106,7 +106,8 @@ func TestControllerHTTPInterface(t *testing.T) {
 				2048,               // 1kb
 				0,
 				true,
-				true)
+				true,
+				"")
 			task, err := apiClient.CreateStorageTask(ctx, newStorageTask)
 			require.NoError(t, err)
 			require.Equal(t, task.StorageTask.Must(), newStorageTask)
@@ -121,6 +122,7 @@ func TestControllerHTTPInterface(t *testing.T) {
 				"f0127896",
 				"bafykbzacedikkmeotawrxqquthryw3cijaonobygdp7fb5bujhuos6wdkwomm",
 				false,
+				"",
 			)
 			task, err = apiClient.CreateRetrievalTask(ctx, newRetrievalTask)
 			require.NoError(t, err)

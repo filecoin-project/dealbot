@@ -159,11 +159,12 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(updateStage UpdateStage) 
 	return nil
 }
 
-func (rp *_RetrievalTask__Prototype) Of(minerParam string, payloadCid string, carExport bool) RetrievalTask {
+func (rp *_RetrievalTask__Prototype) Of(minerParam string, payloadCid string, carExport bool, tag string) RetrievalTask {
 	rt := _RetrievalTask{
 		Miner:      _String{minerParam},
 		PayloadCID: _String{payloadCid},
 		CARExport:  _Bool{carExport},
+		Tag:        asStrM(tag),
 	}
 	return &rt
 }

@@ -10,6 +10,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -28,6 +29,7 @@ import (
 	// DB interfaces
 	"github.com/filecoin-project/dealbot/controller/state/postgresdb"
 	"github.com/filecoin-project/dealbot/controller/state/sqlitedb"
+	//"github.com/lib/pq"
 
 	// DB migrations
 	"github.com/golang-migrate/migrate/v4"
@@ -277,6 +279,17 @@ func (s *stateDB) AssignTask(ctx context.Context, req tasks.PopTask) (tasks.Task
 		return nil, fmt.Errorf("cannot assign %q status to task", req.Status.String())
 	}
 
+	var tags []interface{}
+	if req.Tags.Exists() {
+		for _, t := range strings.Split(req.Tags.Must().String(), ",") {
+			t = strings.TrimSpace(t)
+			if t == "" {
+				continue
+			}
+			tags = append(tags, t)
+		}
+	}
+
 	var assigned tasks.Task
 	err := s.transact(ctx, func(tx *sql.Tx) error {
 		var cnt int
@@ -284,13 +297,21 @@ func (s *stateDB) AssignTask(ctx context.Context, req tasks.PopTask) (tasks.Task
 		if err != nil {
 			return err
 		}
+
 		if cnt > 0 {
 			// worker is being drained
 			return nil
 		}
 
 		var taskID, serialized string
-		err = tx.QueryRowContext(ctx, oldestAvailableTaskSQL).Scan(&taskID, &serialized)
+		if len(tags) == 0 {
+			err = tx.QueryRowContext(ctx, oldestAvailableTaskSQL).Scan(&taskID, &serialized)
+		} else {
+			//err = tx.QueryRowContext(ctx, oldestAvailableTaskWithTagsSQL, pq.Array(tags)).Scan(&taskID, &serialized, &tasktag)
+			// This SQL formation is needed for sqlite.  Is there a better way?
+			sql := fmt.Sprintf(oldestAvailableTaskWithTagsSQLsqlite, "?"+strings.Repeat(",?", len(tags)-1))
+			err = tx.QueryRowContext(ctx, sql, tags...).Scan(&taskID, &serialized)
+		}
 		if err != nil {
 			if err == sql.ErrNoRows {
 				// There are no available tasks
@@ -455,9 +476,12 @@ func txContextLoader(ctx context.Context, tx *sql.Tx) ipld.Loader {
 
 func (s *stateDB) NewStorageTask(ctx context.Context, storageTask tasks.StorageTask) (tasks.Task, error) {
 	task := tasks.Type.Task.New(nil, storageTask)
-
+	var tag string
+	if storageTask.Tag.Exists() {
+		tag = storageTask.Tag.Must().String()
+	}
 	// save the update back to DB
-	if err := s.saveTask(ctx, task); err != nil {
+	if err := s.saveTask(ctx, task, tag); err != nil {
 		return nil, err
 	}
 
@@ -466,9 +490,13 @@ func (s *stateDB) NewStorageTask(ctx context.Context, storageTask tasks.StorageT
 
 func (s *stateDB) NewRetrievalTask(ctx context.Context, retrievalTask tasks.RetrievalTask) (tasks.Task, error) {
 	task := tasks.Type.Task.New(retrievalTask, nil)
+	var tag string
+	if retrievalTask.Tag.Exists() {
+		tag = retrievalTask.Tag.Must().String()
+	}
 
 	// save the update back to DB
-	if err := s.saveTask(ctx, task); err != nil {
+	if err := s.saveTask(ctx, task, tag); err != nil {
 		return nil, err
 	}
 
@@ -554,15 +582,23 @@ func withTransaction(ctx context.Context, db *sql.DB, f func(*sql.Tx) error) (er
 }
 
 // createTask inserts a new task and new task status into the database
-func (s *stateDB) saveTask(ctx context.Context, task tasks.Task) error {
+func (s *stateDB) saveTask(ctx context.Context, task tasks.Task, tag string) error {
 	lnk, data, err := serializeToJSON(ctx, task.Representation())
 	if err != nil {
 		return err
 	}
 
+	var tagCol sql.NullString
+	if tag != "" {
+		tagCol = sql.NullString{
+			String: tag,
+			Valid:  true,
+		}
+	}
+
 	return s.transact(ctx, func(tx *sql.Tx) error {
 		now := time.Now()
-		if _, err := tx.ExecContext(ctx, createTaskSQL, task.UUID.String(), data, now, lnk.String()); err != nil {
+		if _, err := tx.ExecContext(ctx, createTaskSQL, task.UUID.String(), data, now, lnk.String(), tagCol); err != nil {
 			return err
 		}
 

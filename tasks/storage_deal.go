@@ -324,7 +324,7 @@ func logStages(info api.DealInfo, log LogStatus) {
 	}
 }
 
-func (sp *_StorageTask__Prototype) Of(miner string, maxPrice, size, startOffset int64, fastRetrieval, verified bool) StorageTask {
+func (sp *_StorageTask__Prototype) Of(miner string, maxPrice, size, startOffset int64, fastRetrieval, verified bool, tag string) StorageTask {
 	st := _StorageTask{
 		Miner:           _String{miner},
 		MaxPriceAttoFIL: _Int{maxPrice},
@@ -332,6 +332,7 @@ func (sp *_StorageTask__Prototype) Of(miner string, maxPrice, size, startOffset 
 		StartOffset:     _Int{startOffset},
 		FastRetrieval:   _Bool{fastRetrieval},
 		Verified:        _Bool{verified},
+		Tag:             asStrM(tag),
 	}
 	return &st
 }

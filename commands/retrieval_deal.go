@@ -37,7 +37,7 @@ func makeRetrievalDeal(cctx *cli.Context) error {
 	// get miner address
 	minerParam := cctx.String("miner")
 
-	task := tasks.Type.RetrievalTask.Of(minerParam, payloadCid, carExport)
+	task := tasks.Type.RetrievalTask.Of(minerParam, payloadCid, carExport, "")
 
 	err = tasks.MakeRetrievalDeal(cctx.Context, nodeConfig, node, task, emptyUpdateStage, log.Infow)
 	if err != nil {
