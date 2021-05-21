@@ -13,7 +13,7 @@ import (
 var QueueStorageCmd = &cli.Command{
 	Name:   "queue-storage",
 	Usage:  "Queue storage deal in the controller",
-	Flags:  append(EndpointFlags, StorageFlags...),
+	Flags:  append(append(EndpointFlags, MinerFlags...), StorageFlags...),
 	Action: queueStorageDeal,
 }
 
