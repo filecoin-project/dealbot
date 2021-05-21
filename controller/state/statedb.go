@@ -29,7 +29,7 @@ import (
 	// DB interfaces
 	"github.com/filecoin-project/dealbot/controller/state/postgresdb"
 	"github.com/filecoin-project/dealbot/controller/state/sqlitedb"
-	//"github.com/lib/pq"
+	"github.com/lib/pq"
 
 	// DB migrations
 	"github.com/golang-migrate/migrate/v4"
@@ -307,10 +307,13 @@ func (s *stateDB) AssignTask(ctx context.Context, req tasks.PopTask) (tasks.Task
 		if len(tags) == 0 {
 			err = tx.QueryRowContext(ctx, oldestAvailableTaskSQL).Scan(&taskID, &serialized)
 		} else {
-			//err = tx.QueryRowContext(ctx, oldestAvailableTaskWithTagsSQL, pq.Array(tags)).Scan(&taskID, &serialized, &tasktag)
-			// This SQL formation is needed for sqlite.  Is there a better way?
-			sql := fmt.Sprintf(oldestAvailableTaskWithTagsSQLsqlite, "?"+strings.Repeat(",?", len(tags)-1))
-			err = tx.QueryRowContext(ctx, sql, tags...).Scan(&taskID, &serialized)
+			if s.dbconn.Name() == "postgres" {
+				err = tx.QueryRowContext(ctx, oldestAvailableTaskWithTagsSQL, pq.Array(tags)).Scan(&taskID, &serialized)
+			} else {
+				// This SQL formation is needed for sqlite.  Is there a better way?
+				sql := fmt.Sprintf(oldestAvailableTaskWithTagsSQLsqlite, "?"+strings.Repeat(",?", len(tags)-1))
+				err = tx.QueryRowContext(ctx, sql, tags...).Scan(&taskID, &serialized)
+			}
 		}
 		if err != nil {
 			if err == sql.ErrNoRows {
