@@ -2,12 +2,18 @@ package postgresdb
 
 import (
 	"database/sql"
+	"database/sql/driver"
 	"fmt"
+	"math/rand"
+	"net"
+	"net/url"
 	"os"
 	"sync"
+	"syscall"
+	"time"
 
 	// include postgres driver
-	_ "github.com/lib/pq"
+	"github.com/lib/pq"
 )
 
 // PostgresDB is a sql.DB with reconnect functionality.
@@ -26,6 +32,8 @@ type PostgresConfig struct {
 	Database string
 	SSLMode  string
 }
+
+const serializationErrorRetryDelay = 30 * time.Millisecond
 
 func (pgcfg PostgresConfig) String() string {
 	if pgcfg.Host == "" {
@@ -85,8 +93,67 @@ func (db *PostgresDB) Connect() error {
 	return nil
 }
 
+func (db *PostgresDB) Name() string {
+	return "postgres"
+}
+
 func (db *PostgresDB) SqlDB() *sql.DB {
 	db.mutex.Lock()
 	defer db.mutex.Unlock()
 	return db.DB
+}
+
+// RetryableError determines if a transaction should be retried after failing
+// due to the specified error.  When true, sleeps for a short random time
+// before returning.
+func (db *PostgresDB) RetryableError(err error) bool {
+	const (
+		errSerializationFailure  = "40001"
+		errDeadlockDetected      = "40P01"
+		errInsufficientResources = "53000"
+		errCannotConnectNow      = "57P03"
+	)
+
+	if e, ok := err.(*pq.Error); ok {
+		switch string(e.Code) {
+		case errSerializationFailure, errDeadlockDetected, errCannotConnectNow, errInsufficientResources:
+			time.Sleep(time.Duration(rand.Int63n(int64(serializationErrorRetryDelay + 1))))
+			return true
+		}
+	}
+	if err == driver.ErrBadConn {
+		if connErr := db.Connect(); connErr != nil {
+			// If failed to reconnect, wait before retrying in hopes that the
+			// database will be online by next retry
+			time.Sleep(time.Second)
+		}
+		return true
+	}
+	return retryableError(err)
+}
+
+func retryableError(err error) bool {
+	switch e := err.(type) {
+	case *net.DNSError:
+		return e.Temporary()
+	case *net.OpError:
+		if e.Temporary() {
+			return true
+		}
+		return retryableError(e.Err)
+	case *url.Error:
+		if e.Temporary() {
+			return true
+		}
+		return retryableError(e.Err)
+	case *os.SyscallError:
+		return retryableError(e.Err)
+	case syscall.Errno:
+		return e == syscall.EAGAIN ||
+			e == syscall.ECONNABORTED ||
+			e == syscall.ECONNRESET ||
+			e == syscall.ENETRESET ||
+			e == syscall.ENODATA
+	}
+	return false
 }
