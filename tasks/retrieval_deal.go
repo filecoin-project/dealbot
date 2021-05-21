@@ -123,7 +123,7 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(updateStage UpdateStage) 
 			retrievalmarket.DealStatusRejected,
 			retrievalmarket.DealStatusDealNotFound:
 
-			return errors.New("retrieval deal failed")
+			return fmt.Errorf("retrieval deal failed: %s", event.Err)
 
 		// deal is on chain, exit successfully
 		case retrievalmarket.DealStatusCompleted:

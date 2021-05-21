@@ -234,11 +234,12 @@ func (t *_Task) Assign(worker string, status Status) Task {
 	return &newTask
 }
 
-func (t *_Task) Update(status Status, stage string, details StageDetails, runCount int) (Task, error) {
+func (t *_Task) Update(status Status, stage string, errorMessage string, details StageDetails, runCount int) (Task, error) {
 	updatedTask := _Task{
 		UUID:          t.UUID,
 		Status:        *status,
 		WorkedBy:      t.WorkedBy,
+		ErrorMessage:  _String{errorMessage},
 		Stage:         _String{stage},
 		StartedAt:     t.StartedAt,
 		RunCount:      _Int{int64(runCount)},
@@ -274,6 +275,7 @@ func (t *_Task) Finalize(ctx context.Context, s ipld.Storer) (FinishedTask, erro
 	ft := _FinishedTask{
 		Status:             t.Status,
 		StartedAt:          *t.StartedAt.v,
+		ErrorMessage:       t.ErrorMessage,
 		RetrievalTask:      t.RetrievalTask,
 		StorageTask:        t.StorageTask,
 		DealID:             _Int{int64(dealID)},
@@ -304,9 +306,13 @@ func parseFinalLogs(t Task) (int, string, string, _Int__Maybe, _Int__Maybe, _Int
 func (t *_Task) UpdateTask(tsk UpdateTask) (Task, error) {
 	stage := ""
 	if tsk.Stage.Exists() {
-		stage = tsk.Stage.Must().x
+		stage = tsk.Stage.Must().String()
 	}
-	nt, err := t.Update(&tsk.Status, stage, tsk.CurrentStageDetails.v, int(tsk.RunCount.Int()))
+	errorMessage := ""
+	if tsk.ErrorMessage.Exists() {
+		errorMessage = tsk.ErrorMessage.Must().String()
+	}
+	nt, err := t.Update(&tsk.Status, stage, errorMessage, tsk.CurrentStageDetails.v, int(tsk.RunCount.Int()))
 	if err != nil {
 		return nil, err
 	}

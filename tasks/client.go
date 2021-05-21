@@ -15,6 +15,7 @@ func (utp *_UpdateTask__Prototype) Of(workedBy string, status Status, runCount i
 	ut := _UpdateTask{
 		WorkedBy:            _String{workedBy},
 		Status:              *status,
+		ErrorMessage:        _String__Maybe{m: schema.Maybe_Absent},
 		CurrentStageDetails: _StageDetails__Maybe{m: schema.Maybe_Absent},
 		Stage:               _String__Maybe{m: schema.Maybe_Absent},
 		RunCount:            _Int{int64(runCount)},
@@ -22,10 +23,11 @@ func (utp *_UpdateTask__Prototype) Of(workedBy string, status Status, runCount i
 	return &ut
 }
 
-func (utp *_UpdateTask__Prototype) OfStage(workedBy string, status Status, stage string, details StageDetails, runCount int) *_UpdateTask {
+func (utp *_UpdateTask__Prototype) OfStage(workedBy string, status Status, errorMessage string, stage string, details StageDetails, runCount int) *_UpdateTask {
 	ut := _UpdateTask{
 		WorkedBy:            _String{workedBy},
 		Status:              *status,
+		ErrorMessage:        _String__Maybe{m: schema.Maybe_Value, v: &_String{errorMessage}},
 		CurrentStageDetails: _StageDetails__Maybe{m: schema.Maybe_Value, v: details},
 		Stage:               _String__Maybe{m: schema.Maybe_Value, v: &_String{stage}},
 		RunCount:            _Int{int64(runCount)},

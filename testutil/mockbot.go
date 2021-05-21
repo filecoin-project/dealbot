@@ -135,12 +135,15 @@ func (md *MockDaemon) worker(n int) {
 			return
 		case <-timer.C:
 			result := tasks.Successful
+			errorMessage := ""
 			if !isSuccess {
 				result = tasks.Failed
+				errorMessage = "Something terrible happened"
 			}
 			req := tasks.Type.UpdateTask.OfStage(
 				md.host,
 				result,
+				errorMessage,
 				stage,
 				stageDetails,
 				1,
