@@ -2,7 +2,6 @@ package engine
 
 import (
 	"context"
-	"strings"
 	"sync"
 	"time"
 
@@ -67,7 +66,7 @@ func New(ctx context.Context, cliCtx *cli.Context) (*Engine, error) {
 		sched:      scheduler.New(),
 		shutdown:   make(chan struct{}),
 		stopped:    make(chan struct{}),
-		tags:       strings.Split(cliCtx.String("tags"), ","),
+		tags:       cliCtx.StringSlice("tags"),
 	}
 
 	go e.run(workers)
