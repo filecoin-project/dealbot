@@ -70,7 +70,7 @@ func (s *Scheduler) Add(cronExp string, task tasks.Task, maxRunTime, scheduleLim
 		shutdown:   s.shutdown,
 	}
 	if cronExp == RunNow {
-		j.Run()
+		go j.Run()
 		return noEnt, nil
 	}
 	if scheduleLimit != 0 {
