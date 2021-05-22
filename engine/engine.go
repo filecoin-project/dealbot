@@ -166,7 +166,7 @@ func (e *Engine) runTask(ctx context.Context, task tasks.Task, runCount, worker 
 
 	// Define function to update task stage.  Use shutdown context, not task
 	updateStage := func(stage string, stageDetails tasks.StageDetails) error {
-		task, err = e.client.UpdateTask(ctx, task.UUID.String(),
+		updatedTask, err := e.client.UpdateTask(ctx, task.UUID.String(),
 			tasks.Type.UpdateTask.OfStage(
 				e.host,
 				tasks.InProgress,
@@ -175,6 +175,11 @@ func (e *Engine) runTask(ctx context.Context, task tasks.Task, runCount, worker 
 				stageDetails,
 				runCount,
 			))
+		// TODO: this is a weird side-effecty behavior and we should find a way
+		// to remove it
+		if err == nil {
+			task = updatedTask
+		}
 		return err
 	}
 
