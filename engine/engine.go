@@ -20,6 +20,9 @@ const (
 	maxTaskRunTime = 24 * time.Hour
 	noTasksWait    = 5 * time.Second
 	popTaskTimeout = 2 * time.Second
+
+	defaultProposeRetrievalTimeout = 30 * time.Minute
+	defaultDealAcceptedTimeout     = 30 * time.Minute
 )
 
 var log = logging.Logger("engine")
@@ -35,6 +38,8 @@ type Engine struct {
 	shutdown   chan struct{}
 	stopped    chan struct{}
 	tags       []string
+
+	statusTimeouts map[string]time.Duration
 }
 
 func New(ctx context.Context, cliCtx *cli.Context) (*Engine, error) {
@@ -58,6 +63,12 @@ func New(ctx context.Context, cliCtx *cli.Context) (*Engine, error) {
 	v, err := node.Version(ctx)
 	if err != nil {
 		return nil, err
+	}
+
+	// Establish default timeouts
+	stageTimeouts := map[string]time.Duration{
+		"ProposeRetrieval": defaultProposeRetrievalTimeout,
+		"DealAccepted":     defaultDealAcceptedTimeout,
 	}
 
 	log.Infof("remote version: %s", v.Version)
