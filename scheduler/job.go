@@ -40,11 +40,20 @@ func (j *job) Run() {
 		return
 	}
 
+	done := make(chan struct{})
+	j.Queue(func() {
+		close(done)
+	})
+	// Wait for worker to signal that job is completed or jobs to be
+	// canceled. Do not wait for shutdown here so that running jobs can finish.
+	<-done
+}
+
+func (j *job) Queue(done func()) {
 	j.runCount++
 
 	// Create a context to manage the running time of the current task
 	runCtx, runCancel := context.WithTimeout(context.Background(), j.runTime)
-	defer runCancel()
 
 	jobInfo := Job{
 		Context:  runCtx,
@@ -60,10 +69,13 @@ func (j *job) Run() {
 	case <-j.shutdown:
 		return
 	}
-	// Wait for worker to signal that job is completed or jobs to be
-	// canceled. Do not wait for shutdown here so that running jobs can finish.
-	select {
-	case <-runCtx.Done():
-	case <-j.cancelJobs:
-	}
+
+	go func() {
+		defer runCancel()
+		select {
+		case <-runCtx.Done():
+		case <-j.cancelJobs:
+		}
+		done()
+	}()
 }
