@@ -281,8 +281,13 @@ func (s *stateDB) AssignTask(ctx context.Context, req tasks.PopTask) (tasks.Task
 
 	var tags []interface{}
 	if req.Tags.Exists() {
-		for _, t := range strings.Split(req.Tags.Must().String(), ",") {
-			t = strings.TrimSpace(t)
+		reqTags := req.Tags.Must()
+		tags = make([]interface{}, 0, reqTags.Length())
+		iter := reqTags.Iterator()
+		for !iter.Done() {
+			_, v := iter.Next()
+			t := strings.TrimSpace(v.String())
+			fmt.Println("t:", t)
 			if t == "" {
 				continue
 			}

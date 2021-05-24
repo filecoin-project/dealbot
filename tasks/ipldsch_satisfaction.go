@@ -7751,6 +7751,599 @@ func (la *_List_StageDetails__ReprAssembler) ValuePrototype(_ int64) ipld.NodePr
 	return _StageDetails__ReprPrototype{}
 }
 
+func (n *_List_String) Lookup(idx int64) String {
+	if n.Length() <= idx {
+		return nil
+	}
+	v := &n.x[idx]
+	return v
+}
+func (n *_List_String) LookupMaybe(idx int64) MaybeString {
+	if n.Length() <= idx {
+		return nil
+	}
+	v := &n.x[idx]
+	return &_String__Maybe{
+		m: schema.Maybe_Value,
+		v: v,
+	}
+}
+
+var _List_String__valueAbsent = _String__Maybe{m:schema.Maybe_Absent}
+func (n List_String) Iterator() *List_String__Itr {
+	return &List_String__Itr{n, 0}
+}
+
+type List_String__Itr struct {
+	n List_String
+	idx  int
+}
+
+func (itr *List_String__Itr) Next() (idx int64, v String) {
+	if itr.idx >= len(itr.n.x) {
+		return -1, nil
+	}
+	idx = int64(itr.idx)
+	v = &itr.n.x[itr.idx]
+	itr.idx++
+	return
+}
+func (itr *List_String__Itr) Done() bool {
+	return itr.idx >= len(itr.n.x)
+}
+
+type _List_String__Maybe struct {
+	m schema.Maybe
+	v List_String
+}
+type MaybeList_String = *_List_String__Maybe
+
+func (m MaybeList_String) IsNull() bool {
+	return m.m == schema.Maybe_Null
+}
+func (m MaybeList_String) IsAbsent() bool {
+	return m.m == schema.Maybe_Absent
+}
+func (m MaybeList_String) Exists() bool {
+	return m.m == schema.Maybe_Value
+}
+func (m MaybeList_String) AsNode() ipld.Node {
+	switch m.m {
+		case schema.Maybe_Absent:
+			return ipld.Absent
+		case schema.Maybe_Null:
+			return ipld.Null
+		case schema.Maybe_Value:
+			return m.v
+		default:
+			panic("unreachable")
+	}
+}
+func (m MaybeList_String) Must() List_String {
+	if !m.Exists() {
+		panic("unbox of a maybe rejected")
+	}
+	return m.v
+}
+var _ ipld.Node = (List_String)(&_List_String{})
+var _ schema.TypedNode = (List_String)(&_List_String{})
+func (List_String) Kind() ipld.Kind {
+	return ipld.Kind_List
+}
+func (List_String) LookupByString(string) (ipld.Node, error) {
+	return mixins.List{"tasks.List_String"}.LookupByString("")
+}
+func (n List_String) LookupByNode(k ipld.Node) (ipld.Node, error) {
+	idx, err := k.AsInt()
+	if err != nil {
+		return nil, err
+	}
+	return n.LookupByIndex(idx)
+}
+func (n List_String) LookupByIndex(idx int64) (ipld.Node, error) {
+	if n.Length() <= idx {
+		return nil, ipld.ErrNotExists{ipld.PathSegmentOfInt(idx)}
+	}
+	v := &n.x[idx]
+	return v, nil
+}
+func (n List_String) LookupBySegment(seg ipld.PathSegment) (ipld.Node, error) {
+	i, err := seg.Index()
+	if err != nil {
+		return nil, ipld.ErrInvalidSegmentForList{TypeName: "tasks.List_String", TroubleSegment: seg, Reason: err}
+	}
+	return n.LookupByIndex(i)
+}
+func (List_String) MapIterator() ipld.MapIterator {
+	return nil
+}
+func (n List_String) ListIterator() ipld.ListIterator {
+	return &_List_String__ListItr{n, 0}
+}
+
+type _List_String__ListItr struct {
+	n List_String
+	idx  int
+}
+
+func (itr *_List_String__ListItr) Next() (idx int64, v ipld.Node, _ error) {
+	if itr.idx >= len(itr.n.x) {
+		return -1, nil, ipld.ErrIteratorOverread{}
+	}
+	idx = int64(itr.idx)
+	x := &itr.n.x[itr.idx]
+	v = x
+	itr.idx++
+	return
+}
+func (itr *_List_String__ListItr) Done() bool {
+	return itr.idx >= len(itr.n.x)
+}
+
+func (n List_String) Length() int64 {
+	return int64(len(n.x))
+}
+func (List_String) IsAbsent() bool {
+	return false
+}
+func (List_String) IsNull() bool {
+	return false
+}
+func (List_String) AsBool() (bool, error) {
+	return mixins.List{"tasks.List_String"}.AsBool()
+}
+func (List_String) AsInt() (int64, error) {
+	return mixins.List{"tasks.List_String"}.AsInt()
+}
+func (List_String) AsFloat() (float64, error) {
+	return mixins.List{"tasks.List_String"}.AsFloat()
+}
+func (List_String) AsString() (string, error) {
+	return mixins.List{"tasks.List_String"}.AsString()
+}
+func (List_String) AsBytes() ([]byte, error) {
+	return mixins.List{"tasks.List_String"}.AsBytes()
+}
+func (List_String) AsLink() (ipld.Link, error) {
+	return mixins.List{"tasks.List_String"}.AsLink()
+}
+func (List_String) Prototype() ipld.NodePrototype {
+	return _List_String__Prototype{}
+}
+type _List_String__Prototype struct{}
+
+func (_List_String__Prototype) NewBuilder() ipld.NodeBuilder {
+	var nb _List_String__Builder
+	nb.Reset()
+	return &nb
+}
+type _List_String__Builder struct {
+	_List_String__Assembler
+}
+func (nb *_List_String__Builder) Build() ipld.Node {
+	if *nb.m != schema.Maybe_Value {
+		panic("invalid state: cannot call Build on an assembler that's not finished")
+	}
+	return nb.w
+}
+func (nb *_List_String__Builder) Reset() {
+	var w _List_String
+	var m schema.Maybe
+	*nb = _List_String__Builder{_List_String__Assembler{w: &w, m: &m}}
+}
+type _List_String__Assembler struct {
+	w *_List_String
+	m *schema.Maybe
+	state laState
+
+	cm schema.Maybe
+	va _String__Assembler
+}
+
+func (na *_List_String__Assembler) reset() {
+	na.state = laState_initial
+	na.va.reset()
+}
+func (_List_String__Assembler) BeginMap(sizeHint int64) (ipld.MapAssembler, error) {
+	return mixins.ListAssembler{"tasks.List_String"}.BeginMap(0)
+}
+func (na *_List_String__Assembler) BeginList(sizeHint int64) (ipld.ListAssembler, error) {
+	switch *na.m {
+	case schema.Maybe_Value, schema.Maybe_Null:
+		panic("invalid state: cannot assign into assembler that's already finished")
+	case midvalue:
+		panic("invalid state: it makes no sense to 'begin' twice on the same assembler!")
+	}
+	*na.m = midvalue
+	if sizeHint < 0 {
+		sizeHint = 0
+	}
+	if na.w == nil {
+		na.w = &_List_String{}
+	}
+	if sizeHint > 0 {
+		na.w.x = make([]_String, 0, sizeHint)
+	}
+	return na, nil
+}
+func (na *_List_String__Assembler) AssignNull() error {
+	switch *na.m {
+	case allowNull:
+		*na.m = schema.Maybe_Null
+		return nil
+	case schema.Maybe_Absent:
+		return mixins.ListAssembler{"tasks.List_String"}.AssignNull()
+	case schema.Maybe_Value, schema.Maybe_Null:
+		panic("invalid state: cannot assign into assembler that's already finished")
+	case midvalue:
+		panic("invalid state: cannot assign null into an assembler that's already begun working on recursive structures!")
+	}
+	panic("unreachable")
+}
+func (_List_String__Assembler) AssignBool(bool) error {
+	return mixins.ListAssembler{"tasks.List_String"}.AssignBool(false)
+}
+func (_List_String__Assembler) AssignInt(int64) error {
+	return mixins.ListAssembler{"tasks.List_String"}.AssignInt(0)
+}
+func (_List_String__Assembler) AssignFloat(float64) error {
+	return mixins.ListAssembler{"tasks.List_String"}.AssignFloat(0)
+}
+func (_List_String__Assembler) AssignString(string) error {
+	return mixins.ListAssembler{"tasks.List_String"}.AssignString("")
+}
+func (_List_String__Assembler) AssignBytes([]byte) error {
+	return mixins.ListAssembler{"tasks.List_String"}.AssignBytes(nil)
+}
+func (_List_String__Assembler) AssignLink(ipld.Link) error {
+	return mixins.ListAssembler{"tasks.List_String"}.AssignLink(nil)
+}
+func (na *_List_String__Assembler) AssignNode(v ipld.Node) error {
+	if v.IsNull() {
+		return na.AssignNull()
+	}
+	if v2, ok := v.(*_List_String); ok {
+		switch *na.m {
+		case schema.Maybe_Value, schema.Maybe_Null:
+			panic("invalid state: cannot assign into assembler that's already finished")
+		case midvalue:
+			panic("invalid state: cannot assign null into an assembler that's already begun working on recursive structures!")
+		}
+		if na.w == nil {
+			na.w = v2
+			*na.m = schema.Maybe_Value
+			return nil
+		}
+		*na.w = *v2
+		*na.m = schema.Maybe_Value
+		return nil
+	}
+	if v.Kind() != ipld.Kind_List {
+		return ipld.ErrWrongKind{TypeName: "tasks.List_String", MethodName: "AssignNode", AppropriateKind: ipld.KindSet_JustList, ActualKind: v.Kind()}
+	}
+	itr := v.ListIterator()
+	for !itr.Done() {
+		_, v, err := itr.Next()
+		if err != nil {
+			return err
+		}
+		if err := na.AssembleValue().AssignNode(v); err != nil {
+			return err
+		}
+	}
+	return na.Finish()
+}
+func (_List_String__Assembler) Prototype() ipld.NodePrototype {
+	return _List_String__Prototype{}
+}
+func (la *_List_String__Assembler) valueFinishTidy() bool {
+	switch la.cm {
+	case schema.Maybe_Value:
+		la.va.w = nil
+		la.cm = schema.Maybe_Absent
+		la.state = laState_initial
+		la.va.reset()
+		return true
+	default:
+		return false
+	}
+}
+func (la *_List_String__Assembler) AssembleValue() ipld.NodeAssembler {
+	switch la.state {
+	case laState_initial:
+		// carry on
+	case laState_midValue:
+		if !la.valueFinishTidy() {
+			panic("invalid state: AssembleValue cannot be called when still in the middle of assembling the previous value")
+		} // if tidy success: carry on
+	case laState_finished:
+		panic("invalid state: AssembleValue cannot be called on an assembler that's already finished")
+	}
+	la.w.x = append(la.w.x, _String{})
+	la.state = laState_midValue
+	row := &la.w.x[len(la.w.x)-1]
+	la.va.w = row
+	la.va.m = &la.cm
+	return &la.va
+}
+func (la *_List_String__Assembler) Finish() error {
+	switch la.state {
+	case laState_initial:
+		// carry on
+	case laState_midValue:
+		if !la.valueFinishTidy() {
+			panic("invalid state: Finish cannot be called when in the middle of assembling a value")
+		} // if tidy success: carry on
+	case laState_finished:
+		panic("invalid state: Finish cannot be called on an assembler that's already finished")
+	}
+	la.state = laState_finished
+	*la.m = schema.Maybe_Value
+	return nil
+}
+func (la *_List_String__Assembler) ValuePrototype(_ int64) ipld.NodePrototype {
+	return _String__Prototype{}
+}
+func (List_String) Type() schema.Type {
+	return nil /*TODO:typelit*/
+}
+func (n List_String) Representation() ipld.Node {
+	return (*_List_String__Repr)(n)
+}
+type _List_String__Repr _List_String
+var _ ipld.Node = &_List_String__Repr{}
+func (_List_String__Repr) Kind() ipld.Kind {
+	return ipld.Kind_List
+}
+func (_List_String__Repr) LookupByString(string) (ipld.Node, error) {
+	return mixins.List{"tasks.List_String.Repr"}.LookupByString("")
+}
+func (nr *_List_String__Repr) LookupByNode(k ipld.Node) (ipld.Node, error) {
+	v, err := (List_String)(nr).LookupByNode(k)
+	if err != nil || v == ipld.Null {
+		return v, err
+	}
+	return v.(String).Representation(), nil
+}
+func (nr *_List_String__Repr) LookupByIndex(idx int64) (ipld.Node, error) {
+	v, err := (List_String)(nr).LookupByIndex(idx)
+	if err != nil || v == ipld.Null {
+		return v, err
+	}
+	return v.(String).Representation(), nil
+}
+func (n _List_String__Repr) LookupBySegment(seg ipld.PathSegment) (ipld.Node, error) {
+	i, err := seg.Index()
+	if err != nil {
+		return nil, ipld.ErrInvalidSegmentForList{TypeName: "tasks.List_String.Repr", TroubleSegment: seg, Reason: err}
+	}
+	return n.LookupByIndex(i)
+}
+func (_List_String__Repr) MapIterator() ipld.MapIterator {
+	return nil
+}
+func (nr *_List_String__Repr) ListIterator() ipld.ListIterator {
+	return &_List_String__ReprListItr{(List_String)(nr), 0}
+}
+
+type _List_String__ReprListItr _List_String__ListItr
+
+func (itr *_List_String__ReprListItr) Next() (idx int64, v ipld.Node, err error) {
+	idx, v, err = (*_List_String__ListItr)(itr).Next()
+	if err != nil || v == ipld.Null {
+		return
+	}
+	return idx, v.(String).Representation(), nil
+}
+func (itr *_List_String__ReprListItr) Done() bool {
+	return (*_List_String__ListItr)(itr).Done()
+}
+
+func (rn *_List_String__Repr) Length() int64 {
+	return int64(len(rn.x))
+}
+func (_List_String__Repr) IsAbsent() bool {
+	return false
+}
+func (_List_String__Repr) IsNull() bool {
+	return false
+}
+func (_List_String__Repr) AsBool() (bool, error) {
+	return mixins.List{"tasks.List_String.Repr"}.AsBool()
+}
+func (_List_String__Repr) AsInt() (int64, error) {
+	return mixins.List{"tasks.List_String.Repr"}.AsInt()
+}
+func (_List_String__Repr) AsFloat() (float64, error) {
+	return mixins.List{"tasks.List_String.Repr"}.AsFloat()
+}
+func (_List_String__Repr) AsString() (string, error) {
+	return mixins.List{"tasks.List_String.Repr"}.AsString()
+}
+func (_List_String__Repr) AsBytes() ([]byte, error) {
+	return mixins.List{"tasks.List_String.Repr"}.AsBytes()
+}
+func (_List_String__Repr) AsLink() (ipld.Link, error) {
+	return mixins.List{"tasks.List_String.Repr"}.AsLink()
+}
+func (_List_String__Repr) Prototype() ipld.NodePrototype {
+	return _List_String__ReprPrototype{}
+}
+type _List_String__ReprPrototype struct{}
+
+func (_List_String__ReprPrototype) NewBuilder() ipld.NodeBuilder {
+	var nb _List_String__ReprBuilder
+	nb.Reset()
+	return &nb
+}
+type _List_String__ReprBuilder struct {
+	_List_String__ReprAssembler
+}
+func (nb *_List_String__ReprBuilder) Build() ipld.Node {
+	if *nb.m != schema.Maybe_Value {
+		panic("invalid state: cannot call Build on an assembler that's not finished")
+	}
+	return nb.w
+}
+func (nb *_List_String__ReprBuilder) Reset() {
+	var w _List_String
+	var m schema.Maybe
+	*nb = _List_String__ReprBuilder{_List_String__ReprAssembler{w: &w, m: &m}}
+}
+type _List_String__ReprAssembler struct {
+	w *_List_String
+	m *schema.Maybe
+	state laState
+
+	cm schema.Maybe
+	va _String__ReprAssembler
+}
+
+func (na *_List_String__ReprAssembler) reset() {
+	na.state = laState_initial
+	na.va.reset()
+}
+func (_List_String__ReprAssembler) BeginMap(sizeHint int64) (ipld.MapAssembler, error) {
+	return mixins.ListAssembler{"tasks.List_String.Repr"}.BeginMap(0)
+}
+func (na *_List_String__ReprAssembler) BeginList(sizeHint int64) (ipld.ListAssembler, error) {
+	switch *na.m {
+	case schema.Maybe_Value, schema.Maybe_Null:
+		panic("invalid state: cannot assign into assembler that's already finished")
+	case midvalue:
+		panic("invalid state: it makes no sense to 'begin' twice on the same assembler!")
+	}
+	*na.m = midvalue
+	if sizeHint < 0 {
+		sizeHint = 0
+	}
+	if na.w == nil {
+		na.w = &_List_String{}
+	}
+	if sizeHint > 0 {
+		na.w.x = make([]_String, 0, sizeHint)
+	}
+	return na, nil
+}
+func (na *_List_String__ReprAssembler) AssignNull() error {
+	switch *na.m {
+	case allowNull:
+		*na.m = schema.Maybe_Null
+		return nil
+	case schema.Maybe_Absent:
+		return mixins.ListAssembler{"tasks.List_String.Repr.Repr"}.AssignNull()
+	case schema.Maybe_Value, schema.Maybe_Null:
+		panic("invalid state: cannot assign into assembler that's already finished")
+	case midvalue:
+		panic("invalid state: cannot assign null into an assembler that's already begun working on recursive structures!")
+	}
+	panic("unreachable")
+}
+func (_List_String__ReprAssembler) AssignBool(bool) error {
+	return mixins.ListAssembler{"tasks.List_String.Repr"}.AssignBool(false)
+}
+func (_List_String__ReprAssembler) AssignInt(int64) error {
+	return mixins.ListAssembler{"tasks.List_String.Repr"}.AssignInt(0)
+}
+func (_List_String__ReprAssembler) AssignFloat(float64) error {
+	return mixins.ListAssembler{"tasks.List_String.Repr"}.AssignFloat(0)
+}
+func (_List_String__ReprAssembler) AssignString(string) error {
+	return mixins.ListAssembler{"tasks.List_String.Repr"}.AssignString("")
+}
+func (_List_String__ReprAssembler) AssignBytes([]byte) error {
+	return mixins.ListAssembler{"tasks.List_String.Repr"}.AssignBytes(nil)
+}
+func (_List_String__ReprAssembler) AssignLink(ipld.Link) error {
+	return mixins.ListAssembler{"tasks.List_String.Repr"}.AssignLink(nil)
+}
+func (na *_List_String__ReprAssembler) AssignNode(v ipld.Node) error {
+	if v.IsNull() {
+		return na.AssignNull()
+	}
+	if v2, ok := v.(*_List_String); ok {
+		switch *na.m {
+		case schema.Maybe_Value, schema.Maybe_Null:
+			panic("invalid state: cannot assign into assembler that's already finished")
+		case midvalue:
+			panic("invalid state: cannot assign null into an assembler that's already begun working on recursive structures!")
+		}
+		if na.w == nil {
+			na.w = v2
+			*na.m = schema.Maybe_Value
+			return nil
+		}
+		*na.w = *v2
+		*na.m = schema.Maybe_Value
+		return nil
+	}
+	if v.Kind() != ipld.Kind_List {
+		return ipld.ErrWrongKind{TypeName: "tasks.List_String.Repr", MethodName: "AssignNode", AppropriateKind: ipld.KindSet_JustList, ActualKind: v.Kind()}
+	}
+	itr := v.ListIterator()
+	for !itr.Done() {
+		_, v, err := itr.Next()
+		if err != nil {
+			return err
+		}
+		if err := na.AssembleValue().AssignNode(v); err != nil {
+			return err
+		}
+	}
+	return na.Finish()
+}
+func (_List_String__ReprAssembler) Prototype() ipld.NodePrototype {
+	return _List_String__ReprPrototype{}
+}
+func (la *_List_String__ReprAssembler) valueFinishTidy() bool {
+	switch la.cm {
+	case schema.Maybe_Value:
+		la.va.w = nil
+		la.cm = schema.Maybe_Absent
+		la.state = laState_initial
+		la.va.reset()
+		return true
+	default:
+		return false
+	}
+}
+func (la *_List_String__ReprAssembler) AssembleValue() ipld.NodeAssembler {
+	switch la.state {
+	case laState_initial:
+		// carry on
+	case laState_midValue:
+		if !la.valueFinishTidy() {
+			panic("invalid state: AssembleValue cannot be called when still in the middle of assembling the previous value")
+		} // if tidy success: carry on
+	case laState_finished:
+		panic("invalid state: AssembleValue cannot be called on an assembler that's already finished")
+	}
+	la.w.x = append(la.w.x, _String{})
+	la.state = laState_midValue
+	row := &la.w.x[len(la.w.x)-1]
+	la.va.w = row
+	la.va.m = &la.cm
+	return &la.va
+}
+func (la *_List_String__ReprAssembler) Finish() error {
+	switch la.state {
+	case laState_initial:
+		// carry on
+	case laState_midValue:
+		if !la.valueFinishTidy() {
+			panic("invalid state: Finish cannot be called when in the middle of assembling a value")
+		} // if tidy success: carry on
+	case laState_finished:
+		panic("invalid state: Finish cannot be called on an assembler that's already finished")
+	}
+	la.state = laState_finished
+	*la.m = schema.Maybe_Value
+	return nil
+}
+func (la *_List_String__ReprAssembler) ValuePrototype(_ int64) ipld.NodePrototype {
+	return _String__ReprPrototype{}
+}
+
 
 func (n _Logs) FieldLog() String {
 	return &n.Log
@@ -9440,7 +10033,7 @@ func (n _PopTask) FieldStatus() Status {
 func (n _PopTask) FieldWorkedBy() String {
 	return &n.WorkedBy
 }
-func (n _PopTask) FieldTags() MaybeString {
+func (n _PopTask) FieldTags() MaybeList_String {
 	return &n.Tags
 }
 type _PopTask__Maybe struct {
@@ -9615,7 +10208,7 @@ type _PopTask__Assembler struct {
 	cm schema.Maybe
 	ca_Status _Status__Assembler
 	ca_WorkedBy _String__Assembler
-	ca_Tags _String__Assembler
+	ca_Tags _List_String__Assembler
 	}
 
 func (na *_PopTask__Assembler) reset() {
@@ -10112,7 +10705,7 @@ type _PopTask__ReprAssembler struct {
 	cm schema.Maybe
 	ca_Status _Status__ReprAssembler
 	ca_WorkedBy _String__ReprAssembler
-	ca_Tags _String__ReprAssembler
+	ca_Tags _List_String__ReprAssembler
 	}
 
 func (na *_PopTask__ReprAssembler) reset() {

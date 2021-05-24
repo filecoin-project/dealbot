@@ -47,6 +47,8 @@ type typeSlab struct {
 	List_Logs__Repr _List_Logs__ReprPrototype
 	List_StageDetails       _List_StageDetails__Prototype
 	List_StageDetails__Repr _List_StageDetails__ReprPrototype
+	List_String       _List_String__Prototype
+	List_String__Repr _List_String__ReprPrototype
 	Logs       _Logs__Prototype
 	Logs__Repr _Logs__ReprPrototype
 	Map       _Map__Prototype
@@ -170,6 +172,12 @@ type _List_StageDetails struct {
 	x []_StageDetails
 }
 
+// List_String matches the IPLD Schema type "List_String".  It has list kind.
+type List_String = *_List_String
+type _List_String struct {
+	x []_String
+}
+
 // Logs matches the IPLD Schema type "Logs".  It has Struct type-kind, and may be interrogated like map kind.
 type Logs = *_Logs
 type _Logs struct {
@@ -193,7 +201,7 @@ type PopTask = *_PopTask
 type _PopTask struct {
 	Status _Status
 	WorkedBy _String
-	Tags _String__Maybe
+	Tags _List_String__Maybe
 }
 
 // RecordUpdate matches the IPLD Schema type "RecordUpdate".  It has Struct type-kind, and may be interrogated like map kind.

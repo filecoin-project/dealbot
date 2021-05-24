@@ -208,7 +208,6 @@ func TestAssignTaskWithTag(t *testing.T) {
 	worker := "tester"
 	req := tasks.Type.PopTask.Of(worker, tasks.InProgress, "foo", "bar")
 	require.True(t, req.Tags.Exists(), "Tags does not exist in request")
-	require.Equal(t, req.Tags.Must().String(), "foo,bar")
 	task, err = state.AssignTask(ctx, req)
 	require.NoError(t, err)
 	require.Nil(t, task, "Shoud not get task with tags that do not match search")
