@@ -37,7 +37,7 @@ or
 
 	./dealbot --api [api] retrieval-deal --data-dir [shared-dir] --miner [miner-address] --cid [payload-cid]
 
-To use dealbot with a remote Lotus, see [devnet/README.md](devnet/README.md).
+To start Lotus locally, or tunnel to a remote Lotus, see [devnet/README.md](devnet/README.md).
 
 ## Versioning and Releases
 

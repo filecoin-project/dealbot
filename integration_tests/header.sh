@@ -35,11 +35,12 @@ if [[ -z $FULLNODE_API_INFO ]]; then
 	devnet &
 	DEVNETPID=$!
 
-	# Wait for both APIs to be up.
-	lotus wait-api
-	lotus-miner wait-api
+	# We also wait for the APIs to be up before using them.
+	# The commands print every second by default, which is too verbose.
 
 	echo "Waiting for the default wallet to be set up..."
+
+	lotus wait-api | grep -v 'Not online yet'
 	for ((i = 0; ; i++)); do
 		sleep 2
 		if lotus wallet default; then
@@ -52,6 +53,8 @@ if [[ -z $FULLNODE_API_INFO ]]; then
 	done
 
 	echo "Waiting for the miner to have one peer..."
+
+	lotus-miner wait-api | grep -v 'Not online yet'
 	for ((i = 0; ; i++)); do
 		sleep 2
 		if lotus-miner net peers | grep tcp; then
