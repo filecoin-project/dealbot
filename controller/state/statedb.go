@@ -270,6 +270,10 @@ func (s *stateDB) GetAll(ctx context.Context) ([]tasks.Task, error) {
 // assigns it to req.WorkedBy. If there are no available tasks, the task returned
 // is nil.
 //
+// If the request specifies no tags, then this selects any task.  If the
+// request specifies tags, then this selects any task with a tag matching one
+// of the tags in the request, or any untagged task.
+//
 // TODO: There should be a limit to the age of the task to assign.
 func (s *stateDB) AssignTask(ctx context.Context, req tasks.PopTask) (tasks.Task, error) {
 	if req.WorkedBy.String() == "" {
