@@ -35,7 +35,7 @@ func queueStorageDeal(cctx *cli.Context) error {
 	startOffset := cctx.Uint64("start-offset")
 	maxPrice := cctx.Uint64("max-price")
 
-	task := tasks.Type.StorageTask.Of(miner, int64(maxPrice), int64(size.Bytes()), int64(startOffset), fastRetrieval, verified)
+	task := tasks.Type.StorageTask.Of(miner, int64(maxPrice), int64(size.Bytes()), int64(startOffset), fastRetrieval, verified, "")
 
 	t, err := client.CreateStorageTask(cctx.Context, task)
 

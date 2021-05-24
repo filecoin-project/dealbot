@@ -79,6 +79,15 @@ func (c *Client) ListTasks(ctx context.Context) ([]tasks.Task, error) {
 	return tsks.List(), nil
 }
 
+// PopTask requests a Task from the controller.
+//
+// The PopTask request specifies the initial status to set the task to, the
+// identity of client requesting and assigned the task, and any tagged tasks
+// that are begin requested.
+//
+// If the request specifies no tags, then this selects any task.  If the
+// request specifies tags, then this selects any task with a tag matching one
+// of the tags in the request, or any untagged task.
 func (c *Client) PopTask(ctx context.Context, r tasks.PopTask) (tasks.Task, error) {
 	var body bytes.Buffer
 	err := dagjson.Encoder(r.Representation(), &body)

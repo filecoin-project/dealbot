@@ -69,6 +69,8 @@ func main() {
 
 	ts.Accumulate(schema.SpawnInt("Status"))
 
+	ts.Accumulate(schema.SpawnList("List_String", "String", false))
+
 	ts.Accumulate(schema.SpawnStruct("StageDetails", []schema.StructField{
 		schema.SpawnStructField("Description", "String", true, false),
 		schema.SpawnStructField("ExpectedDuration", "String", true, false),
@@ -90,6 +92,7 @@ func main() {
 		schema.SpawnStructField("CARExport", "Bool", false, false),
 		schema.SpawnStructField("Schedule", "String", true, false),
 		schema.SpawnStructField("ScheduleLimit", "String", true, false),
+		schema.SpawnStructField("Tag", "String", true, false),
 	}, schema.SpawnStructRepresentationMap(map[string]string{})))
 
 	ts.Accumulate(schema.SpawnStruct("StorageTask", []schema.StructField{
@@ -101,6 +104,7 @@ func main() {
 		schema.SpawnStructField("Verified", "Bool", false, false),
 		schema.SpawnStructField("Schedule", "String", true, false),
 		schema.SpawnStructField("ScheduleLimit", "String", true, false),
+		schema.SpawnStructField("Tag", "String", true, false),
 	}, schema.SpawnStructRepresentationMap(map[string]string{})))
 
 	ts.Accumulate(schema.SpawnStruct("Task", []schema.StructField{
@@ -138,6 +142,7 @@ func main() {
 	ts.Accumulate(schema.SpawnStruct("PopTask", []schema.StructField{
 		schema.SpawnStructField("Status", "Status", false, false),
 		schema.SpawnStructField("WorkedBy", "String", false, false),
+		schema.SpawnStructField("Tags", "List_String", true, false),
 	}, schema.SpawnStructRepresentationMap(map[string]string{})))
 	ts.Accumulate(schema.SpawnStruct("UpdateTask", []schema.StructField{
 		schema.SpawnStructField("Status", "Status", false, false),

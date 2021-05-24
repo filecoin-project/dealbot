@@ -39,9 +39,9 @@ func TestLoadTask(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 0, count)
 
-	rt := tasks.Type.RetrievalTask.Of("t01000", "bafk2bzacedli6qxp43sf54feczjd26jgeyfxv4ucwylujd3xo5s6cohcqbg36", false)
+	rt := tasks.Type.RetrievalTask.Of("t01000", "bafk2bzacedli6qxp43sf54feczjd26jgeyfxv4ucwylujd3xo5s6cohcqbg36", false, "")
 	tsk := tasks.Type.Task.New(rt, nil)
-	err = state.saveTask(ctx, tsk)
+	err = state.saveTask(ctx, tsk, "")
 	require.NoError(t, err)
 
 	oldCount := count
@@ -71,9 +71,9 @@ func TestAssignTask(t *testing.T) {
 	err = populateTestTasks(ctx, jsonTestDeals, stateInterface)
 	require.NoError(t, err)
 
-	rt := tasks.Type.RetrievalTask.Of("t01000", "bafk2bzacedli6qxp43sf54feczjd26jgeyfxv4ucwylujd3xo5s6cohcqbg36", false)
+	rt := tasks.Type.RetrievalTask.Of("t01000", "bafk2bzacedli6qxp43sf54feczjd26jgeyfxv4ucwylujd3xo5s6cohcqbg36", false, "")
 	task := tasks.Type.Task.New(rt, nil)
-	err = state.saveTask(ctx, task)
+	err = state.saveTask(ctx, task, "")
 	require.NoError(t, err)
 
 	taskCount, err := state.countTasks(ctx)
@@ -169,6 +169,68 @@ func TestAssignConcurrentTask(t *testing.T) {
 		assert.Equal(t, tasks.Available, history[0].Status, "wrong status for 1st history")
 		assert.Equal(t, tasks.InProgress, history[1].Status, "wrong status for 2nd history")
 	}
+}
+
+func TestAssignTaskWithTag(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	tmpDir, err := ioutil.TempDir("", "testdealbot")
+	if err != nil {
+		panic(err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	key, err := makeKey()
+	require.NoError(t, err)
+
+	stateInterface, err := NewStateDB(ctx, "sqlite", filepath.Join(tmpDir, "teststate.db"), key, nil)
+	require.NoError(t, err)
+	state, ok := stateInterface.(*stateDB)
+	require.True(t, ok, "returned wrong type")
+
+	//err = populateTestTasks(ctx, jsonTestDeals, stateInterface)
+	//require.NoError(t, err)
+
+	tasktag := "testtag"
+	rt := tasks.Type.RetrievalTask.Of("t01000", "bafk2bzacedli6qxp43sf54feczjd26jgeyfxv4ucwylujd3xo5s6cohcqbg36", false, tasktag)
+	task := tasks.Type.Task.New(rt, nil)
+	err = state.saveTask(ctx, task, tasktag)
+	require.NoError(t, err)
+
+	tasktag = "sometag"
+	rt = tasks.Type.RetrievalTask.Of("f0127896", "bafk2bzacedli6qxp43sf54feczjd26jgeyfxv4ucwylujd3xo5s6cohcqbg36", false, tasktag)
+	task = tasks.Type.Task.New(rt, nil)
+	err = state.saveTask(ctx, task, tasktag)
+	require.NoError(t, err)
+
+	// Should not get tagged task with unmatching tags
+	worker := "tester"
+	req := tasks.Type.PopTask.Of(worker, tasks.InProgress, "foo", "bar")
+	require.True(t, req.Tags.Exists(), "Tags does not exist in request")
+	task, err = state.AssignTask(ctx, req)
+	require.NoError(t, err)
+	require.Nil(t, task, "Shoud not get task with tags that do not match search")
+
+	// Should get tagged task with matching tags
+	req = tasks.Type.PopTask.Of(worker, tasks.InProgress, "foo", "bar", "testtag")
+	task, err = state.AssignTask(ctx, req)
+	require.NotNil(t, task, "Did not find tagged task using matching tags")
+
+	// Should get tagged task matching empty tags
+	req = tasks.Type.PopTask.Of(worker, tasks.InProgress)
+	task, err = state.AssignTask(ctx, req)
+	require.NotNil(t, task, "Did not find tagged task using empty tags")
+
+	rt = tasks.Type.RetrievalTask.Of("t01000", "bafk2bzacedli6qxp43sf54feczjd26jgeyfxv4ucwylujd3xo5s6cohcqbg36", false, "")
+	task = tasks.Type.Task.New(rt, nil)
+	err = state.saveTask(ctx, task, "")
+	require.NoError(t, err)
+
+	// Should get untagged task
+	req = tasks.Type.PopTask.Of(worker, tasks.InProgress, "foo", "bar")
+	task, err = state.AssignTask(ctx, req)
+	require.NotNil(t, task, "Did not get untagged task")
 }
 
 func TestUpdateTasks(t *testing.T) {

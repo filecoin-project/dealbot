@@ -116,6 +116,11 @@ var DaemonFlags = append(DealFlags, append(CommonFlags, append(EndpointFlags, []
 		EnvVars: []string{"DEALBOT_WORKERS"},
 		Value:   1,
 	}),
+	altsrc.NewStringSliceFlag(&cli.StringSliceFlag{
+		Name:    "tags",
+		Usage:   "comma separated tag strings",
+		EnvVars: []string{"DEALBOT_TAGS"},
+	}),
 }...)...)...)
 
 var MockFlags = []cli.Flag{

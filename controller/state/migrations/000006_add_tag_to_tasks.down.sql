@@ -1,0 +1,5 @@
+BEGIN;
+
+ALTER TABLE tasks DROP COLUMN tag;
+
+COMMIT;

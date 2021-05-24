@@ -34,6 +34,7 @@ type Engine struct {
 	sched      *scheduler.Scheduler
 	shutdown   chan struct{}
 	stopped    chan struct{}
+	tags       []string
 }
 
 func New(ctx context.Context, cliCtx *cli.Context) (*Engine, error) {
@@ -65,6 +66,7 @@ func New(ctx context.Context, cliCtx *cli.Context) (*Engine, error) {
 		sched:      scheduler.New(),
 		shutdown:   make(chan struct{}),
 		stopped:    make(chan struct{}),
+		tags:       cliCtx.StringSlice("tags"),
 	}
 
 	go e.run(workers)
@@ -133,7 +135,7 @@ func (e *Engine) popTask() tasks.Task {
 	defer cancel()
 
 	// pop a task
-	task, err := e.client.PopTask(ctx, tasks.Type.PopTask.Of(e.host, tasks.InProgress))
+	task, err := e.client.PopTask(ctx, tasks.Type.PopTask.Of(e.host, tasks.InProgress, e.tags...))
 	if err != nil {
 		log.Warnw("pop-task returned error", "err", err)
 		return nil
