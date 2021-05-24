@@ -39,7 +39,7 @@ func MakeRetrievalDeal(ctx context.Context, config NodeConfig, node api.FullNode
 	if err != nil {
 		return err
 	}
-	return de.executeAndMonitorDeal(updateStage)
+	return de.executeAndMonitorDeal(ctx, updateStage)
 }
 
 type retrievalDealExecutor struct {
@@ -67,7 +67,7 @@ func (de *retrievalDealExecutor) queryOffer() error {
 	return nil
 }
 
-func (de *retrievalDealExecutor) executeAndMonitorDeal(updateStage UpdateStage) error {
+func (de *retrievalDealExecutor) executeAndMonitorDeal(ctx context.Context, updateStage UpdateStage) error {
 	dealStage := RetrievalStages["ProposeRetrieval"]
 	err := updateStage("ProposeRetrieval", dealStage)
 	if err != nil {
@@ -92,71 +92,77 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(updateStage UpdateStage) 
 
 	lastStatus := retrievalmarket.DealStatusNew
 	var lastBytesReceived uint64 = 0
-	for event := range events {
-		if event.Status != lastStatus {
-			de.log("Deal status",
-				"cid", de.task.PayloadCID.x,
-				"state", retrievalmarket.DealStatuses[event.Status],
-				"error", event.Err,
-				"received", event.BytesReceived,
-			)
-			lastStatus = event.Status
-		}
+	for {
+		select {
+		case event, ok := <-events:
+			if ok {
+				// non-terminal event, process
 
-		if event.Event == retrievalmarket.ClientEventDealAccepted {
-			dealStage = RetrievalStages["DealAccepted"]
-			err := updateStage("DealAccepted", dealStage)
-			if err != nil {
-				return err
+				if event.Status != lastStatus {
+					de.log("Deal status",
+						"cid", de.task.PayloadCID.x,
+						"state", retrievalmarket.DealStatuses[event.Status],
+						"error", event.Err,
+						"received", event.BytesReceived,
+					)
+					lastStatus = event.Status
+				}
+
+				if event.Event == retrievalmarket.ClientEventDealAccepted {
+					dealStage = RetrievalStages["DealAccepted"]
+					err := updateStage("DealAccepted", dealStage)
+					if err != nil {
+						return err
+					}
+				}
+				if event.BytesReceived > 0 && lastBytesReceived == 0 {
+					dealStage = RetrievalStages["FirstByteReceived"]
+					err := updateStage("FirstByteReceived", dealStage)
+					if err != nil {
+						return err
+					}
+				}
+			} else {
+				// steam closed, no errors, so the deal is a success
+
+				// deal is on chain, exit successfully
+				dealStage = RetrievalStages["DealComplete"]
+				dealStage = AddLog(dealStage, fmt.Sprintf("bytes received: %d", event.BytesReceived))
+				err := updateStage("DealComplete", dealStage)
+				if err != nil {
+					return err
+				}
+
+				rdata, err := ioutil.ReadFile(filepath.Join(de.config.DataDir, "ret"))
+				if err != nil {
+					return err
+				}
+
+				de.log("retrieval successful", "PayloadCID", de.task.PayloadCID.x)
+
+				_ = rdata
+
+				dealStage = AddLog(dealStage, "file read from file system")
+				err = updateStage("DealComplete", dealStage)
+				if err != nil {
+					return err
+				}
+
+				if de.task.CARExport.x {
+					return errors.New("car export not implemented")
+				}
+				return nil
 			}
-		}
-		if event.BytesReceived > 0 && lastBytesReceived == 0 {
-			dealStage = RetrievalStages["FirstByteReceived"]
-			err := updateStage("FirstByteReceived", dealStage)
-			if err != nil {
-				return err
+
+			// if the event has an error message, then something went wrong and deal failed
+			if event.Err != "" {
+				return fmt.Errorf("retrieval deal failed: %s", event.Err)
 			}
-		}
-		switch event.Status {
-		case retrievalmarket.DealStatusCancelled,
-			retrievalmarket.DealStatusErrored,
-			retrievalmarket.DealStatusRejected,
-			retrievalmarket.DealStatusDealNotFound:
-
-			return fmt.Errorf("retrieval deal failed: %s", event.Err)
-
-		// deal is on chain, exit successfully
-		case retrievalmarket.DealStatusCompleted:
-			dealStage = RetrievalStages["DealComplete"]
-			dealStage = AddLog(dealStage, fmt.Sprintf("bytes received: %d", event.BytesReceived))
-			err := updateStage("DealComplete", dealStage)
-			if err != nil {
-				return err
-			}
-
-			rdata, err := ioutil.ReadFile(filepath.Join(de.config.DataDir, "ret"))
-			if err != nil {
-				return err
-			}
-
-			de.log("retrieval successful", "PayloadCID", de.task.PayloadCID.x)
-
-			_ = rdata
-
-			dealStage = AddLog(dealStage, "file read from file system")
-			err = updateStage("DealComplete", dealStage)
-			if err != nil {
-				return err
-			}
-
-			if de.task.CARExport.x {
-				return errors.New("car export not implemented")
-			}
-			return nil
+		case <-ctx.Done():
+			return ctx.Err()
 		}
 	}
 
-	return nil
 }
 
 func (rp *_RetrievalTask__Prototype) Of(minerParam string, payloadCid string, carExport bool, tag string) RetrievalTask {
