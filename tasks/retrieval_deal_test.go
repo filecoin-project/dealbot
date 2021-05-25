@@ -6,17 +6,14 @@ import (
 )
 
 func TestParseStageTimeouts(t *testing.T) {
-	retTo, stoTo, err := ParseStageTimeouts([]string{"ProposeRetrieval=31m", "DealAccepted=3h"})
+	stageTo, err := ParseStageTimeouts([]string{"ProposeRetrieval=31m", "DealAccepted=3h"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if stoTo != nil {
-		t.Error("not expecteing storage timeouts")
-	}
-	if len(retTo) != 2 {
+	if len(stageTo) != 2 {
 		t.Fatal("expected 2 retrieval timeouts")
 	}
-	to, ok := retTo["proposeretrieval"]
+	to, ok := stageTo["proposeretrieval"]
 	if !ok {
 		t.Fatal("missing proposeretrieval timeout")
 	}
@@ -24,7 +21,7 @@ func TestParseStageTimeouts(t *testing.T) {
 		t.Error("wrong value for proposeretrieval timeout")
 	}
 
-	to, ok = retTo["dealaccepted"]
+	to, ok = stageTo["dealaccepted"]
 	if !ok {
 		t.Fatal("missing dealaccepted timeout")
 	}
@@ -32,21 +29,21 @@ func TestParseStageTimeouts(t *testing.T) {
 		t.Error("wrong value for dealaccepted timeout")
 	}
 
-	retTo, _, err = ParseStageTimeouts([]string{"DealAccepted=3x"})
+	stageTo, err = ParseStageTimeouts([]string{"DealAccepted=3x"})
 	if err == nil {
 		t.Fatal("expected error from bad duration value")
 	}
 
-	retTo, _, err = ParseStageTimeouts([]string{"DealAccepted:3h"})
+	stageTo, err = ParseStageTimeouts([]string{"DealAccepted:3h"})
 	if err == nil {
 		t.Fatal("expected error from bad specification")
 	}
 
-	retTo, _, err = ParseStageTimeouts([]string{"unknown=3h"})
+	stageTo, err = ParseStageTimeouts([]string{"unknown=3h"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if retTo != nil {
+	if stageTo != nil {
 		t.Fatal("should not have retrieval timeouts")
 	}
 }

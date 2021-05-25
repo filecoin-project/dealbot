@@ -40,10 +40,5 @@ func makeStorageDeal(cctx *cli.Context) error {
 
 	task := tasks.Type.StorageTask.Of(miner, int64(maxPrice), int64(size.Bytes()), int64(startOffset), fastRetrieval, verified, "")
 
-	_, stageTimeouts, err := tasks.ParseStageTimeouts(cctx.StringSlice("stage-timeout"))
-	if err != nil {
-		return err
-	}
-
-	return tasks.MakeStorageDeal(cctx.Context, nodeConfig, node, task, emptyUpdateStage, log.Infow, stageTimeouts)
+	return tasks.MakeStorageDeal(cctx.Context, nodeConfig, node, task, emptyUpdateStage, log.Infow)
 }

@@ -206,39 +206,36 @@ func (rp *_RetrievalTask__Prototype) Of(minerParam string, payloadCid string, ca
 	return &rt
 }
 
-// ParseStageTimeouts parses "StageName=timeout" strings into maps of retrieval and
-// storage timeouts.
-func ParseStageTimeouts(timeoutSpecs []string) (map[string]time.Duration, map[string]time.Duration, error) {
-	var (
-		retrievalTimeouts map[string]time.Duration
-		storageTimeouts   map[string]time.Duration
-	)
+// ParseStageTimeouts parses "StageName=timeout" strings into a map of stage
+// name to timeout duration.
+func ParseStageTimeouts(timeoutSpecs []string) (map[string]time.Duration, error) {
+	var stageTimeouts map[string]time.Duration
 
 	// Parse all stage timeout durations
-	stageTimeouts := map[string]time.Duration{}
+	timeouts := map[string]time.Duration{}
 	for _, spec := range timeoutSpecs {
 		parts := strings.SplitN(spec, "=", 2)
 		if len(parts) != 2 {
-			return nil, nil, fmt.Errorf("invalid stage timeout specification: %s", spec)
+			return nil, fmt.Errorf("invalid stage timeout specification: %s", spec)
 		}
 		stage := parts[0]
 		timeout := parts[1]
 		d, err := time.ParseDuration(strings.TrimSpace(timeout))
 		if err != nil || d < time.Second {
-			return nil, nil, fmt.Errorf("invalid value for stage %q timeout: %s", stage, timeout)
+			return nil, fmt.Errorf("invalid value for stage %q timeout: %s", stage, timeout)
 		}
-		stageTimeouts[strings.ToLower(strings.TrimSpace(stage))] = d
+		timeouts[strings.ToLower(strings.TrimSpace(stage))] = d
 	}
 
 	// Get retrieval timeouts
 	for stageName, _ := range RetrievalStages {
 		stageName = strings.ToLower(stageName)
-		d, ok := stageTimeouts[stageName]
+		d, ok := timeouts[stageName]
 		if ok {
-			if retrievalTimeouts == nil {
-				retrievalTimeouts = make(map[string]time.Duration)
+			if stageTimeouts == nil {
+				stageTimeouts = make(map[string]time.Duration)
 			}
-			retrievalTimeouts[stageName] = d
+			stageTimeouts[stageName] = d
 		}
 	}
 
@@ -246,5 +243,5 @@ func ParseStageTimeouts(timeoutSpecs []string) (map[string]time.Duration, map[st
 	//
 	// None defined currently
 
-	return retrievalTimeouts, storageTimeouts, nil
+	return stageTimeouts, nil
 }

@@ -94,11 +94,6 @@ var StorageFlags = []cli.Flag{
 		EnvVars: []string{"DEALBOT_START_OFFSET"},
 		Value:   30760,
 	},
-	altsrc.NewStringSliceFlag(&cli.StringSliceFlag{
-		Name:    "stage-timeout",
-		Usage:   "stagename=duration exampple: DealAccepted=30m",
-		EnvVars: []string{"STAGE_TIMEOUT"},
-	}),
 }
 
 var SingleTaskFlags = append(DealFlags, MinerFlags...)

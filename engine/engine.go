@@ -36,8 +36,7 @@ type Engine struct {
 	stopped    chan struct{}
 	tags       []string
 
-	retrievalStageTimeouts map[string]time.Duration
-	storageStageTimeouts   map[string]time.Duration
+	stageTimeouts map[string]time.Duration
 }
 
 func New(ctx context.Context, cliCtx *cli.Context) (*Engine, error) {
@@ -51,7 +50,7 @@ func New(ctx context.Context, cliCtx *cli.Context) (*Engine, error) {
 		host_id = uuid.New().String()[:8]
 	}
 
-	retStageTimeouts, stoStageTimeouts, err := tasks.ParseStageTimeouts(cliCtx.StringSlice("stage-timeout"))
+	stageTimeouts, err := tasks.ParseStageTimeouts(cliCtx.StringSlice("stage-timeout"))
 	if err != nil {
 		return nil, err
 	}
@@ -81,8 +80,7 @@ func New(ctx context.Context, cliCtx *cli.Context) (*Engine, error) {
 		stopped:    make(chan struct{}),
 		tags:       cliCtx.StringSlice("tags"),
 
-		retrievalStageTimeouts: retStageTimeouts,
-		storageStageTimeouts:   stoStageTimeouts,
+		stageTimeouts: stageTimeouts,
 	}
 
 	go e.run(workers)
@@ -206,7 +204,7 @@ func (e *Engine) runTask(ctx context.Context, task tasks.Task, runCount, worker 
 
 	// Start deals
 	if task.RetrievalTask.Exists() {
-		err = tasks.MakeRetrievalDeal(ctx, e.nodeConfig, e.node, task.RetrievalTask.Must(), updateStage, log.Infow, e.retrievalStageTimeouts)
+		err = tasks.MakeRetrievalDeal(ctx, e.nodeConfig, e.node, task.RetrievalTask.Must(), updateStage, log.Infow, e.stageTimeouts)
 		if err != nil {
 			if err == context.Canceled {
 				// Engine closed, do not update final state
@@ -220,7 +218,7 @@ func (e *Engine) runTask(ctx context.Context, task tasks.Task, runCount, worker 
 			tlog.Info("successfully retrieved data")
 		}
 	} else if task.StorageTask.Exists() {
-		err = tasks.MakeStorageDeal(ctx, e.nodeConfig, e.node, task.StorageTask.Must(), updateStage, log.Infow, e.storageStageTimeouts)
+		err = tasks.MakeStorageDeal(ctx, e.nodeConfig, e.node, task.StorageTask.Must(), updateStage, log.Infow)
 		if err != nil {
 			if err == context.Canceled {
 				// Engine closed, do not update final state

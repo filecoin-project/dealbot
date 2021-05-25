@@ -25,7 +25,7 @@ import (
 const maxPriceDefault = 5e16
 const startOffsetDefault = 30760
 
-func MakeStorageDeal(ctx context.Context, config NodeConfig, node api.FullNode, task StorageTask, updateStage UpdateStage, log LogStatus, stageTimeouts map[string]time.Duration) error {
+func MakeStorageDeal(ctx context.Context, config NodeConfig, node api.FullNode, task StorageTask, updateStage UpdateStage, log LogStatus) error {
 	de := &storageDealExecutor{
 		dealExecutor: dealExecutor{
 			ctx:    ctx,
@@ -64,7 +64,7 @@ func MakeStorageDeal(ctx context.Context, config NodeConfig, node api.FullNode, 
 	if err != nil {
 		return err
 	}
-	return de.executeAndMonitorDeal(updateStage, stageTimeouts)
+	return de.executeAndMonitorDeal(updateStage)
 }
 
 type dealExecutor struct {
