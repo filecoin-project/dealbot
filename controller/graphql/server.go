@@ -1,6 +1,7 @@
 package graphql
 
 import (
+	"embed"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -9,6 +10,9 @@ import (
 	"github.com/filecoin-project/dealbot/tasks"
 	"github.com/graphql-go/graphql"
 )
+
+//go:embed index.html
+var index embed.FS
 
 func CorsMiddleware(next http.HandlerFunc) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -58,6 +62,7 @@ func GetHandler(db state.State) (*http.ServeMux, error) {
 	}
 
 	mux := http.NewServeMux()
+	mux.Handle("/", http.FileServer(http.FS(index)))
 	mux.Handle("/graphql", CorsMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		var result *graphql.Result
 		ctx := r.Context()
