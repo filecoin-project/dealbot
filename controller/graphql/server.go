@@ -44,6 +44,20 @@ func GetHandler(db state.State) (*http.ServeMux, error) {
 						return tasks.Type.Tasks.Of(tsks), nil
 					},
 				},
+				"Task": &graphql.Field{
+					Type: Task__type,
+					Args: graphql.FieldConfigArgument{
+						"UUID": &graphql.ArgumentConfig{Type: graphql.NewNonNull(graphql.String), Description: "task uuid"},
+					},
+					Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+						uuid := p.Args["UUID"].(string)
+						tsk, err := db.Get(p.Context, uuid)
+						if err != nil {
+							return nil, err
+						}
+						return tsk, nil
+					},
+				},
 				"RecordUpdate": &graphql.Field{
 					Type: RecordUpdate__type,
 					Resolve: func(p graphql.ResolveParams) (interface{}, error) {
