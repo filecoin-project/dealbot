@@ -87,7 +87,7 @@ func TestAssignTask(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, task, "Did not find task to assign")
 		require.Equal(t, worker, task.WorkedBy.Must().String(), "should be assigned to correct worker")
-		uuid := mustString(task.UUID.AsString())
+		uuid := task.UUID.String()
 		_, found := seen[uuid]
 		require.False(t, found, "Assigned task that was previously assigned")
 
@@ -162,7 +162,7 @@ func TestAssignConcurrentTask(t *testing.T) {
 			t.Log("did not find task to assign")
 			continue
 		}
-		history, err := state.TaskHistory(ctx, mustString(task.UUID.AsString()))
+		history, err := state.TaskHistory(ctx, task.UUID.String())
 		require.NoError(t, err)
 
 		assert.Len(t, history, 2)

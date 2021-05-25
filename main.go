@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -34,12 +33,6 @@ func main() {
 
 	if err := logging.SetLogLevel("*", "info"); err != nil {
 		log.Fatal(err)
-	}
-
-	defaultName := "dealbot_" + version.String()
-	hostname, err := os.Hostname()
-	if err == nil {
-		defaultName = fmt.Sprintf("%s_%s_%d", defaultName, hostname, os.Getpid())
 	}
 
 	appFlags := append(commands.CommonFlags, []cli.Flag{

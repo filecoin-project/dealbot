@@ -120,7 +120,6 @@ taskLoop:
 
 	// Stop workers and wait for all workers to exit
 	wg.Wait()
-	return
 }
 
 func (e *Engine) Close(ctx context.Context) {
