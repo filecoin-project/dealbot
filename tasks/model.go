@@ -88,17 +88,17 @@ func asStageDetails(description, expected string) StageDetails {
 	}
 }
 
-// ConnectivityStages are stages that occur prior to initiating a deal
-var ConnectivityStages = map[string]StageDetails{
+// CommonStages are stages near the beginning of a deal shared between storage & retrieval
+var CommonStages = map[string]StageDetails{
 	"MinerOnline":  asStageDetails("Miner is online", "a few seconds"),
 	"QueryAsk":     asStageDetails("Miner responds to query ask", "a few seconds"),
 	"CheckPrice":   asStageDetails("Miner meets price criteria", ""),
 	"ClientImport": asStageDetails("Importing data into Lotus", "a few minutes"),
+	"ProposeDeal":  asStageDetails("Send proposal to miner", ""),
 }
 
 // RetrievalStages are stages that occur in a retrieval deal
 var RetrievalStages = map[string]StageDetails{
-	"ProposeRetrieval":  asStageDetails("Send retrieval to miner", ""),
 	"DealAccepted":      asStageDetails("Miner accepts deal", "a few seconds"),
 	"FirstByteReceived": asStageDetails("First byte of data received from miner", "a few seconds, or several hours when unsealing"),
 	"DealComplete":      asStageDetails("All bytes received and deal is completed", "a few seconds"),
@@ -142,7 +142,7 @@ type step struct {
 }
 
 func executeStage(stage string, updateStage UpdateStage, steps []step) error {
-	stageDetails, ok := ConnectivityStages[stage]
+	stageDetails, ok := CommonStages[stage]
 	if !ok {
 		return errors.New("unknown stage")
 	}

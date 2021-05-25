@@ -68,8 +68,8 @@ func (de *retrievalDealExecutor) queryOffer() error {
 }
 
 func (de *retrievalDealExecutor) executeAndMonitorDeal(ctx context.Context, updateStage UpdateStage) error {
-	dealStage := RetrievalStages["ProposeRetrieval"]
-	err := updateStage("ProposeRetrieval", dealStage)
+	dealStage := RetrievalStages["ProposeDeal"]
+	err := updateStage("ProposeDeal", dealStage)
 	if err != nil {
 		return err
 	}
@@ -85,7 +85,7 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(ctx context.Context, upda
 	}
 
 	dealStage = AddLog(dealStage, "deal sent to miner")
-	err = updateStage("ProposeRetrieval", dealStage)
+	err = updateStage("ProposeDeal", dealStage)
 	if err != nil {
 		return err
 	}
