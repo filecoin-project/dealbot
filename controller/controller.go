@@ -2,6 +2,7 @@ package controller
 
 import (
 	"context"
+	"embed"
 	"fmt"
 	"io/ioutil"
 	"net"
@@ -98,6 +99,9 @@ func New(ctx *cli.Context) (*Controller, error) {
 	return NewWithDependencies(l, gl, recorder, backend)
 }
 
+//go:embed static/index.html static/script.js
+var static embed.FS
+
 func NewWithDependencies(listener, graphqlListener net.Listener, recorder metrics.MetricsRecorder, backend state.State) (*Controller, error) {
 	srv := new(Controller)
 	srv.db = backend
@@ -112,6 +116,7 @@ func NewWithDependencies(listener, graphqlListener net.Listener, recorder metric
 		})
 	})
 
+	r.Handle("/", http.FileServer(http.FS(static)))
 	r.HandleFunc("/drain/{workedby}", srv.drainHandler).Methods("POST")
 	r.HandleFunc("/complete/{workedby}", srv.completeHandler).Methods("POST")
 	r.HandleFunc("/pop-task", srv.popTaskHandler).Methods("POST")
