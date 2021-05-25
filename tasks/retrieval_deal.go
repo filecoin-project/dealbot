@@ -6,13 +6,15 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
+	"strings"
+	"time"
 
 	"github.com/filecoin-project/go-fil-markets/retrievalmarket"
 	"github.com/filecoin-project/lotus/api"
 	"github.com/ipfs/go-cid"
 )
 
-func MakeRetrievalDeal(ctx context.Context, config NodeConfig, node api.FullNode, task RetrievalTask, updateStage UpdateStage, log LogStatus) error {
+func MakeRetrievalDeal(ctx context.Context, config NodeConfig, node api.FullNode, task RetrievalTask, updateStage UpdateStage, log LogStatus, stageTimeouts map[string]time.Duration) error {
 	de := &retrievalDealExecutor{
 		dealExecutor: dealExecutor{
 			ctx:    ctx,
@@ -39,7 +41,8 @@ func MakeRetrievalDeal(ctx context.Context, config NodeConfig, node api.FullNode
 	if err != nil {
 		return err
 	}
-	return de.executeAndMonitorDeal(ctx, updateStage)
+
+	return de.executeAndMonitorDeal(ctx, updateStage, stageTimeouts)
 }
 
 type retrievalDealExecutor struct {
@@ -67,9 +70,10 @@ func (de *retrievalDealExecutor) queryOffer() error {
 	return nil
 }
 
-func (de *retrievalDealExecutor) executeAndMonitorDeal(ctx context.Context, updateStage UpdateStage) error {
-	dealStage := CommonStages["ProposeDeal"]
-	err := updateStage("ProposeDeal", dealStage)
+func (de *retrievalDealExecutor) executeAndMonitorDeal(ctx context.Context, updateStage UpdateStage, stageTimeouts map[string]time.Duration) error {
+	stage := "ProposeDeal"
+	dealStage := CommonStages[stage]
+	err := updateStage(stage, dealStage)
 	if err != nil {
 		return err
 	}
@@ -85,15 +89,39 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(ctx context.Context, upda
 	}
 
 	dealStage = AddLog(dealStage, "deal sent to miner")
-	err = updateStage("ProposeDeal", dealStage)
+	err = updateStage(stage, dealStage)
 	if err != nil {
 		return err
 	}
 
 	lastStatus := retrievalmarket.DealStatusNew
-	var lastBytesReceived uint64 = 0
+	var lastBytesReceived uint64
+	var prevStage string
+
+	stageTimer := time.NewTimer(0)
+	if !stageTimer.Stop() {
+		<-stageTimer.C
+	}
+	defer stageTimer.Stop()
+
 	for {
+		if stage != prevStage {
+			// If there is a timeout for the current deal stage, then set the timer
+			if stageTimeout, ok := stageTimeouts[strings.ToLower(stage)]; ok {
+				stageTimer.Reset(stageTimeout)
+			} else {
+				if !stageTimer.Stop() {
+					<-stageTimer.C
+				}
+			}
+			prevStage = stage
+		}
+
 		select {
+		case <-stageTimer.C:
+			msg := fmt.Sprintf("timed out after %s", stageTimeouts[strings.ToLower(stage)])
+			AddLog(dealStage, msg)
+			return fmt.Errorf("deal stage %q %s", stage, msg)
 		case event, ok := <-events:
 			if ok {
 				// non-terminal event, process
@@ -109,15 +137,17 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(ctx context.Context, upda
 				}
 
 				if event.Event == retrievalmarket.ClientEventDealAccepted {
-					dealStage = RetrievalStages["DealAccepted"]
-					err := updateStage("DealAccepted", dealStage)
+					stage = "DealAccepted"
+					dealStage = RetrievalStages[stage]
+					err := updateStage(stage, dealStage)
 					if err != nil {
 						return err
 					}
 				}
 				if event.BytesReceived > 0 && lastBytesReceived == 0 {
-					dealStage = RetrievalStages["FirstByteReceived"]
-					err := updateStage("FirstByteReceived", dealStage)
+					stage = "FirstByteReceived"
+					dealStage = RetrievalStages[stage]
+					err := updateStage(stage, dealStage)
 					if err != nil {
 						return err
 					}
@@ -126,9 +156,10 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(ctx context.Context, upda
 				// steam closed, no errors, so the deal is a success
 
 				// deal is on chain, exit successfully
-				dealStage = RetrievalStages["DealComplete"]
+				stage = "DealComplete"
+				dealStage = RetrievalStages[stage]
 				dealStage = AddLog(dealStage, fmt.Sprintf("bytes received: %d", event.BytesReceived))
-				err := updateStage("DealComplete", dealStage)
+				err := updateStage(stage, dealStage)
 				if err != nil {
 					return err
 				}
@@ -143,7 +174,7 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(ctx context.Context, upda
 				_ = rdata
 
 				dealStage = AddLog(dealStage, "file read from file system")
-				err = updateStage("DealComplete", dealStage)
+				err = updateStage(stage, dealStage)
 				if err != nil {
 					return err
 				}
@@ -173,4 +204,47 @@ func (rp *_RetrievalTask__Prototype) Of(minerParam string, payloadCid string, ca
 		Tag:        asStrM(tag),
 	}
 	return &rt
+}
+
+// ParseStageTimeouts parses "StageName=timeout" strings into maps of retrieval and
+// storage timeouts.
+func ParseStageTimeouts(timeoutSpecs []string) (map[string]time.Duration, map[string]time.Duration, error) {
+	var (
+		retrievalTimeouts map[string]time.Duration
+		storageTimeouts   map[string]time.Duration
+	)
+
+	// Parse all stage timeout durations
+	stageTimeouts := map[string]time.Duration{}
+	for _, spec := range timeoutSpecs {
+		parts := strings.SplitN(spec, "=", 2)
+		if len(parts) != 2 {
+			return nil, nil, fmt.Errorf("invalid stage timeout specification: %s", spec)
+		}
+		stage := parts[0]
+		timeout := parts[1]
+		d, err := time.ParseDuration(strings.TrimSpace(timeout))
+		if err != nil || d < time.Second {
+			return nil, nil, fmt.Errorf("invalid value for stage %q timeout: %s", stage, timeout)
+		}
+		stageTimeouts[strings.ToLower(strings.TrimSpace(stage))] = d
+	}
+
+	// Get retrieval timeouts
+	for stageName, _ := range RetrievalStages {
+		stageName = strings.ToLower(stageName)
+		d, ok := stageTimeouts[stageName]
+		if ok {
+			if retrievalTimeouts == nil {
+				retrievalTimeouts = make(map[string]time.Duration)
+			}
+			retrievalTimeouts[stageName] = d
+		}
+	}
+
+	// Get storage timeouts
+	//
+	// None defined currently
+
+	return retrievalTimeouts, storageTimeouts, nil
 }

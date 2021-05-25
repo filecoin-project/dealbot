@@ -39,7 +39,12 @@ func makeRetrievalDeal(cctx *cli.Context) error {
 
 	task := tasks.Type.RetrievalTask.Of(minerParam, payloadCid, carExport, "")
 
-	err = tasks.MakeRetrievalDeal(cctx.Context, nodeConfig, node, task, emptyUpdateStage, log.Infow)
+	stageTimeouts, _, err := tasks.ParseStageTimeouts(cctx.StringSlice("stage-timeout"))
+	if err != nil {
+		return err
+	}
+
+	err = tasks.MakeRetrievalDeal(cctx.Context, nodeConfig, node, task, emptyUpdateStage, log.Infow, stageTimeouts)
 	if err != nil {
 		log.Fatal(err)
 	}

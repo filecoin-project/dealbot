@@ -53,6 +53,11 @@ var RetrievalFlags = []cli.Flag{
 		Usage: "payload cid to fetch from miner",
 		Value: "bafykbzacedikkmeotawrxqquthryw3cijaonobygdp7fb5bujhuos6wdkwomm",
 	},
+	altsrc.NewStringSliceFlag(&cli.StringSliceFlag{
+		Name:    "stage-timeout",
+		Usage:   "stagename=duration exampple: DealAccepted=30m",
+		EnvVars: []string{"STAGE_TIMEOUT"},
+	}),
 }
 
 var StorageFlags = []cli.Flag{
@@ -89,6 +94,11 @@ var StorageFlags = []cli.Flag{
 		EnvVars: []string{"DEALBOT_START_OFFSET"},
 		Value:   30760,
 	},
+	altsrc.NewStringSliceFlag(&cli.StringSliceFlag{
+		Name:    "stage-timeout",
+		Usage:   "stagename=duration exampple: DealAccepted=30m",
+		EnvVars: []string{"STAGE_TIMEOUT"},
+	}),
 }
 
 var SingleTaskFlags = append(DealFlags, MinerFlags...)
@@ -125,6 +135,11 @@ var DaemonFlags = append(DealFlags, append(CommonFlags, append(EndpointFlags, []
 		Name:    "tags",
 		Usage:   "comma separated tag strings",
 		EnvVars: []string{"DEALBOT_TAGS"},
+	}),
+	altsrc.NewStringSliceFlag(&cli.StringSliceFlag{
+		Name:    "stage-timeout",
+		Usage:   "stagename=duration exampple: DealAccepted=30m",
+		EnvVars: []string{"STAGE_TIMEOUT"},
 	}),
 }...)...)...)
 

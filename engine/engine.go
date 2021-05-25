@@ -20,9 +20,6 @@ const (
 	maxTaskRunTime = 24 * time.Hour
 	noTasksWait    = 5 * time.Second
 	popTaskTimeout = 2 * time.Second
-
-	defaultProposeRetrievalTimeout = 30 * time.Minute
-	defaultDealAcceptedTimeout     = 30 * time.Minute
 )
 
 var log = logging.Logger("engine")
@@ -39,7 +36,8 @@ type Engine struct {
 	stopped    chan struct{}
 	tags       []string
 
-	statusTimeouts map[string]time.Duration
+	retrievalStageTimeouts map[string]time.Duration
+	storageStageTimeouts   map[string]time.Duration
 }
 
 func New(ctx context.Context, cliCtx *cli.Context) (*Engine, error) {
@@ -51,6 +49,11 @@ func New(ctx context.Context, cliCtx *cli.Context) (*Engine, error) {
 	host_id := cliCtx.String("id")
 	if host_id == "" {
 		host_id = uuid.New().String()[:8]
+	}
+
+	retStageTimeouts, stoStageTimeouts, err := tasks.ParseStageTimeouts(cliCtx.StringSlice("stage-timeout"))
+	if err != nil {
+		return nil, err
 	}
 
 	client := client.New(cliCtx)
@@ -65,12 +68,6 @@ func New(ctx context.Context, cliCtx *cli.Context) (*Engine, error) {
 		return nil, err
 	}
 
-	// Establish default timeouts
-	stageTimeouts := map[string]time.Duration{
-		"ProposeRetrieval": defaultProposeRetrievalTimeout,
-		"DealAccepted":     defaultDealAcceptedTimeout,
-	}
-
 	log.Infof("remote version: %s", v.Version)
 
 	e := &Engine{
@@ -83,6 +80,9 @@ func New(ctx context.Context, cliCtx *cli.Context) (*Engine, error) {
 		shutdown:   make(chan struct{}),
 		stopped:    make(chan struct{}),
 		tags:       cliCtx.StringSlice("tags"),
+
+		retrievalStageTimeouts: retStageTimeouts,
+		storageStageTimeouts:   stoStageTimeouts,
 	}
 
 	go e.run(workers)
@@ -206,7 +206,7 @@ func (e *Engine) runTask(ctx context.Context, task tasks.Task, runCount, worker 
 
 	// Start deals
 	if task.RetrievalTask.Exists() {
-		err = tasks.MakeRetrievalDeal(ctx, e.nodeConfig, e.node, task.RetrievalTask.Must(), updateStage, log.Infow)
+		err = tasks.MakeRetrievalDeal(ctx, e.nodeConfig, e.node, task.RetrievalTask.Must(), updateStage, log.Infow, e.retrievalStageTimeouts)
 		if err != nil {
 			if err == context.Canceled {
 				// Engine closed, do not update final state
@@ -220,7 +220,7 @@ func (e *Engine) runTask(ctx context.Context, task tasks.Task, runCount, worker 
 			tlog.Info("successfully retrieved data")
 		}
 	} else if task.StorageTask.Exists() {
-		err = tasks.MakeStorageDeal(ctx, e.nodeConfig, e.node, task.StorageTask.Must(), updateStage, log.Infow)
+		err = tasks.MakeStorageDeal(ctx, e.nodeConfig, e.node, task.StorageTask.Must(), updateStage, log.Infow, e.storageStageTimeouts)
 		if err != nil {
 			if err == context.Canceled {
 				// Engine closed, do not update final state
