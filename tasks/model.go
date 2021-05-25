@@ -105,7 +105,7 @@ var RetrievalStages = map[string]StageDetails{
 }
 
 // the multi-codec and hash we use for cid links by default
-var linkProto = linksystem.LinkBuilder{cid.Prefix{
+var linkProto = linksystem.LinkBuilder{Prefix: cid.Prefix{
 	Version:  1,
 	Codec:    uint64(multicodec.DagJson),
 	MhType:   uint64(multicodec.Sha2_256),

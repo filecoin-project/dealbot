@@ -22,7 +22,6 @@ import (
 	"github.com/ipld/go-ipld-prime"
 	dagjson "github.com/ipld/go-ipld-prime/codec/dagjson"
 	cidlink "github.com/ipld/go-ipld-prime/linking/cid"
-	linksystem "github.com/ipld/go-ipld-prime/linking/cid"
 	crypto "github.com/libp2p/go-libp2p-crypto"
 	"github.com/multiformats/go-multicodec"
 
@@ -58,7 +57,7 @@ func (e errorString) Error() string {
 const ErrNotAssigned = errorString("tasks must be acquired through pop task")
 const ErrWrongWorker = errorString("task already acquired by other worker")
 
-var linkProto = linksystem.LinkBuilder{cid.Prefix{
+var linkProto = cidlink.LinkBuilder{Prefix: cid.Prefix{
 	Version:  1,
 	Codec:    uint64(multicodec.DagJson),
 	MhType:   uint64(multicodec.Sha2_256),
@@ -81,7 +80,7 @@ func serializeToJSON(ctx context.Context, n ipld.Node) (cid.Cid, []byte, error) 
 		return cid.Undef, nil, err
 	}
 
-	return link.(linksystem.Link).Cid, data, nil
+	return link.(cidlink.Link).Cid, data, nil
 }
 
 // stateDB is a persisted implementation of the State interface
@@ -184,7 +183,7 @@ func (s *sdbstore) Get(c cid.Cid) (blockformat.Block, error) {
 	}
 	defer tx.Commit()
 	loader := txContextLoader(s.Context, tx)
-	blkReader, err := loader(linksystem.Link{c}, ipld.LinkContext{})
+	blkReader, err := loader(cidlink.Link{Cid: c}, ipld.LinkContext{})
 	if err != nil {
 		return nil, err
 	}
@@ -203,7 +202,7 @@ func (s *sdbstore) Head() (cid.Cid, error) {
 		return cid.Undef, err
 	} else {
 		headCid, err = cid.Decode(head)
-		return headCid, nil
+		return headCid, err
 	}
 }
 
@@ -371,10 +370,6 @@ func (s *stateDB) AssignTask(ctx context.Context, req tasks.PopTask) (tasks.Task
 	return assigned, nil
 }
 
-func mustString(s string, _ error) string {
-	return s
-}
-
 func (s *stateDB) Update(ctx context.Context, taskID string, req tasks.UpdateTask) (tasks.Task, error) {
 	var task tasks.Task
 	err := s.transact(ctx, func(tx *sql.Tx) error {
@@ -441,7 +436,7 @@ func (s *stateDB) Update(ctx context.Context, taskID string, req tasks.UpdateTas
 			}
 
 			if _, err := tx.ExecContext(ctx, addHeadSQL,
-				flink.(linksystem.Link).Cid.String(),
+				flink.(cidlink.Link).Cid.String(),
 				time.Now(),
 				req.WorkedBy.String(),
 				UNATTACHED_RECORD); err != nil {
@@ -470,14 +465,14 @@ func txContextStorer(ctx context.Context, tx *sql.Tx) ipld.Storer {
 	return func(ipld.LinkContext) (io.Writer, ipld.StoreCommitter, error) {
 		buf := bytes.Buffer{}
 		return &buf, func(lnk ipld.Link) error {
-			_, err := tx.ExecContext(ctx, cidArchiveSQL, lnk.(linksystem.Link).Cid.String(), buf.Bytes(), time.Now())
+			_, err := tx.ExecContext(ctx, cidArchiveSQL, lnk.(cidlink.Link).Cid.String(), buf.Bytes(), time.Now())
 			return err
 		}, nil
 	}
 }
 func txContextLoader(ctx context.Context, tx *sql.Tx) ipld.Loader {
 	return func(lnk ipld.Link, lnkCtx ipld.LinkContext) (io.Reader, error) {
-		lc := lnk.(linksystem.Link).Cid.String()
+		lc := lnk.(cidlink.Link).Cid.String()
 		buf := []byte{}
 		if err := tx.QueryRowContext(ctx, cidGetArchiveSQL, lc).Scan(&buf); err != nil {
 			return nil, err
@@ -530,7 +525,12 @@ func (s *stateDB) TaskHistory(ctx context.Context, taskID string) ([]tasks.TaskE
 		if err = rows.Scan(&status, &stage, &run, &ts); err != nil {
 			return nil, err
 		}
-		history = append(history, tasks.TaskEvent{tasks.Type.Status.Of(status), stage, run, ts})
+		history = append(history, tasks.TaskEvent{
+			Status: tasks.Type.Status.Of(status),
+			Stage:  stage,
+			Run:    run,
+			At:     ts,
+		})
 	}
 	return history, nil
 }
@@ -648,7 +648,7 @@ func (s *stateDB) GetHead(ctx context.Context) (tasks.RecordUpdate, error) {
 
 	loader := txContextLoader(ctx, tx)
 	na := tasks.Type.RecordUpdate.NewBuilder()
-	if err = (linksystem.Link{Cid: cidLink}).Load(ctx, ipld.LinkContext{}, na, loader); err != nil {
+	if err = (cidlink.Link{Cid: cidLink}).Load(ctx, ipld.LinkContext{}, na, loader); err != nil {
 		return nil, err
 	}
 
