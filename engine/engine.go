@@ -43,6 +43,11 @@ func New(ctx context.Context, cliCtx *cli.Context) (*Engine, error) {
 		workers = 1
 	}
 
+	host_id := cliCtx.String("id")
+	if host_id == "" {
+		host_id = uuid.New().String()[:8]
+	}
+
 	client := client.New(cliCtx)
 
 	nodeConfig, node, closer, err := lotus.SetupClient(ctx, cliCtx)
@@ -62,7 +67,7 @@ func New(ctx context.Context, cliCtx *cli.Context) (*Engine, error) {
 		nodeConfig: nodeConfig,
 		node:       node,
 		closer:     closer,
-		host:       uuid.New().String()[:8], // TODO: set from config toml
+		host:       host_id,
 		sched:      scheduler.New(),
 		shutdown:   make(chan struct{}),
 		stopped:    make(chan struct{}),
