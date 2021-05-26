@@ -97,28 +97,21 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(ctx context.Context, upda
 	lastStatus := retrievalmarket.DealStatusNew
 	var lastBytesReceived uint64
 	var prevStage string
-
-	stageTimer := time.NewTimer(0)
-	if !stageTimer.Stop() {
-		<-stageTimer.C
-	}
-	defer stageTimer.Stop()
+	var stageTimeout <-chan time.Time
 
 	for {
 		if stage != prevStage {
 			// If there is a timeout for the current deal stage, then set the timer
-			if stageTimeout, ok := stageTimeouts[strings.ToLower(stage)]; ok {
-				stageTimer.Reset(stageTimeout)
+			if timeout, ok := stageTimeouts[strings.ToLower(stage)]; ok {
+				stageTimeout = time.After(timeout)
 			} else {
-				if !stageTimer.Stop() {
-					<-stageTimer.C
-				}
+				stageTimeout = nil
 			}
 			prevStage = stage
 		}
 
 		select {
-		case <-stageTimer.C:
+		case <-stageTimeout:
 			msg := fmt.Sprintf("timed out after %s", stageTimeouts[strings.ToLower(stage)])
 			AddLog(dealStage, msg)
 			return fmt.Errorf("deal stage %q %s", stage, msg)
