@@ -414,6 +414,68 @@ func TestUpdateTasks(t *testing.T) {
 	}
 }
 
+func TestUpdateAndQueryTasks(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	tmpDir, err := ioutil.TempDir("", "testdealbot")
+	if err != nil {
+		panic(err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	key, err := makeKey()
+	require.NoError(t, err)
+
+	stateInterface, err := NewStateDB(ctx, "sqlite", filepath.Join(tmpDir, "teststate.db"), key, nil)
+	require.NoError(t, err)
+	state, ok := stateInterface.(*stateDB)
+	require.True(t, ok, "returned wrong type")
+
+	err = populateTestTasks(ctx, jsonTestDeals, stateInterface)
+	require.NoError(t, err)
+
+	taskCount, err := state.countTasks(ctx)
+	require.NoError(t, err)
+
+	// assign all tasks
+	var inProgressTasks []tasks.Task
+	for i := 0; i < taskCount; i++ {
+		worker := fmt.Sprintf("tester")
+		req := tasks.Type.PopTask.Of(worker, tasks.InProgress)
+		task, err := state.AssignTask(ctx, req)
+		require.NoError(t, err)
+		inProgressTasks = append(inProgressTasks, task)
+	}
+
+	exStageDetail := tasks.Type.StageDetails.Of("Doing Stuff", "A good long while")
+
+	errs := make(chan error, 100)
+	for i := 0; i < 50; i++ {
+		go func() {
+			_, err := state.Update(ctx, inProgressTasks[2].GetUUID(),
+				tasks.Type.UpdateTask.OfStage(inProgressTasks[2].WorkedBy.Must().String(), tasks.InProgress, "", "Stuff", exStageDetail, 1))
+			errs <- err
+		}()
+	}
+	for i := 0; i < 50; i++ {
+		go func() {
+			_, err := state.GetAll(ctx)
+			errs <- err
+		}()
+	}
+	errCount := 0
+	for errCount < 100 {
+		select {
+		case err := <-errs:
+			require.NoError(t, err)
+			errCount++
+		case <-ctx.Done():
+			t.Fatal("both operations did not complete")
+		}
+	}
+}
+
 func populateTestTasks(ctx context.Context, jsonTests string, state State) error {
 	sampleTaskFile, err := os.Open(jsonTestDeals)
 	if err != nil {
