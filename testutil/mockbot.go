@@ -53,8 +53,8 @@ func NewMockDaemon(ctx context.Context, cliCtx *cli.Context) (srv *MockDaemon) {
 
 func (md *MockDaemon) worker(n int) {
 	log.Infow("mock worker started", "worker_id", n)
-	baseFailStates := make([]string, 0, len(tasks.ConnectivityStages))
-	for state := range tasks.ConnectivityStages {
+	baseFailStates := make([]string, 0, len(tasks.CommonStages))
+	for state := range tasks.CommonStages {
 		baseFailStates = append(baseFailStates, state)
 	}
 	retrievalFailStates := make([]string, 0, len(tasks.RetrievalStages)-1+len(baseFailStates))
@@ -115,13 +115,13 @@ func (md *MockDaemon) worker(n int) {
 				stage = retrievalFailStates[rand.Intn(len(retrievalFailStates))]
 				stageDetails, ok = tasks.RetrievalStages[stage]
 				if !ok {
-					stageDetails = tasks.ConnectivityStages[stage]
+					stageDetails = tasks.CommonStages[stage]
 				}
 			} else {
 				stage = storageFailStates[rand.Intn(len(storageFailStates))]
 				stageDetails, ok = storageStageDetails[stage]
 				if !ok {
-					stageDetails = tasks.ConnectivityStages[stage]
+					stageDetails = tasks.CommonStages[stage]
 				}
 			}
 			taskDuration = md.failureAvg + time.Duration(rand.NormFloat64()*float64(md.failureDeviation))

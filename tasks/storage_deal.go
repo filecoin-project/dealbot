@@ -185,6 +185,11 @@ func (de *storageDealExecutor) importFile() (err error) {
 }
 
 func (de *storageDealExecutor) executeAndMonitorDeal(updateStage UpdateStage) error {
+	dealStage := CommonStages["ProposeDeal"]
+	err := updateStage("ProposeDeal", dealStage)
+	if err != nil {
+		return err
+	}
 
 	startOffset := de.task.StartOffset.x
 	if startOffset == 0 {
