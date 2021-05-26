@@ -68,7 +68,7 @@ func (de *retrievalDealExecutor) queryOffer() error {
 }
 
 func (de *retrievalDealExecutor) executeAndMonitorDeal(ctx context.Context, updateStage UpdateStage) error {
-	dealStage := RetrievalStages["ProposeDeal"]
+	dealStage := CommonStages["ProposeDeal"]
 	err := updateStage("ProposeDeal", dealStage)
 	if err != nil {
 		return err
