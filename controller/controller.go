@@ -4,6 +4,7 @@ import (
 	"context"
 	"embed"
 	"fmt"
+	"io/fs"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -99,7 +100,7 @@ func New(ctx *cli.Context) (*Controller, error) {
 	return NewWithDependencies(l, gl, recorder, backend)
 }
 
-//go:embed static/index.html static/script.js
+//go:embed static
 var static embed.FS
 
 func NewWithDependencies(listener, graphqlListener net.Listener, recorder metrics.MetricsRecorder, backend state.State) (*Controller, error) {
@@ -116,7 +117,10 @@ func NewWithDependencies(listener, graphqlListener net.Listener, recorder metric
 		})
 	})
 
-	r.Handle("/", http.FileServer(http.FS(static)))
+	statDir, err := fs.Sub(static, "static")
+	if err != nil {
+		return nil, err
+	}
 	r.HandleFunc("/drain/{workedby}", srv.drainHandler).Methods("POST")
 	r.HandleFunc("/complete/{workedby}", srv.completeHandler).Methods("POST")
 	r.HandleFunc("/pop-task", srv.popTaskHandler).Methods("POST")
@@ -132,7 +136,7 @@ func NewWithDependencies(listener, graphqlListener net.Listener, recorder metric
 	if metricsHandler != nil {
 		r.Handle("/metrics", metricsHandler)
 	}
-	//r.HandleFunc("/task", srv.getTaskHandler).Methods("GET")
+	r.PathPrefix("/").Handler(http.FileServer(http.FS(statDir)))
 
 	srv.doneCh = make(chan struct{})
 	srv.server = &http.Server{
