@@ -197,15 +197,20 @@ func (s *sdbstore) Get(c cid.Cid) (blockformat.Block, error) {
 }
 
 func (s *sdbstore) Head() (cid.Cid, error) {
-	var head string
 	var headCid cid.Cid
-	err := s.db().QueryRowContext(s.Context, queryHeadSQL, LATEST_UPDATE, "").Scan(&head)
+	err := s.stateDB.transact(s.Context, func(tx *sql.Tx) error {
+		var head string
+		err := tx.QueryRowContext(s.Context, queryHeadSQL, LATEST_UPDATE, "").Scan(&head)
+		if err != nil {
+			return err
+		}
+		headCid, err = cid.Decode(head)
+		return err
+	})
 	if err != nil {
 		return cid.Undef, err
-	} else {
-		headCid, err = cid.Decode(head)
-		return headCid, err
 	}
+	return headCid, nil
 }
 
 func (s *stateDB) db() *sql.DB {
@@ -214,17 +219,25 @@ func (s *stateDB) db() *sql.DB {
 
 // Get returns a specific task identified by ID
 func (s *stateDB) Get(ctx context.Context, taskID string) (tasks.Task, error) {
-	var serialized string
-	err := s.db().QueryRowContext(ctx, getTaskSQL, taskID).Scan(&serialized)
+	var task tasks.Task
+	err := s.transact(ctx, func(tx *sql.Tx) error {
+		var serialized string
+		err := s.db().QueryRowContext(ctx, getTaskSQL, taskID).Scan(&serialized)
+		if err != nil {
+			return err
+		}
+
+		tp := tasks.Type.Task.NewBuilder()
+		if err = dagjson.Decoder(tp, bytes.NewBufferString(serialized)); err != nil {
+			return err
+		}
+		task = tp.Build().(tasks.Task)
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
-
-	tp := tasks.Type.Task.NewBuilder()
-	if err := dagjson.Decoder(tp, bytes.NewBufferString(serialized)); err != nil {
-		return nil, err
-	}
-	return tp.Build().(tasks.Task), nil
+	return task, nil
 }
 
 // Get returns a specific task identified by CID
@@ -252,7 +265,7 @@ func (s *stateDB) GetAll(ctx context.Context) ([]tasks.Task, error) {
 		}
 		defer rows.Close()
 
-		tasklist = nil
+		tasklist = nil // reset in case transaction retry
 		for rows.Next() {
 			var serialized string
 			if err = rows.Scan(&serialized); err != nil {
@@ -527,7 +540,7 @@ func (s *stateDB) TaskHistory(ctx context.Context, taskID string) ([]tasks.TaskE
 		}
 		defer rows.Close()
 
-		history = nil
+		history = nil // reset in case transaction retry
 		for rows.Next() {
 			var status, run int
 			var ts time.Time
@@ -647,7 +660,7 @@ func (s *stateDB) countTasks(ctx context.Context) (int, error) {
 
 // GetHead gets the latest record update from the controller.
 func (s *stateDB) GetHead(ctx context.Context) (tasks.RecordUpdate, error) {
-	na := tasks.Type.RecordUpdate.NewBuilder()
+	var recordUpdate tasks.RecordUpdate
 	err := s.transact(ctx, func(tx *sql.Tx) error {
 		var c string
 		err := tx.QueryRowContext(ctx, queryHeadSQL, LATEST_UPDATE, "").Scan(&c)
@@ -659,17 +672,19 @@ func (s *stateDB) GetHead(ctx context.Context) (tasks.RecordUpdate, error) {
 			return err
 		}
 
+		na := tasks.Type.RecordUpdate.NewBuilder()
 		loader := txContextLoader(ctx, tx)
 		if err = (cidlink.Link{Cid: cidLink}).Load(ctx, ipld.LinkContext{}, na, loader); err != nil {
 			return err
 		}
+		recordUpdate = na.Build().(tasks.RecordUpdate)
 		return nil
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	return na.Build().(tasks.RecordUpdate), nil
+	return recordUpdate, nil
 }
 
 // find all unattached records from worker, collect them into a new record update, and make it the new head.
