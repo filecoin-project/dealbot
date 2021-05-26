@@ -27,7 +27,7 @@ func runCmdsWithLog(ctx context.Context, name string, commands [][]string) {
 		cmd.Stderr = logFile
 		// If ctx.Err()!=nil, we cancelled the command via SIGINT.
 		if err := cmd.Run(); err != nil && ctx.Err() == nil {
-			log.Printf("%s; check %s for derunLotusNodetails", err, logFile.Name())
+			log.Printf("%s; check %s for details", err, logFile.Name())
 			break
 		}
 	}
@@ -49,6 +49,7 @@ func runLotusDaemon(ctx context.Context, home string) {
 func runLotusMiner(ctx context.Context, home string) {
 	cmds := [][]string{
 		{"lotus", "wait-api"}, // wait for lotus node to run
+
 		{"lotus", "wallet", "import",
 			filepath.Join(home, ".genesis-sectors", "pre-seal-t01000.key")},
 		{"lotus-miner", "init", "--genesis-miner", "--actor=t01000", "--sector-size=2048",
