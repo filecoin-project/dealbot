@@ -177,17 +177,19 @@ type sdbstore struct {
 }
 
 func (s *sdbstore) Get(c cid.Cid) (blockformat.Block, error) {
-	tx, err := s.stateDB.db().Begin()
-	if err != nil {
-		return nil, err
-	}
-	defer tx.Commit()
-	loader := txContextLoader(s.Context, tx)
-	blkReader, err := loader(cidlink.Link{Cid: c}, ipld.LinkContext{})
-	if err != nil {
-		return nil, err
-	}
-	data, err := ioutil.ReadAll(blkReader)
+	var data []byte
+	err := s.stateDB.transact(s.Context, func(tx *sql.Tx) error {
+		loader := txContextLoader(s.Context, tx)
+		blkReader, err := loader(cidlink.Link{Cid: c}, ipld.LinkContext{})
+		if err != nil {
+			return err
+		}
+		data, err = ioutil.ReadAll(blkReader)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -242,24 +244,31 @@ func (s *stateDB) GetByCID(ctx context.Context, taskCID cid.Cid) (tasks.Task, er
 
 // GetAll queries all tasks from the DB
 func (s *stateDB) GetAll(ctx context.Context) ([]tasks.Task, error) {
-	rows, err := s.db().QueryContext(ctx, getAllTasksSQL)
+	var tasklist []tasks.Task
+	err := s.transact(ctx, func(tx *sql.Tx) error {
+		rows, err := tx.QueryContext(ctx, getAllTasksSQL)
+		if err != nil {
+			return err
+		}
+		defer rows.Close()
+
+		tasklist = nil
+		for rows.Next() {
+			var serialized string
+			if err = rows.Scan(&serialized); err != nil {
+				return err
+			}
+			tp := tasks.Type.Task.NewBuilder()
+			if err = dagjson.Decoder(tp, bytes.NewBufferString(serialized)); err != nil {
+				return err
+			}
+			task := tp.Build().(tasks.Task)
+			tasklist = append(tasklist, task)
+		}
+		return nil
+	})
 	if err != nil {
 		return nil, err
-	}
-	defer rows.Close()
-
-	var tasklist []tasks.Task
-	for rows.Next() {
-		var serialized string
-		if err = rows.Scan(&serialized); err != nil {
-			return nil, err
-		}
-		tp := tasks.Type.Task.NewBuilder()
-		if err = dagjson.Decoder(tp, bytes.NewBufferString(serialized)); err != nil {
-			return nil, err
-		}
-		task := tp.Build().(tasks.Task)
-		tasklist = append(tasklist, task)
 	}
 	return tasklist, nil
 
@@ -290,7 +299,6 @@ func (s *stateDB) AssignTask(ctx context.Context, req tasks.PopTask) (tasks.Task
 		for !iter.Done() {
 			_, v := iter.Next()
 			t := strings.TrimSpace(v.String())
-			fmt.Println("t:", t)
 			if t == "" {
 				continue
 			}
@@ -511,26 +519,33 @@ func (s *stateDB) NewRetrievalTask(ctx context.Context, retrievalTask tasks.Retr
 }
 
 func (s *stateDB) TaskHistory(ctx context.Context, taskID string) ([]tasks.TaskEvent, error) {
-	rows, err := s.db().QueryContext(ctx, taskHistorySQL, taskID)
+	var history []tasks.TaskEvent
+	err := s.transact(ctx, func(tx *sql.Tx) error {
+		rows, err := tx.QueryContext(ctx, taskHistorySQL, taskID)
+		if err != nil {
+			return err
+		}
+		defer rows.Close()
+
+		history = nil
+		for rows.Next() {
+			var status, run int
+			var ts time.Time
+			var stage string
+			if err = rows.Scan(&status, &stage, &run, &ts); err != nil {
+				return err
+			}
+			history = append(history, tasks.TaskEvent{
+				Status: tasks.Type.Status.Of(status),
+				Stage:  stage,
+				Run:    run,
+				At:     ts,
+			})
+		}
+		return nil
+	})
 	if err != nil {
 		return nil, err
-	}
-	defer rows.Close()
-
-	var history []tasks.TaskEvent
-	for rows.Next() {
-		var status, run int
-		var ts time.Time
-		var stage string
-		if err = rows.Scan(&status, &stage, &run, &ts); err != nil {
-			return nil, err
-		}
-		history = append(history, tasks.TaskEvent{
-			Status: tasks.Type.Status.Of(status),
-			Stage:  stage,
-			Run:    run,
-			At:     ts,
-		})
 	}
 	return history, nil
 }
@@ -632,27 +647,25 @@ func (s *stateDB) countTasks(ctx context.Context) (int, error) {
 
 // GetHead gets the latest record update from the controller.
 func (s *stateDB) GetHead(ctx context.Context) (tasks.RecordUpdate, error) {
-	tx, err := s.db().Begin()
-	if err != nil {
-		return nil, err
-	}
-
-	var c string
-	if err := tx.QueryRowContext(ctx, queryHeadSQL, LATEST_UPDATE, "").Scan(&c); err != nil {
-		return nil, err
-	}
-	cidLink, err := cid.Decode(c)
-	if err != nil {
-		return nil, err
-	}
-
-	loader := txContextLoader(ctx, tx)
 	na := tasks.Type.RecordUpdate.NewBuilder()
-	if err = (cidlink.Link{Cid: cidLink}).Load(ctx, ipld.LinkContext{}, na, loader); err != nil {
-		return nil, err
-	}
+	err := s.transact(ctx, func(tx *sql.Tx) error {
+		var c string
+		err := tx.QueryRowContext(ctx, queryHeadSQL, LATEST_UPDATE, "").Scan(&c)
+		if err != nil {
+			return err
+		}
+		cidLink, err := cid.Decode(c)
+		if err != nil {
+			return err
+		}
 
-	if err := tx.Commit(); err != nil {
+		loader := txContextLoader(ctx, tx)
+		if err = (cidlink.Link{Cid: cidLink}).Load(ctx, ipld.LinkContext{}, na, loader); err != nil {
+			return err
+		}
+		return nil
+	})
+	if err != nil {
 		return nil, err
 	}
 
@@ -661,76 +674,79 @@ func (s *stateDB) GetHead(ctx context.Context) (tasks.RecordUpdate, error) {
 
 // find all unattached records from worker, collect them into a new record update, and make it the new head.
 func (s *stateDB) PublishRecordsFrom(ctx context.Context, worker string) error {
-	tx, err := s.db().Begin()
-	if err != nil {
-		return err
-	}
-
-	var head string
-	var headCid cid.Cid
-	err = tx.QueryRowContext(ctx, queryHeadSQL, LATEST_UPDATE, "").Scan(&head)
-	if err != nil {
-		if err == sql.ErrNoRows {
+	return s.transact(ctx, func(tx *sql.Tx) error {
+		var head string
+		var headCid cid.Cid
+		err := tx.QueryRowContext(ctx, queryHeadSQL, LATEST_UPDATE, "").Scan(&head)
+		if err != nil {
+			if err != sql.ErrNoRows {
+				return err
+			}
 			head = ""
 			headCid = cid.Undef
 		} else {
-			return err
+			headCid, err = cid.Decode(head)
+			if err != nil {
+				return err
+			}
 		}
-	} else {
-		headCid, err = cid.Decode(head)
+		headCidSig, err := s.PrivKey.Sign([]byte(head))
 		if err != nil {
 			return err
 		}
-	}
-	headCidSig, err := s.PrivKey.Sign([]byte(head))
-	if err != nil {
-		return err
-	}
 
-	itms, err := tx.QueryContext(ctx, queryHeadSQL, UNATTACHED_RECORD, worker)
-	if err != nil {
-		return err
-	}
-
-	rcrds := []tasks.AuthenticatedRecord{}
-
-	for itms.Next() {
-		var lnk string
-		if err := itms.Scan(&lnk); err != nil {
-			return err
-		}
-		if _, err := tx.ExecContext(ctx, updateHeadSQL, ATTACHED_RECORD, lnk); err != nil {
-			return err
-		}
-		sig, err := s.PrivKey.Sign([]byte(lnk))
+		itms, err := tx.QueryContext(ctx, queryHeadSQL, UNATTACHED_RECORD, worker)
 		if err != nil {
 			return err
 		}
-		c, err := cid.Decode(lnk)
+
+		rcrds := []tasks.AuthenticatedRecord{}
+
+		updateHeadStmt, err := tx.PrepareContext(ctx, updateHeadSQL)
 		if err != nil {
 			return err
 		}
-		rcrd := tasks.Type.AuthenticatedRecord.Of(c, sig)
-		rcrds = append(rcrds, rcrd)
-	}
-	rcrdlst := tasks.Type.List_AuthenticatedRecord.Of(rcrds)
+		defer updateHeadStmt.Close()
 
-	update := tasks.Type.RecordUpdate.Of(rcrdlst, headCid, headCidSig)
-	updateCid, err := linkProto.Build(ctx, ipld.LinkContext{}, update, txContextStorer(ctx, tx))
-	if err != nil {
-		return err
-	}
+		for itms.Next() {
+			var lnk string
+			if err := itms.Scan(&lnk); err != nil {
+				return err
+			}
 
-	if _, err := tx.ExecContext(ctx, addHeadSQL, updateCid.(cidlink.Link).Cid.String(), time.Now(), "", LATEST_UPDATE); err != nil {
-		return err
-	}
-	if head != "" {
-		if _, err := tx.ExecContext(ctx, updateHeadSQL, PREVIOUS_UPDATE, head); err != nil {
+			_, err = updateHeadStmt.ExecContext(ctx, ATTACHED_RECORD, lnk)
+			if err != nil {
+				return err
+			}
+			sig, err := s.PrivKey.Sign([]byte(lnk))
+			if err != nil {
+				return err
+			}
+			c, err := cid.Decode(lnk)
+			if err != nil {
+				return err
+			}
+			rcrd := tasks.Type.AuthenticatedRecord.Of(c, sig)
+			rcrds = append(rcrds, rcrd)
+		}
+		rcrdlst := tasks.Type.List_AuthenticatedRecord.Of(rcrds)
+
+		update := tasks.Type.RecordUpdate.Of(rcrdlst, headCid, headCidSig)
+		updateCid, err := linkProto.Build(ctx, ipld.LinkContext{}, update, txContextStorer(ctx, tx))
+		if err != nil {
 			return err
 		}
-	}
 
-	return tx.Commit()
+		if _, err = tx.ExecContext(ctx, addHeadSQL, updateCid.(cidlink.Link).Cid.String(), time.Now(), "", LATEST_UPDATE); err != nil {
+			return err
+		}
+		if head != "" {
+			if _, err = tx.ExecContext(ctx, updateHeadSQL, PREVIOUS_UPDATE, head); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 }
 
 // drainWorker adds a worker to the list of workers to not give work to.
