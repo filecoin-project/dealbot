@@ -88,6 +88,9 @@ func asStageDetails(description, expected string) StageDetails {
 	}
 }
 
+// BlankStage is a fallback stage for deals that fail early in an unknown stage
+var BlankStage = asStageDetails("Unknown stage", "")
+
 // CommonStages are stages near the beginning of a deal shared between storage & retrieval
 var CommonStages = map[string]StageDetails{
 	"MinerOnline":  asStageDetails("Miner is online", "a few seconds"),

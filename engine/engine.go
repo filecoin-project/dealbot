@@ -228,13 +228,19 @@ func (e *Engine) runTask(ctx context.Context, task tasks.Task, runCount, worker 
 	}
 
 	// Update task final status. Do not use task context.
+	var stageDetails tasks.StageDetails
+	if task.CurrentStageDetails.Exists() {
+		stageDetails = task.CurrentStageDetails.Must()
+	} else {
+		stageDetails = tasks.BlankStage
+	}
 	_, err = e.client.UpdateTask(ctx, task.UUID.String(),
 		tasks.Type.UpdateTask.OfStage(
 			e.host,
 			finalStatus,
 			finalErrorMessage,
 			task.Stage.String(),
-			task.CurrentStageDetails.Must(),
+			stageDetails,
 			runCount,
 		))
 
