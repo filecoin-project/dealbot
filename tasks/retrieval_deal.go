@@ -243,7 +243,15 @@ func ParseStageTimeouts(timeoutSpecs []string) (map[string]time.Duration, error)
 	stageTimeouts := make(map[string]time.Duration, len(timeouts)+1)
 	stageTimeouts[defaultStageTimeoutName] = d
 
-	// Get retrieval timeouts
+	// Get common stage timeouts
+	for stageName, _ := range CommonStages {
+		stageName = strings.ToLower(stageName)
+		if d, ok = timeouts[stageName]; ok {
+			stageTimeouts[stageName] = d
+		}
+	}
+
+	// Get retrieval stage timeouts
 	for stageName, _ := range RetrievalStages {
 		stageName = strings.ToLower(stageName)
 		if d, ok = timeouts[stageName]; ok {
