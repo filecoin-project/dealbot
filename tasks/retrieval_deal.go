@@ -14,6 +14,11 @@ import (
 	"github.com/ipfs/go-cid"
 )
 
+const (
+	defaultStageTimeout     = 30 * time.Minute
+	defaultStageTimeoutName = "default"
+)
+
 func MakeRetrievalDeal(ctx context.Context, config NodeConfig, node api.FullNode, task RetrievalTask, updateStage UpdateStage, log LogStatus, stageTimeouts map[string]time.Duration) error {
 	de := &retrievalDealExecutor{
 		dealExecutor: dealExecutor{
@@ -97,21 +102,26 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(ctx context.Context, upda
 	lastStatus := retrievalmarket.DealStatusNew
 	var lastBytesReceived uint64
 	var prevStage string
-	var stageTimeout <-chan time.Time
+
+	defaultStageTimeout := stageTimeouts[defaultStageTimeoutName]
+	timer := time.NewTimer(defaultStageTimeout)
 
 	for {
 		if stage != prevStage {
-			// If there is a timeout for the current deal stage, then set the timer
-			if timeout, ok := stageTimeouts[strings.ToLower(stage)]; ok {
-				stageTimeout = time.After(timeout)
-			} else {
-				stageTimeout = nil
+			// Set the timeout for the for the current deal stage
+			timeout, ok := stageTimeouts[strings.ToLower(stage)]
+			if !ok {
+				timeout = defaultStageTimeout
 			}
+			if !timer.Stop() {
+				<-timer.C
+			}
+			timer.Reset(timeout)
 			prevStage = stage
 		}
 
 		select {
-		case <-stageTimeout:
+		case <-timer.C:
 			msg := fmt.Sprintf("timed out after %s", stageTimeouts[strings.ToLower(stage)])
 			AddLog(dealStage, msg)
 			return fmt.Errorf("deal stage %q %s", stage, msg)
@@ -202,8 +212,6 @@ func (rp *_RetrievalTask__Prototype) Of(minerParam string, payloadCid string, ca
 // ParseStageTimeouts parses "StageName=timeout" strings into a map of stage
 // name to timeout duration.
 func ParseStageTimeouts(timeoutSpecs []string) (map[string]time.Duration, error) {
-	var stageTimeouts map[string]time.Duration
-
 	// Parse all stage timeout durations
 	timeouts := map[string]time.Duration{}
 	for _, spec := range timeoutSpecs {
@@ -211,23 +219,34 @@ func ParseStageTimeouts(timeoutSpecs []string) (map[string]time.Duration, error)
 		if len(parts) != 2 {
 			return nil, fmt.Errorf("invalid stage timeout specification: %s", spec)
 		}
-		stage := parts[0]
-		timeout := parts[1]
-		d, err := time.ParseDuration(strings.TrimSpace(timeout))
+		stage := strings.TrimSpace(parts[0])
+		timeout := strings.TrimSpace(parts[1])
+		d, err := time.ParseDuration(timeout)
 		if err != nil || d < time.Second {
 			return nil, fmt.Errorf("invalid value for stage %q timeout: %s", stage, timeout)
 		}
-		timeouts[strings.ToLower(strings.TrimSpace(stage))] = d
+		stage = strings.ToLower(stage)
+		if _, found := timeouts[stage]; found {
+			return nil, fmt.Errorf("multiple timeouts specified for stage %q", stage)
+		}
+		timeouts[stage] = d
 	}
+
+	// Get default stage timeout
+	d, ok := timeouts[defaultStageTimeoutName]
+	if !ok {
+		d = defaultStageTimeout
+	} else {
+		delete(timeouts, defaultStageTimeoutName)
+	}
+
+	stageTimeouts := make(map[string]time.Duration, len(timeouts)+1)
+	stageTimeouts[defaultStageTimeoutName] = d
 
 	// Get retrieval timeouts
 	for stageName, _ := range RetrievalStages {
 		stageName = strings.ToLower(stageName)
-		d, ok := timeouts[stageName]
-		if ok {
-			if stageTimeouts == nil {
-				stageTimeouts = make(map[string]time.Duration)
-			}
+		if d, ok = timeouts[stageName]; ok {
 			stageTimeouts[stageName] = d
 		}
 	}
@@ -235,6 +254,15 @@ func ParseStageTimeouts(timeoutSpecs []string) (map[string]time.Duration, error)
 	// Get storage timeouts
 	//
 	// None defined currently
+
+	// Check for unused stage timeouts
+	if len(stageTimeouts)-1 < len(timeouts) {
+		for stageName, _ := range timeouts {
+			if _, ok = stageTimeouts[stageName]; !ok {
+				return nil, fmt.Errorf("unusable stage timeout: %q", stageName)
+			}
+		}
+	}
 
 	return stageTimeouts, nil
 }

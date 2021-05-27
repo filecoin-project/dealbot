@@ -55,7 +55,7 @@ var RetrievalFlags = []cli.Flag{
 	},
 	altsrc.NewStringSliceFlag(&cli.StringSliceFlag{
 		Name:    "stage-timeout",
-		Usage:   "stagename=duration exampple: DealAccepted=30m",
+		Usage:   "stagename=duration (example: DealAccepted=15m), set default: default=30m",
 		EnvVars: []string{"STAGE_TIMEOUT"},
 	}),
 }
@@ -120,21 +120,21 @@ var DaemonFlags = append(DealFlags, append(CommonFlags, append(EndpointFlags, []
 		Aliases: []string{"l"},
 		EnvVars: []string{"DEALBOT_LISTEN"},
 	}),
-	altsrc.NewIntFlag(&cli.IntFlag{
-		Name:    "workers",
-		Usage:   "number of concurrent task workers",
-		EnvVars: []string{"DEALBOT_WORKERS"},
-		Value:   1,
+	altsrc.NewStringSliceFlag(&cli.StringSliceFlag{
+		Name:    "stage-timeout",
+		Usage:   "stagename=duration (example: DealAccepted=15m), set default: default=30m",
+		EnvVars: []string{"STAGE_TIMEOUT"},
 	}),
 	altsrc.NewStringSliceFlag(&cli.StringSliceFlag{
 		Name:    "tags",
 		Usage:   "comma separated tag strings",
 		EnvVars: []string{"DEALBOT_TAGS"},
 	}),
-	altsrc.NewStringSliceFlag(&cli.StringSliceFlag{
-		Name:    "stage-timeout",
-		Usage:   "stagename=duration exampple: DealAccepted=30m",
-		EnvVars: []string{"STAGE_TIMEOUT"},
+	altsrc.NewIntFlag(&cli.IntFlag{
+		Name:    "workers",
+		Usage:   "number of concurrent task workers",
+		EnvVars: []string{"DEALBOT_WORKERS"},
+		Value:   1,
 	}),
 }...)...)...)
 
