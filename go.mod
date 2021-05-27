@@ -8,7 +8,7 @@ require (
 	github.com/filecoin-project/go-fil-markets v1.2.5
 	github.com/filecoin-project/go-jsonrpc v0.1.4-0.20210217175800-45ea43ac2bec
 	github.com/filecoin-project/go-state-types v0.1.0
-	github.com/filecoin-project/lotus v1.6.1-0.20210413134401-50b4ea308366
+	github.com/filecoin-project/lotus v1.9.0
 	github.com/golang-migrate/migrate/v4 v4.14.2-0.20210505171241-ffdcb52998c9
 	github.com/google/go-cmp v0.5.4 // indirect
 	github.com/google/uuid v1.1.2
