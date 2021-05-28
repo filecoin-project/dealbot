@@ -87,10 +87,6 @@ func (c *Controller) completeHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *Controller) popTaskHandler(w http.ResponseWriter, r *http.Request) {
-	// TODO: use a single SQL transaction to remove the need for a mutex here
-	c.popTaskLk.Lock()
-	defer c.popTaskLk.Unlock()
-
 	logger := log.With("req_id", r.Header.Get("X-Request-ID"))
 
 	logger.Debugw("handle request", "command", "pop task")
