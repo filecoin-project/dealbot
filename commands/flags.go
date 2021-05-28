@@ -55,7 +55,7 @@ var RetrievalFlags = []cli.Flag{
 	},
 	altsrc.NewStringSliceFlag(&cli.StringSliceFlag{
 		Name:    "stage-timeout",
-		Usage:   "stagename=duration (example: DealAccepted=15m), set default: default=30m",
+		Usage:   "stagename=duration (example: DealAccepted=15m), DefaultRetrieval sets default",
 		EnvVars: []string{"STAGE_TIMEOUT"},
 	}),
 }
@@ -94,6 +94,11 @@ var StorageFlags = []cli.Flag{
 		EnvVars: []string{"DEALBOT_START_OFFSET"},
 		Value:   30760,
 	},
+	altsrc.NewStringSliceFlag(&cli.StringSliceFlag{
+		Name:    "stage-timeout",
+		Usage:   "stagename=duration (example: ProposeDeal=15m), DefaultStorage sets default",
+		EnvVars: []string{"STAGE_TIMEOUT"},
+	}),
 }
 
 var SingleTaskFlags = append(DealFlags, MinerFlags...)
@@ -122,7 +127,7 @@ var DaemonFlags = append(DealFlags, append(CommonFlags, append(EndpointFlags, []
 	}),
 	altsrc.NewStringSliceFlag(&cli.StringSliceFlag{
 		Name:    "stage-timeout",
-		Usage:   "stagename=duration (example: DealAccepted=15m), set default: default=30m",
+		Usage:   "stagename=duration (example: DealAccepted=15m), DefaultRetrieval and DefaultStorage set defaults",
 		EnvVars: []string{"STAGE_TIMEOUT"},
 	}),
 	altsrc.NewStringSliceFlag(&cli.StringSliceFlag{

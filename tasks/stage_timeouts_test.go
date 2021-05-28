@@ -6,14 +6,22 @@ import (
 )
 
 func TestParseStageTimeouts(t *testing.T) {
-	stageTo, err := ParseStageTimeouts([]string{"ProposeDeal=31m", "DealAccepted=3h", "default=1h"})
+	stageTo, err := ParseStageTimeouts([]string{"ProposeDeal=31m", "DealAccepted=3h", "defaultRetrieval=1h"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(stageTo) != 3 {
-		t.Fatal("expected 3 retrieval timeouts")
+	if len(stageTo) != 4 {
+		t.Fatal("expected 4 retrieval timeouts")
 	}
-	to, ok := stageTo["proposedeal"]
+	to, ok := stageTo[defaultStorageStageTimeoutName]
+	if !ok {
+		t.Fatalf("missing %s timeout", defaultStorageStageTimeoutName)
+	}
+	if to != defaultStorageStageTimeout {
+		t.Errorf("wrong value for %s timeout", defaultStorageStageTimeoutName)
+	}
+
+	to, ok = stageTo["proposedeal"]
 	if !ok {
 		t.Fatal("missing proposedeal timeout")
 	}

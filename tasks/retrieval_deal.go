@@ -14,11 +14,6 @@ import (
 	"github.com/ipfs/go-cid"
 )
 
-const (
-	defaultStageTimeout     = 30 * time.Minute
-	defaultStageTimeoutName = "default"
-)
-
 func MakeRetrievalDeal(ctx context.Context, config NodeConfig, node api.FullNode, task RetrievalTask, updateStage UpdateStage, log LogStatus, stageTimeouts map[string]time.Duration) error {
 	de := &retrievalDealExecutor{
 		dealExecutor: dealExecutor{
@@ -31,18 +26,33 @@ func MakeRetrievalDeal(ctx context.Context, config NodeConfig, node api.FullNode
 		task: task,
 	}
 
-	err := executeStage("MinerOnline", updateStage, []step{
+	defaultTimeout := stageTimeouts[defaultRetrievalStageTimeoutName]
+	getStageCtx := func(stage string) (context.Context, context.CancelFunc) {
+		timeout, ok := stageTimeouts[stage]
+		if !ok {
+			timeout = defaultTimeout
+		}
+		return context.WithTimeout(ctx, timeout)
+	}
+
+	stage := "MinerOnline"
+	stageCtx, cancel := getStageCtx(stage)
+	err := executeStage(stageCtx, stage, updateStage, []step{
 		{de.getTipSet, "Tipset successfully fetched"},
 		{de.getMinerInfo, "Miner Info successfully fetched"},
 		{de.getPeerAddr, "Miner address validated"},
 		{de.netConnect, "Connected to miner"},
 	})
+	cancel()
 	if err != nil {
 		return err
 	}
-	err = executeStage("QueryAsk", updateStage, []step{
+	stage = "QueryAsk"
+	stageCtx, cancel = getStageCtx(stage)
+	err = executeStage(stageCtx, stage, updateStage, []step{
 		{de.queryOffer, "Miner Offer Received"},
 	})
+	cancel()
 	if err != nil {
 		return err
 	}
@@ -78,7 +88,7 @@ func (de *retrievalDealExecutor) queryOffer() error {
 func (de *retrievalDealExecutor) executeAndMonitorDeal(ctx context.Context, updateStage UpdateStage, stageTimeouts map[string]time.Duration) error {
 	stage := "ProposeDeal"
 	dealStage := CommonStages[stage]
-	err := updateStage(stage, dealStage)
+	err := updateStage(ctx, stage, dealStage)
 	if err != nil {
 		return err
 	}
@@ -94,7 +104,7 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(ctx context.Context, upda
 	}
 
 	dealStage = AddLog(dealStage, "deal sent to miner")
-	err = updateStage(stage, dealStage)
+	err = updateStage(ctx, stage, dealStage)
 	if err != nil {
 		return err
 	}
@@ -103,12 +113,12 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(ctx context.Context, upda
 	var lastBytesReceived uint64
 	var prevStage string
 
-	defaultStageTimeout := stageTimeouts[defaultStageTimeoutName]
+	defaultStageTimeout := stageTimeouts[defaultRetrievalStageTimeoutName]
 	timer := time.NewTimer(defaultStageTimeout)
 
 	for {
 		if stage != prevStage {
-			// Set the timeout for the for the current deal stage
+			// Set the timeout for the current deal stage
 			timeout, ok := stageTimeouts[strings.ToLower(stage)]
 			if !ok {
 				timeout = defaultStageTimeout
@@ -142,7 +152,7 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(ctx context.Context, upda
 				if event.Event == retrievalmarket.ClientEventDealAccepted {
 					stage = "DealAccepted"
 					dealStage = RetrievalStages[stage]
-					err := updateStage(stage, dealStage)
+					err := updateStage(ctx, stage, dealStage)
 					if err != nil {
 						return err
 					}
@@ -150,7 +160,7 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(ctx context.Context, upda
 				if event.BytesReceived > 0 && lastBytesReceived == 0 {
 					stage = "FirstByteReceived"
 					dealStage = RetrievalStages[stage]
-					err := updateStage(stage, dealStage)
+					err := updateStage(ctx, stage, dealStage)
 					if err != nil {
 						return err
 					}
@@ -162,7 +172,7 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(ctx context.Context, upda
 				stage = "DealComplete"
 				dealStage = RetrievalStages[stage]
 				dealStage = AddLog(dealStage, fmt.Sprintf("bytes received: %d", event.BytesReceived))
-				err := updateStage(stage, dealStage)
+				err := updateStage(ctx, stage, dealStage)
 				if err != nil {
 					return err
 				}
@@ -177,7 +187,7 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(ctx context.Context, upda
 				_ = rdata
 
 				dealStage = AddLog(dealStage, "file read from file system")
-				err = updateStage(stage, dealStage)
+				err = updateStage(ctx, stage, dealStage)
 				if err != nil {
 					return err
 				}
@@ -207,70 +217,4 @@ func (rp *_RetrievalTask__Prototype) Of(minerParam string, payloadCid string, ca
 		Tag:        asStrM(tag),
 	}
 	return &rt
-}
-
-// ParseStageTimeouts parses "StageName=timeout" strings into a map of stage
-// name to timeout duration.
-func ParseStageTimeouts(timeoutSpecs []string) (map[string]time.Duration, error) {
-	// Parse all stage timeout durations
-	timeouts := map[string]time.Duration{}
-	for _, spec := range timeoutSpecs {
-		parts := strings.SplitN(spec, "=", 2)
-		if len(parts) != 2 {
-			return nil, fmt.Errorf("invalid stage timeout specification: %s", spec)
-		}
-		stage := strings.TrimSpace(parts[0])
-		timeout := strings.TrimSpace(parts[1])
-		d, err := time.ParseDuration(timeout)
-		if err != nil || d < time.Second {
-			return nil, fmt.Errorf("invalid value for stage %q timeout: %s", stage, timeout)
-		}
-		stage = strings.ToLower(stage)
-		if _, found := timeouts[stage]; found {
-			return nil, fmt.Errorf("multiple timeouts specified for stage %q", stage)
-		}
-		timeouts[stage] = d
-	}
-
-	// Get default stage timeout
-	d, ok := timeouts[defaultStageTimeoutName]
-	if !ok {
-		d = defaultStageTimeout
-	} else {
-		delete(timeouts, defaultStageTimeoutName)
-	}
-
-	stageTimeouts := make(map[string]time.Duration, len(timeouts)+1)
-	stageTimeouts[defaultStageTimeoutName] = d
-
-	// Get common stage timeouts
-	for stageName, _ := range CommonStages {
-		stageName = strings.ToLower(stageName)
-		if d, ok = timeouts[stageName]; ok {
-			stageTimeouts[stageName] = d
-		}
-	}
-
-	// Get retrieval stage timeouts
-	for stageName, _ := range RetrievalStages {
-		stageName = strings.ToLower(stageName)
-		if d, ok = timeouts[stageName]; ok {
-			stageTimeouts[stageName] = d
-		}
-	}
-
-	// Get storage timeouts
-	//
-	// None defined currently
-
-	// Check for unused stage timeouts
-	if len(stageTimeouts)-1 < len(timeouts) {
-		for stageName, _ := range timeouts {
-			if _, ok = stageTimeouts[stageName]; !ok {
-				return nil, fmt.Errorf("unusable stage timeout: %q", stageName)
-			}
-		}
-	}
-
-	return stageTimeouts, nil
 }

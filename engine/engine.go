@@ -180,7 +180,7 @@ func (e *Engine) runTask(ctx context.Context, task tasks.Task, runCount, worker 
 	log.Infow("worker running task", "uuid", task.UUID.String(), "run_count", runCount, "worker_id", worker)
 
 	// Define function to update task stage.  Use shutdown context, not task
-	updateStage := func(stage string, stageDetails tasks.StageDetails) error {
+	updateStage := func(ctx context.Context, stage string, stageDetails tasks.StageDetails) error {
 		updatedTask, err := e.client.UpdateTask(ctx, task.UUID.String(),
 			tasks.Type.UpdateTask.OfStage(
 				e.host,
@@ -218,7 +218,7 @@ func (e *Engine) runTask(ctx context.Context, task tasks.Task, runCount, worker 
 			tlog.Info("successfully retrieved data")
 		}
 	} else if task.StorageTask.Exists() {
-		err = tasks.MakeStorageDeal(ctx, e.nodeConfig, e.node, task.StorageTask.Must(), updateStage, log.Infow)
+		err = tasks.MakeStorageDeal(ctx, e.nodeConfig, e.node, task.StorageTask.Must(), updateStage, log.Infow, e.stageTimeouts)
 		if err != nil {
 			if err == context.Canceled {
 				// Engine closed, do not update final state
