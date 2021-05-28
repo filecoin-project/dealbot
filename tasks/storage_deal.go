@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/filecoin-project/go-address"
@@ -25,7 +26,7 @@ import (
 const maxPriceDefault = 5e16
 const startOffsetDefault = 30760
 
-func MakeStorageDeal(ctx context.Context, config NodeConfig, node api.FullNode, task StorageTask, updateStage UpdateStage, log LogStatus) error {
+func MakeStorageDeal(ctx context.Context, config NodeConfig, node api.FullNode, task StorageTask, updateStage UpdateStage, log LogStatus, stageTimeouts map[string]time.Duration) error {
 	de := &storageDealExecutor{
 		dealExecutor: dealExecutor{
 			ctx:    ctx,
@@ -36,35 +37,57 @@ func MakeStorageDeal(ctx context.Context, config NodeConfig, node api.FullNode, 
 		},
 		task: task,
 	}
-	err := executeStage("MinerOnline", updateStage, []step{
+
+	defaultTimeout := stageTimeouts[defaultStorageStageTimeoutName]
+	getStageCtx := func(stage string) (context.Context, context.CancelFunc) {
+		timeout, ok := stageTimeouts[stage]
+		if !ok {
+			timeout = defaultTimeout
+		}
+		return context.WithTimeout(ctx, timeout)
+	}
+
+	stage := "MinerOnline"
+	stageCtx, cancel := getStageCtx(stage)
+	err := executeStage(stageCtx, stage, updateStage, []step{
 		{de.getTipSet, "Tipset successfully fetched"},
 		{de.getMinerInfo, "Miner Info successfully fetched"},
 		{de.getPeerAddr, "Miner address validated"},
 		{de.netConnect, "Connected to miner"},
 	})
+	cancel()
 	if err != nil {
 		return err
 	}
-	err = executeStage("QueryAsk", updateStage, []step{
+	stage = "QueryAsk"
+	stageCtx, cancel = getStageCtx(stage)
+	err = executeStage(stageCtx, stage, updateStage, []step{
 		{de.queryAsk, "Successfully queried ask from miner"},
 	})
+	cancel()
 	if err != nil {
 		return err
 	}
-	err = executeStage("CheckPrice", updateStage, []step{
+	stage = "CheckPrice"
+	stageCtx, cancel = getStageCtx(stage)
+	err = executeStage(stageCtx, stage, updateStage, []step{
 		{de.checkPrice, "Deal Price Validated"},
 	})
+	cancel()
 	if err != nil {
 		return err
 	}
-	err = executeStage("ClientImport", updateStage, []step{
+	stage = "ClientImport"
+	stageCtx, cancel = getStageCtx(stage)
+	err = executeStage(stageCtx, stage, updateStage, []step{
 		{de.generateFile, "Data file generated"},
 		{de.importFile, "Data file imported to Lotus"},
 	})
+	cancel()
 	if err != nil {
 		return err
 	}
-	return de.executeAndMonitorDeal(updateStage)
+	return de.executeAndMonitorDeal(ctx, updateStage, stageTimeouts)
 }
 
 type dealExecutor struct {
@@ -184,9 +207,10 @@ func (de *storageDealExecutor) importFile() (err error) {
 	return nil
 }
 
-func (de *storageDealExecutor) executeAndMonitorDeal(updateStage UpdateStage) error {
-	dealStage := CommonStages["ProposeDeal"]
-	err := updateStage("ProposeDeal", dealStage)
+func (de *storageDealExecutor) executeAndMonitorDeal(ctx context.Context, updateStage UpdateStage, stageTimeouts map[string]time.Duration) error {
+	stage := "ProposeDeal"
+	dealStage := CommonStages[stage]
+	err := updateStage(ctx, stage, dealStage)
 	if err != nil {
 		return err
 	}
@@ -230,50 +254,80 @@ func (de *storageDealExecutor) executeAndMonitorDeal(updateStage UpdateStage) er
 
 	de.log("got deal updates channel")
 
+	var prevStage string
+	defaultStageTimeout := stageTimeouts[defaultStorageStageTimeoutName]
+	timer := time.NewTimer(defaultStageTimeout)
+
 	lastState := storagemarket.StorageDealUnknown
-	for info := range updates {
-		if !proposalCid.Equals(info.ProposalCid) {
-			continue
-		}
-		stage := info.DealStages.GetStage(storagemarket.DealStates[info.State])
-		if stage != nil {
-			err = updateStage(storagemarket.DealStates[info.State], toStageDetails(stage))
-			if err != nil {
-				return err
+	for {
+		if stage != prevStage {
+			// Set the timeout for the current deal stage
+			timeout, ok := stageTimeouts[strings.ToLower(stage)]
+			if !ok {
+				timeout = defaultStageTimeout
 			}
-		}
-		if info.State != lastState {
-			de.log("Deal status",
-				"cid", info.ProposalCid,
-				"piece", info.PieceCID,
-				"state", storagemarket.DealStates[info.State],
-				"message", info.Message,
-				"provider", info.Provider,
-			)
-			lastState = info.State
+			if !timer.Stop() {
+				<-timer.C
+			}
+			timer.Reset(timeout)
+			prevStage = stage
 		}
 
-		switch info.State {
-		case storagemarket.StorageDealUnknown,
-			storagemarket.StorageDealProposalNotFound,
-			storagemarket.StorageDealProposalRejected,
-			storagemarket.StorageDealExpired,
-			storagemarket.StorageDealSlashed,
-			storagemarket.StorageDealRejecting,
-			storagemarket.StorageDealFailing,
-			storagemarket.StorageDealError:
+		select {
+		case <-timer.C:
+			msg := fmt.Sprintf("timed out after %s", stageTimeouts[strings.ToLower(stage)])
+			AddLog(dealStage, msg)
+			return fmt.Errorf("deal stage %q %s", stage, msg)
+		case info, ok := <-updates:
+			if !ok {
+				return nil
+			}
 
-			logStages(info, de.log)
-			return fmt.Errorf("storage deal failed: %s", info.Message)
+			if !proposalCid.Equals(info.ProposalCid) {
+				continue
+			}
 
-		// deal is on chain, exit successfully
-		case storagemarket.StorageDealActive:
+			stage := info.DealStages.GetStage(storagemarket.DealStates[info.State])
+			if stage != nil {
+				err = updateStage(ctx, storagemarket.DealStates[info.State], toStageDetails(stage))
+				if err != nil {
+					return err
+				}
+			}
+			if info.State != lastState {
+				de.log("Deal status",
+					"cid", info.ProposalCid,
+					"piece", info.PieceCID,
+					"state", storagemarket.DealStates[info.State],
+					"message", info.Message,
+					"provider", info.Provider,
+				)
+				lastState = info.State
+			}
 
-			logStages(info, de.log)
-			return nil
+			switch info.State {
+			case storagemarket.StorageDealUnknown,
+				storagemarket.StorageDealProposalNotFound,
+				storagemarket.StorageDealProposalRejected,
+				storagemarket.StorageDealExpired,
+				storagemarket.StorageDealSlashed,
+				storagemarket.StorageDealRejecting,
+				storagemarket.StorageDealFailing,
+				storagemarket.StorageDealError:
+
+				logStages(info, de.log)
+				return fmt.Errorf("storage deal failed: %s", info.Message)
+
+			// deal is on chain, exit successfully
+			case storagemarket.StorageDealActive:
+
+				logStages(info, de.log)
+				return nil
+			}
+		case <-ctx.Done():
+			return ctx.Err()
 		}
 	}
-
 	return nil
 }
 

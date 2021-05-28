@@ -25,7 +25,7 @@ type LogStatus func(msg string, keysAndValues ...interface{})
 
 // UpdateStage updates the stage & current stage details for a deal, and
 // records the previous stage in the task status ledger as needed
-type UpdateStage func(stage string, stageDetails StageDetails) error
+type UpdateStage func(ctx context.Context, stage string, stageDetails StageDetails) error
 
 // NodeConfig specifies parameters to a running deal bot
 type NodeConfig struct {
@@ -144,22 +144,25 @@ type step struct {
 	stepSuccess   string
 }
 
-func executeStage(stage string, updateStage UpdateStage, steps []step) error {
+func executeStage(ctx context.Context, stage string, updateStage UpdateStage, steps []step) error {
 	stageDetails, ok := CommonStages[stage]
 	if !ok {
 		return errors.New("unknown stage")
 	}
-	err := updateStage(stage, stageDetails)
+	err := updateStage(ctx, stage, stageDetails)
 	if err != nil {
 		return err
 	}
 	for _, step := range steps {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
 		err := step.stepExecution()
 		if err != nil {
 			return err
 		}
 		stageDetails = AddLog(stageDetails, step.stepSuccess)
-		err = updateStage(stage, stageDetails)
+		err = updateStage(ctx, stage, stageDetails)
 		if err != nil {
 			return nil
 		}

@@ -35,6 +35,8 @@ type Engine struct {
 	shutdown   chan struct{}
 	stopped    chan struct{}
 	tags       []string
+
+	stageTimeouts map[string]time.Duration
 }
 
 func New(ctx context.Context, cliCtx *cli.Context) (*Engine, error) {
@@ -46,6 +48,11 @@ func New(ctx context.Context, cliCtx *cli.Context) (*Engine, error) {
 	host_id := cliCtx.String("id")
 	if host_id == "" {
 		host_id = uuid.New().String()[:8]
+	}
+
+	stageTimeouts, err := tasks.ParseStageTimeouts(cliCtx.StringSlice("stage-timeout"))
+	if err != nil {
+		return nil, err
 	}
 
 	client := client.New(cliCtx)
@@ -72,6 +79,8 @@ func New(ctx context.Context, cliCtx *cli.Context) (*Engine, error) {
 		shutdown:   make(chan struct{}),
 		stopped:    make(chan struct{}),
 		tags:       cliCtx.StringSlice("tags"),
+
+		stageTimeouts: stageTimeouts,
 	}
 
 	go e.run(workers)
@@ -171,7 +180,7 @@ func (e *Engine) runTask(ctx context.Context, task tasks.Task, runCount, worker 
 	log.Infow("worker running task", "uuid", task.UUID.String(), "run_count", runCount, "worker_id", worker)
 
 	// Define function to update task stage.  Use shutdown context, not task
-	updateStage := func(stage string, stageDetails tasks.StageDetails) error {
+	updateStage := func(ctx context.Context, stage string, stageDetails tasks.StageDetails) error {
 		updatedTask, err := e.client.UpdateTask(ctx, task.UUID.String(),
 			tasks.Type.UpdateTask.OfStage(
 				e.host,
@@ -195,7 +204,7 @@ func (e *Engine) runTask(ctx context.Context, task tasks.Task, runCount, worker 
 
 	// Start deals
 	if task.RetrievalTask.Exists() {
-		err = tasks.MakeRetrievalDeal(ctx, e.nodeConfig, e.node, task.RetrievalTask.Must(), updateStage, log.Infow)
+		err = tasks.MakeRetrievalDeal(ctx, e.nodeConfig, e.node, task.RetrievalTask.Must(), updateStage, log.Infow, e.stageTimeouts)
 		if err != nil {
 			if err == context.Canceled {
 				// Engine closed, do not update final state
@@ -209,7 +218,7 @@ func (e *Engine) runTask(ctx context.Context, task tasks.Task, runCount, worker 
 			tlog.Info("successfully retrieved data")
 		}
 	} else if task.StorageTask.Exists() {
-		err = tasks.MakeStorageDeal(ctx, e.nodeConfig, e.node, task.StorageTask.Must(), updateStage, log.Infow)
+		err = tasks.MakeStorageDeal(ctx, e.nodeConfig, e.node, task.StorageTask.Must(), updateStage, log.Infow, e.stageTimeouts)
 		if err != nil {
 			if err == context.Canceled {
 				// Engine closed, do not update final state
