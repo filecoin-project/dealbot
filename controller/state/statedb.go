@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"net/http"
 	"strings"
 	"sync"
 	"time"
@@ -35,8 +34,7 @@ import (
 	"github.com/golang-migrate/migrate/v4/database"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	"github.com/golang-migrate/migrate/v4/database/sqlite"
-	"github.com/golang-migrate/migrate/v4/source/httpfs"
-	//"github.com/golang-migrate/migrate/v4/source/iofs"
+	"github.com/golang-migrate/migrate/v4/source/iofs"
 )
 
 // Maximum time to retry transactions that fail due to temporary error
@@ -108,9 +106,7 @@ func migrateSqlite(db *sql.DB) error {
 }
 
 func migrateDatabase(dbName string, dbInstance database.Driver) error {
-	// TODO: Replace httpfs with iofs when it becomes available (June 2021?)
-	source, err := httpfs.New(http.FS(migrations), "migrations")
-	//source, err := iofs.New(migrations, "migrations")
+	source, err := iofs.New(migrations, "migrations")
 	if err != nil {
 		return err
 	}
@@ -119,7 +115,7 @@ func migrateDatabase(dbName string, dbInstance database.Driver) error {
 	if err != nil {
 		return err
 	}
-	//return m.Steps(2) // Migrate 2 versions up at mose
+
 	err = m.Up()
 	if err == migrate.ErrNoChange {
 		return nil
@@ -294,8 +290,6 @@ func (s *stateDB) GetAll(ctx context.Context) ([]tasks.Task, error) {
 // If the request specifies no tags, then this selects any task.  If the
 // request specifies tags, then this selects any task with a tag matching one
 // of the tags in the request, or any untagged task.
-//
-// TODO: There should be a limit to the age of the task to assign.
 func (s *stateDB) AssignTask(ctx context.Context, req tasks.PopTask) (tasks.Task, error) {
 	if req.WorkedBy.String() == "" {
 		return nil, errors.New("PopTask request must specify WorkedBy")
@@ -570,8 +564,8 @@ func (s *stateDB) transact(ctx context.Context, f func(*sql.Tx) error) error {
 		return err
 	}
 
-	// SQLite is not safe to use un multiple goroutines concurrently, so mutex
-	// around transaction is needed.
+	// SQLite is not safe to use with multiple goroutines concurrently, so mutex
+	// lock around transaction is needed.
 	var needLock bool
 	if s.dbconn.Name() == "sqlite" {
 		needLock = true

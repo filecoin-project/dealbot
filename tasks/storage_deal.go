@@ -3,6 +3,7 @@ package tasks
 import (
 	"context"
 	"crypto/rand"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -128,7 +129,7 @@ func (de *dealExecutor) getMinerInfo() (err error) {
 
 func (de *dealExecutor) getPeerAddr() error {
 	if de.minerInfo.PeerId == nil {
-		return fmt.Errorf("no PeerID for miner")
+		return errors.New("no PeerID for miner")
 	}
 	multiaddrs := make([]multiaddr.Multiaddr, 0, len(de.minerInfo.Multiaddrs))
 	for i, a := range de.minerInfo.Multiaddrs {

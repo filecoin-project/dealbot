@@ -9,7 +9,6 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"sync"
 	"time"
 
 	"github.com/filecoin-project/dealbot/controller/graphql"
@@ -37,7 +36,6 @@ type Controller struct {
 	doneCh          chan struct{}
 	db              state.State
 	metricsRecorder metrics.MetricsRecorder
-	popTaskLk       sync.Mutex
 }
 
 func New(ctx *cli.Context) (*Controller, error) {
