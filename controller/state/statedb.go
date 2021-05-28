@@ -564,8 +564,8 @@ func (s *stateDB) transact(ctx context.Context, f func(*sql.Tx) error) error {
 		return err
 	}
 
-	// SQLite is not safe to use un multiple goroutines concurrently, so mutex
-	// around transaction is needed.
+	// SQLite is not safe to use with multiple goroutines concurrently, so mutex
+	// lock around transaction is needed.
 	var needLock bool
 	if s.dbconn.Name() == "sqlite" {
 		needLock = true
