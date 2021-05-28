@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/filecoin-project/go-address"
@@ -274,7 +275,41 @@ func (t *_Task) Finalize(ctx context.Context, s ipld.Storer) (FinishedTask, erro
 }
 
 func parseFinalLogs(t Task) (int, string, string, _Int__Maybe, _Int__Maybe, _Int__Maybe) {
-	return 0, "", "", _Int__Maybe{}, _Int__Maybe{}, _Int__Maybe{}
+	timeFirstByte := _Int__Maybe{m: schema.Maybe_Absent}
+	timeLastByte := _Int__Maybe{m: schema.Maybe_Absent}
+
+	// If the task failed early, we might not have some of the info.
+	if !t.StartedAt.Exists() || !t.PastStageDetails.Exists() {
+		return 0, "", "", _Int__Maybe{}, timeFirstByte, timeLastByte
+	}
+
+	start := t.StartedAt.Must().Time()
+	for _, stage := range t.PastStageDetails.Must().x {
+		for _, log := range stage.Logs.x {
+			entry := log.Log.String()
+			entryTime := log.UpdatedAt.Time()
+
+			// If funds are reserved, we're about to transfer the data.
+			// TODO: can we do better, e.g. the first transfer
+			// progress update?
+			// TODO: test for retrieval tasks, too.
+			if !timeFirstByte.Exists() && strings.Contains(entry, "funds reserved") {
+				timeFirstByte.m = schema.Maybe_Value
+				timeFirstByte.v = &_Int{entryTime.Sub(start).Milliseconds()}
+			}
+
+			// If the provider is verifying the data, it has all the bytes.
+			// TODO: can we do better, e.g. the last transfer
+			// progress update? this log line seems too late, as it
+			// shows ~30s for a local devnet.
+			// TODO: test for retrieval tasks, too.
+			if !timeLastByte.Exists() && strings.Contains(entry, "provider is verifying the data") {
+				timeLastByte.m = schema.Maybe_Value
+				timeLastByte.v = &_Int{entryTime.Sub(start).Milliseconds()}
+			}
+		}
+	}
+	return 0, "", "", _Int__Maybe{}, timeFirstByte, timeLastByte
 }
 
 func (t *_Task) UpdateTask(tsk UpdateTask) (Task, error) {
