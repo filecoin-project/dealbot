@@ -104,6 +104,13 @@ func TestAssignTask(t *testing.T) {
 	task, err = state.AssignTask(ctx, tasks.Type.PopTask.Of("it's me", tasks.InProgress))
 	require.NoError(t, err)
 	require.Nil(t, task, "Shoud not be able to assign more tasks")
+
+	var uuid string
+	for uuid = range seen {
+		break
+	}
+	task, err = state.Get(ctx, uuid)
+	require.NoError(t, err)
 }
 
 func TestAssignConcurrentTask(t *testing.T) {

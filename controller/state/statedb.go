@@ -218,7 +218,7 @@ func (s *stateDB) Get(ctx context.Context, taskID string) (tasks.Task, error) {
 	var task tasks.Task
 	err := s.transact(ctx, func(tx *sql.Tx) error {
 		var serialized string
-		err := s.db().QueryRowContext(ctx, getTaskSQL, taskID).Scan(&serialized)
+		err := tx.QueryRowContext(ctx, getTaskSQL, taskID).Scan(&serialized)
 		if err != nil {
 			return err
 		}
@@ -238,17 +238,25 @@ func (s *stateDB) Get(ctx context.Context, taskID string) (tasks.Task, error) {
 
 // Get returns a specific task identified by CID
 func (s *stateDB) GetByCID(ctx context.Context, taskCID cid.Cid) (tasks.Task, error) {
-	var serialized string
-	err := s.db().QueryRowContext(ctx, getTaskByCidSQL, taskCID.KeyString()).Scan(&serialized)
+	var task tasks.Task
+	err := s.transact(ctx, func(tx *sql.Tx) error {
+		var serialized string
+		err := tx.QueryRowContext(ctx, getTaskByCidSQL, taskCID.KeyString()).Scan(&serialized)
+		if err != nil {
+			return err
+		}
+
+		tp := tasks.Type.Task.NewBuilder()
+		if err := dagjson.Decoder(tp, bytes.NewBufferString(serialized)); err != nil {
+			return err
+		}
+		task = tp.Build().(tasks.Task)
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
-
-	tp := tasks.Type.Task.NewBuilder()
-	if err := dagjson.Decoder(tp, bytes.NewBufferString(serialized)); err != nil {
-		return nil, err
-	}
-	return tp.Build().(tasks.Task), nil
+	return task, nil
 }
 
 // GetAll queries all tasks from the DB
