@@ -60,6 +60,12 @@ jobs:
         type: string
       release:
         type: string
+      circle_context:
+        type: string
+      kubernetes_cluster:
+        type: string
+      aws_region:
+        type: string
     steps:
       - run:
           name: submit deploy job
@@ -71,6 +77,9 @@ jobs:
             --data "{
               \"parameters\":{
                 \"api_workflow_requested\": \"helm-deploy\",
+                \"circle_context\": \"<< parameters.circle_context >>\",
+                \"kubernetes_cluster\": \"<< parameters.kubernetes_cluster >>\",
+                \"aws_region\": \"<< parameters.aws_region >>\",
                 \"namespace\": \"<< parameters.namespace >>\",
                 \"release\": \"<< parameters.release >>\",
                 \"chart\": \"filecoin/dealbot\",
@@ -90,6 +99,9 @@ workflows:
             - build-and-test
       - deploy-lotusinfra:
           name: deploy-nerpanet
+          circle_context: sentinel-staging-deploy
+          kubernetes_cluster: mainnet-us-east-2-dev-eks
+          aws_regoin: us-east-2
           namespace: ntwk-nerpanet-dealbot
           release: dealbot-0
           requires:
@@ -98,3 +110,17 @@ workflows:
             branches:
               only:
                 - main
+      - deploy-lotusinfra:
+          name: deploy-mainnet-us-east-1
+          circle_context: filecoin-mainnet-aws
+          kubernetes_cluster: mainnet-us-east-1-eks
+          aws_regoin: us-east-1
+          namespace: ntwk-mainnet-dealbot
+          release: dealbot-0
+          requires:
+            - build-push
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*$/
