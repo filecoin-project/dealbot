@@ -239,6 +239,15 @@ func (de *storageDealExecutor) executeAndMonitorDeal(ctx context.Context, update
 	}
 	_ = params
 
+	// track updates to all deals -- we want to start this before we even
+	// initiate the deal so we don't miss any updates
+	updates, err := de.node.ClientGetDealUpdates(de.ctx)
+	if err != nil {
+		return err
+	}
+
+	de.log("got deal updates channel")
+
 	// start deal process
 	proposalCid, err := de.node.ClientStartDeal(de.ctx, params)
 	if err != nil {
@@ -246,14 +255,6 @@ func (de *storageDealExecutor) executeAndMonitorDeal(ctx context.Context, update
 	}
 
 	de.log("got proposal cid", "cid", proposalCid)
-
-	// track updates to deal
-	updates, err := de.node.ClientGetDealUpdates(de.ctx)
-	if err != nil {
-		return err
-	}
-
-	de.log("got deal updates channel")
 
 	var prevStage string
 	defaultStageTimeout := stageTimeouts[defaultStorageStageTimeoutName]
@@ -288,9 +289,9 @@ func (de *storageDealExecutor) executeAndMonitorDeal(ctx context.Context, update
 				continue
 			}
 
-			stage := info.DealStages.GetStage(storagemarket.DealStates[info.State])
-			if stage != nil {
-				err = updateStage(ctx, storagemarket.DealStates[info.State], toStageDetails(stage))
+			if len(info.DealStages.Stages) > 0 {
+				err = updateStage(ctx, storagemarket.DealStates[info.State], toStageDetails(info.DealStages.Stages[len(info.DealStages.Stages)-1]))
+
 				if err != nil {
 					return err
 				}
