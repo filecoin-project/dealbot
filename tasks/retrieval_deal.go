@@ -172,7 +172,7 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(ctx context.Context, upda
 				stage = "DealComplete"
 				dealStage = RetrievalStages[stage]
 				dealStage = AddLog(dealStage, fmt.Sprintf("bytes received: %d", event.BytesReceived))
-				err := updateStage(ctx, stage, dealStage)
+				err = updateStage(ctx, stage, dealStage)
 				if err != nil {
 					return err
 				}

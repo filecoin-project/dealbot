@@ -157,14 +157,14 @@ func executeStage(ctx context.Context, stage string, updateStage UpdateStage, st
 		if ctx.Err() != nil {
 			return ctx.Err()
 		}
-		err := step.stepExecution()
+		err = step.stepExecution()
 		if err != nil {
 			return err
 		}
 		stageDetails = AddLog(stageDetails, step.stepSuccess)
 		err = updateStage(ctx, stage, stageDetails)
 		if err != nil {
-			return nil
+			return err
 		}
 	}
 	return nil

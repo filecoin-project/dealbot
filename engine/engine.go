@@ -181,7 +181,7 @@ func (e *Engine) runTask(ctx context.Context, task tasks.Task, runCount, worker 
 
 	// Define function to update task stage.  Use shutdown context, not task
 	updateStage := func(ctx context.Context, stage string, stageDetails tasks.StageDetails) error {
-		updatedTask, err := e.client.UpdateTask(ctx, task.UUID.String(),
+		_, err := e.client.UpdateTask(ctx, task.UUID.String(),
 			tasks.Type.UpdateTask.OfStage(
 				e.host,
 				tasks.InProgress,
@@ -190,11 +190,6 @@ func (e *Engine) runTask(ctx context.Context, task tasks.Task, runCount, worker 
 				stageDetails,
 				runCount,
 			))
-		// TODO: this is a weird side-effecty behavior and we should find a way
-		// to remove it
-		if err == nil {
-			task = updatedTask
-		}
 		return err
 	}
 
@@ -234,6 +229,12 @@ func (e *Engine) runTask(ctx context.Context, task tasks.Task, runCount, worker 
 	} else {
 		tlog.Error("task has unknown deal type")
 		return
+	}
+
+	// Fetch task with all the updates from deal execution
+	task, err = e.client.GetTask(ctx, task.UUID.String())
+	if err != nil {
+		tlog.Errorw("cannot get updated task to finalize", "err", err)
 	}
 
 	// Update task final status. Do not use task context.
