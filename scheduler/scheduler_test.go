@@ -1,6 +1,8 @@
 package scheduler
 
 import (
+	"context"
+	"sync"
 	"testing"
 	"time"
 
@@ -164,4 +166,46 @@ func TestScheduleLimit(t *testing.T) {
 	case <-time.After(time.Second):
 		t.Error("did not cancel task immediately")
 	}
+}
+
+func TestScheduleRunNow(t *testing.T) {
+	s := NewWithSeconds()
+
+	runChan := s.RunChan()
+
+	wg := new(sync.WaitGroup)
+	worker := func() {
+		defer wg.Done()
+		for job := range runChan {
+			t.Log("running job")
+			select {
+			case <-time.After(5 * time.Second):
+				t.Log("finished job")
+			case <-job.Context.Done():
+				t.Log("canceled job")
+			}
+			job.End()
+		}
+	}
+
+	wg.Add(1)
+	go worker()
+
+	for i := 0; i < 4; i++ {
+		t.Log("Adding job", i)
+		_, err := s.Add(RunNow, nil, 30*time.Second, 0, 0)
+		if err != nil {
+			t.Error(err)
+		} else {
+			t.Log("Added job", i)
+		}
+		t.Log("")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	t.Log("closing scheduler")
+	s.Close(ctx)
+	wg.Wait()
 }

@@ -16,9 +16,7 @@ import (
 	"github.com/robfig/cron/v3"
 )
 
-const (
-	RunNow = "NOW"
-)
+const RunNow = ""
 
 var noEnt cron.EntryID
 
@@ -61,6 +59,7 @@ func (s *Scheduler) RunChan() <-chan Job {
 // Add adds a Task to be scheduled.
 func (s *Scheduler) Add(cronExp string, task tasks.Task, maxRunTime, scheduleLimit time.Duration, lastRunCount int) (cron.EntryID, error) {
 	j := &job{
+		idChan:   make(chan cron.EntryID, 1),
 		runChan:  s.runChan,
 		runCount: lastRunCount,
 		runTime:  maxRunTime,
@@ -70,7 +69,7 @@ func (s *Scheduler) Add(cronExp string, task tasks.Task, maxRunTime, scheduleLim
 		shutdown:   s.shutdown,
 	}
 	if cronExp == RunNow {
-		j.Queue(func() {})
+		j.run(false)
 		return noEnt, nil
 	}
 	if scheduleLimit != 0 {
@@ -81,7 +80,7 @@ func (s *Scheduler) Add(cronExp string, task tasks.Task, maxRunTime, scheduleLim
 	if err != nil {
 		return entID, err
 	}
-	j.entryID = entID
+	j.idChan <- entID
 	return entID, nil
 }
 
@@ -90,9 +89,9 @@ func (s *Scheduler) Remove(jobID cron.EntryID) {
 	s.cronSched.Remove(jobID)
 }
 
-// CLose stops the scheduler, and all its running jobs.  The context passed to
-// Stop determines how long the scheduler will wait for it currently running
-// tasks to complete before it cancels them.  A nil context means do not wait.
+// Close stops the scheduler and all its running jobs.  The context passed to
+// Close determines how long the scheduler waits for running jobs to complete
+// before it cancels them.  A nil context means do not wait.
 func (s *Scheduler) Close(ctx context.Context) {
 	close(s.shutdown)
 	stopCtx := s.cronSched.Stop()

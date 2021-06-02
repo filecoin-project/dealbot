@@ -13,6 +13,7 @@ type job struct {
 	cronSched *cron.Cron
 	entryID   cron.EntryID
 	expireAt  time.Time
+	idChan    chan cron.EntryID
 	runTime   time.Duration
 	runCount  int
 	runChan   chan<- Job
@@ -40,16 +41,14 @@ func (j *job) Run() {
 		return
 	}
 
-	done := make(chan struct{})
-	j.Queue(func() {
-		close(done)
-	})
-	// Wait for worker to signal that job is completed or jobs to be
-	// canceled. Do not wait for shutdown here so that running jobs can finish.
-	<-done
+	if j.entryID == noEnt {
+		j.entryID = <-j.idChan
+	}
+
+	j.run(true)
 }
 
-func (j *job) Queue(done func()) {
+func (j *job) run(wait bool) {
 	j.runCount++
 
 	// Create a context to manage the running time of the current task
@@ -67,15 +66,24 @@ func (j *job) Queue(done func()) {
 	select {
 	case j.runChan <- jobInfo:
 	case <-j.shutdown:
+		runCancel()
 		return
 	}
 
-	go func() {
-		defer runCancel()
+	waitDoneOrCancel := func() {
+		// Wait for worker to signal that job is completed or jobs to be
+		// canceled. Do not wait for shutdown here so that running jobs can
+		// finish without being cancelled by shutdown.
 		select {
 		case <-runCtx.Done():
 		case <-j.cancelJobs:
 		}
-		done()
-	}()
+		runCancel()
+	}
+
+	if wait {
+		waitDoneOrCancel()
+	} else {
+		go waitDoneOrCancel()
+	}
 }
