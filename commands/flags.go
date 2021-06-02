@@ -239,6 +239,11 @@ var ControllerFlags = []cli.Flag{
 		Usage:   "connection string for sql DB",
 		EnvVars: []string{"DEALBOT_PERSISTENCE_CONN"},
 	}),
+	altsrc.NewStringFlag(&cli.StringFlag{
+		Name:    "gqlAccessToken",
+		Usage:   "set an access secret for access to inprogress data over gql",
+		EnvVars: []string{"DEALBOT_GRAPHQL_ACCESS_TOKEN"},
+	}),
 }
 
 var AllFlags = append(DealFlags, append(SingleTaskFlags, append(DaemonFlags, append(ControllerFlags, MockFlags...)...)...)...)

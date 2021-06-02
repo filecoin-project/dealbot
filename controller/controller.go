@@ -95,13 +95,18 @@ func New(ctx *cli.Context) (*Controller, error) {
 		return nil, err
 	}
 
-	return NewWithDependencies(l, gl, recorder, backend)
+	gqlToken := ""
+	if ctx.IsSet("gqlAccessToken") {
+		gqlToken = ctx.String("gqlAccessToken")
+	}
+
+	return NewWithDependencies(l, gl, gqlToken, recorder, backend)
 }
 
 //go:embed static
 var static embed.FS
 
-func NewWithDependencies(listener, graphqlListener net.Listener, recorder metrics.MetricsRecorder, backend state.State) (*Controller, error) {
+func NewWithDependencies(listener, graphqlListener net.Listener, gqlToken string, recorder metrics.MetricsRecorder, backend state.State) (*Controller, error) {
 	srv := new(Controller)
 	srv.db = backend
 
@@ -144,7 +149,7 @@ func NewWithDependencies(listener, graphqlListener net.Listener, recorder metric
 	}
 
 	if graphqlListener != nil {
-		gqlHandler, err := graphql.GetHandler(srv.db)
+		gqlHandler, err := graphql.GetHandler(srv.db, gqlToken)
 		if err != nil {
 			return nil, err
 		}
