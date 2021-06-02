@@ -42,6 +42,7 @@ func MakeRetrievalDeal(ctx context.Context, config NodeConfig, node api.FullNode
 		{de.getMinerInfo, "Miner Info successfully fetched"},
 		{de.getPeerAddr, "Miner address validated"},
 		{de.netConnect, "Connected to miner"},
+		{de.netDiag, "Got miner version"},
 	})
 	cancel()
 	if err != nil {
@@ -66,7 +67,7 @@ type retrievalDealExecutor struct {
 	offer api.QueryOffer
 }
 
-func (de *retrievalDealExecutor) queryOffer() error {
+func (de *retrievalDealExecutor) queryOffer(_ logFunc) error {
 	payloadCid, err := cid.Parse(de.task.PayloadCID.x)
 	if err != nil {
 		return err
