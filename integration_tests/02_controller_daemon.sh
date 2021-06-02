@@ -66,6 +66,10 @@ for ((i = 0; ; i++)); do
 		echo "Storage deal is active!"
 		break
 	fi
+	if [ $(grep -c pop-task dealbot-controller.log) -gt 1 ]; then
+		echo "Should not have tried to pop task while worker busy"
+		exit 1
+	fi
 	if ((i > 10*60)); then
 		# The logs are already being printed out.
 		echo "Timed out waiting for storage deal to be active."
