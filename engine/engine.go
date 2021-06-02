@@ -35,6 +35,7 @@ type Engine struct {
 	shutdown   chan struct{}
 	stopped    chan struct{}
 	tags       []string
+	workerPing chan struct{}
 
 	stageTimeouts map[string]time.Duration
 }
@@ -70,16 +71,16 @@ func New(ctx context.Context, cliCtx *cli.Context) (*Engine, error) {
 	log.Infof("remote version: %s", v.Version)
 
 	e := &Engine{
-		client:     client,
-		nodeConfig: nodeConfig,
-		node:       node,
-		closer:     closer,
-		host:       host_id,
-		sched:      scheduler.New(),
-		shutdown:   make(chan struct{}),
-		stopped:    make(chan struct{}),
-		tags:       cliCtx.StringSlice("tags"),
-
+		client:        client,
+		nodeConfig:    nodeConfig,
+		node:          node,
+		closer:        closer,
+		host:          host_id,
+		sched:         scheduler.New(),
+		shutdown:      make(chan struct{}),
+		stopped:       make(chan struct{}),
+		tags:          cliCtx.StringSlice("tags"),
+		workerPing:    make(chan struct{}),
 		stageTimeouts: stageTimeouts,
 	}
 
@@ -106,19 +107,18 @@ taskLoop:
 		default:
 		}
 
-		// Check if there is a new task
-		task := e.popTask()
-		if task != nil {
-			taskSchedule, limit := getTaskSchedule(task)
+		if e.pingWorker() {
+			// Check if there is a new task
+			task := e.popTask()
+			if task != nil {
+				// Get task's schedule.  Tasks that have an empty schedule are run once, immediately.
+				taskSchedule, limit := getTaskSchedule(task)
 
-			// If task has no schedule, run now
-			if taskSchedule == "" {
-				taskSchedule = scheduler.RunNow
+				// Add task to scheduler
+				log.Infow("scheduling task", "uuid", task.UUID.String(), "schedule", taskSchedule, "schedule_limit", limit)
+				e.sched.Add(taskSchedule, task, maxTaskRunTime, limit, 0)
+				continue
 			}
-			// Add task to scheduler
-			log.Infow("scheduling task", "uuid", task.UUID.String(), "schedule", taskSchedule, "schedule_limit", limit)
-			e.sched.Add(taskSchedule, task, maxTaskRunTime, limit, 0)
-			continue
 		}
 
 		// No tasks to run now, so wait for scheduler or timer
@@ -169,9 +169,16 @@ func (e *Engine) worker(n int, wg *sync.WaitGroup) {
 	log.Infow("engine worker started", "worker_id", n)
 	defer wg.Done()
 	runNow := e.sched.RunChan()
-	for job := range runNow {
-		e.runTask(job.Context, job.Task, job.RunCount, n)
-		job.End()
+	for {
+		select {
+		case job, ok := <-runNow:
+			if !ok {
+				return
+			}
+			e.runTask(job.Context, job.Task, job.RunCount, n)
+			job.End()
+		case <-e.workerPing:
+		}
 	}
 }
 
@@ -294,4 +301,17 @@ func getTaskSchedule(task tasks.Task) (string, time.Duration) {
 	}
 
 	return schedule, duration
+}
+
+// pingWorker returns true if a worker is available to read the workerPing
+// channel.  This does not guarantee that the worker will still be available
+// after returning true if there are scheduled tasks that the scheduler may
+// run.
+func (e *Engine) pingWorker() bool {
+	select {
+	case e.workerPing <- struct{}{}:
+		return true
+	default:
+		return false
+	}
 }
