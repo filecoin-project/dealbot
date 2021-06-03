@@ -140,8 +140,10 @@ func AddLog(stageDetails StageDetails, log string) StageDetails {
 	return &n
 }
 
+type logFunc func(string)
+
 type step struct {
-	stepExecution func() error
+	stepExecution func(logFunc) error
 	stepSuccess   string
 }
 
@@ -158,7 +160,12 @@ func executeStage(ctx context.Context, stage string, updateStage UpdateStage, st
 		if ctx.Err() != nil {
 			return ctx.Err()
 		}
-		err = step.stepExecution()
+
+		lf := func(l string) {
+			stageDetails = AddLog(stageDetails, l)
+		}
+
+		err = step.stepExecution(lf)
 		if err != nil {
 			return err
 		}
@@ -246,19 +253,20 @@ func (t *_Task) Finalize(ctx context.Context, s ipld.Storer) (FinishedTask, erro
 		return nil, fmt.Errorf("task cannot be finalized as it is not in a finished state")
 	}
 
-	dealID, minerAddr, clientAddr, minerLatency, timeFirstByte, timeLastByte := parseFinalLogs(t)
+	logs := parseFinalLogs(t)
 	ft := _FinishedTask{
 		Status:             t.Status,
 		StartedAt:          *t.StartedAt.v,
 		ErrorMessage:       t.ErrorMessage,
 		RetrievalTask:      t.RetrievalTask,
 		StorageTask:        t.StorageTask,
-		DealID:             _Int{int64(dealID)},
-		MinerMultiAddr:     _String{minerAddr},
-		ClientApparentAddr: _String{clientAddr},
-		MinerLatencyMS:     minerLatency,
-		TimeToFirstByteMS:  timeFirstByte,
-		TimeToLastByteMS:   timeLastByte,
+		DealID:             _Int{int64(logs.dealID)},
+		MinerMultiAddr:     _String{logs.minerAddr},
+		ClientApparentAddr: _String{logs.clientAddr},
+		MinerLatencyMS:     logs.minerLatency,
+		TimeToFirstByteMS:  logs.timeFirstByte,
+		TimeToLastByteMS:   logs.timeLastByte,
+		MinerVersion:       logs.minerVersion,
 	}
 	// events to dag item
 	logList := &_List_StageDetails{}
@@ -274,13 +282,27 @@ func (t *_Task) Finalize(ctx context.Context, s ipld.Storer) (FinishedTask, erro
 	return &ft, nil
 }
 
-func parseFinalLogs(t Task) (int, string, string, _Int__Maybe, _Int__Maybe, _Int__Maybe) {
-	timeFirstByte := _Int__Maybe{m: schema.Maybe_Absent}
-	timeLastByte := _Int__Maybe{m: schema.Maybe_Absent}
+type logExtraction struct {
+	dealID        int
+	minerAddr     string
+	minerVersion  _String__Maybe
+	clientAddr    string
+	minerLatency  _Int__Maybe
+	timeFirstByte _Int__Maybe
+	timeLastByte  _Int__Maybe
+}
+
+func parseFinalLogs(t Task) *logExtraction {
+	le := &logExtraction{
+		minerVersion:  _String__Maybe{m: schema.Maybe_Absent},
+		minerLatency:  _Int__Maybe{m: schema.Maybe_Absent},
+		timeFirstByte: _Int__Maybe{m: schema.Maybe_Absent},
+		timeLastByte:  _Int__Maybe{m: schema.Maybe_Absent},
+	}
 
 	// If the task failed early, we might not have some of the info.
 	if !t.StartedAt.Exists() || !t.PastStageDetails.Exists() {
-		return 0, "", "", _Int__Maybe{}, timeFirstByte, timeLastByte
+		return le
 	}
 
 	start := t.StartedAt.Must().Time()
@@ -293,9 +315,9 @@ func parseFinalLogs(t Task) (int, string, string, _Int__Maybe, _Int__Maybe, _Int
 			// TODO: can we do better, e.g. the first transfer
 			// progress update?
 			// TODO: test for retrieval tasks, too.
-			if !timeFirstByte.Exists() && strings.Contains(entry, "funds reserved") {
-				timeFirstByte.m = schema.Maybe_Value
-				timeFirstByte.v = &_Int{entryTime.Sub(start).Milliseconds()}
+			if !le.timeFirstByte.Exists() && strings.Contains(entry, "funds reserved") {
+				le.timeFirstByte.m = schema.Maybe_Value
+				le.timeFirstByte.v = &_Int{entryTime.Sub(start).Milliseconds()}
 			}
 
 			// If the provider is verifying the data, it has all the bytes.
@@ -303,13 +325,18 @@ func parseFinalLogs(t Task) (int, string, string, _Int__Maybe, _Int__Maybe, _Int
 			// progress update? this log line seems too late, as it
 			// shows ~30s for a local devnet.
 			// TODO: test for retrieval tasks, too.
-			if !timeLastByte.Exists() && strings.Contains(entry, "provider is verifying the data") {
-				timeLastByte.m = schema.Maybe_Value
-				timeLastByte.v = &_Int{entryTime.Sub(start).Milliseconds()}
+			if !le.timeLastByte.Exists() && strings.Contains(entry, "provider is verifying the data") {
+				le.timeLastByte.m = schema.Maybe_Value
+				le.timeLastByte.v = &_Int{entryTime.Sub(start).Milliseconds()}
+			}
+
+			if !le.minerVersion.Exists() && strings.Contains(entry, "NetAgentVersion:") {
+				le.minerVersion.m = schema.Maybe_Value
+				le.minerVersion.v = &_String{strings.TrimPrefix(entry, "NetAgentVersion:")}
 			}
 		}
 	}
-	return 0, "", "", _Int__Maybe{}, timeFirstByte, timeLastByte
+	return le
 }
 
 func (t *_Task) UpdateTask(tsk UpdateTask) (Task, error) {

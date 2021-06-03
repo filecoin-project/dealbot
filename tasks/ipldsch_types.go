@@ -126,6 +126,7 @@ type _FinishedTask struct {
 	TimeToFirstByteMS _Int__Maybe
 	TimeToLastByteMS _Int__Maybe
 	Events _Link_List_StageDetails
+	MinerVersion _String__Maybe
 }
 
 // Float matches the IPLD Schema type "Float".  It has float kind.
