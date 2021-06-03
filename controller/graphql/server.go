@@ -3,6 +3,7 @@ package graphql
 import (
 	"embed"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -29,14 +30,24 @@ type postData struct {
 	Variables map[string]interface{} `json:"variables"`
 }
 
-func GetHandler(db state.State) (*http.ServeMux, error) {
+func GetHandler(db state.State, accessToken string) (*http.ServeMux, error) {
 	schema, err := graphql.NewSchema(graphql.SchemaConfig{
 		Query: graphql.NewObject(graphql.ObjectConfig{
 			Name: "Query",
 			Fields: graphql.Fields{
 				"Tasks": &graphql.Field{
 					Type: Tasks__type,
+					Args: graphql.FieldConfigArgument{
+						"AccessToken": &graphql.ArgumentConfig{Type: graphql.String, Description: "potentially access-restricted query"},
+					},
 					Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+						if accessToken != "" {
+							at, ok := p.Args["AccessToken"]
+							if !ok || at.(string) != accessToken {
+								return nil, fmt.Errorf("access token required")
+							}
+						}
+
 						tsks, err := db.GetAll(p.Context)
 						if err != nil {
 							return nil, err
@@ -47,9 +58,17 @@ func GetHandler(db state.State) (*http.ServeMux, error) {
 				"Task": &graphql.Field{
 					Type: Task__type,
 					Args: graphql.FieldConfigArgument{
-						"UUID": &graphql.ArgumentConfig{Type: graphql.NewNonNull(graphql.String), Description: "task uuid"},
+						"AccessToken": &graphql.ArgumentConfig{Type: graphql.String, Description: "potentially access-restricted query"},
+						"UUID":        &graphql.ArgumentConfig{Type: graphql.NewNonNull(graphql.String), Description: "task uuid"},
 					},
 					Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+						if accessToken != "" {
+							at, ok := p.Args["AccessToken"]
+							if !ok || at.(string) != accessToken {
+								return nil, fmt.Errorf("access token required")
+							}
+						}
+
 						uuid := p.Args["UUID"].(string)
 						tsk, err := db.Get(p.Context, uuid)
 						if err != nil {

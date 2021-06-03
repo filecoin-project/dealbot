@@ -195,7 +195,7 @@ func newHarness(ctx context.Context, t *testing.T) *harness {
 	require.NoError(t, err)
 	be, err := state.NewStateDB(ctx, "sqlite", h.dbloc+"/tmp.sqlite", pr, h.recorder)
 	require.NoError(t, err)
-	h.controller, err = controller.NewWithDependencies(listener, nil, h.recorder, be)
+	h.controller, err = controller.NewWithDependencies(listener, nil, "", h.recorder, be)
 
 	h.serveErr = make(chan error, 1)
 	go func() {
