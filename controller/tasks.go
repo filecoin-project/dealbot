@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"errors"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/ipld/go-car"
@@ -34,13 +36,41 @@ func (c *Controller) getTasksHandler(w http.ResponseWriter, r *http.Request) {
 
 	enableCors(&w, r)
 
+	dateStart := time.Time{}
+	dateEnd := time.Now()
+	qargs := r.URL.Query()
+	if qstart := qargs.Get("start"); qstart != "" {
+		sNum, err := strconv.ParseInt(qstart, 10, 64)
+		if err != nil {
+			log.Errorw("getTasks failed: parse start", "err", err.Error())
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		dateStart = time.Unix(sNum, 0)
+	}
+	if qend := qargs.Get("end"); qend != "" {
+		eNum, err := strconv.ParseInt(qend, 10, 64)
+		if err != nil {
+			log.Errorw("getTasks failed: parse end", "err", err.Error())
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		dateEnd = time.Unix(eNum, 0)
+	}
+
 	taskList, err := c.db.GetAll(r.Context())
 	if err != nil {
 		log.Errorw("getTasks failed: backend", "err", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	tsks := tasks.Type.Tasks.Of(taskList)
+	matchList := make([]tasks.Task, 0, len(taskList))
+	for _, t := range taskList {
+		if sa := t.StartedAt.Must().Time(); sa.After(dateStart) && sa.Before(dateEnd) {
+			matchList = append(matchList, t)
+		}
+	}
+	tsks := tasks.Type.Tasks.Of(matchList)
 	dagjson.Encoder(tsks.Representation(), w)
 }
 
