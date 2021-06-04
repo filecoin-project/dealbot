@@ -57,6 +57,7 @@ func (c *Controller) getTasksHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		dateEnd = time.Unix(eNum, 0)
 	}
+	strict := qargs.Get("strict") == "yes"
 
 	taskList, err := c.db.GetAll(r.Context())
 	if err != nil {
@@ -66,6 +67,12 @@ func (c *Controller) getTasksHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	matchList := make([]tasks.Task, 0, len(taskList))
 	for _, t := range taskList {
+		if t.StartedAt.IsAbsent() {
+			if !strict {
+				matchList = append(matchList, t)
+			}
+			continue
+		}
 		if sa := t.StartedAt.Must().Time(); sa.After(dateStart) && sa.Before(dateEnd) {
 			matchList = append(matchList, t)
 		}
