@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/filecoin-project/go-address"
+	"github.com/filecoin-project/go-state-types/big"
 	"github.com/google/uuid"
 	"github.com/ipfs/go-cid"
 	"github.com/ipld/go-ipld-prime"
@@ -30,9 +31,10 @@ type UpdateStage func(ctx context.Context, stage string, stageDetails StageDetai
 
 // NodeConfig specifies parameters to a running deal bot
 type NodeConfig struct {
-	DataDir       string
-	NodeDataDir   string
-	WalletAddress address.Address
+	DataDir          string
+	NodeDataDir      string
+	WalletAddress    address.Address
+	MinWalletBalance big.Int
 }
 
 // TaskEvent logs a change in either status

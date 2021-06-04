@@ -7,6 +7,7 @@ import (
 
 	"github.com/filecoin-project/dealbot/tasks"
 	"github.com/filecoin-project/go-address"
+	"github.com/filecoin-project/go-state-types/big"
 	"github.com/filecoin-project/lotus/api"
 	"github.com/urfave/cli/v2"
 )
@@ -58,11 +59,19 @@ func SetupClientFromCLI(cctx *cli.Context) (tasks.NodeConfig, api.FullNode, Node
 	if err != nil {
 		return tasks.NodeConfig{}, nil, nil, fmt.Errorf("wallet is not a Filecoin address: %s, %s", cctx.String("wallet"), err)
 	}
+	mf := big.NewInt(100000000000000)
+	if cctx.IsSet("minfil") {
+		log.Infow("using minimum wallet fil for picking tasks", cctx.String("minfil"))
+		if _, ok := mf.SetString(cctx.String("minfil"), 0); !ok {
+			return tasks.NodeConfig{}, nil, nil, fmt.Errorf("could not parse min wallet balance: %s, %s", cctx.String("minfil"), err)
+		}
+	}
 
 	return tasks.NodeConfig{
-		DataDir:       dataDir,
-		NodeDataDir:   nodeDataDir,
-		WalletAddress: walletAddress,
+		DataDir:          dataDir,
+		NodeDataDir:      nodeDataDir,
+		WalletAddress:    walletAddress,
+		MinWalletBalance: mf,
 	}, node, closer, nil
 }
 
@@ -108,10 +117,18 @@ func SetupClient(ctx context.Context, cliCtx *cli.Context) (tasks.NodeConfig, ap
 	if err != nil {
 		return tasks.NodeConfig{}, nil, nil, fmt.Errorf("wallet is not a Filecoin address: %s, %s", wallet, err)
 	}
+	mf := big.NewInt(100000000000000)
+	if cliCtx.IsSet("minfil") {
+		log.Infow("using minimum wallet fil for picking tasks", cliCtx.String("minfil"))
+		if _, ok := mf.SetString(cliCtx.String("minfil"), 0); !ok {
+			return tasks.NodeConfig{}, nil, nil, fmt.Errorf("could not parse min wallet balance: %s, %s", cliCtx.String("minfil"), err)
+		}
+	}
 
 	return tasks.NodeConfig{
-		DataDir:       dataDir,
-		NodeDataDir:   nodeDataDir,
-		WalletAddress: walletAddress,
+		DataDir:          dataDir,
+		NodeDataDir:      nodeDataDir,
+		WalletAddress:    walletAddress,
+		MinWalletBalance: mf,
 	}, node, closer, nil
 }
