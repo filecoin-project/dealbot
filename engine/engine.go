@@ -327,5 +327,20 @@ func (e *Engine) apiGood(ctx context.Context) bool {
 	if localBalance.LessThan(e.nodeConfig.MinWalletBalance) {
 		return false
 	}
+
+	head, err := e.node.ChainHead(ctx)
+	if err != nil {
+		log.Errorw("could not query api for head", "error", err)
+		return false
+	}
+	localCap, err := e.node.StateVerifiedClientStatus(ctx, e.nodeConfig.WalletAddress, head.Key())
+	if err != nil {
+		log.Errorw("could not query api for datacap", "error", err)
+		return false
+	}
+	if localCap.LessThan(e.nodeConfig.MinWalletCap) {
+		return false
+	}
+
 	return true
 }

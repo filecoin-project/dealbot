@@ -35,6 +35,7 @@ type NodeConfig struct {
 	NodeDataDir      string
 	WalletAddress    address.Address
 	MinWalletBalance big.Int
+	MinWalletCap     big.Int
 }
 
 // TaskEvent logs a change in either status

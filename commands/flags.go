@@ -146,6 +146,11 @@ var DaemonFlags = append(DealFlags, append(CommonFlags, append(EndpointFlags, []
 		Usage:   "min amount of fil needed (in attofil) in wallet for tasks to be popped by daemon",
 		EnvVars: []string{"DEALBOT_MIN_FIL"},
 	}),
+	altsrc.NewStringFlag(&cli.StringFlag{
+		Name:    "mincap",
+		Usage:   "min amount of datacap needed (in bytes) in wallet for tasks to be popped by daemon",
+		EnvVars: []string{"DEALBOT_MIN_CAP"},
+	}),
 }...)...)...)
 
 var MockFlags = []cli.Flag{
