@@ -2540,6 +2540,9 @@ func (n _FinishedTask) FieldEvents() Link_List_StageDetails {
 func (n _FinishedTask) FieldMinerVersion() MaybeString {
 	return &n.MinerVersion
 }
+func (n _FinishedTask) FieldClientVersion() MaybeString {
+	return &n.ClientVersion
+}
 type _FinishedTask__Maybe struct {
 	m schema.Maybe
 	v FinishedTask
@@ -2587,6 +2590,7 @@ var (
 	fieldName__FinishedTask_TimeToLastByteMS = _String{"TimeToLastByteMS"}
 	fieldName__FinishedTask_Events = _String{"Events"}
 	fieldName__FinishedTask_MinerVersion = _String{"MinerVersion"}
+	fieldName__FinishedTask_ClientVersion = _String{"ClientVersion"}
 )
 var _ ipld.Node = (FinishedTask)(&_FinishedTask{})
 var _ schema.TypedNode = (FinishedTask)(&_FinishedTask{})
@@ -2642,6 +2646,11 @@ func (n FinishedTask) LookupByString(key string) (ipld.Node, error) {
 			return ipld.Absent, nil
 		}
 		return n.MinerVersion.v, nil
+	case "ClientVersion":
+		if n.ClientVersion.m == schema.Maybe_Absent {
+			return ipld.Absent, nil
+		}
+		return n.ClientVersion.v, nil
 	default:
 		return nil, schema.ErrNoSuchField{Type: nil /*TODO*/, Field: ipld.PathSegmentOfString(key)}
 	}
@@ -2669,7 +2678,7 @@ type _FinishedTask__MapItr struct {
 }
 
 func (itr *_FinishedTask__MapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
-	if itr.idx >= 13 {
+	if itr.idx >= 14 {
 		return nil, nil, ipld.ErrIteratorOverread{}
 	}
 	switch itr.idx {
@@ -2740,6 +2749,13 @@ func (itr *_FinishedTask__MapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
 			break
 		}
 		v = itr.n.MinerVersion.v
+	case 13:
+		k = &fieldName__FinishedTask_ClientVersion
+		if itr.n.ClientVersion.m == schema.Maybe_Absent {
+			v = ipld.Absent
+			break
+		}
+		v = itr.n.ClientVersion.v
 	default:
 		panic("unreachable")
 	}
@@ -2747,14 +2763,14 @@ func (itr *_FinishedTask__MapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
 	return
 }
 func (itr *_FinishedTask__MapItr) Done() bool {
-	return itr.idx >= 13
+	return itr.idx >= 14
 }
 
 func (FinishedTask) ListIterator() ipld.ListIterator {
 	return nil
 }
 func (FinishedTask) Length() int64 {
-	return 13
+	return 14
 }
 func (FinishedTask) IsAbsent() bool {
 	return false
@@ -2825,6 +2841,7 @@ type _FinishedTask__Assembler struct {
 	ca_TimeToLastByteMS _Int__Assembler
 	ca_Events _Link_List_StageDetails__Assembler
 	ca_MinerVersion _String__Assembler
+	ca_ClientVersion _String__Assembler
 	}
 
 func (na *_FinishedTask__Assembler) reset() {
@@ -2843,6 +2860,7 @@ func (na *_FinishedTask__Assembler) reset() {
 	na.ca_TimeToLastByteMS.reset()
 	na.ca_Events.reset()
 	na.ca_MinerVersion.reset()
+	na.ca_ClientVersion.reset()
 }
 
 var (
@@ -2859,6 +2877,7 @@ var (
 	fieldBit__FinishedTask_TimeToLastByteMS = 1 << 10
 	fieldBit__FinishedTask_Events = 1 << 11
 	fieldBit__FinishedTask_MinerVersion = 1 << 12
+	fieldBit__FinishedTask_ClientVersion = 1 << 13
 	fieldBits__FinishedTask_sufficient = 0 + 1 << 0 + 1 << 1 + 1 << 5 + 1 << 6 + 1 << 7 + 1 << 11
 )
 func (na *_FinishedTask__Assembler) BeginMap(int64) (ipld.MapAssembler, error) {
@@ -3075,6 +3094,15 @@ func (ma *_FinishedTask__Assembler) valueFinishTidy() bool {
 		default:
 			return false
 		}
+	case 13:
+		switch ma.w.ClientVersion.m {
+		case schema.Maybe_Value:
+			ma.w.ClientVersion.v = ma.ca_ClientVersion.w
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
 	default:
 		panic("unreachable")
 	}
@@ -3225,6 +3253,16 @@ func (ma *_FinishedTask__Assembler) AssembleEntry(k string) (ipld.NodeAssembler,
 		ma.ca_MinerVersion.w = ma.w.MinerVersion.v
 		ma.ca_MinerVersion.m = &ma.w.MinerVersion.m
 		return &ma.ca_MinerVersion, nil
+	case "ClientVersion":
+		if ma.s & fieldBit__FinishedTask_ClientVersion != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_ClientVersion}
+		}
+		ma.s += fieldBit__FinishedTask_ClientVersion
+		ma.state = maState_midValue
+		ma.f = 13
+		ma.ca_ClientVersion.w = ma.w.ClientVersion.v
+		ma.ca_ClientVersion.m = &ma.w.ClientVersion.m
+		return &ma.ca_ClientVersion, nil
 	default:
 		return nil, ipld.ErrInvalidKey{TypeName:"tasks.FinishedTask", Key:&_String{k}}
 	}
@@ -3314,6 +3352,10 @@ func (ma *_FinishedTask__Assembler) AssembleValue() ipld.NodeAssembler {
 		ma.ca_MinerVersion.w = ma.w.MinerVersion.v
 		ma.ca_MinerVersion.m = &ma.w.MinerVersion.m
 		return &ma.ca_MinerVersion
+	case 13:
+		ma.ca_ClientVersion.w = ma.w.ClientVersion.v
+		ma.ca_ClientVersion.m = &ma.w.ClientVersion.m
+		return &ma.ca_ClientVersion
 	default:
 		panic("unreachable")
 	}
@@ -3480,6 +3522,13 @@ func (ka *_FinishedTask__KeyAssembler) AssignString(k string) error {
 		ka.s += fieldBit__FinishedTask_MinerVersion
 		ka.state = maState_expectValue
 		ka.f = 12
+	case "ClientVersion":
+		if ka.s & fieldBit__FinishedTask_ClientVersion != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_ClientVersion}
+		}
+		ka.s += fieldBit__FinishedTask_ClientVersion
+		ka.state = maState_expectValue
+		ka.f = 13
 	default:
 		return ipld.ErrInvalidKey{TypeName:"tasks.FinishedTask", Key:&_String{k}}
 	}
@@ -3522,6 +3571,7 @@ var (
 	fieldName__FinishedTask_TimeToLastByteMS_serial = _String{"TimeToLastByteMS"}
 	fieldName__FinishedTask_Events_serial = _String{"Events"}
 	fieldName__FinishedTask_MinerVersion_serial = _String{"MinerVersion"}
+	fieldName__FinishedTask_ClientVersion_serial = _String{"ClientVersion"}
 )
 var _ ipld.Node = &_FinishedTask__Repr{}
 func (_FinishedTask__Repr) Kind() ipld.Kind {
@@ -3576,6 +3626,11 @@ func (n *_FinishedTask__Repr) LookupByString(key string) (ipld.Node, error) {
 			return ipld.Absent, ipld.ErrNotExists{ipld.PathSegmentOfString(key)}
 		}
 		return n.MinerVersion.v.Representation(), nil
+	case "ClientVersion":
+		if n.ClientVersion.m == schema.Maybe_Absent {
+			return ipld.Absent, ipld.ErrNotExists{ipld.PathSegmentOfString(key)}
+		}
+		return n.ClientVersion.v.Representation(), nil
 	default:
 		return nil, schema.ErrNoSuchField{Type: nil /*TODO*/, Field: ipld.PathSegmentOfString(key)}
 	}
@@ -3594,7 +3649,12 @@ func (n _FinishedTask__Repr) LookupBySegment(seg ipld.PathSegment) (ipld.Node, e
 	return n.LookupByString(seg.String())
 }
 func (n *_FinishedTask__Repr) MapIterator() ipld.MapIterator {
-	end := 13
+	end := 14
+	if n.ClientVersion.m == schema.Maybe_Absent {
+		end = 13
+	} else {
+		goto done
+	}
 	if n.MinerVersion.m == schema.Maybe_Absent {
 		end = 12
 	} else {
@@ -3611,7 +3671,7 @@ type _FinishedTask__ReprMapItr struct {
 }
 
 func (itr *_FinishedTask__ReprMapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
-advance:if itr.idx >= 13 {
+advance:if itr.idx >= 14 {
 		return nil, nil, ipld.ErrIteratorOverread{}
 	}
 	switch itr.idx {
@@ -3682,6 +3742,13 @@ advance:if itr.idx >= 13 {
 			goto advance
 		}
 		v = itr.n.MinerVersion.v.Representation()
+	case 13:
+		k = &fieldName__FinishedTask_ClientVersion_serial
+		if itr.n.ClientVersion.m == schema.Maybe_Absent {
+			itr.idx++
+			goto advance
+		}
+		v = itr.n.ClientVersion.v.Representation()
 	default:
 		panic("unreachable")
 	}
@@ -3695,7 +3762,7 @@ func (_FinishedTask__Repr) ListIterator() ipld.ListIterator {
 	return nil
 }
 func (rn *_FinishedTask__Repr) Length() int64 {
-	l := 13
+	l := 14
 	if rn.ErrorMessage.m == schema.Maybe_Absent {
 		l--
 	}
@@ -3715,6 +3782,9 @@ func (rn *_FinishedTask__Repr) Length() int64 {
 		l--
 	}
 	if rn.MinerVersion.m == schema.Maybe_Absent {
+		l--
+	}
+	if rn.ClientVersion.m == schema.Maybe_Absent {
 		l--
 	}
 	return int64(l)
@@ -3788,6 +3858,7 @@ type _FinishedTask__ReprAssembler struct {
 	ca_TimeToLastByteMS _Int__ReprAssembler
 	ca_Events _Link_List_StageDetails__ReprAssembler
 	ca_MinerVersion _String__ReprAssembler
+	ca_ClientVersion _String__ReprAssembler
 	}
 
 func (na *_FinishedTask__ReprAssembler) reset() {
@@ -3806,6 +3877,7 @@ func (na *_FinishedTask__ReprAssembler) reset() {
 	na.ca_TimeToLastByteMS.reset()
 	na.ca_Events.reset()
 	na.ca_MinerVersion.reset()
+	na.ca_ClientVersion.reset()
 }
 func (na *_FinishedTask__ReprAssembler) BeginMap(int64) (ipld.MapAssembler, error) {
 	switch *na.m {
@@ -4009,6 +4081,15 @@ func (ma *_FinishedTask__ReprAssembler) valueFinishTidy() bool {
 		default:
 			return false
 		}
+	case 13:
+		switch ma.w.ClientVersion.m {
+		case schema.Maybe_Value:
+			ma.w.ClientVersion.v = ma.ca_ClientVersion.w
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
 	default:
 		panic("unreachable")
 	}
@@ -4166,6 +4247,17 @@ func (ma *_FinishedTask__ReprAssembler) AssembleEntry(k string) (ipld.NodeAssemb
 		ma.ca_MinerVersion.m = &ma.w.MinerVersion.m
 		
 		return &ma.ca_MinerVersion, nil
+	case "ClientVersion":
+		if ma.s & fieldBit__FinishedTask_ClientVersion != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_ClientVersion_serial}
+		}
+		ma.s += fieldBit__FinishedTask_ClientVersion
+		ma.state = maState_midValue
+		ma.f = 13
+		ma.ca_ClientVersion.w = ma.w.ClientVersion.v
+		ma.ca_ClientVersion.m = &ma.w.ClientVersion.m
+		
+		return &ma.ca_ClientVersion, nil
 	default:
 		return nil, ipld.ErrInvalidKey{TypeName:"tasks.FinishedTask.Repr", Key:&_String{k}}
 	}
@@ -4262,6 +4354,11 @@ func (ma *_FinishedTask__ReprAssembler) AssembleValue() ipld.NodeAssembler {
 		ma.ca_MinerVersion.m = &ma.w.MinerVersion.m
 		
 		return &ma.ca_MinerVersion
+	case 13:
+		ma.ca_ClientVersion.w = ma.w.ClientVersion.v
+		ma.ca_ClientVersion.m = &ma.w.ClientVersion.m
+		
+		return &ma.ca_ClientVersion
 	default:
 		panic("unreachable")
 	}
@@ -4428,6 +4525,13 @@ func (ka *_FinishedTask__ReprKeyAssembler) AssignString(k string) error {
 		ka.s += fieldBit__FinishedTask_MinerVersion
 		ka.state = maState_expectValue
 		ka.f = 12
+	case "ClientVersion":
+		if ka.s & fieldBit__FinishedTask_ClientVersion != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_ClientVersion_serial}
+		}
+		ka.s += fieldBit__FinishedTask_ClientVersion
+		ka.state = maState_expectValue
+		ka.f = 13
 	default:
 		return ipld.ErrInvalidKey{TypeName:"tasks.FinishedTask.Repr", Key:&_String{k}}
 	}

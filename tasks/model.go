@@ -267,6 +267,7 @@ func (t *_Task) Finalize(ctx context.Context, s ipld.Storer) (FinishedTask, erro
 		TimeToFirstByteMS:  logs.timeFirstByte,
 		TimeToLastByteMS:   logs.timeLastByte,
 		MinerVersion:       logs.minerVersion,
+		ClientVersion:      logs.clientVersion,
 	}
 	// events to dag item
 	logList := &_List_StageDetails{}
@@ -287,6 +288,7 @@ type logExtraction struct {
 	minerAddr     string
 	minerVersion  _String__Maybe
 	clientAddr    string
+	clientVersion _String__Maybe
 	minerLatency  _Int__Maybe
 	timeFirstByte _Int__Maybe
 	timeLastByte  _Int__Maybe
@@ -333,6 +335,10 @@ func parseFinalLogs(t Task) *logExtraction {
 			if !le.minerVersion.Exists() && strings.Contains(entry, "NetAgentVersion:") {
 				le.minerVersion.m = schema.Maybe_Value
 				le.minerVersion.v = &_String{strings.TrimPrefix(entry, "NetAgentVersion:")}
+			}
+			if !le.clientVersion.Exists() && strings.Contains(entry, "ClientVersion:") {
+				le.clientVersion.m = schema.Maybe_Value
+				le.clientVersion.v = &_String{strings.TrimPrefix(entry, "ClientVersion:")}
 			}
 		}
 	}

@@ -155,8 +155,16 @@ func (de *dealExecutor) netConnect(_ logFunc) error {
 
 func (de *dealExecutor) netDiag(l logFunc) error {
 	av, err := de.node.NetAgentVersion(de.ctx, de.pi.ID)
+	if err != nil {
+		return err
+	}
 	de.log("remote peer version", "version", av)
+
+	cv, err := de.node.Version(de.ctx)
+	de.log("local client version", "version", cv.Version)
+
 	l(fmt.Sprintf("NetAgentVersion: %s", av))
+	l(fmt.Sprintf("ClientVersion: %s", cv.Version))
 	return err
 }
 

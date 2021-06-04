@@ -136,6 +136,7 @@ func main() {
 		schema.SpawnStructField("TimeToLastByteMS", "Int", true, false),
 		schema.SpawnStructField("Events", "Link_List_StageDetails", false, false),
 		schema.SpawnStructField("MinerVersion", "String", true, false),
+		schema.SpawnStructField("ClientVersion", "String", true, false),
 	}, schema.SpawnStructRepresentationMap(map[string]string{})))
 	ts.Accumulate(schema.SpawnLinkReference("Link_FinishedTask", "FinishedTask"))
 
