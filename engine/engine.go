@@ -338,6 +338,9 @@ func (e *Engine) apiGood(ctx context.Context) bool {
 		log.Errorw("could not query api for datacap", "error", err)
 		return false
 	}
+	if localCap == nil {
+		return e.nodeConfig.MinWalletCap.NilOrZero()
+	}
 	if localCap.LessThan(e.nodeConfig.MinWalletCap) {
 		return false
 	}
