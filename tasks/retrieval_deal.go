@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"math/big"
 	"path/filepath"
 	"strings"
 	"time"
@@ -67,7 +68,7 @@ type retrievalDealExecutor struct {
 	offer api.QueryOffer
 }
 
-func (de *retrievalDealExecutor) queryOffer(_ logFunc) error {
+func (de *retrievalDealExecutor) queryOffer(logg logFunc) error {
 	payloadCid, err := cid.Parse(de.task.PayloadCID.x)
 	if err != nil {
 		return err
@@ -83,6 +84,17 @@ func (de *retrievalDealExecutor) queryOffer(_ logFunc) error {
 	}
 
 	de.log("got query offer", "root", de.offer.Root, "piece", de.offer.Piece, "size", de.offer.Size, "minprice", de.offer.MinPrice, "unseal_price", de.offer.UnsealPrice)
+
+	if de.task.MaxPriceAttoFIL.Exists() {
+		totPrice := big.NewInt(0).Add(de.offer.UnsealPrice.Int, de.offer.MinPrice.Int)
+		if totPrice.Cmp(big.NewInt(de.task.MaxPriceAttoFIL.Must().Int())) == 1 {
+			// too expensive.
+			msg := fmt.Sprintf("RejectingDealOverCost min:%d, unseal:%d", de.offer.MinPrice.Int64(), de.offer.UnsealPrice.Int64())
+			logg(msg)
+			return fmt.Errorf(msg)
+		}
+	}
+
 	return nil
 }
 

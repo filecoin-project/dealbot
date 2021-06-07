@@ -82,6 +82,13 @@ func main() {
 		Before: altsrc.InitInputSourceWithContext(append(appFlags, commands.AllFlags...), altsrc.NewYamlSourceFromFlagFunc("config")),
 	}
 
+	if _, ok := os.LookupEnv("DEALBOT_LOG_JSON"); ok {
+		logging.SetupLogging(logging.Config{
+			Format: logging.JSONOutput,
+			Stdout: true,
+		})
+	}
+
 	if err := app.RunContext(ctx, os.Args); err != nil {
 		log.Fatal(err)
 	}
