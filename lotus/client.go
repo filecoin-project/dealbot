@@ -12,6 +12,9 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
+// the default amount to expect in a wallet. 10^14 = 0.0001 fil
+const defaultMinWalletFil = 100000000000000
+
 type NodeCloser func()
 
 func SetupClientFromCLI(cctx *cli.Context) (tasks.NodeConfig, api.FullNode, NodeCloser, error) {
@@ -59,7 +62,7 @@ func SetupClientFromCLI(cctx *cli.Context) (tasks.NodeConfig, api.FullNode, Node
 	if err != nil {
 		return tasks.NodeConfig{}, nil, nil, fmt.Errorf("wallet is not a Filecoin address: %s, %s", cctx.String("wallet"), err)
 	}
-	mf := big.NewInt(100000000000000)
+	mf := big.NewInt(defaultMinWalletFil)
 	if cctx.IsSet("minfil") {
 		log.Infow("using minimum wallet fil for picking tasks", cctx.String("minfil"))
 		if _, ok := mf.SetString(cctx.String("minfil"), 0); !ok {
@@ -125,7 +128,7 @@ func SetupClient(ctx context.Context, cliCtx *cli.Context) (tasks.NodeConfig, ap
 	if err != nil {
 		return tasks.NodeConfig{}, nil, nil, fmt.Errorf("wallet is not a Filecoin address: %s, %s", wallet, err)
 	}
-	mf := big.NewInt(100000000000000)
+	mf := big.NewInt(defaultMinWalletFil)
 	if cliCtx.IsSet("minfil") {
 		log.Infow("using minimum wallet fil for picking tasks", cliCtx.String("minfil"))
 		if _, ok := mf.SetString(cliCtx.String("minfil"), 0); !ok {

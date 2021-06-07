@@ -107,8 +107,7 @@ taskLoop:
 		default:
 		}
 
-		check, _ := context.WithDeadline(context.Background(), time.Now().Add(3*time.Second))
-		if e.pingWorker() && e.apiGood(check) {
+		if e.pingWorker() && e.apiGood() {
 			// Check if there is a new task
 			task := e.popTask()
 			if task != nil {
@@ -318,13 +317,16 @@ func (e *Engine) pingWorker() bool {
 }
 
 // apiGood returns true if the api can be reached and reports sufficient fil/cap to process tasks.
-func (e *Engine) apiGood(ctx context.Context) bool {
+func (e *Engine) apiGood() bool {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
 	localBalance, err := e.node.WalletBalance(ctx, e.nodeConfig.WalletAddress)
 	if err != nil {
 		log.Errorw("could not query api for wallet balance", "error", err)
 		return false
 	}
 	if localBalance.LessThan(e.nodeConfig.MinWalletBalance) {
+		log.Warnf("Not accepting task. local balance below min")
 		return false
 	}
 
@@ -342,6 +344,7 @@ func (e *Engine) apiGood(ctx context.Context) bool {
 		return e.nodeConfig.MinWalletCap.NilOrZero()
 	}
 	if localCap.LessThan(e.nodeConfig.MinWalletCap) {
+		log.Warnf("Not accepting task. local datacap below min")
 		return false
 	}
 
