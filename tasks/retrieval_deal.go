@@ -89,8 +89,9 @@ func (de *retrievalDealExecutor) queryOffer(logg logFunc) error {
 		totPrice := big.NewInt(0).Add(de.offer.UnsealPrice.Int, de.offer.MinPrice.Int)
 		if totPrice.Cmp(big.NewInt(de.task.MaxPriceAttoFIL.Must().Int())) == 1 {
 			// too expensive.
-			logg(fmt.Sprintf("RejectingDealOverCost min:%d, unseal:%d", de.offer.MinPrice.Int64(), de.offer.UnsealPrice.Int64()))
-			return fmt.Errorf("RejectingDealOverCost min:%d, unseal:%d", de.offer.MinPrice.Int64(), de.offer.UnsealPrice.Int64())
+			msg := fmt.Sprintf("RejectingDealOverCost min:%d, unseal:%d", de.offer.MinPrice.Int64(), de.offer.UnsealPrice.Int64())
+			logg(msg)
+			return fmt.Errorf(msg)
 		}
 	}
 
