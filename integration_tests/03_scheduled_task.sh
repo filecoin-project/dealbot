@@ -69,6 +69,10 @@ for ((i = 0; i < 30*60; i++)); do
 	active=$(grep -c StorageDealActive dealbot-daemon.log)
 	if [ "$active" != "$prev_active" ]; then
 		echo "Storage deal is active! Deals active: $active"
+        if [ "$active" = "2" ]; then
+            # Stop test once deal runs again
+            break
+        fi
 		prev_active="$active"
 	fi
 	sleep 1
