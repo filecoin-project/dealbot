@@ -56,6 +56,17 @@ func runLotusMiner(ctx context.Context, home string) {
 			"--pre-sealed-sectors=" + filepath.Join(home, ".genesis-sectors"),
 			"--pre-sealed-metadata=" + filepath.Join(home, ".genesis-sectors", "pre-seal-t01000.json"),
 			"--nosync"},
+
+		// Starting in network version 13,
+		// pre-commits are batched by default,
+		// and commits are aggregated by default.
+		// This means deals could sit at StorageDealAwaitingPreCommit or
+		// StorageDealSealing for a while, going past our 10m test timeout.
+		{"sed", "-ri",
+			"-e", `s/#(\s*BatchPreCommits\s*=\s*)true/ \1false/`,
+			"-e", `s/#(\s*AggregateCommits\s*=\s*)true/ \1false/`,
+			filepath.Join(home, ".lotusminer", "config.toml")},
+
 		{"lotus-miner", "run", "--nosync"},
 	}
 
