@@ -12277,6 +12277,9 @@ func (n _RetrievalTask) FieldScheduleLimit() MaybeString {
 func (n _RetrievalTask) FieldTag() MaybeString {
 	return &n.Tag
 }
+func (n _RetrievalTask) FieldMaxPriceAttoFIL() MaybeInt {
+	return &n.MaxPriceAttoFIL
+}
 type _RetrievalTask__Maybe struct {
 	m schema.Maybe
 	v RetrievalTask
@@ -12317,6 +12320,7 @@ var (
 	fieldName__RetrievalTask_Schedule = _String{"Schedule"}
 	fieldName__RetrievalTask_ScheduleLimit = _String{"ScheduleLimit"}
 	fieldName__RetrievalTask_Tag = _String{"Tag"}
+	fieldName__RetrievalTask_MaxPriceAttoFIL = _String{"MaxPriceAttoFIL"}
 )
 var _ ipld.Node = (RetrievalTask)(&_RetrievalTask{})
 var _ schema.TypedNode = (RetrievalTask)(&_RetrievalTask{})
@@ -12346,6 +12350,11 @@ func (n RetrievalTask) LookupByString(key string) (ipld.Node, error) {
 			return ipld.Absent, nil
 		}
 		return n.Tag.v, nil
+	case "MaxPriceAttoFIL":
+		if n.MaxPriceAttoFIL.m == schema.Maybe_Absent {
+			return ipld.Absent, nil
+		}
+		return n.MaxPriceAttoFIL.v, nil
 	default:
 		return nil, schema.ErrNoSuchField{Type: nil /*TODO*/, Field: ipld.PathSegmentOfString(key)}
 	}
@@ -12373,7 +12382,7 @@ type _RetrievalTask__MapItr struct {
 }
 
 func (itr *_RetrievalTask__MapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
-	if itr.idx >= 6 {
+	if itr.idx >= 7 {
 		return nil, nil, ipld.ErrIteratorOverread{}
 	}
 	switch itr.idx {
@@ -12407,6 +12416,13 @@ func (itr *_RetrievalTask__MapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
 			break
 		}
 		v = itr.n.Tag.v
+	case 6:
+		k = &fieldName__RetrievalTask_MaxPriceAttoFIL
+		if itr.n.MaxPriceAttoFIL.m == schema.Maybe_Absent {
+			v = ipld.Absent
+			break
+		}
+		v = itr.n.MaxPriceAttoFIL.v
 	default:
 		panic("unreachable")
 	}
@@ -12414,14 +12430,14 @@ func (itr *_RetrievalTask__MapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
 	return
 }
 func (itr *_RetrievalTask__MapItr) Done() bool {
-	return itr.idx >= 6
+	return itr.idx >= 7
 }
 
 func (RetrievalTask) ListIterator() ipld.ListIterator {
 	return nil
 }
 func (RetrievalTask) Length() int64 {
-	return 6
+	return 7
 }
 func (RetrievalTask) IsAbsent() bool {
 	return false
@@ -12485,6 +12501,7 @@ type _RetrievalTask__Assembler struct {
 	ca_Schedule _String__Assembler
 	ca_ScheduleLimit _String__Assembler
 	ca_Tag _String__Assembler
+	ca_MaxPriceAttoFIL _Int__Assembler
 	}
 
 func (na *_RetrievalTask__Assembler) reset() {
@@ -12496,6 +12513,7 @@ func (na *_RetrievalTask__Assembler) reset() {
 	na.ca_Schedule.reset()
 	na.ca_ScheduleLimit.reset()
 	na.ca_Tag.reset()
+	na.ca_MaxPriceAttoFIL.reset()
 }
 
 var (
@@ -12505,6 +12523,7 @@ var (
 	fieldBit__RetrievalTask_Schedule = 1 << 3
 	fieldBit__RetrievalTask_ScheduleLimit = 1 << 4
 	fieldBit__RetrievalTask_Tag = 1 << 5
+	fieldBit__RetrievalTask_MaxPriceAttoFIL = 1 << 6
 	fieldBits__RetrievalTask_sufficient = 0 + 1 << 0 + 1 << 1 + 1 << 2
 )
 func (na *_RetrievalTask__Assembler) BeginMap(int64) (ipld.MapAssembler, error) {
@@ -12655,6 +12674,15 @@ func (ma *_RetrievalTask__Assembler) valueFinishTidy() bool {
 		default:
 			return false
 		}
+	case 6:
+		switch ma.w.MaxPriceAttoFIL.m {
+		case schema.Maybe_Value:
+			ma.w.MaxPriceAttoFIL.v = ma.ca_MaxPriceAttoFIL.w
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
 	default:
 		panic("unreachable")
 	}
@@ -12735,6 +12763,16 @@ func (ma *_RetrievalTask__Assembler) AssembleEntry(k string) (ipld.NodeAssembler
 		ma.ca_Tag.w = ma.w.Tag.v
 		ma.ca_Tag.m = &ma.w.Tag.m
 		return &ma.ca_Tag, nil
+	case "MaxPriceAttoFIL":
+		if ma.s & fieldBit__RetrievalTask_MaxPriceAttoFIL != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__RetrievalTask_MaxPriceAttoFIL}
+		}
+		ma.s += fieldBit__RetrievalTask_MaxPriceAttoFIL
+		ma.state = maState_midValue
+		ma.f = 6
+		ma.ca_MaxPriceAttoFIL.w = ma.w.MaxPriceAttoFIL.v
+		ma.ca_MaxPriceAttoFIL.m = &ma.w.MaxPriceAttoFIL.m
+		return &ma.ca_MaxPriceAttoFIL, nil
 	default:
 		return nil, ipld.ErrInvalidKey{TypeName:"tasks.RetrievalTask", Key:&_String{k}}
 	}
@@ -12796,6 +12834,10 @@ func (ma *_RetrievalTask__Assembler) AssembleValue() ipld.NodeAssembler {
 		ma.ca_Tag.w = ma.w.Tag.v
 		ma.ca_Tag.m = &ma.w.Tag.m
 		return &ma.ca_Tag
+	case 6:
+		ma.ca_MaxPriceAttoFIL.w = ma.w.MaxPriceAttoFIL.v
+		ma.ca_MaxPriceAttoFIL.m = &ma.w.MaxPriceAttoFIL.m
+		return &ma.ca_MaxPriceAttoFIL
 	default:
 		panic("unreachable")
 	}
@@ -12904,6 +12946,13 @@ func (ka *_RetrievalTask__KeyAssembler) AssignString(k string) error {
 		ka.s += fieldBit__RetrievalTask_Tag
 		ka.state = maState_expectValue
 		ka.f = 5
+	case "MaxPriceAttoFIL":
+		if ka.s & fieldBit__RetrievalTask_MaxPriceAttoFIL != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__RetrievalTask_MaxPriceAttoFIL}
+		}
+		ka.s += fieldBit__RetrievalTask_MaxPriceAttoFIL
+		ka.state = maState_expectValue
+		ka.f = 6
 	default:
 		return ipld.ErrInvalidKey{TypeName:"tasks.RetrievalTask", Key:&_String{k}}
 	}
@@ -12939,6 +12988,7 @@ var (
 	fieldName__RetrievalTask_Schedule_serial = _String{"Schedule"}
 	fieldName__RetrievalTask_ScheduleLimit_serial = _String{"ScheduleLimit"}
 	fieldName__RetrievalTask_Tag_serial = _String{"Tag"}
+	fieldName__RetrievalTask_MaxPriceAttoFIL_serial = _String{"MaxPriceAttoFIL"}
 )
 var _ ipld.Node = &_RetrievalTask__Repr{}
 func (_RetrievalTask__Repr) Kind() ipld.Kind {
@@ -12967,6 +13017,11 @@ func (n *_RetrievalTask__Repr) LookupByString(key string) (ipld.Node, error) {
 			return ipld.Absent, ipld.ErrNotExists{ipld.PathSegmentOfString(key)}
 		}
 		return n.Tag.v.Representation(), nil
+	case "MaxPriceAttoFIL":
+		if n.MaxPriceAttoFIL.m == schema.Maybe_Absent {
+			return ipld.Absent, ipld.ErrNotExists{ipld.PathSegmentOfString(key)}
+		}
+		return n.MaxPriceAttoFIL.v.Representation(), nil
 	default:
 		return nil, schema.ErrNoSuchField{Type: nil /*TODO*/, Field: ipld.PathSegmentOfString(key)}
 	}
@@ -12985,7 +13040,12 @@ func (n _RetrievalTask__Repr) LookupBySegment(seg ipld.PathSegment) (ipld.Node, 
 	return n.LookupByString(seg.String())
 }
 func (n *_RetrievalTask__Repr) MapIterator() ipld.MapIterator {
-	end := 6
+	end := 7
+	if n.MaxPriceAttoFIL.m == schema.Maybe_Absent {
+		end = 6
+	} else {
+		goto done
+	}
 	if n.Tag.m == schema.Maybe_Absent {
 		end = 5
 	} else {
@@ -13012,7 +13072,7 @@ type _RetrievalTask__ReprMapItr struct {
 }
 
 func (itr *_RetrievalTask__ReprMapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
-advance:if itr.idx >= 6 {
+advance:if itr.idx >= 7 {
 		return nil, nil, ipld.ErrIteratorOverread{}
 	}
 	switch itr.idx {
@@ -13046,6 +13106,13 @@ advance:if itr.idx >= 6 {
 			goto advance
 		}
 		v = itr.n.Tag.v.Representation()
+	case 6:
+		k = &fieldName__RetrievalTask_MaxPriceAttoFIL_serial
+		if itr.n.MaxPriceAttoFIL.m == schema.Maybe_Absent {
+			itr.idx++
+			goto advance
+		}
+		v = itr.n.MaxPriceAttoFIL.v.Representation()
 	default:
 		panic("unreachable")
 	}
@@ -13059,7 +13126,7 @@ func (_RetrievalTask__Repr) ListIterator() ipld.ListIterator {
 	return nil
 }
 func (rn *_RetrievalTask__Repr) Length() int64 {
-	l := 6
+	l := 7
 	if rn.Schedule.m == schema.Maybe_Absent {
 		l--
 	}
@@ -13067,6 +13134,9 @@ func (rn *_RetrievalTask__Repr) Length() int64 {
 		l--
 	}
 	if rn.Tag.m == schema.Maybe_Absent {
+		l--
+	}
+	if rn.MaxPriceAttoFIL.m == schema.Maybe_Absent {
 		l--
 	}
 	return int64(l)
@@ -13133,6 +13203,7 @@ type _RetrievalTask__ReprAssembler struct {
 	ca_Schedule _String__ReprAssembler
 	ca_ScheduleLimit _String__ReprAssembler
 	ca_Tag _String__ReprAssembler
+	ca_MaxPriceAttoFIL _Int__ReprAssembler
 	}
 
 func (na *_RetrievalTask__ReprAssembler) reset() {
@@ -13144,6 +13215,7 @@ func (na *_RetrievalTask__ReprAssembler) reset() {
 	na.ca_Schedule.reset()
 	na.ca_ScheduleLimit.reset()
 	na.ca_Tag.reset()
+	na.ca_MaxPriceAttoFIL.reset()
 }
 func (na *_RetrievalTask__ReprAssembler) BeginMap(int64) (ipld.MapAssembler, error) {
 	switch *na.m {
@@ -13287,6 +13359,15 @@ func (ma *_RetrievalTask__ReprAssembler) valueFinishTidy() bool {
 		default:
 			return false
 		}
+	case 6:
+		switch ma.w.MaxPriceAttoFIL.m {
+		case schema.Maybe_Value:
+			ma.w.MaxPriceAttoFIL.v = ma.ca_MaxPriceAttoFIL.w
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
 	default:
 		panic("unreachable")
 	}
@@ -13370,6 +13451,17 @@ func (ma *_RetrievalTask__ReprAssembler) AssembleEntry(k string) (ipld.NodeAssem
 		ma.ca_Tag.m = &ma.w.Tag.m
 		
 		return &ma.ca_Tag, nil
+	case "MaxPriceAttoFIL":
+		if ma.s & fieldBit__RetrievalTask_MaxPriceAttoFIL != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__RetrievalTask_MaxPriceAttoFIL_serial}
+		}
+		ma.s += fieldBit__RetrievalTask_MaxPriceAttoFIL
+		ma.state = maState_midValue
+		ma.f = 6
+		ma.ca_MaxPriceAttoFIL.w = ma.w.MaxPriceAttoFIL.v
+		ma.ca_MaxPriceAttoFIL.m = &ma.w.MaxPriceAttoFIL.m
+		
+		return &ma.ca_MaxPriceAttoFIL, nil
 	default:
 		return nil, ipld.ErrInvalidKey{TypeName:"tasks.RetrievalTask.Repr", Key:&_String{k}}
 	}
@@ -13434,6 +13526,11 @@ func (ma *_RetrievalTask__ReprAssembler) AssembleValue() ipld.NodeAssembler {
 		ma.ca_Tag.m = &ma.w.Tag.m
 		
 		return &ma.ca_Tag
+	case 6:
+		ma.ca_MaxPriceAttoFIL.w = ma.w.MaxPriceAttoFIL.v
+		ma.ca_MaxPriceAttoFIL.m = &ma.w.MaxPriceAttoFIL.m
+		
+		return &ma.ca_MaxPriceAttoFIL
 	default:
 		panic("unreachable")
 	}
@@ -13542,6 +13639,13 @@ func (ka *_RetrievalTask__ReprKeyAssembler) AssignString(k string) error {
 		ka.s += fieldBit__RetrievalTask_Tag
 		ka.state = maState_expectValue
 		ka.f = 5
+	case "MaxPriceAttoFIL":
+		if ka.s & fieldBit__RetrievalTask_MaxPriceAttoFIL != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__RetrievalTask_MaxPriceAttoFIL_serial}
+		}
+		ka.s += fieldBit__RetrievalTask_MaxPriceAttoFIL
+		ka.state = maState_expectValue
+		ka.f = 6
 	default:
 		return ipld.ErrInvalidKey{TypeName:"tasks.RetrievalTask.Repr", Key:&_String{k}}
 	}
