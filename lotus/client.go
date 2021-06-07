@@ -7,9 +7,13 @@ import (
 
 	"github.com/filecoin-project/dealbot/tasks"
 	"github.com/filecoin-project/go-address"
+	"github.com/filecoin-project/go-state-types/big"
 	"github.com/filecoin-project/lotus/api"
 	"github.com/urfave/cli/v2"
 )
+
+// the default amount to expect in a wallet. 10^14 = 0.0001 fil
+const defaultMinWalletFil = 100000000000000
 
 type NodeCloser func()
 
@@ -58,11 +62,27 @@ func SetupClientFromCLI(cctx *cli.Context) (tasks.NodeConfig, api.FullNode, Node
 	if err != nil {
 		return tasks.NodeConfig{}, nil, nil, fmt.Errorf("wallet is not a Filecoin address: %s, %s", cctx.String("wallet"), err)
 	}
+	mf := big.NewInt(defaultMinWalletFil)
+	if cctx.IsSet("minfil") {
+		log.Infow("using minimum wallet fil for picking tasks", cctx.String("minfil"))
+		if _, ok := mf.SetString(cctx.String("minfil"), 0); !ok {
+			return tasks.NodeConfig{}, nil, nil, fmt.Errorf("could not parse min wallet balance: %s, %s", cctx.String("minfil"), err)
+		}
+	}
+	mc := big.NewInt(0)
+	if cctx.IsSet("mincap") {
+		log.Infow("using minimum wallet datacap for picking tasks", cctx.String("mincap"))
+		if _, ok := mf.SetString(cctx.String("mincap"), 0); !ok {
+			return tasks.NodeConfig{}, nil, nil, fmt.Errorf("could not parse min wallet datacap: %s, %s", cctx.String("mincap"), err)
+		}
+	}
 
 	return tasks.NodeConfig{
-		DataDir:       dataDir,
-		NodeDataDir:   nodeDataDir,
-		WalletAddress: walletAddress,
+		DataDir:          dataDir,
+		NodeDataDir:      nodeDataDir,
+		WalletAddress:    walletAddress,
+		MinWalletBalance: mf,
+		MinWalletCap:     mc,
 	}, node, closer, nil
 }
 
@@ -108,10 +128,26 @@ func SetupClient(ctx context.Context, cliCtx *cli.Context) (tasks.NodeConfig, ap
 	if err != nil {
 		return tasks.NodeConfig{}, nil, nil, fmt.Errorf("wallet is not a Filecoin address: %s, %s", wallet, err)
 	}
+	mf := big.NewInt(defaultMinWalletFil)
+	if cliCtx.IsSet("minfil") {
+		log.Infow("using minimum wallet fil for picking tasks", cliCtx.String("minfil"))
+		if _, ok := mf.SetString(cliCtx.String("minfil"), 0); !ok {
+			return tasks.NodeConfig{}, nil, nil, fmt.Errorf("could not parse min wallet balance: %s, %s", cliCtx.String("minfil"), err)
+		}
+	}
+	mc := big.NewInt(0)
+	if cliCtx.IsSet("mincap") {
+		log.Infow("using minimum wallet datacap for picking tasks", cliCtx.String("mincap"))
+		if _, ok := mf.SetString(cliCtx.String("mincap"), 0); !ok {
+			return tasks.NodeConfig{}, nil, nil, fmt.Errorf("could not parse min wallet datacap: %s, %s", cliCtx.String("mincap"), err)
+		}
+	}
 
 	return tasks.NodeConfig{
-		DataDir:       dataDir,
-		NodeDataDir:   nodeDataDir,
-		WalletAddress: walletAddress,
+		DataDir:          dataDir,
+		NodeDataDir:      nodeDataDir,
+		WalletAddress:    walletAddress,
+		MinWalletBalance: mf,
+		MinWalletCap:     mc,
 	}, node, closer, nil
 }

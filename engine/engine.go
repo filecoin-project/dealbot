@@ -107,7 +107,7 @@ taskLoop:
 		default:
 		}
 
-		if e.pingWorker() {
+		if e.pingWorker() && e.apiGood() {
 			// Check if there is a new task
 			task := e.popTask()
 			if task != nil {
@@ -314,4 +314,39 @@ func (e *Engine) pingWorker() bool {
 	default:
 		return false
 	}
+}
+
+// apiGood returns true if the api can be reached and reports sufficient fil/cap to process tasks.
+func (e *Engine) apiGood() bool {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	localBalance, err := e.node.WalletBalance(ctx, e.nodeConfig.WalletAddress)
+	if err != nil {
+		log.Errorw("could not query api for wallet balance", "error", err)
+		return false
+	}
+	if localBalance.LessThan(e.nodeConfig.MinWalletBalance) {
+		log.Warnf("Not accepting task. local balance below min")
+		return false
+	}
+
+	head, err := e.node.ChainHead(ctx)
+	if err != nil {
+		log.Errorw("could not query api for head", "error", err)
+		return false
+	}
+	localCap, err := e.node.StateVerifiedClientStatus(ctx, e.nodeConfig.WalletAddress, head.Key())
+	if err != nil {
+		log.Errorw("could not query api for datacap", "error", err)
+		return false
+	}
+	if localCap == nil {
+		return e.nodeConfig.MinWalletCap.NilOrZero()
+	}
+	if localCap.LessThan(e.nodeConfig.MinWalletCap) {
+		log.Warnf("Not accepting task. local datacap below min")
+		return false
+	}
+
+	return true
 }
