@@ -114,7 +114,7 @@ type logEcapsulator struct {
 }
 
 func (fw *logEcapsulator) Write(p []byte) (n int, err error) {
-	fw.logger.Infow("http req", "logline", p)
+	fw.logger.Infow("http req", "logline", string(p))
 	return len(p), nil
 }
 
