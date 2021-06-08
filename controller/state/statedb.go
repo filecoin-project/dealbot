@@ -209,6 +209,13 @@ func (s *sdbstore) Head() (cid.Cid, error) {
 	return headCid, nil
 }
 
+func (s *sdbstore) Set(c cid.Cid, data []byte) error {
+	return s.stateDB.transact(s.Context, func(tx *sql.Tx) error {
+		_, err := tx.ExecContext(s.Context, cidArchiveSQL, c.String(), data, time.Now())
+		return err
+	})
+}
+
 func (s *stateDB) db() *sql.DB {
 	return s.dbconn.SqlDB()
 }
@@ -453,7 +460,7 @@ func (s *stateDB) Update(ctx context.Context, taskID string, req tasks.UpdateTas
 			if err != nil {
 				return err
 			}
-			flink, err := linkProto.Build(ctx, ipld.LinkContext{}, finalized, txContextStorer(ctx, tx))
+			flink, err := linkProto.Build(ctx, ipld.LinkContext{}, finalized.Representation(), txContextStorer(ctx, tx))
 			if err != nil {
 				return err
 			}
@@ -749,7 +756,7 @@ func (s *stateDB) PublishRecordsFrom(ctx context.Context, worker string) error {
 		rcrdlst := tasks.Type.List_AuthenticatedRecord.Of(rcrds)
 
 		update := tasks.Type.RecordUpdate.Of(rcrdlst, headCid, headCidSig)
-		updateCid, err := linkProto.Build(ctx, ipld.LinkContext{}, update, txContextStorer(ctx, tx))
+		updateCid, err := linkProto.Build(ctx, ipld.LinkContext{}, update.Representation(), txContextStorer(ctx, tx))
 		if err != nil {
 			return err
 		}

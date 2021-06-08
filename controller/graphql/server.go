@@ -1,15 +1,21 @@
 package graphql
 
 import (
+	"bytes"
+	"context"
 	"embed"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 
 	"github.com/filecoin-project/dealbot/controller/state"
 	"github.com/filecoin-project/dealbot/tasks"
 	"github.com/graphql-go/graphql"
+	ipld "github.com/ipld/go-ipld-prime"
+	"github.com/ipld/go-ipld-prime/codec/dagjson"
+	cidlink "github.com/ipld/go-ipld-prime/linking/cid"
 )
 
 //go:embed index.html
@@ -77,6 +83,37 @@ func GetHandler(db state.State, accessToken string) (*http.ServeMux, error) {
 						return tsk, nil
 					},
 				},
+				"FinishedTask": &graphql.Field{
+					Type: Task__type,
+					Args: graphql.FieldConfigArgument{
+						"AccessToken": &graphql.ArgumentConfig{Type: graphql.String, Description: "potentially access-restricted query"},
+						"UUID":        &graphql.ArgumentConfig{Type: graphql.NewNonNull(graphql.String), Description: "task uuid"},
+					},
+					Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+						if accessToken != "" {
+							at, ok := p.Args["AccessToken"]
+							if !ok || at.(string) != accessToken {
+								return nil, fmt.Errorf("access token required")
+							}
+						}
+
+						uuid := p.Args["UUID"].(string)
+						tsk, err := db.Get(p.Context, uuid)
+						store := db.Store(p.Context)
+						storer := func(_ ipld.LinkContext) (io.Writer, ipld.StoreCommitter, error) {
+							buf := bytes.Buffer{}
+							return &buf, func(l ipld.Link) error {
+								c := l.(cidlink.Link).Cid
+								return store.Set(c, buf.Bytes())
+							}, nil
+						}
+						finished, err := tsk.Finalize(p.Context, storer)
+						if err != nil {
+							return nil, err
+						}
+						return finished, nil
+					},
+				},
 				"RecordUpdate": &graphql.Field{
 					Type: RecordUpdate__type,
 					Resolve: func(p graphql.ResolveParams) (interface{}, error) {
@@ -94,11 +131,25 @@ func GetHandler(db state.State, accessToken string) (*http.ServeMux, error) {
 		return nil, err
 	}
 
+	loader := func(ctx context.Context, cl cidlink.Link, builder ipld.NodeBuilder) (ipld.Node, error) {
+		store := db.Store(ctx)
+		block, err := store.Get(cl.Cid)
+		if err != nil {
+			return nil, err
+		}
+		if err := dagjson.Decoder(builder, bytes.NewBuffer(block.RawData())); err != nil {
+			return nil, err
+		}
+
+		n := builder.Build()
+		return n, nil
+	}
+
 	mux := http.NewServeMux()
 	mux.Handle("/", http.FileServer(http.FS(index)))
 	mux.Handle("/graphql", CorsMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		var result *graphql.Result
-		ctx := r.Context()
+		ctx := context.WithValue(r.Context(), nodeLoaderCtxKey, loader)
 
 		if r.Method == "POST" && r.Header.Get("Content-Type") == "application/json" {
 			var p postData
