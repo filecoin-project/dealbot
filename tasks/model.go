@@ -36,6 +36,7 @@ type NodeConfig struct {
 	WalletAddress    address.Address
 	MinWalletBalance big.Int
 	MinWalletCap     big.Int
+	PostHook         string
 }
 
 // TaskEvent logs a change in either status

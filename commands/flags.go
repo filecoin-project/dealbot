@@ -151,6 +151,11 @@ var DaemonFlags = append(DealFlags, append(CommonFlags, append(EndpointFlags, []
 		Usage:   "min amount of datacap needed (in bytes) in wallet for tasks to be popped by daemon",
 		EnvVars: []string{"DEALBOT_MIN_CAP"},
 	}),
+	altsrc.NewStringFlag(&cli.StringFlag{
+		Name:    "posthook",
+		Usage:   "command to run when a deal finishes",
+		EnvVars: []string{"DEALBOT_POST_HOOK"},
+	}),
 }...)...)...)
 
 var MockFlags = []cli.Flag{

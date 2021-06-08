@@ -2,6 +2,7 @@ package engine
 
 import (
 	"context"
+	"os/exec"
 	"sync"
 	"time"
 
@@ -267,6 +268,12 @@ func (e *Engine) runTask(ctx context.Context, task tasks.Task, runCount, worker 
 			return
 		}
 		tlog.Errorw("error updating final status", "err", err)
+	}
+	if e.nodeConfig.PostHook != "" {
+		err := exec.Command("/bin/bash", e.nodeConfig.PostHook, task.GetUUID()).Run()
+		if err != nil {
+			tlog.Errorw("could not run post hook", "err", err)
+		}
 	}
 }
 
