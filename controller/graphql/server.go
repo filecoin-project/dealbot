@@ -1,6 +1,8 @@
 package graphql
 
 import (
+	"bytes"
+	"context"
 	"embed"
 	"encoding/json"
 	"fmt"
@@ -10,6 +12,9 @@ import (
 	"github.com/filecoin-project/dealbot/controller/state"
 	"github.com/filecoin-project/dealbot/tasks"
 	"github.com/graphql-go/graphql"
+	ipld "github.com/ipld/go-ipld-prime"
+	"github.com/ipld/go-ipld-prime/codec/dagjson"
+	cidlink "github.com/ipld/go-ipld-prime/linking/cid"
 )
 
 //go:embed index.html
@@ -94,11 +99,26 @@ func GetHandler(db state.State, accessToken string) (*http.ServeMux, error) {
 		return nil, err
 	}
 
+	loader := func(ctx context.Context, cl cidlink.Link, builder ipld.NodeBuilder) (ipld.Node, error) {
+		store := db.Store(ctx)
+		block, err := store.Get(cl.Cid)
+		if err != nil {
+			return nil, err
+		}
+		if err := dagjson.Decoder(builder, bytes.NewBuffer(block.RawData())); err != nil {
+			return nil, err
+		}
+
+		n := builder.Build()
+		return n, nil
+	}
+
 	mux := http.NewServeMux()
 	mux.Handle("/", http.FileServer(http.FS(index)))
 	mux.Handle("/graphql", CorsMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		var result *graphql.Result
-		ctx := r.Context()
+		sctx := r.Context()
+		ctx := context.WithValue(sctx, nodeLoaderCtxKey, loader)
 
 		if r.Method == "POST" && r.Header.Get("Content-Type") == "application/json" {
 			var p postData
