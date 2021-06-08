@@ -44,20 +44,13 @@ fi
 tail -f dealbot-daemon.log | sed 's/^/dealbot-daemon.log: /' &
 DAEMON_TAIL_PID=$!
 
+# Add a storage task to the queue.
 curl --header "Content-Type: application/json" \
 	--request POST \
 	--data '{"Miner":"t01000","MaxPriceAttoFIL":100000000000000000,"Size":1024,"StartOffset":0,"FastRetrieval":true,"Verified":false}' \
 	"$CONTROLLER_ENDPOINT/tasks/storage"
 
-# TODO: Also test a retrieval task.
-
-# TODO: Once the daemon posts all updates back to the controller, use the
-# controller logs alone.
-
-# TODO: Track the status logs more intelligently. Probably too complex for shell.
-
-# TODO: Also test multiple daemons, and e.g. submitting many trivial tasks and
-# seeing that every daemon picks up at least one of them.
+# TODO: poll the controller for progress instead of relying on logs.
 
 # On average, the storage deal takes about four minutes.
 # Use a timeout of ten minutes, just in case.
@@ -82,3 +75,27 @@ if ! grep -q 'INFO.*controller.*storage task.*"miner": "t01000",.*"size": 1024,.
 	echo "The controller doesn't seem to be logging tasks correctly."
 	exit 1
 fi
+
+CID=$(lotus client local | tail -1 | awk '{print $2}')
+
+# Also queue a retrieval task of the data we just stored.
+curl --header "Content-Type: application/json" \
+	--request POST \
+	--data '{"Miner":"t01000","PayloadCID":"'$CID'","CARExport":false}' \
+	"$CONTROLLER_ENDPOINT/tasks/retrieval"
+
+
+# On average, the retrieval deal takes about half a minute.
+# Use a timeout of two minutes, just in case.
+for ((i = 0; ; i++)); do
+	if grep -q "$CID.*DealStatusCompleted" dealbot-daemon.log; then
+		echo "Retrieval deal is complete!"
+		break
+	fi
+	if ((i > 2*60)); then
+		# The logs are already being printed out.
+		echo "Timed out waiting for retrieval deal to be complete."
+		exit 0
+	fi
+	sleep 1
+done

@@ -49,16 +49,6 @@ curl --header "Content-Type: application/json" \
 	--data '{"Miner":"t01000","MaxPriceAttoFIL":100000000000000000,"Size":1024,"StartOffset":0,"FastRetrieval":true,"Verified":false,"Schedule":"*/6 * * * *","ScheduleLimit":"20m"}' \
 	"$CONTROLLER_ENDPOINT/tasks/storage"
 
-# TODO: Also test a retrieval task.
-
-# TODO: Once the daemon posts all updates back to the controller, use the
-# controller logs alone.
-
-# TODO: Track the status logs more intelligently. Probably too complex for shell.
-
-# TODO: Also test multiple daemons, and e.g. submitting many trivial tasks and
-# seeing that every daemon picks up at least one of them.
-
 # On average, the storage deal takes about four minutes.
 #
 # Allowing 6 minutes for each deal to complete, running scheduled deal for a
