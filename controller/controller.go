@@ -28,6 +28,12 @@ import (
 
 var log = logging.Logger("controller")
 
+// Automatically set through -ldflags
+// Example: go install -ldflags "-X controller.buildDate=`date -u +%d/%m/%Y@%H:%M:%S`"
+var (
+	buildDate = "unknown"
+)
+
 type Controller struct {
 	server          *http.Server
 	gserver         *http.Server
@@ -134,6 +140,7 @@ func NewWithDependencies(listener, graphqlListener net.Listener, gqlToken string
 	r.HandleFunc("/tasks/{uuid}", srv.updateTaskHandler).Methods("PATCH")
 	r.HandleFunc("/tasks/{uuid}", srv.getTaskHandler).Methods("GET")
 	r.HandleFunc("/car", srv.carHandler).Methods("GET")
+	r.HandleFunc("/health", srv.healthHandler).Methods("GET")
 	r.Methods("OPTIONS").HandlerFunc(srv.sendCORSHeaders)
 	metricsHandler := recorder.Handler()
 	if metricsHandler != nil {

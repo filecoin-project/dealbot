@@ -8,7 +8,7 @@ WORKDIR /go/src/app/
 COPY . .
 # Fetch dependencies.
 RUN go get -d -v ./...
-RUN go build -o dealbot ./
+RUN go build -o -ldflags "-X github.com/filecoin-project/dealbot/controller.buildDate=`date -u +%d/%m/%Y@%H:%M:%S`" ./
 
 FROM alpine
 # Copy our static executable.
