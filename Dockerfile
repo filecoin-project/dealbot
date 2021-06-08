@@ -13,4 +13,5 @@ RUN go build -o dealbot ./
 FROM alpine
 # Copy our static executable.
 COPY --from=builder /go/src/app/dealbot /dealbot
+ENV DEALBOT_LOG_JSON=true
 ENTRYPOINT ["/dealbot"]

@@ -141,6 +141,16 @@ var DaemonFlags = append(DealFlags, append(CommonFlags, append(EndpointFlags, []
 		EnvVars: []string{"DEALBOT_WORKERS"},
 		Value:   1,
 	}),
+	altsrc.NewStringFlag(&cli.StringFlag{
+		Name:    "minfil",
+		Usage:   "min amount of fil needed (in attofil) in wallet for tasks to be popped by daemon",
+		EnvVars: []string{"DEALBOT_MIN_FIL"},
+	}),
+	altsrc.NewStringFlag(&cli.StringFlag{
+		Name:    "mincap",
+		Usage:   "min amount of datacap needed (in bytes) in wallet for tasks to be popped by daemon",
+		EnvVars: []string{"DEALBOT_MIN_CAP"},
+	}),
 }...)...)...)
 
 var MockFlags = []cli.Flag{
@@ -238,6 +248,11 @@ var ControllerFlags = []cli.Flag{
 		Name:    "dbloc",
 		Usage:   "connection string for sql DB",
 		EnvVars: []string{"DEALBOT_PERSISTENCE_CONN"},
+	}),
+	altsrc.NewStringFlag(&cli.StringFlag{
+		Name:    "gqlAccessToken",
+		Usage:   "set an access secret for access to inprogress data over gql",
+		EnvVars: []string{"DEALBOT_GRAPHQL_ACCESS_TOKEN"},
 	}),
 }
 

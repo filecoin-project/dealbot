@@ -55,6 +55,7 @@ func MakeStorageDeal(ctx context.Context, config NodeConfig, node api.FullNode, 
 		{de.getMinerInfo, "Miner Info successfully fetched"},
 		{de.getPeerAddr, "Miner address validated"},
 		{de.netConnect, "Connected to miner"},
+		{de.netDiag, "Got miner version"},
 	})
 	cancel()
 	if err != nil {
@@ -111,12 +112,12 @@ type storageDealExecutor struct {
 	importRes *api.ImportRes
 }
 
-func (de *dealExecutor) getTipSet() (err error) {
+func (de *dealExecutor) getTipSet(_ logFunc) (err error) {
 	de.tipSet, err = de.node.ChainHead(de.ctx)
 	return err
 }
 
-func (de *dealExecutor) getMinerInfo() (err error) {
+func (de *dealExecutor) getMinerInfo(_ logFunc) (err error) {
 	// retrieve and validate miner price
 	de.minerAddress, err = address.NewFromString(de.miner)
 	if err != nil {
@@ -127,7 +128,7 @@ func (de *dealExecutor) getMinerInfo() (err error) {
 	return err
 }
 
-func (de *dealExecutor) getPeerAddr() error {
+func (de *dealExecutor) getPeerAddr(_ logFunc) error {
 	if de.minerInfo.PeerId == nil {
 		return errors.New("no PeerID for miner")
 	}
@@ -148,11 +149,26 @@ func (de *dealExecutor) getPeerAddr() error {
 	return nil
 }
 
-func (de *dealExecutor) netConnect() error {
+func (de *dealExecutor) netConnect(_ logFunc) error {
 	return de.node.NetConnect(de.ctx, de.pi)
 }
 
-func (de *storageDealExecutor) queryAsk() (err error) {
+func (de *dealExecutor) netDiag(l logFunc) error {
+	av, err := de.node.NetAgentVersion(de.ctx, de.pi.ID)
+	if err != nil {
+		return err
+	}
+	de.log("remote peer version", "version", av)
+
+	cv, err := de.node.Version(de.ctx)
+	de.log("local client version", "version", cv.Version)
+
+	l(fmt.Sprintf("NetAgentVersion: %s", av))
+	l(fmt.Sprintf("ClientVersion: %s", cv.Version))
+	return err
+}
+
+func (de *storageDealExecutor) queryAsk(_ logFunc) (err error) {
 	ask, err := de.node.ClientQueryAsk(de.ctx, *de.minerInfo.PeerId, de.minerAddress)
 	if err != nil {
 		return err
@@ -166,7 +182,7 @@ func (de *storageDealExecutor) queryAsk() (err error) {
 	return
 }
 
-func (de *storageDealExecutor) checkPrice() error {
+func (de *storageDealExecutor) checkPrice(_ logFunc) error {
 	maxPrice := abi.NewTokenAmount(de.task.MaxPriceAttoFIL.x)
 	if de.task.MaxPriceAttoFIL.x == 0 {
 		maxPrice = abi.NewTokenAmount(maxPriceDefault)
@@ -177,7 +193,7 @@ func (de *storageDealExecutor) checkPrice() error {
 	return nil
 }
 
-func (de *storageDealExecutor) generateFile() error {
+func (de *storageDealExecutor) generateFile(_ logFunc) error {
 	de.fileName = uuid.New().String()
 	filePath := filepath.Join(de.config.DataDir, de.fileName)
 	file, err := os.Create(filePath)
@@ -194,7 +210,7 @@ func (de *storageDealExecutor) generateFile() error {
 	return nil
 }
 
-func (de *storageDealExecutor) importFile() (err error) {
+func (de *storageDealExecutor) importFile(_ logFunc) (err error) {
 	// import the file into the lotus node
 	ref := api.FileRef{
 		Path:  filepath.Join(de.config.NodeDataDir, de.fileName),
@@ -239,6 +255,15 @@ func (de *storageDealExecutor) executeAndMonitorDeal(ctx context.Context, update
 	}
 	_ = params
 
+	// track updates to all deals -- we want to start this before we even
+	// initiate the deal so we don't miss any updates
+	updates, err := de.node.ClientGetDealUpdates(de.ctx)
+	if err != nil {
+		return err
+	}
+
+	de.log("got deal updates channel")
+
 	// start deal process
 	proposalCid, err := de.node.ClientStartDeal(de.ctx, params)
 	if err != nil {
@@ -246,14 +271,6 @@ func (de *storageDealExecutor) executeAndMonitorDeal(ctx context.Context, update
 	}
 
 	de.log("got proposal cid", "cid", proposalCid)
-
-	// track updates to deal
-	updates, err := de.node.ClientGetDealUpdates(de.ctx)
-	if err != nil {
-		return err
-	}
-
-	de.log("got deal updates channel")
 
 	var prevStage string
 	defaultStageTimeout := stageTimeouts[defaultStorageStageTimeoutName]
@@ -288,9 +305,9 @@ func (de *storageDealExecutor) executeAndMonitorDeal(ctx context.Context, update
 				continue
 			}
 
-			stage := info.DealStages.GetStage(storagemarket.DealStates[info.State])
-			if stage != nil {
-				err = updateStage(ctx, storagemarket.DealStates[info.State], toStageDetails(stage))
+			if len(info.DealStages.Stages) > 0 {
+				err = updateStage(ctx, storagemarket.DealStates[info.State], toStageDetails(info.DealStages.Stages[len(info.DealStages.Stages)-1]))
+
 				if err != nil {
 					return err
 				}

@@ -126,6 +126,8 @@ type _FinishedTask struct {
 	TimeToFirstByteMS _Int__Maybe
 	TimeToLastByteMS _Int__Maybe
 	Events _Link_List_StageDetails
+	MinerVersion _String__Maybe
+	ClientVersion _String__Maybe
 }
 
 // Float matches the IPLD Schema type "Float".  It has float kind.
@@ -221,6 +223,7 @@ type _RetrievalTask struct {
 	Schedule _String__Maybe
 	ScheduleLimit _String__Maybe
 	Tag _String__Maybe
+	MaxPriceAttoFIL _Int__Maybe
 }
 
 // StageDetails matches the IPLD Schema type "StageDetails".  It has Struct type-kind, and may be interrogated like map kind.
