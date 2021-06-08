@@ -109,6 +109,15 @@ func New(ctx *cli.Context) (*Controller, error) {
 	return NewWithDependencies(l, gl, gqlToken, recorder, backend)
 }
 
+type logEcapsulator struct {
+	logger *logging.ZapEventLogger
+}
+
+func (fw *logEcapsulator) Write(p []byte) (n int, err error) {
+	fw.logger.Infow("http req", "logline", p)
+	return len(p), nil
+}
+
 //go:embed static
 var static embed.FS
 
@@ -150,7 +159,7 @@ func NewWithDependencies(listener, graphqlListener net.Listener, gqlToken string
 
 	srv.doneCh = make(chan struct{})
 	srv.server = &http.Server{
-		Handler:      handlers.LoggingHandler(os.Stdout, r),
+		Handler:      handlers.LoggingHandler(&logEcapsulator{log}, r),
 		WriteTimeout: 30 * time.Second,
 		ReadTimeout:  30 * time.Second,
 	}
@@ -162,7 +171,7 @@ func NewWithDependencies(listener, graphqlListener net.Listener, gqlToken string
 		}
 
 		srv.gserver = &http.Server{
-			Handler:      handlers.LoggingHandler(os.Stdout, gqlHandler),
+			Handler:      handlers.LoggingHandler(&logEcapsulator{log}, gqlHandler),
 			WriteTimeout: 30 * time.Second,
 			ReadTimeout:  30 * time.Second,
 		}
