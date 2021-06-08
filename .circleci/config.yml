@@ -101,7 +101,7 @@ workflows:
           name: deploy-nerpanet
           circle_context: sentinel-staging-deploy
           kubernetes_cluster: mainnet-us-east-2-dev-eks
-          aws_regoin: us-east-2
+          aws_region: us-east-2
           namespace: ntwk-nerpanet-dealbot
           release: dealbot-0
           requires:
@@ -114,7 +114,7 @@ workflows:
           name: deploy-mainnet-us-east-1
           circle_context: filecoin-mainnet-aws
           kubernetes_cluster: mainnet-us-east-1-eks
-          aws_regoin: us-east-1
+          aws_region: us-east-1
           namespace: ntwk-mainnet-dealbot
           release: dealbot-0
           requires:
