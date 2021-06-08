@@ -149,8 +149,7 @@ func GetHandler(db state.State, accessToken string) (*http.ServeMux, error) {
 	mux.Handle("/", http.FileServer(http.FS(index)))
 	mux.Handle("/graphql", CorsMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		var result *graphql.Result
-		sctx := r.Context()
-		ctx := context.WithValue(sctx, nodeLoaderCtxKey, loader)
+		ctx := context.WithValue(r.Context(), nodeLoaderCtxKey, loader)
 
 		if r.Method == "POST" && r.Header.Get("Content-Type") == "application/json" {
 			var p postData
