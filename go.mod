@@ -18,7 +18,7 @@ require (
 	github.com/ipfs/go-cid v0.0.7
 	github.com/ipfs/go-log/v2 v2.1.2
 	github.com/ipld/go-car v0.1.1-0.20201119040415-11b6074b6d4d
-	github.com/ipld/go-ipld-graphql v0.0.0-20210425153336-bd6fb64874b6
+	github.com/ipld/go-ipld-graphql v0.0.0-20210608181858-5e7994523c5a
 	github.com/ipld/go-ipld-prime v0.7.1-0.20210519202903-3a67953d6ef3
 	github.com/ipld/go-ipld-prime-proto v0.1.1 // indirect
 	github.com/lib/pq v1.9.0
