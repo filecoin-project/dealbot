@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/filecoin-project/dealbot/netutil"
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-fil-markets/storagemarket"
 	"github.com/filecoin-project/go-state-types/abi"
@@ -165,7 +166,16 @@ func (de *dealExecutor) netDiag(l logFunc) error {
 
 	l(fmt.Sprintf("NetAgentVersion: %s", av))
 	l(fmt.Sprintf("ClientVersion: %s", cv.Version))
-	return err
+	if err != nil {
+		return err
+	}
+
+	peerAddr, peerL, err := netutil.TryAcquireLatency(de.ctx, de.pi)
+	if err != nil {
+		l(fmt.Sprintf("RemotePeerAddr: %s", peerAddr))
+		l(fmt.Sprintf("RemotePeerLatency: %d", peerL))
+	}
+	return nil
 }
 
 func (de *storageDealExecutor) queryAsk(_ logFunc) (err error) {

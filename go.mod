@@ -22,6 +22,7 @@ require (
 	github.com/ipld/go-ipld-prime v0.7.1-0.20210519202903-3a67953d6ef3
 	github.com/ipld/go-ipld-prime-proto v0.1.1 // indirect
 	github.com/lib/pq v1.9.0
+	github.com/libp2p/go-libp2p v0.12.0
 	github.com/libp2p/go-libp2p-core v0.7.0
 	github.com/libp2p/go-libp2p-crypto v0.1.0
 	github.com/mitchellh/go-homedir v1.1.0
@@ -31,6 +32,7 @@ require (
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/stretchr/testify v1.7.0
 	github.com/urfave/cli/v2 v2.3.0
+	golang.org/x/net v0.0.0-20210119194325-5f4716e94777
 	modernc.org/sqlite v1.10.6
 )
 
