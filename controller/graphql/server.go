@@ -6,6 +6,7 @@ import (
 	"embed"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 
@@ -80,6 +81,37 @@ func GetHandler(db state.State, accessToken string) (*http.ServeMux, error) {
 							return nil, err
 						}
 						return tsk, nil
+					},
+				},
+				"FinishedTask": &graphql.Field{
+					Type: Task__type,
+					Args: graphql.FieldConfigArgument{
+						"AccessToken": &graphql.ArgumentConfig{Type: graphql.String, Description: "potentially access-restricted query"},
+						"UUID":        &graphql.ArgumentConfig{Type: graphql.NewNonNull(graphql.String), Description: "task uuid"},
+					},
+					Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+						if accessToken != "" {
+							at, ok := p.Args["AccessToken"]
+							if !ok || at.(string) != accessToken {
+								return nil, fmt.Errorf("access token required")
+							}
+						}
+
+						uuid := p.Args["UUID"].(string)
+						tsk, err := db.Get(p.Context, uuid)
+						store := db.Store(p.Context)
+						storer := func(_ ipld.LinkContext) (io.Writer, ipld.StoreCommitter, error) {
+							buf := bytes.Buffer{}
+							return &buf, func(l ipld.Link) error {
+								c := l.(cidlink.Link).Cid
+								return store.Set(c, buf.Bytes())
+							}, nil
+						}
+						finished, err := tsk.Finalize(p.Context, storer)
+						if err != nil {
+							return nil, err
+						}
+						return finished, nil
 					},
 				},
 				"RecordUpdate": &graphql.Field{

@@ -2634,15 +2634,24 @@ func (n FinishedTask) LookupByString(key string) (ipld.Node, error) {
 		if n.MinerLatencyMS.m == schema.Maybe_Absent {
 			return ipld.Absent, nil
 		}
+		if n.MinerLatencyMS.m == schema.Maybe_Null {
+			return ipld.Null, nil
+		}
 		return n.MinerLatencyMS.v, nil
 	case "TimeToFirstByteMS":
 		if n.TimeToFirstByteMS.m == schema.Maybe_Absent {
 			return ipld.Absent, nil
 		}
+		if n.TimeToFirstByteMS.m == schema.Maybe_Null {
+			return ipld.Null, nil
+		}
 		return n.TimeToFirstByteMS.v, nil
 	case "TimeToLastByteMS":
 		if n.TimeToLastByteMS.m == schema.Maybe_Absent {
 			return ipld.Absent, nil
+		}
+		if n.TimeToLastByteMS.m == schema.Maybe_Null {
+			return ipld.Null, nil
 		}
 		return n.TimeToLastByteMS.v, nil
 	case "Events":
@@ -2651,10 +2660,16 @@ func (n FinishedTask) LookupByString(key string) (ipld.Node, error) {
 		if n.MinerVersion.m == schema.Maybe_Absent {
 			return ipld.Absent, nil
 		}
+		if n.MinerVersion.m == schema.Maybe_Null {
+			return ipld.Null, nil
+		}
 		return n.MinerVersion.v, nil
 	case "ClientVersion":
 		if n.ClientVersion.m == schema.Maybe_Absent {
 			return ipld.Absent, nil
+		}
+		if n.ClientVersion.m == schema.Maybe_Null {
+			return ipld.Null, nil
 		}
 		return n.ClientVersion.v, nil
 	default:
@@ -2738,6 +2753,10 @@ func (itr *_FinishedTask__MapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
 			v = ipld.Absent
 			break
 		}
+		if itr.n.MinerLatencyMS.m == schema.Maybe_Null {
+			v = ipld.Null
+			break
+		}
 		v = itr.n.MinerLatencyMS.v
 	case 9:
 		k = &fieldName__FinishedTask_TimeToFirstByteMS
@@ -2745,11 +2764,19 @@ func (itr *_FinishedTask__MapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
 			v = ipld.Absent
 			break
 		}
+		if itr.n.TimeToFirstByteMS.m == schema.Maybe_Null {
+			v = ipld.Null
+			break
+		}
 		v = itr.n.TimeToFirstByteMS.v
 	case 10:
 		k = &fieldName__FinishedTask_TimeToLastByteMS
 		if itr.n.TimeToLastByteMS.m == schema.Maybe_Absent {
 			v = ipld.Absent
+			break
+		}
+		if itr.n.TimeToLastByteMS.m == schema.Maybe_Null {
+			v = ipld.Null
 			break
 		}
 		v = itr.n.TimeToLastByteMS.v
@@ -2762,11 +2789,19 @@ func (itr *_FinishedTask__MapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
 			v = ipld.Absent
 			break
 		}
+		if itr.n.MinerVersion.m == schema.Maybe_Null {
+			v = ipld.Null
+			break
+		}
 		v = itr.n.MinerVersion.v
 	case 13:
 		k = &fieldName__FinishedTask_ClientVersion
 		if itr.n.ClientVersion.m == schema.Maybe_Absent {
 			v = ipld.Absent
+			break
+		}
+		if itr.n.ClientVersion.m == schema.Maybe_Null {
+			v = ipld.Null
 			break
 		}
 		v = itr.n.ClientVersion.v
@@ -3070,6 +3105,9 @@ func (ma *_FinishedTask__Assembler) valueFinishTidy() bool {
 		}
 	case 8:
 		switch ma.w.MinerLatencyMS.m {
+		case schema.Maybe_Null:
+			ma.state = maState_initial
+			return true
 		case schema.Maybe_Value:
 			ma.w.MinerLatencyMS.v = ma.ca_MinerLatencyMS.w
 			ma.state = maState_initial
@@ -3079,6 +3117,9 @@ func (ma *_FinishedTask__Assembler) valueFinishTidy() bool {
 		}
 	case 9:
 		switch ma.w.TimeToFirstByteMS.m {
+		case schema.Maybe_Null:
+			ma.state = maState_initial
+			return true
 		case schema.Maybe_Value:
 			ma.w.TimeToFirstByteMS.v = ma.ca_TimeToFirstByteMS.w
 			ma.state = maState_initial
@@ -3088,6 +3129,9 @@ func (ma *_FinishedTask__Assembler) valueFinishTidy() bool {
 		}
 	case 10:
 		switch ma.w.TimeToLastByteMS.m {
+		case schema.Maybe_Null:
+			ma.state = maState_initial
+			return true
 		case schema.Maybe_Value:
 			ma.w.TimeToLastByteMS.v = ma.ca_TimeToLastByteMS.w
 			ma.state = maState_initial
@@ -3107,6 +3151,9 @@ func (ma *_FinishedTask__Assembler) valueFinishTidy() bool {
 		}
 	case 12:
 		switch ma.w.MinerVersion.m {
+		case schema.Maybe_Null:
+			ma.state = maState_initial
+			return true
 		case schema.Maybe_Value:
 			ma.w.MinerVersion.v = ma.ca_MinerVersion.w
 			ma.state = maState_initial
@@ -3116,6 +3163,9 @@ func (ma *_FinishedTask__Assembler) valueFinishTidy() bool {
 		}
 	case 13:
 		switch ma.w.ClientVersion.m {
+		case schema.Maybe_Null:
+			ma.state = maState_initial
+			return true
 		case schema.Maybe_Value:
 			ma.w.ClientVersion.v = ma.ca_ClientVersion.w
 			ma.state = maState_initial
@@ -3234,6 +3284,7 @@ func (ma *_FinishedTask__Assembler) AssembleEntry(k string) (ipld.NodeAssembler,
 		ma.f = 8
 		ma.ca_MinerLatencyMS.w = ma.w.MinerLatencyMS.v
 		ma.ca_MinerLatencyMS.m = &ma.w.MinerLatencyMS.m
+		ma.w.MinerLatencyMS.m = allowNull
 		return &ma.ca_MinerLatencyMS, nil
 	case "TimeToFirstByteMS":
 		if ma.s & fieldBit__FinishedTask_TimeToFirstByteMS != 0 {
@@ -3244,6 +3295,7 @@ func (ma *_FinishedTask__Assembler) AssembleEntry(k string) (ipld.NodeAssembler,
 		ma.f = 9
 		ma.ca_TimeToFirstByteMS.w = ma.w.TimeToFirstByteMS.v
 		ma.ca_TimeToFirstByteMS.m = &ma.w.TimeToFirstByteMS.m
+		ma.w.TimeToFirstByteMS.m = allowNull
 		return &ma.ca_TimeToFirstByteMS, nil
 	case "TimeToLastByteMS":
 		if ma.s & fieldBit__FinishedTask_TimeToLastByteMS != 0 {
@@ -3254,6 +3306,7 @@ func (ma *_FinishedTask__Assembler) AssembleEntry(k string) (ipld.NodeAssembler,
 		ma.f = 10
 		ma.ca_TimeToLastByteMS.w = ma.w.TimeToLastByteMS.v
 		ma.ca_TimeToLastByteMS.m = &ma.w.TimeToLastByteMS.m
+		ma.w.TimeToLastByteMS.m = allowNull
 		return &ma.ca_TimeToLastByteMS, nil
 	case "Events":
 		if ma.s & fieldBit__FinishedTask_Events != 0 {
@@ -3274,6 +3327,7 @@ func (ma *_FinishedTask__Assembler) AssembleEntry(k string) (ipld.NodeAssembler,
 		ma.f = 12
 		ma.ca_MinerVersion.w = ma.w.MinerVersion.v
 		ma.ca_MinerVersion.m = &ma.w.MinerVersion.m
+		ma.w.MinerVersion.m = allowNull
 		return &ma.ca_MinerVersion, nil
 	case "ClientVersion":
 		if ma.s & fieldBit__FinishedTask_ClientVersion != 0 {
@@ -3284,6 +3338,7 @@ func (ma *_FinishedTask__Assembler) AssembleEntry(k string) (ipld.NodeAssembler,
 		ma.f = 13
 		ma.ca_ClientVersion.w = ma.w.ClientVersion.v
 		ma.ca_ClientVersion.m = &ma.w.ClientVersion.m
+		ma.w.ClientVersion.m = allowNull
 		return &ma.ca_ClientVersion, nil
 	default:
 		return nil, ipld.ErrInvalidKey{TypeName:"tasks.FinishedTask", Key:&_String{k}}
@@ -3359,14 +3414,17 @@ func (ma *_FinishedTask__Assembler) AssembleValue() ipld.NodeAssembler {
 	case 8:
 		ma.ca_MinerLatencyMS.w = ma.w.MinerLatencyMS.v
 		ma.ca_MinerLatencyMS.m = &ma.w.MinerLatencyMS.m
+		ma.w.MinerLatencyMS.m = allowNull
 		return &ma.ca_MinerLatencyMS
 	case 9:
 		ma.ca_TimeToFirstByteMS.w = ma.w.TimeToFirstByteMS.v
 		ma.ca_TimeToFirstByteMS.m = &ma.w.TimeToFirstByteMS.m
+		ma.w.TimeToFirstByteMS.m = allowNull
 		return &ma.ca_TimeToFirstByteMS
 	case 10:
 		ma.ca_TimeToLastByteMS.w = ma.w.TimeToLastByteMS.v
 		ma.ca_TimeToLastByteMS.m = &ma.w.TimeToLastByteMS.m
+		ma.w.TimeToLastByteMS.m = allowNull
 		return &ma.ca_TimeToLastByteMS
 	case 11:
 		ma.ca_Events.w = &ma.w.Events
@@ -3375,10 +3433,12 @@ func (ma *_FinishedTask__Assembler) AssembleValue() ipld.NodeAssembler {
 	case 12:
 		ma.ca_MinerVersion.w = ma.w.MinerVersion.v
 		ma.ca_MinerVersion.m = &ma.w.MinerVersion.m
+		ma.w.MinerVersion.m = allowNull
 		return &ma.ca_MinerVersion
 	case 13:
 		ma.ca_ClientVersion.w = ma.w.ClientVersion.v
 		ma.ca_ClientVersion.m = &ma.w.ClientVersion.m
+		ma.w.ClientVersion.m = allowNull
 		return &ma.ca_ClientVersion
 	default:
 		panic("unreachable")
@@ -3638,15 +3698,24 @@ func (n *_FinishedTask__Repr) LookupByString(key string) (ipld.Node, error) {
 		if n.MinerLatencyMS.m == schema.Maybe_Absent {
 			return ipld.Absent, ipld.ErrNotExists{ipld.PathSegmentOfString(key)}
 		}
+		if n.MinerLatencyMS.m == schema.Maybe_Null {
+			return ipld.Null, nil
+		}
 		return n.MinerLatencyMS.v.Representation(), nil
 	case "TimeToFirstByteMS":
 		if n.TimeToFirstByteMS.m == schema.Maybe_Absent {
 			return ipld.Absent, ipld.ErrNotExists{ipld.PathSegmentOfString(key)}
 		}
+		if n.TimeToFirstByteMS.m == schema.Maybe_Null {
+			return ipld.Null, nil
+		}
 		return n.TimeToFirstByteMS.v.Representation(), nil
 	case "TimeToLastByteMS":
 		if n.TimeToLastByteMS.m == schema.Maybe_Absent {
 			return ipld.Absent, ipld.ErrNotExists{ipld.PathSegmentOfString(key)}
+		}
+		if n.TimeToLastByteMS.m == schema.Maybe_Null {
+			return ipld.Null, nil
 		}
 		return n.TimeToLastByteMS.v.Representation(), nil
 	case "Events":
@@ -3655,10 +3724,16 @@ func (n *_FinishedTask__Repr) LookupByString(key string) (ipld.Node, error) {
 		if n.MinerVersion.m == schema.Maybe_Absent {
 			return ipld.Absent, ipld.ErrNotExists{ipld.PathSegmentOfString(key)}
 		}
+		if n.MinerVersion.m == schema.Maybe_Null {
+			return ipld.Null, nil
+		}
 		return n.MinerVersion.v.Representation(), nil
 	case "ClientVersion":
 		if n.ClientVersion.m == schema.Maybe_Absent {
 			return ipld.Absent, ipld.ErrNotExists{ipld.PathSegmentOfString(key)}
+		}
+		if n.ClientVersion.m == schema.Maybe_Null {
+			return ipld.Null, nil
 		}
 		return n.ClientVersion.v.Representation(), nil
 	default:
@@ -3755,6 +3830,10 @@ advance:if itr.idx >= 14 {
 			itr.idx++
 			goto advance
 		}
+		if itr.n.MinerLatencyMS.m == schema.Maybe_Null {
+			v = ipld.Null
+			break
+		}
 		v = itr.n.MinerLatencyMS.v.Representation()
 	case 9:
 		k = &fieldName__FinishedTask_TimeToFirstByteMS_serial
@@ -3762,12 +3841,20 @@ advance:if itr.idx >= 14 {
 			itr.idx++
 			goto advance
 		}
+		if itr.n.TimeToFirstByteMS.m == schema.Maybe_Null {
+			v = ipld.Null
+			break
+		}
 		v = itr.n.TimeToFirstByteMS.v.Representation()
 	case 10:
 		k = &fieldName__FinishedTask_TimeToLastByteMS_serial
 		if itr.n.TimeToLastByteMS.m == schema.Maybe_Absent {
 			itr.idx++
 			goto advance
+		}
+		if itr.n.TimeToLastByteMS.m == schema.Maybe_Null {
+			v = ipld.Null
+			break
 		}
 		v = itr.n.TimeToLastByteMS.v.Representation()
 	case 11:
@@ -3779,12 +3866,20 @@ advance:if itr.idx >= 14 {
 			itr.idx++
 			goto advance
 		}
+		if itr.n.MinerVersion.m == schema.Maybe_Null {
+			v = ipld.Null
+			break
+		}
 		v = itr.n.MinerVersion.v.Representation()
 	case 13:
 		k = &fieldName__FinishedTask_ClientVersion_serial
 		if itr.n.ClientVersion.m == schema.Maybe_Absent {
 			itr.idx++
 			goto advance
+		}
+		if itr.n.ClientVersion.m == schema.Maybe_Null {
+			v = ipld.Null
+			break
 		}
 		v = itr.n.ClientVersion.v.Representation()
 	default:
@@ -4083,6 +4178,9 @@ func (ma *_FinishedTask__ReprAssembler) valueFinishTidy() bool {
 		}
 	case 8:
 		switch ma.w.MinerLatencyMS.m {
+		case schema.Maybe_Null:
+			ma.state = maState_initial
+			return true
 		case schema.Maybe_Value:
 			ma.w.MinerLatencyMS.v = ma.ca_MinerLatencyMS.w
 			ma.state = maState_initial
@@ -4092,6 +4190,9 @@ func (ma *_FinishedTask__ReprAssembler) valueFinishTidy() bool {
 		}
 	case 9:
 		switch ma.w.TimeToFirstByteMS.m {
+		case schema.Maybe_Null:
+			ma.state = maState_initial
+			return true
 		case schema.Maybe_Value:
 			ma.w.TimeToFirstByteMS.v = ma.ca_TimeToFirstByteMS.w
 			ma.state = maState_initial
@@ -4101,6 +4202,9 @@ func (ma *_FinishedTask__ReprAssembler) valueFinishTidy() bool {
 		}
 	case 10:
 		switch ma.w.TimeToLastByteMS.m {
+		case schema.Maybe_Null:
+			ma.state = maState_initial
+			return true
 		case schema.Maybe_Value:
 			ma.w.TimeToLastByteMS.v = ma.ca_TimeToLastByteMS.w
 			ma.state = maState_initial
@@ -4118,6 +4222,9 @@ func (ma *_FinishedTask__ReprAssembler) valueFinishTidy() bool {
 		}
 	case 12:
 		switch ma.w.MinerVersion.m {
+		case schema.Maybe_Null:
+			ma.state = maState_initial
+			return true
 		case schema.Maybe_Value:
 			ma.w.MinerVersion.v = ma.ca_MinerVersion.w
 			ma.state = maState_initial
@@ -4127,6 +4234,9 @@ func (ma *_FinishedTask__ReprAssembler) valueFinishTidy() bool {
 		}
 	case 13:
 		switch ma.w.ClientVersion.m {
+		case schema.Maybe_Null:
+			ma.state = maState_initial
+			return true
 		case schema.Maybe_Value:
 			ma.w.ClientVersion.v = ma.ca_ClientVersion.w
 			ma.state = maState_initial
@@ -4246,7 +4356,7 @@ func (ma *_FinishedTask__ReprAssembler) AssembleEntry(k string) (ipld.NodeAssemb
 		ma.f = 8
 		ma.ca_MinerLatencyMS.w = ma.w.MinerLatencyMS.v
 		ma.ca_MinerLatencyMS.m = &ma.w.MinerLatencyMS.m
-		
+		ma.w.MinerLatencyMS.m = allowNull
 		return &ma.ca_MinerLatencyMS, nil
 	case "TimeToFirstByteMS":
 		if ma.s & fieldBit__FinishedTask_TimeToFirstByteMS != 0 {
@@ -4257,7 +4367,7 @@ func (ma *_FinishedTask__ReprAssembler) AssembleEntry(k string) (ipld.NodeAssemb
 		ma.f = 9
 		ma.ca_TimeToFirstByteMS.w = ma.w.TimeToFirstByteMS.v
 		ma.ca_TimeToFirstByteMS.m = &ma.w.TimeToFirstByteMS.m
-		
+		ma.w.TimeToFirstByteMS.m = allowNull
 		return &ma.ca_TimeToFirstByteMS, nil
 	case "TimeToLastByteMS":
 		if ma.s & fieldBit__FinishedTask_TimeToLastByteMS != 0 {
@@ -4268,7 +4378,7 @@ func (ma *_FinishedTask__ReprAssembler) AssembleEntry(k string) (ipld.NodeAssemb
 		ma.f = 10
 		ma.ca_TimeToLastByteMS.w = ma.w.TimeToLastByteMS.v
 		ma.ca_TimeToLastByteMS.m = &ma.w.TimeToLastByteMS.m
-		
+		ma.w.TimeToLastByteMS.m = allowNull
 		return &ma.ca_TimeToLastByteMS, nil
 	case "Events":
 		if ma.s & fieldBit__FinishedTask_Events != 0 {
@@ -4289,7 +4399,7 @@ func (ma *_FinishedTask__ReprAssembler) AssembleEntry(k string) (ipld.NodeAssemb
 		ma.f = 12
 		ma.ca_MinerVersion.w = ma.w.MinerVersion.v
 		ma.ca_MinerVersion.m = &ma.w.MinerVersion.m
-		
+		ma.w.MinerVersion.m = allowNull
 		return &ma.ca_MinerVersion, nil
 	case "ClientVersion":
 		if ma.s & fieldBit__FinishedTask_ClientVersion != 0 {
@@ -4300,7 +4410,7 @@ func (ma *_FinishedTask__ReprAssembler) AssembleEntry(k string) (ipld.NodeAssemb
 		ma.f = 13
 		ma.ca_ClientVersion.w = ma.w.ClientVersion.v
 		ma.ca_ClientVersion.m = &ma.w.ClientVersion.m
-		
+		ma.w.ClientVersion.m = allowNull
 		return &ma.ca_ClientVersion, nil
 	default:
 		return nil, ipld.ErrInvalidKey{TypeName:"tasks.FinishedTask.Repr", Key:&_String{k}}
@@ -4377,17 +4487,17 @@ func (ma *_FinishedTask__ReprAssembler) AssembleValue() ipld.NodeAssembler {
 	case 8:
 		ma.ca_MinerLatencyMS.w = ma.w.MinerLatencyMS.v
 		ma.ca_MinerLatencyMS.m = &ma.w.MinerLatencyMS.m
-		
+		ma.w.MinerLatencyMS.m = allowNull
 		return &ma.ca_MinerLatencyMS
 	case 9:
 		ma.ca_TimeToFirstByteMS.w = ma.w.TimeToFirstByteMS.v
 		ma.ca_TimeToFirstByteMS.m = &ma.w.TimeToFirstByteMS.m
-		
+		ma.w.TimeToFirstByteMS.m = allowNull
 		return &ma.ca_TimeToFirstByteMS
 	case 10:
 		ma.ca_TimeToLastByteMS.w = ma.w.TimeToLastByteMS.v
 		ma.ca_TimeToLastByteMS.m = &ma.w.TimeToLastByteMS.m
-		
+		ma.w.TimeToLastByteMS.m = allowNull
 		return &ma.ca_TimeToLastByteMS
 	case 11:
 		ma.ca_Events.w = &ma.w.Events
@@ -4396,12 +4506,12 @@ func (ma *_FinishedTask__ReprAssembler) AssembleValue() ipld.NodeAssembler {
 	case 12:
 		ma.ca_MinerVersion.w = ma.w.MinerVersion.v
 		ma.ca_MinerVersion.m = &ma.w.MinerVersion.m
-		
+		ma.w.MinerVersion.m = allowNull
 		return &ma.ca_MinerVersion
 	case 13:
 		ma.ca_ClientVersion.w = ma.w.ClientVersion.v
 		ma.ca_ClientVersion.m = &ma.w.ClientVersion.m
-		
+		ma.w.ClientVersion.m = allowNull
 		return &ma.ca_ClientVersion
 	default:
 		panic("unreachable")
@@ -12383,20 +12493,32 @@ func (n RetrievalTask) LookupByString(key string) (ipld.Node, error) {
 		if n.Schedule.m == schema.Maybe_Absent {
 			return ipld.Absent, nil
 		}
+		if n.Schedule.m == schema.Maybe_Null {
+			return ipld.Null, nil
+		}
 		return n.Schedule.v, nil
 	case "ScheduleLimit":
 		if n.ScheduleLimit.m == schema.Maybe_Absent {
 			return ipld.Absent, nil
+		}
+		if n.ScheduleLimit.m == schema.Maybe_Null {
+			return ipld.Null, nil
 		}
 		return n.ScheduleLimit.v, nil
 	case "Tag":
 		if n.Tag.m == schema.Maybe_Absent {
 			return ipld.Absent, nil
 		}
+		if n.Tag.m == schema.Maybe_Null {
+			return ipld.Null, nil
+		}
 		return n.Tag.v, nil
 	case "MaxPriceAttoFIL":
 		if n.MaxPriceAttoFIL.m == schema.Maybe_Absent {
 			return ipld.Absent, nil
+		}
+		if n.MaxPriceAttoFIL.m == schema.Maybe_Null {
+			return ipld.Null, nil
 		}
 		return n.MaxPriceAttoFIL.v, nil
 	default:
@@ -12445,11 +12567,19 @@ func (itr *_RetrievalTask__MapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
 			v = ipld.Absent
 			break
 		}
+		if itr.n.Schedule.m == schema.Maybe_Null {
+			v = ipld.Null
+			break
+		}
 		v = itr.n.Schedule.v
 	case 4:
 		k = &fieldName__RetrievalTask_ScheduleLimit
 		if itr.n.ScheduleLimit.m == schema.Maybe_Absent {
 			v = ipld.Absent
+			break
+		}
+		if itr.n.ScheduleLimit.m == schema.Maybe_Null {
+			v = ipld.Null
 			break
 		}
 		v = itr.n.ScheduleLimit.v
@@ -12459,11 +12589,19 @@ func (itr *_RetrievalTask__MapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
 			v = ipld.Absent
 			break
 		}
+		if itr.n.Tag.m == schema.Maybe_Null {
+			v = ipld.Null
+			break
+		}
 		v = itr.n.Tag.v
 	case 6:
 		k = &fieldName__RetrievalTask_MaxPriceAttoFIL
 		if itr.n.MaxPriceAttoFIL.m == schema.Maybe_Absent {
 			v = ipld.Absent
+			break
+		}
+		if itr.n.MaxPriceAttoFIL.m == schema.Maybe_Null {
+			v = ipld.Null
 			break
 		}
 		v = itr.n.MaxPriceAttoFIL.v
@@ -12693,6 +12831,9 @@ func (ma *_RetrievalTask__Assembler) valueFinishTidy() bool {
 		}
 	case 3:
 		switch ma.w.Schedule.m {
+		case schema.Maybe_Null:
+			ma.state = maState_initial
+			return true
 		case schema.Maybe_Value:
 			ma.w.Schedule.v = ma.ca_Schedule.w
 			ma.state = maState_initial
@@ -12702,6 +12843,9 @@ func (ma *_RetrievalTask__Assembler) valueFinishTidy() bool {
 		}
 	case 4:
 		switch ma.w.ScheduleLimit.m {
+		case schema.Maybe_Null:
+			ma.state = maState_initial
+			return true
 		case schema.Maybe_Value:
 			ma.w.ScheduleLimit.v = ma.ca_ScheduleLimit.w
 			ma.state = maState_initial
@@ -12711,6 +12855,9 @@ func (ma *_RetrievalTask__Assembler) valueFinishTidy() bool {
 		}
 	case 5:
 		switch ma.w.Tag.m {
+		case schema.Maybe_Null:
+			ma.state = maState_initial
+			return true
 		case schema.Maybe_Value:
 			ma.w.Tag.v = ma.ca_Tag.w
 			ma.state = maState_initial
@@ -12720,6 +12867,9 @@ func (ma *_RetrievalTask__Assembler) valueFinishTidy() bool {
 		}
 	case 6:
 		switch ma.w.MaxPriceAttoFIL.m {
+		case schema.Maybe_Null:
+			ma.state = maState_initial
+			return true
 		case schema.Maybe_Value:
 			ma.w.MaxPriceAttoFIL.v = ma.ca_MaxPriceAttoFIL.w
 			ma.state = maState_initial
@@ -12786,6 +12936,7 @@ func (ma *_RetrievalTask__Assembler) AssembleEntry(k string) (ipld.NodeAssembler
 		ma.f = 3
 		ma.ca_Schedule.w = ma.w.Schedule.v
 		ma.ca_Schedule.m = &ma.w.Schedule.m
+		ma.w.Schedule.m = allowNull
 		return &ma.ca_Schedule, nil
 	case "ScheduleLimit":
 		if ma.s & fieldBit__RetrievalTask_ScheduleLimit != 0 {
@@ -12796,6 +12947,7 @@ func (ma *_RetrievalTask__Assembler) AssembleEntry(k string) (ipld.NodeAssembler
 		ma.f = 4
 		ma.ca_ScheduleLimit.w = ma.w.ScheduleLimit.v
 		ma.ca_ScheduleLimit.m = &ma.w.ScheduleLimit.m
+		ma.w.ScheduleLimit.m = allowNull
 		return &ma.ca_ScheduleLimit, nil
 	case "Tag":
 		if ma.s & fieldBit__RetrievalTask_Tag != 0 {
@@ -12806,6 +12958,7 @@ func (ma *_RetrievalTask__Assembler) AssembleEntry(k string) (ipld.NodeAssembler
 		ma.f = 5
 		ma.ca_Tag.w = ma.w.Tag.v
 		ma.ca_Tag.m = &ma.w.Tag.m
+		ma.w.Tag.m = allowNull
 		return &ma.ca_Tag, nil
 	case "MaxPriceAttoFIL":
 		if ma.s & fieldBit__RetrievalTask_MaxPriceAttoFIL != 0 {
@@ -12816,6 +12969,7 @@ func (ma *_RetrievalTask__Assembler) AssembleEntry(k string) (ipld.NodeAssembler
 		ma.f = 6
 		ma.ca_MaxPriceAttoFIL.w = ma.w.MaxPriceAttoFIL.v
 		ma.ca_MaxPriceAttoFIL.m = &ma.w.MaxPriceAttoFIL.m
+		ma.w.MaxPriceAttoFIL.m = allowNull
 		return &ma.ca_MaxPriceAttoFIL, nil
 	default:
 		return nil, ipld.ErrInvalidKey{TypeName:"tasks.RetrievalTask", Key:&_String{k}}
@@ -12869,18 +13023,22 @@ func (ma *_RetrievalTask__Assembler) AssembleValue() ipld.NodeAssembler {
 	case 3:
 		ma.ca_Schedule.w = ma.w.Schedule.v
 		ma.ca_Schedule.m = &ma.w.Schedule.m
+		ma.w.Schedule.m = allowNull
 		return &ma.ca_Schedule
 	case 4:
 		ma.ca_ScheduleLimit.w = ma.w.ScheduleLimit.v
 		ma.ca_ScheduleLimit.m = &ma.w.ScheduleLimit.m
+		ma.w.ScheduleLimit.m = allowNull
 		return &ma.ca_ScheduleLimit
 	case 5:
 		ma.ca_Tag.w = ma.w.Tag.v
 		ma.ca_Tag.m = &ma.w.Tag.m
+		ma.w.Tag.m = allowNull
 		return &ma.ca_Tag
 	case 6:
 		ma.ca_MaxPriceAttoFIL.w = ma.w.MaxPriceAttoFIL.v
 		ma.ca_MaxPriceAttoFIL.m = &ma.w.MaxPriceAttoFIL.m
+		ma.w.MaxPriceAttoFIL.m = allowNull
 		return &ma.ca_MaxPriceAttoFIL
 	default:
 		panic("unreachable")
@@ -13050,20 +13208,32 @@ func (n *_RetrievalTask__Repr) LookupByString(key string) (ipld.Node, error) {
 		if n.Schedule.m == schema.Maybe_Absent {
 			return ipld.Absent, ipld.ErrNotExists{ipld.PathSegmentOfString(key)}
 		}
+		if n.Schedule.m == schema.Maybe_Null {
+			return ipld.Null, nil
+		}
 		return n.Schedule.v.Representation(), nil
 	case "ScheduleLimit":
 		if n.ScheduleLimit.m == schema.Maybe_Absent {
 			return ipld.Absent, ipld.ErrNotExists{ipld.PathSegmentOfString(key)}
+		}
+		if n.ScheduleLimit.m == schema.Maybe_Null {
+			return ipld.Null, nil
 		}
 		return n.ScheduleLimit.v.Representation(), nil
 	case "Tag":
 		if n.Tag.m == schema.Maybe_Absent {
 			return ipld.Absent, ipld.ErrNotExists{ipld.PathSegmentOfString(key)}
 		}
+		if n.Tag.m == schema.Maybe_Null {
+			return ipld.Null, nil
+		}
 		return n.Tag.v.Representation(), nil
 	case "MaxPriceAttoFIL":
 		if n.MaxPriceAttoFIL.m == schema.Maybe_Absent {
 			return ipld.Absent, ipld.ErrNotExists{ipld.PathSegmentOfString(key)}
+		}
+		if n.MaxPriceAttoFIL.m == schema.Maybe_Null {
+			return ipld.Null, nil
 		}
 		return n.MaxPriceAttoFIL.v.Representation(), nil
 	default:
@@ -13135,12 +13305,20 @@ advance:if itr.idx >= 7 {
 			itr.idx++
 			goto advance
 		}
+		if itr.n.Schedule.m == schema.Maybe_Null {
+			v = ipld.Null
+			break
+		}
 		v = itr.n.Schedule.v.Representation()
 	case 4:
 		k = &fieldName__RetrievalTask_ScheduleLimit_serial
 		if itr.n.ScheduleLimit.m == schema.Maybe_Absent {
 			itr.idx++
 			goto advance
+		}
+		if itr.n.ScheduleLimit.m == schema.Maybe_Null {
+			v = ipld.Null
+			break
 		}
 		v = itr.n.ScheduleLimit.v.Representation()
 	case 5:
@@ -13149,12 +13327,20 @@ advance:if itr.idx >= 7 {
 			itr.idx++
 			goto advance
 		}
+		if itr.n.Tag.m == schema.Maybe_Null {
+			v = ipld.Null
+			break
+		}
 		v = itr.n.Tag.v.Representation()
 	case 6:
 		k = &fieldName__RetrievalTask_MaxPriceAttoFIL_serial
 		if itr.n.MaxPriceAttoFIL.m == schema.Maybe_Absent {
 			itr.idx++
 			goto advance
+		}
+		if itr.n.MaxPriceAttoFIL.m == schema.Maybe_Null {
+			v = ipld.Null
+			break
 		}
 		v = itr.n.MaxPriceAttoFIL.v.Representation()
 	default:
@@ -13378,6 +13564,9 @@ func (ma *_RetrievalTask__ReprAssembler) valueFinishTidy() bool {
 		}
 	case 3:
 		switch ma.w.Schedule.m {
+		case schema.Maybe_Null:
+			ma.state = maState_initial
+			return true
 		case schema.Maybe_Value:
 			ma.w.Schedule.v = ma.ca_Schedule.w
 			ma.state = maState_initial
@@ -13387,6 +13576,9 @@ func (ma *_RetrievalTask__ReprAssembler) valueFinishTidy() bool {
 		}
 	case 4:
 		switch ma.w.ScheduleLimit.m {
+		case schema.Maybe_Null:
+			ma.state = maState_initial
+			return true
 		case schema.Maybe_Value:
 			ma.w.ScheduleLimit.v = ma.ca_ScheduleLimit.w
 			ma.state = maState_initial
@@ -13396,6 +13588,9 @@ func (ma *_RetrievalTask__ReprAssembler) valueFinishTidy() bool {
 		}
 	case 5:
 		switch ma.w.Tag.m {
+		case schema.Maybe_Null:
+			ma.state = maState_initial
+			return true
 		case schema.Maybe_Value:
 			ma.w.Tag.v = ma.ca_Tag.w
 			ma.state = maState_initial
@@ -13405,6 +13600,9 @@ func (ma *_RetrievalTask__ReprAssembler) valueFinishTidy() bool {
 		}
 	case 6:
 		switch ma.w.MaxPriceAttoFIL.m {
+		case schema.Maybe_Null:
+			ma.state = maState_initial
+			return true
 		case schema.Maybe_Value:
 			ma.w.MaxPriceAttoFIL.v = ma.ca_MaxPriceAttoFIL.w
 			ma.state = maState_initial
@@ -13471,7 +13669,7 @@ func (ma *_RetrievalTask__ReprAssembler) AssembleEntry(k string) (ipld.NodeAssem
 		ma.f = 3
 		ma.ca_Schedule.w = ma.w.Schedule.v
 		ma.ca_Schedule.m = &ma.w.Schedule.m
-		
+		ma.w.Schedule.m = allowNull
 		return &ma.ca_Schedule, nil
 	case "ScheduleLimit":
 		if ma.s & fieldBit__RetrievalTask_ScheduleLimit != 0 {
@@ -13482,7 +13680,7 @@ func (ma *_RetrievalTask__ReprAssembler) AssembleEntry(k string) (ipld.NodeAssem
 		ma.f = 4
 		ma.ca_ScheduleLimit.w = ma.w.ScheduleLimit.v
 		ma.ca_ScheduleLimit.m = &ma.w.ScheduleLimit.m
-		
+		ma.w.ScheduleLimit.m = allowNull
 		return &ma.ca_ScheduleLimit, nil
 	case "Tag":
 		if ma.s & fieldBit__RetrievalTask_Tag != 0 {
@@ -13493,7 +13691,7 @@ func (ma *_RetrievalTask__ReprAssembler) AssembleEntry(k string) (ipld.NodeAssem
 		ma.f = 5
 		ma.ca_Tag.w = ma.w.Tag.v
 		ma.ca_Tag.m = &ma.w.Tag.m
-		
+		ma.w.Tag.m = allowNull
 		return &ma.ca_Tag, nil
 	case "MaxPriceAttoFIL":
 		if ma.s & fieldBit__RetrievalTask_MaxPriceAttoFIL != 0 {
@@ -13504,7 +13702,7 @@ func (ma *_RetrievalTask__ReprAssembler) AssembleEntry(k string) (ipld.NodeAssem
 		ma.f = 6
 		ma.ca_MaxPriceAttoFIL.w = ma.w.MaxPriceAttoFIL.v
 		ma.ca_MaxPriceAttoFIL.m = &ma.w.MaxPriceAttoFIL.m
-		
+		ma.w.MaxPriceAttoFIL.m = allowNull
 		return &ma.ca_MaxPriceAttoFIL, nil
 	default:
 		return nil, ipld.ErrInvalidKey{TypeName:"tasks.RetrievalTask.Repr", Key:&_String{k}}
@@ -13558,22 +13756,22 @@ func (ma *_RetrievalTask__ReprAssembler) AssembleValue() ipld.NodeAssembler {
 	case 3:
 		ma.ca_Schedule.w = ma.w.Schedule.v
 		ma.ca_Schedule.m = &ma.w.Schedule.m
-		
+		ma.w.Schedule.m = allowNull
 		return &ma.ca_Schedule
 	case 4:
 		ma.ca_ScheduleLimit.w = ma.w.ScheduleLimit.v
 		ma.ca_ScheduleLimit.m = &ma.w.ScheduleLimit.m
-		
+		ma.w.ScheduleLimit.m = allowNull
 		return &ma.ca_ScheduleLimit
 	case 5:
 		ma.ca_Tag.w = ma.w.Tag.v
 		ma.ca_Tag.m = &ma.w.Tag.m
-		
+		ma.w.Tag.m = allowNull
 		return &ma.ca_Tag
 	case 6:
 		ma.ca_MaxPriceAttoFIL.w = ma.w.MaxPriceAttoFIL.v
 		ma.ca_MaxPriceAttoFIL.m = &ma.w.MaxPriceAttoFIL.m
-		
+		ma.w.MaxPriceAttoFIL.m = allowNull
 		return &ma.ca_MaxPriceAttoFIL
 	default:
 		panic("unreachable")
@@ -15134,15 +15332,24 @@ func (n StorageTask) LookupByString(key string) (ipld.Node, error) {
 		if n.Schedule.m == schema.Maybe_Absent {
 			return ipld.Absent, nil
 		}
+		if n.Schedule.m == schema.Maybe_Null {
+			return ipld.Null, nil
+		}
 		return n.Schedule.v, nil
 	case "ScheduleLimit":
 		if n.ScheduleLimit.m == schema.Maybe_Absent {
 			return ipld.Absent, nil
 		}
+		if n.ScheduleLimit.m == schema.Maybe_Null {
+			return ipld.Null, nil
+		}
 		return n.ScheduleLimit.v, nil
 	case "Tag":
 		if n.Tag.m == schema.Maybe_Absent {
 			return ipld.Absent, nil
+		}
+		if n.Tag.m == schema.Maybe_Null {
+			return ipld.Null, nil
 		}
 		return n.Tag.v, nil
 	default:
@@ -15200,6 +15407,10 @@ func (itr *_StorageTask__MapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
 			v = ipld.Absent
 			break
 		}
+		if itr.n.Schedule.m == schema.Maybe_Null {
+			v = ipld.Null
+			break
+		}
 		v = itr.n.Schedule.v
 	case 7:
 		k = &fieldName__StorageTask_ScheduleLimit
@@ -15207,11 +15418,19 @@ func (itr *_StorageTask__MapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
 			v = ipld.Absent
 			break
 		}
+		if itr.n.ScheduleLimit.m == schema.Maybe_Null {
+			v = ipld.Null
+			break
+		}
 		v = itr.n.ScheduleLimit.v
 	case 8:
 		k = &fieldName__StorageTask_Tag
 		if itr.n.Tag.m == schema.Maybe_Absent {
 			v = ipld.Absent
+			break
+		}
+		if itr.n.Tag.m == schema.Maybe_Null {
+			v = ipld.Null
 			break
 		}
 		v = itr.n.Tag.v
@@ -15477,6 +15696,9 @@ func (ma *_StorageTask__Assembler) valueFinishTidy() bool {
 		}
 	case 6:
 		switch ma.w.Schedule.m {
+		case schema.Maybe_Null:
+			ma.state = maState_initial
+			return true
 		case schema.Maybe_Value:
 			ma.w.Schedule.v = ma.ca_Schedule.w
 			ma.state = maState_initial
@@ -15486,6 +15708,9 @@ func (ma *_StorageTask__Assembler) valueFinishTidy() bool {
 		}
 	case 7:
 		switch ma.w.ScheduleLimit.m {
+		case schema.Maybe_Null:
+			ma.state = maState_initial
+			return true
 		case schema.Maybe_Value:
 			ma.w.ScheduleLimit.v = ma.ca_ScheduleLimit.w
 			ma.state = maState_initial
@@ -15495,6 +15720,9 @@ func (ma *_StorageTask__Assembler) valueFinishTidy() bool {
 		}
 	case 8:
 		switch ma.w.Tag.m {
+		case schema.Maybe_Null:
+			ma.state = maState_initial
+			return true
 		case schema.Maybe_Value:
 			ma.w.Tag.v = ma.ca_Tag.w
 			ma.state = maState_initial
@@ -15591,6 +15819,7 @@ func (ma *_StorageTask__Assembler) AssembleEntry(k string) (ipld.NodeAssembler, 
 		ma.f = 6
 		ma.ca_Schedule.w = ma.w.Schedule.v
 		ma.ca_Schedule.m = &ma.w.Schedule.m
+		ma.w.Schedule.m = allowNull
 		return &ma.ca_Schedule, nil
 	case "ScheduleLimit":
 		if ma.s & fieldBit__StorageTask_ScheduleLimit != 0 {
@@ -15601,6 +15830,7 @@ func (ma *_StorageTask__Assembler) AssembleEntry(k string) (ipld.NodeAssembler, 
 		ma.f = 7
 		ma.ca_ScheduleLimit.w = ma.w.ScheduleLimit.v
 		ma.ca_ScheduleLimit.m = &ma.w.ScheduleLimit.m
+		ma.w.ScheduleLimit.m = allowNull
 		return &ma.ca_ScheduleLimit, nil
 	case "Tag":
 		if ma.s & fieldBit__StorageTask_Tag != 0 {
@@ -15611,6 +15841,7 @@ func (ma *_StorageTask__Assembler) AssembleEntry(k string) (ipld.NodeAssembler, 
 		ma.f = 8
 		ma.ca_Tag.w = ma.w.Tag.v
 		ma.ca_Tag.m = &ma.w.Tag.m
+		ma.w.Tag.m = allowNull
 		return &ma.ca_Tag, nil
 	default:
 		return nil, ipld.ErrInvalidKey{TypeName:"tasks.StorageTask", Key:&_String{k}}
@@ -15676,14 +15907,17 @@ func (ma *_StorageTask__Assembler) AssembleValue() ipld.NodeAssembler {
 	case 6:
 		ma.ca_Schedule.w = ma.w.Schedule.v
 		ma.ca_Schedule.m = &ma.w.Schedule.m
+		ma.w.Schedule.m = allowNull
 		return &ma.ca_Schedule
 	case 7:
 		ma.ca_ScheduleLimit.w = ma.w.ScheduleLimit.v
 		ma.ca_ScheduleLimit.m = &ma.w.ScheduleLimit.m
+		ma.w.ScheduleLimit.m = allowNull
 		return &ma.ca_ScheduleLimit
 	case 8:
 		ma.ca_Tag.w = ma.w.Tag.v
 		ma.ca_Tag.m = &ma.w.Tag.m
+		ma.w.Tag.m = allowNull
 		return &ma.ca_Tag
 	default:
 		panic("unreachable")
@@ -15884,15 +16118,24 @@ func (n *_StorageTask__Repr) LookupByString(key string) (ipld.Node, error) {
 		if n.Schedule.m == schema.Maybe_Absent {
 			return ipld.Absent, ipld.ErrNotExists{ipld.PathSegmentOfString(key)}
 		}
+		if n.Schedule.m == schema.Maybe_Null {
+			return ipld.Null, nil
+		}
 		return n.Schedule.v.Representation(), nil
 	case "ScheduleLimit":
 		if n.ScheduleLimit.m == schema.Maybe_Absent {
 			return ipld.Absent, ipld.ErrNotExists{ipld.PathSegmentOfString(key)}
 		}
+		if n.ScheduleLimit.m == schema.Maybe_Null {
+			return ipld.Null, nil
+		}
 		return n.ScheduleLimit.v.Representation(), nil
 	case "Tag":
 		if n.Tag.m == schema.Maybe_Absent {
 			return ipld.Absent, ipld.ErrNotExists{ipld.PathSegmentOfString(key)}
+		}
+		if n.Tag.m == schema.Maybe_Null {
+			return ipld.Null, nil
 		}
 		return n.Tag.v.Representation(), nil
 	default:
@@ -15968,6 +16211,10 @@ advance:if itr.idx >= 9 {
 			itr.idx++
 			goto advance
 		}
+		if itr.n.Schedule.m == schema.Maybe_Null {
+			v = ipld.Null
+			break
+		}
 		v = itr.n.Schedule.v.Representation()
 	case 7:
 		k = &fieldName__StorageTask_ScheduleLimit_serial
@@ -15975,12 +16222,20 @@ advance:if itr.idx >= 9 {
 			itr.idx++
 			goto advance
 		}
+		if itr.n.ScheduleLimit.m == schema.Maybe_Null {
+			v = ipld.Null
+			break
+		}
 		v = itr.n.ScheduleLimit.v.Representation()
 	case 8:
 		k = &fieldName__StorageTask_Tag_serial
 		if itr.n.Tag.m == schema.Maybe_Absent {
 			itr.idx++
 			goto advance
+		}
+		if itr.n.Tag.m == schema.Maybe_Null {
+			v = ipld.Null
+			break
 		}
 		v = itr.n.Tag.v.Representation()
 	default:
@@ -16229,6 +16484,9 @@ func (ma *_StorageTask__ReprAssembler) valueFinishTidy() bool {
 		}
 	case 6:
 		switch ma.w.Schedule.m {
+		case schema.Maybe_Null:
+			ma.state = maState_initial
+			return true
 		case schema.Maybe_Value:
 			ma.w.Schedule.v = ma.ca_Schedule.w
 			ma.state = maState_initial
@@ -16238,6 +16496,9 @@ func (ma *_StorageTask__ReprAssembler) valueFinishTidy() bool {
 		}
 	case 7:
 		switch ma.w.ScheduleLimit.m {
+		case schema.Maybe_Null:
+			ma.state = maState_initial
+			return true
 		case schema.Maybe_Value:
 			ma.w.ScheduleLimit.v = ma.ca_ScheduleLimit.w
 			ma.state = maState_initial
@@ -16247,6 +16508,9 @@ func (ma *_StorageTask__ReprAssembler) valueFinishTidy() bool {
 		}
 	case 8:
 		switch ma.w.Tag.m {
+		case schema.Maybe_Null:
+			ma.state = maState_initial
+			return true
 		case schema.Maybe_Value:
 			ma.w.Tag.v = ma.ca_Tag.w
 			ma.state = maState_initial
@@ -16343,7 +16607,7 @@ func (ma *_StorageTask__ReprAssembler) AssembleEntry(k string) (ipld.NodeAssembl
 		ma.f = 6
 		ma.ca_Schedule.w = ma.w.Schedule.v
 		ma.ca_Schedule.m = &ma.w.Schedule.m
-		
+		ma.w.Schedule.m = allowNull
 		return &ma.ca_Schedule, nil
 	case "ScheduleLimit":
 		if ma.s & fieldBit__StorageTask_ScheduleLimit != 0 {
@@ -16354,7 +16618,7 @@ func (ma *_StorageTask__ReprAssembler) AssembleEntry(k string) (ipld.NodeAssembl
 		ma.f = 7
 		ma.ca_ScheduleLimit.w = ma.w.ScheduleLimit.v
 		ma.ca_ScheduleLimit.m = &ma.w.ScheduleLimit.m
-		
+		ma.w.ScheduleLimit.m = allowNull
 		return &ma.ca_ScheduleLimit, nil
 	case "Tag":
 		if ma.s & fieldBit__StorageTask_Tag != 0 {
@@ -16365,7 +16629,7 @@ func (ma *_StorageTask__ReprAssembler) AssembleEntry(k string) (ipld.NodeAssembl
 		ma.f = 8
 		ma.ca_Tag.w = ma.w.Tag.v
 		ma.ca_Tag.m = &ma.w.Tag.m
-		
+		ma.w.Tag.m = allowNull
 		return &ma.ca_Tag, nil
 	default:
 		return nil, ipld.ErrInvalidKey{TypeName:"tasks.StorageTask.Repr", Key:&_String{k}}
@@ -16431,17 +16695,17 @@ func (ma *_StorageTask__ReprAssembler) AssembleValue() ipld.NodeAssembler {
 	case 6:
 		ma.ca_Schedule.w = ma.w.Schedule.v
 		ma.ca_Schedule.m = &ma.w.Schedule.m
-		
+		ma.w.Schedule.m = allowNull
 		return &ma.ca_Schedule
 	case 7:
 		ma.ca_ScheduleLimit.w = ma.w.ScheduleLimit.v
 		ma.ca_ScheduleLimit.m = &ma.w.ScheduleLimit.m
-		
+		ma.w.ScheduleLimit.m = allowNull
 		return &ma.ca_ScheduleLimit
 	case 8:
 		ma.ca_Tag.w = ma.w.Tag.v
 		ma.ca_Tag.m = &ma.w.Tag.m
-		
+		ma.w.Tag.m = allowNull
 		return &ma.ca_Tag
 	default:
 		panic("unreachable")
