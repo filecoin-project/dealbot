@@ -31,13 +31,11 @@ func TryAcquireLatency(ctx context.Context, ai peer.AddrInfo) (multiaddr.Multiad
 	stream, err := conn.NewStream()
 	stream.SetReadDeadline(time.Now().Add(3 * time.Second))
 
-	scheduledChan := make(chan struct{}, 1)
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
 		p := []byte{0x00}
-		scheduledChan <- struct{}{}
 		_, serr := stream.Read(p)
 		if serr == io.EOF || serr == io.ErrUnexpectedEOF || strings.Contains(serr.Error(), "connection reset by peer") {
 			end = time.Now()
@@ -46,11 +44,10 @@ func TryAcquireLatency(ctx context.Context, ai peer.AddrInfo) (multiaddr.Multiad
 		}
 	}()
 
-	// trigger closing, which should cause the stream read to become eof error out.
-	<-scheduledChan
-	stream.Close()
-	conn.Close()
+	// send a write of random bytes, which should make the other side unhappy.
+	stream.Write([]byte("-latencytest-\n\x00"))
 	wg.Wait()
+	defer conn.Close()
 
 	return remote, end.Sub(start).Milliseconds(), err
 }
