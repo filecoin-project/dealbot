@@ -126,18 +126,18 @@ func main() {
 	ts.Accumulate(schema.SpawnStruct("FinishedTask", []schema.StructField{
 		schema.SpawnStructField("Status", "Status", false, false),
 		schema.SpawnStructField("StartedAt", "Time", false, false),
-		schema.SpawnStructField("ErrorMessage", "String", true, false),
-		schema.SpawnStructField("RetrievalTask", "RetrievalTask", true, false),
-		schema.SpawnStructField("StorageTask", "StorageTask", true, false),
+		schema.SpawnStructField("ErrorMessage", "String", true, true),
+		schema.SpawnStructField("RetrievalTask", "RetrievalTask", true, true),
+		schema.SpawnStructField("StorageTask", "StorageTask", true, true),
 		schema.SpawnStructField("DealID", "Int", false, false),
 		schema.SpawnStructField("MinerMultiAddr", "String", false, false),
 		schema.SpawnStructField("ClientApparentAddr", "String", false, false),
-		schema.SpawnStructField("MinerLatencyMS", "Int", true, false),
-		schema.SpawnStructField("TimeToFirstByteMS", "Int", true, false),
-		schema.SpawnStructField("TimeToLastByteMS", "Int", true, false),
+		schema.SpawnStructField("MinerLatencyMS", "Int", true, true),
+		schema.SpawnStructField("TimeToFirstByteMS", "Int", true, true),
+		schema.SpawnStructField("TimeToLastByteMS", "Int", true, true),
 		schema.SpawnStructField("Events", "Link_List_StageDetails", false, false),
-		schema.SpawnStructField("MinerVersion", "String", true, false),
-		schema.SpawnStructField("ClientVersion", "String", true, false),
+		schema.SpawnStructField("MinerVersion", "String", true, true),
+		schema.SpawnStructField("ClientVersion", "String", true, true),
 	}, schema.SpawnStructRepresentationMap(map[string]string{})))
 	ts.Accumulate(schema.SpawnLinkReference("Link_FinishedTask", "FinishedTask"))
 

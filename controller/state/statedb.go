@@ -453,7 +453,7 @@ func (s *stateDB) Update(ctx context.Context, taskID string, req tasks.UpdateTas
 			if err != nil {
 				return err
 			}
-			flink, err := linkProto.Build(ctx, ipld.LinkContext{}, finalized, txContextStorer(ctx, tx))
+			flink, err := linkProto.Build(ctx, ipld.LinkContext{}, finalized.Representation(), txContextStorer(ctx, tx))
 			if err != nil {
 				return err
 			}
@@ -749,7 +749,7 @@ func (s *stateDB) PublishRecordsFrom(ctx context.Context, worker string) error {
 		rcrdlst := tasks.Type.List_AuthenticatedRecord.Of(rcrds)
 
 		update := tasks.Type.RecordUpdate.Of(rcrdlst, headCid, headCidSig)
-		updateCid, err := linkProto.Build(ctx, ipld.LinkContext{}, update, txContextStorer(ctx, tx))
+		updateCid, err := linkProto.Build(ctx, ipld.LinkContext{}, update.Representation(), txContextStorer(ctx, tx))
 		if err != nil {
 			return err
 		}
