@@ -3,6 +3,7 @@ package controller
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -310,6 +311,18 @@ func (c *Controller) carHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Info("car write failed", "err", err)
 	}
+}
+
+func (c *Controller) healthHandler(w http.ResponseWriter, r *http.Request) {
+	// basic health check:
+	// * do i have a sane database
+	if _, err := c.db.GetHead(r.Context()); err != nil {
+		w.WriteHeader(http.StatusFailedDependency)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(fmt.Sprintf("ok\nbuilt at: %s", buildDate)))
 }
 
 func (c *Controller) sendCORSHeaders(w http.ResponseWriter, r *http.Request) {

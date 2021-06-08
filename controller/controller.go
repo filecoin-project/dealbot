@@ -28,6 +28,12 @@ import (
 
 var log = logging.Logger("controller")
 
+// Automatically set through -ldflags
+// Example: go install -ldflags "-X controller.buildDate=`date -u +%d/%m/%Y@%H:%M:%S`"
+var (
+	buildDate = "unknown"
+)
+
 type Controller struct {
 	server          *http.Server
 	gserver         *http.Server
@@ -103,6 +109,15 @@ func New(ctx *cli.Context) (*Controller, error) {
 	return NewWithDependencies(l, gl, gqlToken, recorder, backend)
 }
 
+type logEcapsulator struct {
+	logger *logging.ZapEventLogger
+}
+
+func (fw *logEcapsulator) Write(p []byte) (n int, err error) {
+	fw.logger.Infow("http req", "logline", p)
+	return len(p), nil
+}
+
 //go:embed static
 var static embed.FS
 
@@ -134,6 +149,7 @@ func NewWithDependencies(listener, graphqlListener net.Listener, gqlToken string
 	r.HandleFunc("/tasks/{uuid}", srv.updateTaskHandler).Methods("PATCH")
 	r.HandleFunc("/tasks/{uuid}", srv.getTaskHandler).Methods("GET")
 	r.HandleFunc("/car", srv.carHandler).Methods("GET")
+	r.HandleFunc("/health", srv.healthHandler).Methods("GET")
 	r.Methods("OPTIONS").HandlerFunc(srv.sendCORSHeaders)
 	metricsHandler := recorder.Handler()
 	if metricsHandler != nil {
@@ -143,7 +159,7 @@ func NewWithDependencies(listener, graphqlListener net.Listener, gqlToken string
 
 	srv.doneCh = make(chan struct{})
 	srv.server = &http.Server{
-		Handler:      handlers.LoggingHandler(os.Stdout, r),
+		Handler:      handlers.LoggingHandler(&logEcapsulator{log}, r),
 		WriteTimeout: 30 * time.Second,
 		ReadTimeout:  30 * time.Second,
 	}
@@ -155,7 +171,7 @@ func NewWithDependencies(listener, graphqlListener net.Listener, gqlToken string
 		}
 
 		srv.gserver = &http.Server{
-			Handler:      handlers.LoggingHandler(os.Stdout, gqlHandler),
+			Handler:      handlers.LoggingHandler(&logEcapsulator{log}, gqlHandler),
 			WriteTimeout: 30 * time.Second,
 			ReadTimeout:  30 * time.Second,
 		}
