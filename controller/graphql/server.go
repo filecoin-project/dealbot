@@ -119,7 +119,7 @@ func GetHandler(db state.State, accessToken string) (*http.ServeMux, error) {
 							}
 							finishedTasks = append(finishedTasks, finishedTask)
 						}
-						return finishedTasks, nil
+						return tasks.Type.FinishedTasks.Of(finishedTasks), nil
 					},
 				},
 				"RecordUpdate": &graphql.Field{
