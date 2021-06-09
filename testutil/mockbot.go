@@ -104,7 +104,7 @@ func (md *MockDaemon) worker(n int) {
 		if isSuccess {
 			if task.RetrievalTask.Exists() {
 				stage = "DealComplete"
-				stageDetails = tasks.RetrievalStages[stage]
+				stageDetails = tasks.RetrievalStages[stage]()
 			} else {
 				stage = "StorageDealActive"
 				stageDetails = storageStageDetails[stage]
@@ -113,15 +113,16 @@ func (md *MockDaemon) worker(n int) {
 		} else {
 			if task.RetrievalTask.Exists() {
 				stage = retrievalFailStates[rand.Intn(len(retrievalFailStates))]
-				stageDetails, ok = tasks.RetrievalStages[stage]
-				if !ok {
-					stageDetails = tasks.CommonStages[stage]
+				if stageDetailsFn := tasks.RetrievalStages[stage]; stageDetailsFn != nil {
+					stageDetails = stageDetailsFn()
+				} else {
+					stageDetails = tasks.CommonStages[stage]()
 				}
 			} else {
 				stage = storageFailStates[rand.Intn(len(storageFailStates))]
 				stageDetails, ok = storageStageDetails[stage]
 				if !ok {
-					stageDetails = tasks.CommonStages[stage]
+					stageDetails = tasks.CommonStages[stage]()
 				}
 			}
 			taskDuration = md.failureAvg + time.Duration(rand.NormFloat64()*float64(md.failureDeviation))

@@ -83,32 +83,32 @@ func (s Status) String() string {
 	return statusNames[s]
 }
 
-func asStageDetails(description, expected string) StageDetails {
-	return &_StageDetails{
-		Description:      asStrM(description),
-		ExpectedDuration: asStrM(expected),
-		Logs:             _List_Logs{[]_Logs{}},
-		UpdatedAt:        _Time__Maybe{m: schema.Maybe_Absent},
+// staticStageDetails returns a func,
+// so that we record each time the stage is seen,
+// given that StageDetails.Of uses time.Now.
+func staticStageDetails(description, expected string) func() StageDetails {
+	return func() StageDetails {
+		return Type.StageDetails.Of(description, expected)
 	}
 }
 
 // BlankStage is a fallback stage for deals that fail early in an unknown stage
-var BlankStage = asStageDetails("Unknown stage", "")
+var BlankStage = staticStageDetails("Unknown stage", "")
 
 // CommonStages are stages near the beginning of a deal shared between storage & retrieval
-var CommonStages = map[string]StageDetails{
-	"MinerOnline":  asStageDetails("Miner is online", "a few seconds"),
-	"QueryAsk":     asStageDetails("Miner responds to query ask", "a few seconds"),
-	"CheckPrice":   asStageDetails("Miner meets price criteria", ""),
-	"ClientImport": asStageDetails("Importing data into Lotus", "a few minutes"),
-	"ProposeDeal":  asStageDetails("Send proposal to miner", ""),
+var CommonStages = map[string]func() StageDetails{
+	"MinerOnline":  staticStageDetails("Miner is online", "a few seconds"),
+	"QueryAsk":     staticStageDetails("Miner responds to query ask", "a few seconds"),
+	"CheckPrice":   staticStageDetails("Miner meets price criteria", ""),
+	"ClientImport": staticStageDetails("Importing data into Lotus", "a few minutes"),
+	"ProposeDeal":  staticStageDetails("Send proposal to miner", ""),
 }
 
 // RetrievalStages are stages that occur in a retrieval deal
-var RetrievalStages = map[string]StageDetails{
-	"DealAccepted":      asStageDetails("Miner accepts deal", "a few seconds"),
-	"FirstByteReceived": asStageDetails("First byte of data received from miner", "a few seconds, or several hours when unsealing"),
-	"DealComplete":      asStageDetails("All bytes received and deal is completed", "a few seconds"),
+var RetrievalStages = map[string]func() StageDetails{
+	"DealAccepted":      staticStageDetails("Miner accepts deal", "a few seconds"),
+	"FirstByteReceived": staticStageDetails("First byte of data received from miner", "a few seconds, or several hours when unsealing"),
+	"DealComplete":      staticStageDetails("All bytes received and deal is completed", "a few seconds"),
 }
 
 // the multi-codec and hash we use for cid links by default
@@ -151,10 +151,11 @@ type step struct {
 }
 
 func executeStage(ctx context.Context, stage string, updateStage UpdateStage, steps []step) error {
-	stageDetails, ok := CommonStages[stage]
-	if !ok {
+	stageDetailsFn := CommonStages[stage]
+	if stageDetailsFn == nil {
 		return errors.New("unknown stage")
 	}
+	stageDetails := stageDetailsFn()
 	err := updateStage(ctx, stage, stageDetails)
 	if err != nil {
 		return err
@@ -310,27 +311,44 @@ func parseFinalLogs(t Task) *logExtraction {
 		return le
 	}
 
+	// First/last byte stage substrings for tasks.
+	// They get matched
+
+	// If the provider is verifying the data, it has all the bytes.
+	firstByteSubstring := "opening data transfer"
+	lastByteSubstring := "provider is verifying the data"
+
+	// First/last byte log entries for retrieval tasks.
+	// From RetrievalStages above; matches stage descriptions.
+	if t.RetrievalTask.Exists() {
+		firstByteSubstring = "First byte of data received"
+		lastByteSubstring = "All bytes received"
+	}
+
 	start := t.StartedAt.Must().Time()
 	for _, stage := range t.PastStageDetails.Must().x {
+
+		// First/last byte deriving also looks at stage descriptions.
+		if stage.UpdatedAt.Exists() && stage.Description.Exists() {
+			entry := stage.Description.Must().String()
+			entryTime := stage.UpdatedAt.Must().Time()
+			if !le.timeFirstByte.Exists() && strings.Contains(entry, firstByteSubstring) {
+				le.timeFirstByte.m = schema.Maybe_Value
+				le.timeFirstByte.v = &_Int{entryTime.Sub(start).Milliseconds()}
+			} else if !le.timeLastByte.Exists() && strings.Contains(entry, lastByteSubstring) {
+				le.timeLastByte.m = schema.Maybe_Value
+				le.timeLastByte.v = &_Int{entryTime.Sub(start).Milliseconds()}
+			}
+		}
+
 		for _, log := range stage.Logs.x {
 			entry := log.Log.String()
 			entryTime := log.UpdatedAt.Time()
 
-			// If funds are reserved, we're about to transfer the data.
-			// TODO: can we do better, e.g. the first transfer
-			// progress update?
-			// TODO: test for retrieval tasks, too.
-			if !le.timeFirstByte.Exists() && strings.Contains(entry, "funds reserved") {
+			if !le.timeFirstByte.Exists() && strings.Contains(entry, firstByteSubstring) {
 				le.timeFirstByte.m = schema.Maybe_Value
 				le.timeFirstByte.v = &_Int{entryTime.Sub(start).Milliseconds()}
-			}
-
-			// If the provider is verifying the data, it has all the bytes.
-			// TODO: can we do better, e.g. the last transfer
-			// progress update? this log line seems too late, as it
-			// shows ~30s for a local devnet.
-			// TODO: test for retrieval tasks, too.
-			if !le.timeLastByte.Exists() && strings.Contains(entry, "provider is verifying the data") {
+			} else if !le.timeLastByte.Exists() && strings.Contains(entry, lastByteSubstring) {
 				le.timeLastByte.m = schema.Maybe_Value
 				le.timeLastByte.v = &_Int{entryTime.Sub(start).Milliseconds()}
 			}
@@ -345,6 +363,15 @@ func parseFinalLogs(t Task) *logExtraction {
 			}
 		}
 	}
+
+	// Sometimes we'll see an event for the first byte and no event for the
+	// last byte, such as when doing a retrieval task and the data is
+	// already present locally.
+	// In those casese, assume that the transfer was immediate.
+	if le.timeFirstByte.Exists() && !le.timeLastByte.Exists() {
+		le.timeLastByte = le.timeFirstByte
+	}
+
 	return le
 }
 

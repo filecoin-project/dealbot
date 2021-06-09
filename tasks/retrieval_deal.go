@@ -101,7 +101,7 @@ func (de *retrievalDealExecutor) queryOffer(logg logFunc) error {
 
 func (de *retrievalDealExecutor) executeAndMonitorDeal(ctx context.Context, updateStage UpdateStage, stageTimeouts map[string]time.Duration) error {
 	stage := "ProposeDeal"
-	dealStage := CommonStages[stage]
+	dealStage := CommonStages[stage]()
 	err := updateStage(ctx, stage, dealStage)
 	if err != nil {
 		return err
@@ -165,7 +165,7 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(ctx context.Context, upda
 
 				if event.Event == retrievalmarket.ClientEventDealAccepted {
 					stage = "DealAccepted"
-					dealStage = RetrievalStages[stage]
+					dealStage = RetrievalStages[stage]()
 					err := updateStage(ctx, stage, dealStage)
 					if err != nil {
 						return err
@@ -173,7 +173,7 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(ctx context.Context, upda
 				}
 				if event.BytesReceived > 0 && lastBytesReceived == 0 {
 					stage = "FirstByteReceived"
-					dealStage = RetrievalStages[stage]
+					dealStage = RetrievalStages[stage]()
 					err := updateStage(ctx, stage, dealStage)
 					if err != nil {
 						return err
@@ -184,7 +184,7 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(ctx context.Context, upda
 
 				// deal is on chain, exit successfully
 				stage = "DealComplete"
-				dealStage = RetrievalStages[stage]
+				dealStage = RetrievalStages[stage]()
 				dealStage = AddLog(dealStage, fmt.Sprintf("bytes received: %d", event.BytesReceived))
 				err = updateStage(ctx, stage, dealStage)
 				if err != nil {
