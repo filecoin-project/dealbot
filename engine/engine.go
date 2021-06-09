@@ -249,7 +249,7 @@ func (e *Engine) runTask(ctx context.Context, task tasks.Task, runCount, worker 
 	if task.CurrentStageDetails.Exists() {
 		stageDetails = task.CurrentStageDetails.Must()
 	} else {
-		stageDetails = tasks.BlankStage
+		stageDetails = tasks.BlankStage()
 	}
 	_, err = e.client.UpdateTask(ctx, task.UUID.String(),
 		tasks.Type.UpdateTask.OfStage(

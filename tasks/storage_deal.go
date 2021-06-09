@@ -226,7 +226,7 @@ func (de *storageDealExecutor) importFile(_ logFunc) (err error) {
 
 func (de *storageDealExecutor) executeAndMonitorDeal(ctx context.Context, updateStage UpdateStage, stageTimeouts map[string]time.Duration) error {
 	stage := "ProposeDeal"
-	dealStage := CommonStages[stage]
+	dealStage := CommonStages[stage]()
 	err := updateStage(ctx, stage, dealStage)
 	if err != nil {
 		return err
