@@ -13,7 +13,7 @@ import (
 )
 
 func TryAcquireLatency(ctx context.Context, ai peer.AddrInfo) (multiaddr.Multiaddr, int64, error) {
-	cctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	cctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 	h, err := libp2p.New(cctx)
 	if err != nil {
