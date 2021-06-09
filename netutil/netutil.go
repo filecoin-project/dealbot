@@ -37,7 +37,7 @@ func TryAcquireLatency(ctx context.Context, ai peer.AddrInfo) (multiaddr.Multiad
 		defer wg.Done()
 		p := []byte{0x00}
 		_, serr := stream.Read(p)
-		if serr == io.EOF || serr == io.ErrUnexpectedEOF || strings.Contains(serr.Error(), "connection reset by peer") {
+		if serr == io.EOF || serr == io.ErrUnexpectedEOF || serr == nil || strings.Contains(serr.Error(), "connection reset by peer") {
 			end = time.Now()
 		} else {
 			err = serr
