@@ -143,11 +143,21 @@ func SetupClient(ctx context.Context, cliCtx *cli.Context) (tasks.NodeConfig, ap
 		}
 	}
 
+	ph := ""
+	if cliCtx.IsSet("posthook") {
+		log.Infow("setting post hook", cliCtx.String("posthook"))
+		ph = cliCtx.String("posthook")
+		if _, err := os.Stat(ph); os.IsNotExist(err) {
+			return tasks.NodeConfig{}, nil, nil, fmt.Errorf("posthook should be a single bash script. it will be passed a task uuid as its first argument")
+		}
+	}
+
 	return tasks.NodeConfig{
 		DataDir:          dataDir,
 		NodeDataDir:      nodeDataDir,
 		WalletAddress:    walletAddress,
 		MinWalletBalance: mf,
 		MinWalletCap:     mc,
+		PostHook:         ph,
 	}, node, closer, nil
 }
