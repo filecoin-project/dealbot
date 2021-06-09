@@ -13,16 +13,18 @@ import (
 	"github.com/filecoin-project/go-fil-markets/retrievalmarket"
 	"github.com/filecoin-project/lotus/api"
 	"github.com/ipfs/go-cid"
+	"github.com/libp2p/go-libp2p"
 )
 
 func MakeRetrievalDeal(ctx context.Context, config NodeConfig, node api.FullNode, task RetrievalTask, updateStage UpdateStage, log LogStatus, stageTimeouts map[string]time.Duration) error {
 	de := &retrievalDealExecutor{
 		dealExecutor: dealExecutor{
-			ctx:    ctx,
-			config: config,
-			node:   node,
-			miner:  task.Miner.x,
-			log:    log,
+			ctx:      ctx,
+			config:   config,
+			node:     node,
+			miner:    task.Miner.x,
+			log:      log,
+			makeHost: libp2p.New,
 		},
 		task: task,
 	}
@@ -223,7 +225,7 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(ctx context.Context, upda
 
 }
 
-func (rp *_RetrievalTask__Prototype) Of(minerParam string, payloadCid string, carExport bool, tag string) RetrievalTask {
+func (rp _RetrievalTask__Prototype) Of(minerParam string, payloadCid string, carExport bool, tag string) RetrievalTask {
 	rt := _RetrievalTask{
 		Miner:      _String{minerParam},
 		PayloadCID: _String{payloadCid},

@@ -355,18 +355,18 @@ func parseFinalLogs(t Task) *logExtraction {
 				le.timeLastByte.v = &_Int{entryTime.Sub(start).Milliseconds()}
 			}
 
-			if !le.minerVersion.Exists() && strings.Contains(entry, "NetAgentVersion:") {
+			if !le.minerVersion.Exists() && strings.Contains(entry, "NetAgentVersion: ") {
 				le.minerVersion.m = schema.Maybe_Value
-				le.minerVersion.v = &_String{strings.TrimPrefix(entry, "NetAgentVersion:")}
+				le.minerVersion.v = &_String{strings.TrimPrefix(entry, "NetAgentVersion: ")}
 			}
-			if !le.clientVersion.Exists() && strings.Contains(entry, "ClientVersion:") {
+			if !le.clientVersion.Exists() && strings.Contains(entry, "ClientVersion: ") {
 				le.clientVersion.m = schema.Maybe_Value
-				le.clientVersion.v = &_String{strings.TrimPrefix(entry, "ClientVersion:")}
+				le.clientVersion.v = &_String{strings.TrimPrefix(entry, "ClientVersion: ")}
 			}
-			if le.minerAddr == "" && strings.Contains(entry, "RemotePeerAddr:") {
-				le.minerAddr = strings.TrimPrefix(entry, "RemotePeerAddr:")
+			if le.minerAddr == "" && strings.Contains(entry, "RemotePeerAddr: ") {
+				le.minerAddr = strings.TrimPrefix(entry, "RemotePeerAddr: ")
 			}
-			if !le.minerLatency.Exists() && strings.Contains(entry, "RemotePeerLatency:") {
+			if !le.minerLatency.Exists() && strings.Contains(entry, "RemotePeerLatency: ") {
 				le.minerLatency.m = schema.Maybe_Value
 				val, err := strconv.Atoi(strings.TrimPrefix(entry, "RemotePeerLatency: "))
 				if err == nil {

@@ -21,7 +21,10 @@ import (
 	"github.com/filecoin-project/lotus/chain/types"
 	"github.com/google/uuid"
 	"github.com/ipld/go-ipld-prime/schema"
+	"github.com/libp2p/go-libp2p"
+	"github.com/libp2p/go-libp2p-core/host"
 	peer "github.com/libp2p/go-libp2p-core/peer"
+	"github.com/libp2p/go-libp2p/config"
 	"github.com/multiformats/go-multiaddr"
 )
 
@@ -31,11 +34,12 @@ const startOffsetDefault = 30760
 func MakeStorageDeal(ctx context.Context, config NodeConfig, node api.FullNode, task StorageTask, updateStage UpdateStage, log LogStatus, stageTimeouts map[string]time.Duration) error {
 	de := &storageDealExecutor{
 		dealExecutor: dealExecutor{
-			ctx:    ctx,
-			config: config,
-			node:   node,
-			miner:  task.Miner.x,
-			log:    log,
+			ctx:      ctx,
+			config:   config,
+			node:     node,
+			miner:    task.Miner.x,
+			log:      log,
+			makeHost: libp2p.New,
 		},
 		task: task,
 	}
@@ -103,6 +107,7 @@ type dealExecutor struct {
 	minerAddress address.Address
 	minerInfo    miner.MinerInfo
 	pi           peer.AddrInfo
+	makeHost     func(ctx context.Context, opts ...config.Option) (host.Host, error)
 }
 
 type storageDealExecutor struct {
@@ -170,8 +175,8 @@ func (de *dealExecutor) netDiag(l logFunc) error {
 		return err
 	}
 
-	peerAddr, peerL, err := netutil.TryAcquireLatency(de.ctx, de.pi)
-	if err != nil {
+	peerAddr, peerL, err := netutil.TryAcquireLatency(de.ctx, de.pi, de.makeHost)
+	if err == nil {
 		l(fmt.Sprintf("RemotePeerAddr: %s", peerAddr))
 		l(fmt.Sprintf("RemotePeerLatency: %d", peerL))
 	}
@@ -411,7 +416,7 @@ func logStages(info api.DealInfo, log LogStatus) {
 	}
 }
 
-func (sp *_StorageTask__Prototype) Of(miner string, maxPrice, size, startOffset int64, fastRetrieval, verified bool, tag string) StorageTask {
+func (sp _StorageTask__Prototype) Of(miner string, maxPrice, size, startOffset int64, fastRetrieval, verified bool, tag string) StorageTask {
 	st := _StorageTask{
 		Miner:           _String{miner},
 		MaxPriceAttoFIL: _Int{maxPrice},
