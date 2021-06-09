@@ -153,7 +153,7 @@ var DaemonFlags = append(DealFlags, append(CommonFlags, append(EndpointFlags, []
 	}),
 	altsrc.NewStringFlag(&cli.StringFlag{
 		Name:    "posthook",
-		Usage:   "command to run when a deal finishes",
+		Usage:   "bash script to run when a deal finishes",
 		EnvVars: []string{"DEALBOT_POST_HOOK"},
 	}),
 }...)...)...)

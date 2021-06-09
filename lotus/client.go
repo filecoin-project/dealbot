@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/filecoin-project/dealbot/tasks"
 	"github.com/filecoin-project/go-address"
@@ -148,7 +147,7 @@ func SetupClient(ctx context.Context, cliCtx *cli.Context) (tasks.NodeConfig, ap
 	if cliCtx.IsSet("posthook") {
 		log.Infow("setting post hook", cliCtx.String("posthook"))
 		ph = cliCtx.String("posthook")
-		if strings.Contains(ph, " ") {
+		if _, err := os.Stat(ph); os.IsNotExist(err) {
 			return tasks.NodeConfig{}, nil, nil, fmt.Errorf("posthook should be a single bash script. it will be passed a task uuid as its first argument")
 		}
 	}
