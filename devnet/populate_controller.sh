@@ -10,7 +10,7 @@ LEN=$(cat $DATAFILE | jq "length")
 for (( i=0; i<$LEN; i++))
 do
   DATA=$(cat $DATAFILE | jq -c ".[$i]")
-  STORAGE=$(cat $DATAFILE | jq -c ".[$i].size!=null")
+  STORAGE=$(cat $DATAFILE | jq -c ".[$i].Size!=null")
   if [ "$STORAGE" = "true" ]; then
     curl --header "Content-Type: application/json" \
       --request POST \
