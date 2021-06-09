@@ -105,10 +105,11 @@ func GetHandler(db state.State, accessToken string) (*http.ServeMux, error) {
 								return store.Set(c, buf.Bytes())
 							}, nil
 						}
-						uuids := p.Args["UUIDs"].([]string)
+						uuids := p.Args["UUIDs"].([]interface{})
 						finishedTasks := make([]tasks.FinishedTask, 0, len(uuids))
 						for _, uuid := range uuids {
-							tsk, err := db.Get(p.Context, uuid)
+							uuidString := uuid.(string)
+							tsk, err := db.Get(p.Context, uuidString)
 							if err != nil {
 								return nil, err
 							}
