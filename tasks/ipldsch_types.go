@@ -29,6 +29,8 @@ type typeSlab struct {
 	Bytes__Repr _Bytes__ReprPrototype
 	FinishedTask       _FinishedTask__Prototype
 	FinishedTask__Repr _FinishedTask__ReprPrototype
+	FinishedTasks       _FinishedTasks__Prototype
+	FinishedTasks__Repr _FinishedTasks__ReprPrototype
 	Float       _Float__Prototype
 	Float__Repr _Float__ReprPrototype
 	Int       _Int__Prototype
@@ -128,6 +130,12 @@ type _FinishedTask struct {
 	Events _Link_List_StageDetails
 	MinerVersion _String__Maybe
 	ClientVersion _String__Maybe
+}
+
+// FinishedTasks matches the IPLD Schema type "FinishedTasks".  It has list kind.
+type FinishedTasks = *_FinishedTasks
+type _FinishedTasks struct {
+	x []_FinishedTask
 }
 
 // Float matches the IPLD Schema type "Float".  It has float kind.

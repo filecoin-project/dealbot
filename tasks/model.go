@@ -435,3 +435,13 @@ func (rup *_RecordUpdate__Prototype) Of(rcrds *_List_AuthenticatedRecord, previo
 	}
 	return &ru
 }
+
+func (tl *_FinishedTasks__Prototype) Of(ts []FinishedTask) *_FinishedTasks {
+	t := _FinishedTasks{
+		x: make([]_FinishedTask, 0, len(ts)),
+	}
+	for _, c := range ts {
+		t.x = append(t.x, *c)
+	}
+	return &t
+}

@@ -4708,6 +4708,599 @@ func (_FinishedTask__ReprKeyAssembler) Prototype() ipld.NodePrototype {
 	return _String__Prototype{}
 }
 
+func (n *_FinishedTasks) Lookup(idx int64) FinishedTask {
+	if n.Length() <= idx {
+		return nil
+	}
+	v := &n.x[idx]
+	return v
+}
+func (n *_FinishedTasks) LookupMaybe(idx int64) MaybeFinishedTask {
+	if n.Length() <= idx {
+		return nil
+	}
+	v := &n.x[idx]
+	return &_FinishedTask__Maybe{
+		m: schema.Maybe_Value,
+		v: v,
+	}
+}
+
+var _FinishedTasks__valueAbsent = _FinishedTask__Maybe{m:schema.Maybe_Absent}
+func (n FinishedTasks) Iterator() *FinishedTasks__Itr {
+	return &FinishedTasks__Itr{n, 0}
+}
+
+type FinishedTasks__Itr struct {
+	n FinishedTasks
+	idx  int
+}
+
+func (itr *FinishedTasks__Itr) Next() (idx int64, v FinishedTask) {
+	if itr.idx >= len(itr.n.x) {
+		return -1, nil
+	}
+	idx = int64(itr.idx)
+	v = &itr.n.x[itr.idx]
+	itr.idx++
+	return
+}
+func (itr *FinishedTasks__Itr) Done() bool {
+	return itr.idx >= len(itr.n.x)
+}
+
+type _FinishedTasks__Maybe struct {
+	m schema.Maybe
+	v FinishedTasks
+}
+type MaybeFinishedTasks = *_FinishedTasks__Maybe
+
+func (m MaybeFinishedTasks) IsNull() bool {
+	return m.m == schema.Maybe_Null
+}
+func (m MaybeFinishedTasks) IsAbsent() bool {
+	return m.m == schema.Maybe_Absent
+}
+func (m MaybeFinishedTasks) Exists() bool {
+	return m.m == schema.Maybe_Value
+}
+func (m MaybeFinishedTasks) AsNode() ipld.Node {
+	switch m.m {
+		case schema.Maybe_Absent:
+			return ipld.Absent
+		case schema.Maybe_Null:
+			return ipld.Null
+		case schema.Maybe_Value:
+			return m.v
+		default:
+			panic("unreachable")
+	}
+}
+func (m MaybeFinishedTasks) Must() FinishedTasks {
+	if !m.Exists() {
+		panic("unbox of a maybe rejected")
+	}
+	return m.v
+}
+var _ ipld.Node = (FinishedTasks)(&_FinishedTasks{})
+var _ schema.TypedNode = (FinishedTasks)(&_FinishedTasks{})
+func (FinishedTasks) Kind() ipld.Kind {
+	return ipld.Kind_List
+}
+func (FinishedTasks) LookupByString(string) (ipld.Node, error) {
+	return mixins.List{"tasks.FinishedTasks"}.LookupByString("")
+}
+func (n FinishedTasks) LookupByNode(k ipld.Node) (ipld.Node, error) {
+	idx, err := k.AsInt()
+	if err != nil {
+		return nil, err
+	}
+	return n.LookupByIndex(idx)
+}
+func (n FinishedTasks) LookupByIndex(idx int64) (ipld.Node, error) {
+	if n.Length() <= idx {
+		return nil, ipld.ErrNotExists{ipld.PathSegmentOfInt(idx)}
+	}
+	v := &n.x[idx]
+	return v, nil
+}
+func (n FinishedTasks) LookupBySegment(seg ipld.PathSegment) (ipld.Node, error) {
+	i, err := seg.Index()
+	if err != nil {
+		return nil, ipld.ErrInvalidSegmentForList{TypeName: "tasks.FinishedTasks", TroubleSegment: seg, Reason: err}
+	}
+	return n.LookupByIndex(i)
+}
+func (FinishedTasks) MapIterator() ipld.MapIterator {
+	return nil
+}
+func (n FinishedTasks) ListIterator() ipld.ListIterator {
+	return &_FinishedTasks__ListItr{n, 0}
+}
+
+type _FinishedTasks__ListItr struct {
+	n FinishedTasks
+	idx  int
+}
+
+func (itr *_FinishedTasks__ListItr) Next() (idx int64, v ipld.Node, _ error) {
+	if itr.idx >= len(itr.n.x) {
+		return -1, nil, ipld.ErrIteratorOverread{}
+	}
+	idx = int64(itr.idx)
+	x := &itr.n.x[itr.idx]
+	v = x
+	itr.idx++
+	return
+}
+func (itr *_FinishedTasks__ListItr) Done() bool {
+	return itr.idx >= len(itr.n.x)
+}
+
+func (n FinishedTasks) Length() int64 {
+	return int64(len(n.x))
+}
+func (FinishedTasks) IsAbsent() bool {
+	return false
+}
+func (FinishedTasks) IsNull() bool {
+	return false
+}
+func (FinishedTasks) AsBool() (bool, error) {
+	return mixins.List{"tasks.FinishedTasks"}.AsBool()
+}
+func (FinishedTasks) AsInt() (int64, error) {
+	return mixins.List{"tasks.FinishedTasks"}.AsInt()
+}
+func (FinishedTasks) AsFloat() (float64, error) {
+	return mixins.List{"tasks.FinishedTasks"}.AsFloat()
+}
+func (FinishedTasks) AsString() (string, error) {
+	return mixins.List{"tasks.FinishedTasks"}.AsString()
+}
+func (FinishedTasks) AsBytes() ([]byte, error) {
+	return mixins.List{"tasks.FinishedTasks"}.AsBytes()
+}
+func (FinishedTasks) AsLink() (ipld.Link, error) {
+	return mixins.List{"tasks.FinishedTasks"}.AsLink()
+}
+func (FinishedTasks) Prototype() ipld.NodePrototype {
+	return _FinishedTasks__Prototype{}
+}
+type _FinishedTasks__Prototype struct{}
+
+func (_FinishedTasks__Prototype) NewBuilder() ipld.NodeBuilder {
+	var nb _FinishedTasks__Builder
+	nb.Reset()
+	return &nb
+}
+type _FinishedTasks__Builder struct {
+	_FinishedTasks__Assembler
+}
+func (nb *_FinishedTasks__Builder) Build() ipld.Node {
+	if *nb.m != schema.Maybe_Value {
+		panic("invalid state: cannot call Build on an assembler that's not finished")
+	}
+	return nb.w
+}
+func (nb *_FinishedTasks__Builder) Reset() {
+	var w _FinishedTasks
+	var m schema.Maybe
+	*nb = _FinishedTasks__Builder{_FinishedTasks__Assembler{w: &w, m: &m}}
+}
+type _FinishedTasks__Assembler struct {
+	w *_FinishedTasks
+	m *schema.Maybe
+	state laState
+
+	cm schema.Maybe
+	va _FinishedTask__Assembler
+}
+
+func (na *_FinishedTasks__Assembler) reset() {
+	na.state = laState_initial
+	na.va.reset()
+}
+func (_FinishedTasks__Assembler) BeginMap(sizeHint int64) (ipld.MapAssembler, error) {
+	return mixins.ListAssembler{"tasks.FinishedTasks"}.BeginMap(0)
+}
+func (na *_FinishedTasks__Assembler) BeginList(sizeHint int64) (ipld.ListAssembler, error) {
+	switch *na.m {
+	case schema.Maybe_Value, schema.Maybe_Null:
+		panic("invalid state: cannot assign into assembler that's already finished")
+	case midvalue:
+		panic("invalid state: it makes no sense to 'begin' twice on the same assembler!")
+	}
+	*na.m = midvalue
+	if sizeHint < 0 {
+		sizeHint = 0
+	}
+	if na.w == nil {
+		na.w = &_FinishedTasks{}
+	}
+	if sizeHint > 0 {
+		na.w.x = make([]_FinishedTask, 0, sizeHint)
+	}
+	return na, nil
+}
+func (na *_FinishedTasks__Assembler) AssignNull() error {
+	switch *na.m {
+	case allowNull:
+		*na.m = schema.Maybe_Null
+		return nil
+	case schema.Maybe_Absent:
+		return mixins.ListAssembler{"tasks.FinishedTasks"}.AssignNull()
+	case schema.Maybe_Value, schema.Maybe_Null:
+		panic("invalid state: cannot assign into assembler that's already finished")
+	case midvalue:
+		panic("invalid state: cannot assign null into an assembler that's already begun working on recursive structures!")
+	}
+	panic("unreachable")
+}
+func (_FinishedTasks__Assembler) AssignBool(bool) error {
+	return mixins.ListAssembler{"tasks.FinishedTasks"}.AssignBool(false)
+}
+func (_FinishedTasks__Assembler) AssignInt(int64) error {
+	return mixins.ListAssembler{"tasks.FinishedTasks"}.AssignInt(0)
+}
+func (_FinishedTasks__Assembler) AssignFloat(float64) error {
+	return mixins.ListAssembler{"tasks.FinishedTasks"}.AssignFloat(0)
+}
+func (_FinishedTasks__Assembler) AssignString(string) error {
+	return mixins.ListAssembler{"tasks.FinishedTasks"}.AssignString("")
+}
+func (_FinishedTasks__Assembler) AssignBytes([]byte) error {
+	return mixins.ListAssembler{"tasks.FinishedTasks"}.AssignBytes(nil)
+}
+func (_FinishedTasks__Assembler) AssignLink(ipld.Link) error {
+	return mixins.ListAssembler{"tasks.FinishedTasks"}.AssignLink(nil)
+}
+func (na *_FinishedTasks__Assembler) AssignNode(v ipld.Node) error {
+	if v.IsNull() {
+		return na.AssignNull()
+	}
+	if v2, ok := v.(*_FinishedTasks); ok {
+		switch *na.m {
+		case schema.Maybe_Value, schema.Maybe_Null:
+			panic("invalid state: cannot assign into assembler that's already finished")
+		case midvalue:
+			panic("invalid state: cannot assign null into an assembler that's already begun working on recursive structures!")
+		}
+		if na.w == nil {
+			na.w = v2
+			*na.m = schema.Maybe_Value
+			return nil
+		}
+		*na.w = *v2
+		*na.m = schema.Maybe_Value
+		return nil
+	}
+	if v.Kind() != ipld.Kind_List {
+		return ipld.ErrWrongKind{TypeName: "tasks.FinishedTasks", MethodName: "AssignNode", AppropriateKind: ipld.KindSet_JustList, ActualKind: v.Kind()}
+	}
+	itr := v.ListIterator()
+	for !itr.Done() {
+		_, v, err := itr.Next()
+		if err != nil {
+			return err
+		}
+		if err := na.AssembleValue().AssignNode(v); err != nil {
+			return err
+		}
+	}
+	return na.Finish()
+}
+func (_FinishedTasks__Assembler) Prototype() ipld.NodePrototype {
+	return _FinishedTasks__Prototype{}
+}
+func (la *_FinishedTasks__Assembler) valueFinishTidy() bool {
+	switch la.cm {
+	case schema.Maybe_Value:
+		la.va.w = nil
+		la.cm = schema.Maybe_Absent
+		la.state = laState_initial
+		la.va.reset()
+		return true
+	default:
+		return false
+	}
+}
+func (la *_FinishedTasks__Assembler) AssembleValue() ipld.NodeAssembler {
+	switch la.state {
+	case laState_initial:
+		// carry on
+	case laState_midValue:
+		if !la.valueFinishTidy() {
+			panic("invalid state: AssembleValue cannot be called when still in the middle of assembling the previous value")
+		} // if tidy success: carry on
+	case laState_finished:
+		panic("invalid state: AssembleValue cannot be called on an assembler that's already finished")
+	}
+	la.w.x = append(la.w.x, _FinishedTask{})
+	la.state = laState_midValue
+	row := &la.w.x[len(la.w.x)-1]
+	la.va.w = row
+	la.va.m = &la.cm
+	return &la.va
+}
+func (la *_FinishedTasks__Assembler) Finish() error {
+	switch la.state {
+	case laState_initial:
+		// carry on
+	case laState_midValue:
+		if !la.valueFinishTidy() {
+			panic("invalid state: Finish cannot be called when in the middle of assembling a value")
+		} // if tidy success: carry on
+	case laState_finished:
+		panic("invalid state: Finish cannot be called on an assembler that's already finished")
+	}
+	la.state = laState_finished
+	*la.m = schema.Maybe_Value
+	return nil
+}
+func (la *_FinishedTasks__Assembler) ValuePrototype(_ int64) ipld.NodePrototype {
+	return _FinishedTask__Prototype{}
+}
+func (FinishedTasks) Type() schema.Type {
+	return nil /*TODO:typelit*/
+}
+func (n FinishedTasks) Representation() ipld.Node {
+	return (*_FinishedTasks__Repr)(n)
+}
+type _FinishedTasks__Repr _FinishedTasks
+var _ ipld.Node = &_FinishedTasks__Repr{}
+func (_FinishedTasks__Repr) Kind() ipld.Kind {
+	return ipld.Kind_List
+}
+func (_FinishedTasks__Repr) LookupByString(string) (ipld.Node, error) {
+	return mixins.List{"tasks.FinishedTasks.Repr"}.LookupByString("")
+}
+func (nr *_FinishedTasks__Repr) LookupByNode(k ipld.Node) (ipld.Node, error) {
+	v, err := (FinishedTasks)(nr).LookupByNode(k)
+	if err != nil || v == ipld.Null {
+		return v, err
+	}
+	return v.(FinishedTask).Representation(), nil
+}
+func (nr *_FinishedTasks__Repr) LookupByIndex(idx int64) (ipld.Node, error) {
+	v, err := (FinishedTasks)(nr).LookupByIndex(idx)
+	if err != nil || v == ipld.Null {
+		return v, err
+	}
+	return v.(FinishedTask).Representation(), nil
+}
+func (n _FinishedTasks__Repr) LookupBySegment(seg ipld.PathSegment) (ipld.Node, error) {
+	i, err := seg.Index()
+	if err != nil {
+		return nil, ipld.ErrInvalidSegmentForList{TypeName: "tasks.FinishedTasks.Repr", TroubleSegment: seg, Reason: err}
+	}
+	return n.LookupByIndex(i)
+}
+func (_FinishedTasks__Repr) MapIterator() ipld.MapIterator {
+	return nil
+}
+func (nr *_FinishedTasks__Repr) ListIterator() ipld.ListIterator {
+	return &_FinishedTasks__ReprListItr{(FinishedTasks)(nr), 0}
+}
+
+type _FinishedTasks__ReprListItr _FinishedTasks__ListItr
+
+func (itr *_FinishedTasks__ReprListItr) Next() (idx int64, v ipld.Node, err error) {
+	idx, v, err = (*_FinishedTasks__ListItr)(itr).Next()
+	if err != nil || v == ipld.Null {
+		return
+	}
+	return idx, v.(FinishedTask).Representation(), nil
+}
+func (itr *_FinishedTasks__ReprListItr) Done() bool {
+	return (*_FinishedTasks__ListItr)(itr).Done()
+}
+
+func (rn *_FinishedTasks__Repr) Length() int64 {
+	return int64(len(rn.x))
+}
+func (_FinishedTasks__Repr) IsAbsent() bool {
+	return false
+}
+func (_FinishedTasks__Repr) IsNull() bool {
+	return false
+}
+func (_FinishedTasks__Repr) AsBool() (bool, error) {
+	return mixins.List{"tasks.FinishedTasks.Repr"}.AsBool()
+}
+func (_FinishedTasks__Repr) AsInt() (int64, error) {
+	return mixins.List{"tasks.FinishedTasks.Repr"}.AsInt()
+}
+func (_FinishedTasks__Repr) AsFloat() (float64, error) {
+	return mixins.List{"tasks.FinishedTasks.Repr"}.AsFloat()
+}
+func (_FinishedTasks__Repr) AsString() (string, error) {
+	return mixins.List{"tasks.FinishedTasks.Repr"}.AsString()
+}
+func (_FinishedTasks__Repr) AsBytes() ([]byte, error) {
+	return mixins.List{"tasks.FinishedTasks.Repr"}.AsBytes()
+}
+func (_FinishedTasks__Repr) AsLink() (ipld.Link, error) {
+	return mixins.List{"tasks.FinishedTasks.Repr"}.AsLink()
+}
+func (_FinishedTasks__Repr) Prototype() ipld.NodePrototype {
+	return _FinishedTasks__ReprPrototype{}
+}
+type _FinishedTasks__ReprPrototype struct{}
+
+func (_FinishedTasks__ReprPrototype) NewBuilder() ipld.NodeBuilder {
+	var nb _FinishedTasks__ReprBuilder
+	nb.Reset()
+	return &nb
+}
+type _FinishedTasks__ReprBuilder struct {
+	_FinishedTasks__ReprAssembler
+}
+func (nb *_FinishedTasks__ReprBuilder) Build() ipld.Node {
+	if *nb.m != schema.Maybe_Value {
+		panic("invalid state: cannot call Build on an assembler that's not finished")
+	}
+	return nb.w
+}
+func (nb *_FinishedTasks__ReprBuilder) Reset() {
+	var w _FinishedTasks
+	var m schema.Maybe
+	*nb = _FinishedTasks__ReprBuilder{_FinishedTasks__ReprAssembler{w: &w, m: &m}}
+}
+type _FinishedTasks__ReprAssembler struct {
+	w *_FinishedTasks
+	m *schema.Maybe
+	state laState
+
+	cm schema.Maybe
+	va _FinishedTask__ReprAssembler
+}
+
+func (na *_FinishedTasks__ReprAssembler) reset() {
+	na.state = laState_initial
+	na.va.reset()
+}
+func (_FinishedTasks__ReprAssembler) BeginMap(sizeHint int64) (ipld.MapAssembler, error) {
+	return mixins.ListAssembler{"tasks.FinishedTasks.Repr"}.BeginMap(0)
+}
+func (na *_FinishedTasks__ReprAssembler) BeginList(sizeHint int64) (ipld.ListAssembler, error) {
+	switch *na.m {
+	case schema.Maybe_Value, schema.Maybe_Null:
+		panic("invalid state: cannot assign into assembler that's already finished")
+	case midvalue:
+		panic("invalid state: it makes no sense to 'begin' twice on the same assembler!")
+	}
+	*na.m = midvalue
+	if sizeHint < 0 {
+		sizeHint = 0
+	}
+	if na.w == nil {
+		na.w = &_FinishedTasks{}
+	}
+	if sizeHint > 0 {
+		na.w.x = make([]_FinishedTask, 0, sizeHint)
+	}
+	return na, nil
+}
+func (na *_FinishedTasks__ReprAssembler) AssignNull() error {
+	switch *na.m {
+	case allowNull:
+		*na.m = schema.Maybe_Null
+		return nil
+	case schema.Maybe_Absent:
+		return mixins.ListAssembler{"tasks.FinishedTasks.Repr.Repr"}.AssignNull()
+	case schema.Maybe_Value, schema.Maybe_Null:
+		panic("invalid state: cannot assign into assembler that's already finished")
+	case midvalue:
+		panic("invalid state: cannot assign null into an assembler that's already begun working on recursive structures!")
+	}
+	panic("unreachable")
+}
+func (_FinishedTasks__ReprAssembler) AssignBool(bool) error {
+	return mixins.ListAssembler{"tasks.FinishedTasks.Repr"}.AssignBool(false)
+}
+func (_FinishedTasks__ReprAssembler) AssignInt(int64) error {
+	return mixins.ListAssembler{"tasks.FinishedTasks.Repr"}.AssignInt(0)
+}
+func (_FinishedTasks__ReprAssembler) AssignFloat(float64) error {
+	return mixins.ListAssembler{"tasks.FinishedTasks.Repr"}.AssignFloat(0)
+}
+func (_FinishedTasks__ReprAssembler) AssignString(string) error {
+	return mixins.ListAssembler{"tasks.FinishedTasks.Repr"}.AssignString("")
+}
+func (_FinishedTasks__ReprAssembler) AssignBytes([]byte) error {
+	return mixins.ListAssembler{"tasks.FinishedTasks.Repr"}.AssignBytes(nil)
+}
+func (_FinishedTasks__ReprAssembler) AssignLink(ipld.Link) error {
+	return mixins.ListAssembler{"tasks.FinishedTasks.Repr"}.AssignLink(nil)
+}
+func (na *_FinishedTasks__ReprAssembler) AssignNode(v ipld.Node) error {
+	if v.IsNull() {
+		return na.AssignNull()
+	}
+	if v2, ok := v.(*_FinishedTasks); ok {
+		switch *na.m {
+		case schema.Maybe_Value, schema.Maybe_Null:
+			panic("invalid state: cannot assign into assembler that's already finished")
+		case midvalue:
+			panic("invalid state: cannot assign null into an assembler that's already begun working on recursive structures!")
+		}
+		if na.w == nil {
+			na.w = v2
+			*na.m = schema.Maybe_Value
+			return nil
+		}
+		*na.w = *v2
+		*na.m = schema.Maybe_Value
+		return nil
+	}
+	if v.Kind() != ipld.Kind_List {
+		return ipld.ErrWrongKind{TypeName: "tasks.FinishedTasks.Repr", MethodName: "AssignNode", AppropriateKind: ipld.KindSet_JustList, ActualKind: v.Kind()}
+	}
+	itr := v.ListIterator()
+	for !itr.Done() {
+		_, v, err := itr.Next()
+		if err != nil {
+			return err
+		}
+		if err := na.AssembleValue().AssignNode(v); err != nil {
+			return err
+		}
+	}
+	return na.Finish()
+}
+func (_FinishedTasks__ReprAssembler) Prototype() ipld.NodePrototype {
+	return _FinishedTasks__ReprPrototype{}
+}
+func (la *_FinishedTasks__ReprAssembler) valueFinishTidy() bool {
+	switch la.cm {
+	case schema.Maybe_Value:
+		la.va.w = nil
+		la.cm = schema.Maybe_Absent
+		la.state = laState_initial
+		la.va.reset()
+		return true
+	default:
+		return false
+	}
+}
+func (la *_FinishedTasks__ReprAssembler) AssembleValue() ipld.NodeAssembler {
+	switch la.state {
+	case laState_initial:
+		// carry on
+	case laState_midValue:
+		if !la.valueFinishTidy() {
+			panic("invalid state: AssembleValue cannot be called when still in the middle of assembling the previous value")
+		} // if tidy success: carry on
+	case laState_finished:
+		panic("invalid state: AssembleValue cannot be called on an assembler that's already finished")
+	}
+	la.w.x = append(la.w.x, _FinishedTask{})
+	la.state = laState_midValue
+	row := &la.w.x[len(la.w.x)-1]
+	la.va.w = row
+	la.va.m = &la.cm
+	return &la.va
+}
+func (la *_FinishedTasks__ReprAssembler) Finish() error {
+	switch la.state {
+	case laState_initial:
+		// carry on
+	case laState_midValue:
+		if !la.valueFinishTidy() {
+			panic("invalid state: Finish cannot be called when in the middle of assembling a value")
+		} // if tidy success: carry on
+	case laState_finished:
+		panic("invalid state: Finish cannot be called on an assembler that's already finished")
+	}
+	la.state = laState_finished
+	*la.m = schema.Maybe_Value
+	return nil
+}
+func (la *_FinishedTasks__ReprAssembler) ValuePrototype(_ int64) ipld.NodePrototype {
+	return _FinishedTask__ReprPrototype{}
+}
+
 func (n Float) Float() float64 {
 	return n.x
 }

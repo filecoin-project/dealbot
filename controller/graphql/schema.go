@@ -637,6 +637,99 @@ var FinishedTask__type = graphql.NewObject(graphql.ObjectConfig{
         },
     },
 })
+var FinishedTasks__type = graphql.NewObject(graphql.ObjectConfig{
+    Name: "FinishedTasks",
+    Fields: graphql.Fields{
+        "At": &graphql.Field{
+            Type: FinishedTask__type,
+            Args: graphql.FieldConfigArgument{
+                "key": &graphql.ArgumentConfig{
+                    Type: graphql.NewNonNull(graphql.Int),
+                },
+            },
+            Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+                ts, ok := p.Source.(tasks.FinishedTasks)
+                if !ok {
+                    return nil, errNotNode
+                }
+
+                arg := p.Args["key"]
+                var out ipld.Node
+                var err error
+                switch ta := arg.(type) {
+                case ipld.Node:
+                    out, err = ts.LookupByNode(ta)
+                case int64:
+                    out, err = ts.LookupByIndex(ta)
+                default:
+                    return nil, fmt.Errorf("unknown key type: %T", arg)
+                }
+                
+                return out, err
+                
+            },
+        },
+        "All": &graphql.Field{
+            Type: graphql.NewList(FinishedTask__type),
+            Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+                ts, ok := p.Source.(tasks.FinishedTasks)
+                if !ok {
+                    return nil, errNotNode
+                }
+                it := ts.ListIterator()
+                children := make([]ipld.Node, 0)
+                for !it.Done() {
+                    _, node, err := it.Next()
+                    if err != nil {
+                        return nil, err
+                    }
+                    
+                    children = append(children, node)
+                }
+                return children, nil	
+            },
+        },
+        "Range": &graphql.Field{
+            Type: graphql.NewList(FinishedTask__type),
+            Args: graphql.FieldConfigArgument{
+                "skip": &graphql.ArgumentConfig{
+                    Type: graphql.NewNonNull(graphql.Int),
+                },
+                "take": &graphql.ArgumentConfig{
+                    Type: graphql.NewNonNull(graphql.Int),
+                },
+            },
+            Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+                ts, ok := p.Source.(tasks.FinishedTasks)
+                if !ok {
+                    return nil, errNotNode
+                }
+                it := ts.ListIterator()
+                children := make([]ipld.Node, 0)
+
+                for !it.Done() {
+                    _, node, err := it.Next()
+                    if err != nil {
+                        return nil, err
+                    }
+                    
+                    children = append(children, node)
+                }
+                return children, nil	
+            },
+        },
+        "Count": &graphql.Field{
+            Type: graphql.NewNonNull(graphql.Int),
+            Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+                ts, ok := p.Source.(tasks.FinishedTasks)
+                if !ok {
+                    return nil, errNotNode
+                }
+                return ts.Length(), nil
+            },
+        },
+    },
+})	
 var List__type = graphql.NewObject(graphql.ObjectConfig{
     Name: "List",
     Fields: graphql.Fields{
