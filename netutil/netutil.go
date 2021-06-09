@@ -6,16 +6,17 @@ import (
 	"sync"
 	"time"
 
-	"github.com/libp2p/go-libp2p"
+	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/libp2p/go-libp2p/config"
 	"github.com/multiformats/go-multiaddr"
 	"golang.org/x/net/context"
 )
 
-func TryAcquireLatency(ctx context.Context, ai peer.AddrInfo) (multiaddr.Multiaddr, int64, error) {
+func TryAcquireLatency(ctx context.Context, ai peer.AddrInfo, makeHost func(ctx context.Context, opts ...config.Option) (host.Host, error)) (multiaddr.Multiaddr, int64, error) {
 	cctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
-	h, err := libp2p.New(cctx)
+	h, err := makeHost(cctx)
 	if err != nil {
 		return nil, 0, err
 	}
