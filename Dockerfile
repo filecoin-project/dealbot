@@ -14,4 +14,6 @@ FROM alpine
 # Copy our static executable.
 COPY --from=builder /go/src/app/dealbot /dealbot
 ENV DEALBOT_LOG_JSON=true
+ENV DEALBOT_WORKERS=10
+ENV STAGE_TIMEOUT=DefaultStorage=48h,DefaultRetrieval=48h
 ENTRYPOINT ["/dealbot"]
