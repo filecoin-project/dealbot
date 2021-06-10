@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math/big"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -112,6 +113,11 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(ctx context.Context, upda
 	ref := &api.FileRef{
 		Path:  filepath.Join(de.config.NodeDataDir, "ret"),
 		IsCAR: de.task.CARExport.x,
+	}
+
+	// If file to retrieve already exists locally, then delete it first
+	if !os.IsNotExist(err) {
+		os.Remove(ref.Path)
 	}
 
 	events, err := de.node.ClientRetrieveWithEvents(de.ctx, de.offer.Order(de.config.WalletAddress), ref)
