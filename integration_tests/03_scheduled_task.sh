@@ -1,9 +1,5 @@
 #!/bin/bash
 
-# COMMENT TO ENABLE
-echo "${0}: test skipped"
-exit 0
-
 my_dir="$(dirname "$0")"
 source "$my_dir/header.sh"
 

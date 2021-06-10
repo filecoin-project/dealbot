@@ -24,7 +24,6 @@ commands:
     steps:
       - run: ./integration_tests/01_storage_retrieval_ok.sh
       - run: ./integration_tests/02_controller_daemon.sh
-      - run: ./integration_tests/03_scheduled_task.sh
   docker-login:
     steps:
       - run:
