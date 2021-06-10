@@ -9,34 +9,102 @@ executors:
     resource_class: 2xlarge
 
 commands:
+  save-cache:
+    description: Save the go mod & build cache.
+    steps:
+      - save_cache:
+          key: >-
+            v3-gosrc-{{ .Branch }}-{{ checksum "go.sum" }}-{{
+            .Environment.CIRCLE_JOB }}
+          name: Saving Source Cache
+          paths:
+            - /home/circleci/go/pkg/mod
+      - save_cache:
+          key: >-
+            v3-gobin-{{ arch }}-{{ .Branch }}-{{ checksum "go.sum" }}-{{
+            .Environment.CIRCLE_JOB }}
+          name: Saving Build Cache
+          paths:
+            - /home/circleci/go/cache
+  restore-cache:
+    description: Restore the go mod & build cache.
+    steps:
+      - restore_cache:
+          keys:
+            - >-
+              v3-gosrc-{{ .Branch }}-{{ checksum "go.sum" }}-{{
+              .Environment.CIRCLE_JOB }}
+            - 'v3-gosrc-{{ .Branch }}-{{ checksum "go.sum" }}-'
+            - 'v3-gosrc-{{ .Branch }}-'
+            - v3-gosrc-master-
+          name: Restoring Source Cache
+      - restore_cache:
+          keys:
+            - >-
+              v3-gobin-{{ arch }}-{{ .Branch }}-{{ checksum "go.sum" }}-{{
+              .Environment.CIRCLE_JOB }}
+            - 'v3-gobin-{{ arch }}-{{ .Branch }}-{{ checksum "go.sum" }}-'
+            - 'v3-gobin-{{ arch }}-{{ .Branch }}-'
+            - 'v3-gobin-{{ arch }}-master-'
+          name: Restoring Build Cache
   checkout-dealbot:
     steps:
       - checkout
-  install-lotus:
+  setup-machine:
     steps:
       - run: sudo apt-get update
       - run: sudo apt-get install ocl-icd-opencl-dev libhwloc-dev
+  build-lotus:
+    steps:
       - run: git clone --depth=1 https://github.com/filecoin-project/lotus /tmp/lotus
       - run: cd /tmp/lotus && git submodule update --init --depth=1
-      - run: cd /tmp/lotus && make debug && sudo make install
+      - run: cd /tmp/lotus && make debug
+  build-dealbot:
+    steps:
+      - run: go install ./...
+  install-lotus:
+    steps:
+      - run: cd /tmp/lotus && sudo cp lotus /usr/local/bin
+      - run: cd /tmp/lotus && sudo cp lotus-miner /usr/local/bin
+      - run: cd /tmp/lotus && sudo cp lotus-worker /usr/local/bin
       - run: cd /tmp/lotus && sudo cp lotus-seed /usr/local/bin
   test-integration-dealbot:
     steps:
-      - run: ./integration_tests/01_storage_retrieval_ok.sh
-      - run: ./integration_tests/02_controller_daemon.sh
-      - run: ./integration_tests/03_scheduled_task.sh
+      - run: 
+          command: |
+            circleci tests glob "./integration_tests/[0-9]*.sh" | circleci tests split | xargs -n 1 /bin/bash
   docker-login:
     steps:
       - run:
           command: echo $DOCKERHUB_PASSWORD | docker login --username $DOCKERHUB_USERNAME --password-stdin
 
 jobs:
-  build-and-test:
+  build:
     executor: golang
     steps:
       - checkout-dealbot
+      - setup-machine
+      - build-lotus
+      - build-dealbot
+      - persist_to_workspace:
+          root: /tmp/lotus
+          paths:
+            - lotus
+            - lotus-seed
+            - lotus-worker
+            - lotus-miner
+      - save-cache
+  test:
+    executor: golang
+    steps:
+      - checkout-dealbot
+      - setup-machine
+      - attach_workspace:
+          at: /tmp/lotus
       - install-lotus
+      - restore-cache
       - test-integration-dealbot
+    parallelism: 3
   build-push:
     machine:
       image: ubuntu-2004:202010-01
@@ -93,13 +161,19 @@ workflows:
   version: 2.1
   ci:
     jobs:
-      - build-and-test:
+      - build:
+          filters:
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*$/
+      - test:
+          requires:
+            - build
           filters:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*$/
       - build-push:
           requires:
-            - build-and-test
+            - test
           filters:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*$/
