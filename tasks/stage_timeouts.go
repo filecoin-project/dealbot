@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	defaultRetrievalStageTimeout     = 30 * time.Minute
+	defaultRetrievalStageTimeout     = 3 * time.Hour
 	defaultRetrievalStageTimeoutName = "defaultretrieval"
 	defaultStorageStageTimeout       = 3 * time.Hour
 	defaultStorageStageTimeoutName   = "defaultstorage"

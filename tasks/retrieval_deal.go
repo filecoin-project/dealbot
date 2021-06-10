@@ -148,7 +148,11 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(ctx context.Context, upda
 
 		select {
 		case <-timer.C:
-			msg := fmt.Sprintf("timed out after %s", stageTimeouts[strings.ToLower(stage)])
+			timeout, ok := stageTimeouts[strings.ToLower(stage)]
+			if !ok {
+				timeout = defaultStageTimeout
+			}
+			msg := fmt.Sprintf("timed out after %s", timeout)
 			AddLog(dealStage, msg)
 			return fmt.Errorf("deal stage %q %s", stage, msg)
 		case event, ok := <-events:
