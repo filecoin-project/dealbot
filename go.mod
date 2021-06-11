@@ -5,12 +5,12 @@ go 1.16
 require (
 	github.com/c2h5oh/datasize v0.0.0-20200825124411-48ed595a09d2
 	github.com/filecoin-project/go-address v0.0.5
-	github.com/filecoin-project/go-fil-markets v1.2.5
+	github.com/filecoin-project/go-fil-markets v1.4.0
 	github.com/filecoin-project/go-jsonrpc v0.1.4-0.20210217175800-45ea43ac2bec
-	github.com/filecoin-project/go-state-types v0.1.0
-	github.com/filecoin-project/lotus v1.9.0
+	github.com/filecoin-project/go-state-types v0.1.1-0.20210506134452-99b279731c48
+	github.com/filecoin-project/lotus v1.9.1-0.20210607161144-fadc79a4875b
 	github.com/golang-migrate/migrate/v4 v4.14.2-0.20210511063805-2e7358e012a6
-	github.com/golang/mock v1.4.4
+	github.com/golang/mock v1.5.0
 	github.com/google/uuid v1.1.2
 	github.com/gorilla/handlers v1.4.2
 	github.com/gorilla/mux v1.7.4
@@ -37,4 +37,4 @@ require (
 	modernc.org/sqlite v1.10.6
 )
 
-replace github.com/filecoin-project/filecoin-ffi => github.com/filecoin-project/ffi-stub v0.1.0
+replace github.com/filecoin-project/filecoin-ffi => github.com/hannahhoward/ffi-stub v0.1.1-0.20210611194822-18d26dc20744

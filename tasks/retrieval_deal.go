@@ -117,10 +117,38 @@ func (de *retrievalDealExecutor) queryOffer(logg logFunc) error {
 	return nil
 }
 
+func (de *retrievalDealExecutor) cancelOldDeals(ctx context.Context, dealStage StageDetails) (StageDetails, error) {
+	retrievals, err := de.node.ClientListRetrievals(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, retrieval := range retrievals {
+		if retrieval.Provider == de.pi.ID && retrieval.PayloadCID.Equals(de.offer.Root) {
+			err := de.node.ClientCancelRetrievalDeal(ctx, retrieval.ID)
+			if err != nil {
+				return nil, err
+			}
+			dealStage = AddLog(dealStage, fmt.Sprintf("cancelled identical retrieval with ID %d", retrieval.ID))
+			de.log("cancelled identical retrieval", "ID", retrieval.ID, "PayloadCID", de.task.PayloadCID, "MinerID", de.task.Miner)
+		}
+	}
+	return dealStage, nil
+}
+
 func (de *retrievalDealExecutor) executeAndMonitorDeal(ctx context.Context, updateStage UpdateStage, stageTimeouts map[string]time.Duration) error {
 	stage := RetrievalStageProposeDeal
 	dealStage := CommonStages[stage]()
 	err := updateStage(ctx, stage, dealStage)
+	if err != nil {
+		return err
+	}
+
+	// Clear out old retrieval deals
+	dealStage, err = de.cancelOldDeals(ctx, dealStage)
+	if err != nil {
+		return err
+	}
+	err = updateStage(ctx, stage, dealStage)
 	if err != nil {
 		return err
 	}
