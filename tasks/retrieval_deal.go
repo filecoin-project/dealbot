@@ -16,6 +16,22 @@ import (
 	"github.com/libp2p/go-libp2p"
 )
 
+type RetrievalStage = string
+
+const (
+	RetrievalStageProposeDeal       = RetrievalStage("ProposeDeal")
+	RetrievalStageDealAccepted      = RetrievalStage("DealAccepted")
+	RetrievalStageFirstByteReceived = RetrievalStage("FirstByteReceived")
+	RetrievalStageDealComplete      = RetrievalStage("DealComplete")
+)
+
+var RetrievalDealStages = []RetrievalStage{
+	RetrievalStageProposeDeal,
+	RetrievalStageDealAccepted,
+	RetrievalStageFirstByteReceived,
+	RetrievalStageDealComplete,
+}
+
 func MakeRetrievalDeal(ctx context.Context, config NodeConfig, node api.FullNode, task RetrievalTask, updateStage UpdateStage, log LogStatus, stageTimeouts map[string]time.Duration) error {
 	de := &retrievalDealExecutor{
 		dealExecutor: dealExecutor{
@@ -102,7 +118,7 @@ func (de *retrievalDealExecutor) queryOffer(logg logFunc) error {
 }
 
 func (de *retrievalDealExecutor) executeAndMonitorDeal(ctx context.Context, updateStage UpdateStage, stageTimeouts map[string]time.Duration) error {
-	stage := "ProposeDeal"
+	stage := RetrievalStageProposeDeal
 	dealStage := CommonStages[stage]()
 	err := updateStage(ctx, stage, dealStage)
 	if err != nil {
@@ -170,7 +186,7 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(ctx context.Context, upda
 				}
 
 				if event.Event == retrievalmarket.ClientEventDealAccepted {
-					stage = "DealAccepted"
+					stage = RetrievalStageDealAccepted
 					dealStage = RetrievalStages[stage]()
 					err := updateStage(ctx, stage, dealStage)
 					if err != nil {
@@ -178,7 +194,7 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(ctx context.Context, upda
 					}
 				}
 				if event.BytesReceived > 0 && lastBytesReceived == 0 {
-					stage = "FirstByteReceived"
+					stage = RetrievalStageFirstByteReceived
 					dealStage = RetrievalStages[stage]()
 					err := updateStage(ctx, stage, dealStage)
 					if err != nil {
@@ -189,7 +205,7 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(ctx context.Context, upda
 				// steam closed, no errors, so the deal is a success
 
 				// deal is on chain, exit successfully
-				stage = "DealComplete"
+				stage = RetrievalStageDealComplete
 				dealStage = RetrievalStages[stage]()
 				dealStage = AddLog(dealStage, fmt.Sprintf("bytes received: %d", event.BytesReceived))
 				err = updateStage(ctx, stage, dealStage)

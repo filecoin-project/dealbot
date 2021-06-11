@@ -23,13 +23,23 @@ import (
 	"github.com/ipld/go-ipld-prime/schema"
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/host"
-	peer "github.com/libp2p/go-libp2p-core/peer"
+	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p/config"
 	"github.com/multiformats/go-multiaddr"
 )
 
-const maxPriceDefault = 5e16
-const startOffsetDefault = 30760
+var StorageDealStages = func() []string {
+	ret := make([]string, 0, len(storagemarket.DealStates))
+	for _, v := range storagemarket.DealStates {
+		ret = append(ret, v)
+	}
+	return ret
+}
+
+const (
+	maxPriceDefault    = 5e16
+	startOffsetDefault = 30760
+)
 
 func MakeStorageDeal(ctx context.Context, config NodeConfig, node api.FullNode, task StorageTask, updateStage UpdateStage, log LogStatus, stageTimeouts map[string]time.Duration) error {
 	de := &storageDealExecutor{
