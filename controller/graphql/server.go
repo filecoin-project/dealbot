@@ -132,6 +132,23 @@ func GetHandler(db state.State, accessToken string) (*http.ServeMux, error) {
 						return hd, nil
 					},
 				},
+				"Stages": &graphql.Field{
+					Type: graphql.NewList(graphql.String),
+					Args: map[string]*graphql.ArgumentConfig{
+						// TODO do we want this as an enum?
+						"type": {Type: graphql.String, Description: "'retrieval' or 'storage'"},
+					},
+					Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+						switch p.Args["type"] {
+						case "retrieval":
+							return tasks.RetrievalDealStages, nil
+						case "storage":
+							return tasks.StorageDealStages(), nil
+						}
+						return nil, fmt.Errorf("unsupported type")
+					},
+					Description: "All possible deal stages",
+				},
 			},
 		}),
 	})
