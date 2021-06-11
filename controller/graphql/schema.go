@@ -548,6 +548,22 @@ func FinishedTask__ClientVersion__resolve(p graphql.ResolveParams) (interface{},
     }
     
 }
+func FinishedTask__Size__resolve(p graphql.ResolveParams) (interface{}, error) {
+    ts, ok := p.Source.(tasks.FinishedTask)
+    if !ok {
+        return nil, fmt.Errorf(errUnexpectedType, p.Source, "tasks.FinishedTask")
+    }
+    
+    f := ts.FieldSize()
+    if f.Exists() {
+        
+        return f.Must().AsInt()
+        
+    } else {
+        return nil, nil
+    }
+    
+}
 var FinishedTask__type = graphql.NewObject(graphql.ObjectConfig{
     Name: "FinishedTask",
     Fields: graphql.Fields{
@@ -634,6 +650,12 @@ var FinishedTask__type = graphql.NewObject(graphql.ObjectConfig{
             Type: graphql.String,
             
             Resolve: FinishedTask__ClientVersion__resolve,
+        },
+        "Size": &graphql.Field{
+            
+            Type: graphql.Int,
+            
+            Resolve: FinishedTask__Size__resolve,
         },
     },
 })

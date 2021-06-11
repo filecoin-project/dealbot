@@ -130,6 +130,7 @@ type _FinishedTask struct {
 	Events _Link_List_StageDetails
 	MinerVersion _String__Maybe
 	ClientVersion _String__Maybe
+	Size _Int__Maybe
 }
 
 // FinishedTasks matches the IPLD Schema type "FinishedTasks".  It has list kind.
