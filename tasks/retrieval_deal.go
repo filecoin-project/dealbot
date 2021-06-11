@@ -22,6 +22,7 @@ const (
 	RetrievalStageProposeDeal       = RetrievalStage("ProposeDeal")
 	RetrievalStageDealAccepted      = RetrievalStage("DealAccepted")
 	RetrievalStageFirstByteReceived = RetrievalStage("FirstByteReceived")
+	RetrievalStageAllBytesReceived  = RetrievalStage("AllBytesReceived")
 	RetrievalStageDealComplete      = RetrievalStage("DealComplete")
 )
 
@@ -29,6 +30,7 @@ var RetrievalDealStages = []RetrievalStage{
 	RetrievalStageProposeDeal,
 	RetrievalStageDealAccepted,
 	RetrievalStageFirstByteReceived,
+	RetrievalStageAllBytesReceived,
 	RetrievalStageDealComplete,
 }
 
@@ -233,7 +235,7 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(ctx context.Context, upda
 				// steam closed, no errors, so the deal is a success
 
 				// deal is on chain, exit successfully
-				stage = RetrievalStageDealComplete
+				stage = RetrievalStageAllBytesReceived
 				dealStage = RetrievalStages[stage]()
 				dealStage = AddLog(dealStage, fmt.Sprintf("bytes received: %d", event.BytesReceived))
 				err = updateStage(ctx, stage, dealStage)
@@ -259,7 +261,10 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(ctx context.Context, upda
 				if de.task.CARExport.x {
 					return errors.New("car export not implemented")
 				}
-				return nil
+				// final stage
+				stage = RetrievalStageDealComplete
+				dealStage = RetrievalStages[stage]()
+				return updateStage(ctx, stage, dealStage)
 			}
 
 			// if the event has an error message, then something went wrong and deal failed
