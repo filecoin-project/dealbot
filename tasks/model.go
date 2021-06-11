@@ -110,7 +110,8 @@ var CommonStages = map[string]func() StageDetails{
 var RetrievalStages = map[string]func() StageDetails{
 	"DealAccepted":      staticStageDetails("Miner accepts deal", "a few seconds"),
 	"FirstByteReceived": staticStageDetails("First byte of data received from miner", "a few seconds, or several hours when unsealing"),
-	"DealComplete":      staticStageDetails("All bytes received and deal is completed", "a few seconds"),
+	"AllBytesReceived":  staticStageDetails("All bytes received, deal wrapping up", "a few seconds"),
+	"DealComplete":      staticStageDetails("Deal is complete", "a few seconds"),
 }
 
 // the multi-codec and hash we use for cid links by default
