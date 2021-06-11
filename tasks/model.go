@@ -274,6 +274,7 @@ func (t *_Task) Finalize(ctx context.Context, s ipld.Storer) (FinishedTask, erro
 		TimeToLastByteMS:   logs.timeLastByte,
 		MinerVersion:       logs.minerVersion,
 		ClientVersion:      logs.clientVersion,
+		Size:               logs.size,
 	}
 	// events to dag item
 	logList := &_List_StageDetails{}
@@ -298,6 +299,7 @@ type logExtraction struct {
 	minerLatency  _Int__Maybe
 	timeFirstByte _Int__Maybe
 	timeLastByte  _Int__Maybe
+	size          _Int__Maybe
 }
 
 func parseFinalLogs(t Task) *logExtraction {
@@ -306,6 +308,10 @@ func parseFinalLogs(t Task) *logExtraction {
 		minerLatency:  _Int__Maybe{m: schema.Maybe_Absent},
 		timeFirstByte: _Int__Maybe{m: schema.Maybe_Absent},
 		timeLastByte:  _Int__Maybe{m: schema.Maybe_Absent},
+	}
+
+	if t.StorageTask.Exists() {
+		le.size = _Int__Maybe{m: schema.Maybe_Value, v: &t.StorageTask.Must().Size}
 	}
 
 	// If the task failed early, we might not have some of the info.
@@ -371,6 +377,13 @@ func parseFinalLogs(t Task) *logExtraction {
 				val, err := strconv.Atoi(strings.TrimPrefix(entry, "RemotePeerLatency: "))
 				if err == nil {
 					le.minerLatency.v = &_Int{int64(val)}
+				}
+			}
+			if le.size.IsAbsent() && strings.Contains(entry, "bytes received:") {
+				le.size.m = schema.Maybe_Value
+				b, err := strconv.ParseInt(strings.TrimPrefix(entry, "bytes received: "), 10, 10)
+				if err == nil {
+					le.size.v = &_Int{b}
 				}
 			}
 		}

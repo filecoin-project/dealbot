@@ -138,6 +138,7 @@ func main() {
 		schema.SpawnStructField("Events", "Link_List_StageDetails", false, false),
 		schema.SpawnStructField("MinerVersion", "String", true, true),
 		schema.SpawnStructField("ClientVersion", "String", true, true),
+		schema.SpawnStructField("Size", "Int", true, true),
 	}, schema.SpawnStructRepresentationMap(map[string]string{})))
 	ts.Accumulate(schema.SpawnList("FinishedTasks", "FinishedTask", false))
 	ts.Accumulate(schema.SpawnLinkReference("Link_FinishedTask", "FinishedTask"))
