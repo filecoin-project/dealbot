@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"math/big"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -110,7 +110,7 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(ctx context.Context, upda
 	}
 
 	ref := &api.FileRef{
-		Path:  filepath.Join(de.config.NodeDataDir, "ret"),
+		Path:  filepath.Join(de.config.NodeDataDir, de.task.PayloadCID.x),
 		IsCAR: de.task.CARExport.x,
 	}
 
@@ -197,7 +197,7 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(ctx context.Context, upda
 					return err
 				}
 
-				rdata, err := ioutil.ReadFile(filepath.Join(de.config.DataDir, "ret"))
+				rdata, err := os.Stat(filepath.Join(de.config.DataDir, de.task.PayloadCID.x))
 				if err != nil {
 					return err
 				}
