@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/filecoin-project/go-fil-markets/retrievalmarket"
+	"github.com/filecoin-project/go-fil-markets/retrievalmarket/impl/clientstates"
 	"github.com/filecoin-project/lotus/api"
 	"github.com/ipfs/go-cid"
 	"github.com/libp2p/go-libp2p"
@@ -125,7 +126,7 @@ func (de *retrievalDealExecutor) cancelOldDeals(ctx context.Context, dealStage S
 		return nil, err
 	}
 	for _, retrieval := range retrievals {
-		if retrieval.Provider == de.pi.ID && retrieval.PayloadCID.Equals(de.offer.Root) {
+		if retrieval.Provider == de.pi.ID && retrieval.PayloadCID.Equals(de.offer.Root) && !clientstates.IsFinalityState(retrieval.Status) {
 			err := de.node.ClientCancelRetrievalDeal(ctx, retrieval.ID)
 			if err != nil {
 				return nil, err

@@ -78,6 +78,26 @@ func TestCancelOldDeals(t *testing.T) {
 				fmt.Sprintf("cancelled identical retrieval with ID %d", cancelID1),
 			},
 		},
+		"no cancels cause of finality state": {
+			setExpectations: func(t *testing.T, expect *mocks.MockFullNodeMockRecorder) {
+				expect.ClientListRetrievals(gomock.Any()).Return(
+					[]api.RetrievalInfo{
+						{
+							ID:         retrievalmarket.DealID(rand.Uint64()),
+							PayloadCID: generateRandomCID(t),
+							Provider:   generateRandomPeer(),
+						},
+						{
+							ID:         cancelID1,
+							Status:     retrievalmarket.DealStatusCompleted,
+							PayloadCID: root,
+							Provider:   other,
+						},
+					}, nil,
+				)
+			},
+			expectedLogs: []string{},
+		},
 		"retrieval cancel errors": {
 			setExpectations: func(t *testing.T, expect *mocks.MockFullNodeMockRecorder) {
 				expect.ClientListRetrievals(gomock.Any()).Return(
