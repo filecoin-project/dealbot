@@ -39,9 +39,41 @@ or
 
 To start Lotus locally, or tunnel to a remote Lotus, see [devnet/README.md](devnet/README.md).
 
+### Flags
+
+Dealbot Controller
+
+| Flag | Env Var | Function |
+| :--- | :--- | --- |
+| listen | `DEALBOT_LISTEN` | exposed `host:port` for daemons to contact and for tasking the system |
+| graphql | `DEALBOT_GRAPHQL_LISTEN` | exposed `host:port` for external public graphql queries |
+| metrics | `DEALBOT_METRICS` | either `prometheus` to expose a `/metrics` api, or `log` to write metrics to stdout |
+| identity | `DEALBOT_IDENTITY_KEYPAIR` | filepath of a libp2p identity to sign public records of dealbot activity |
+| driver | `DEALBOT_PERSISTENCE_DRIVER` | `sqlite` or `postgres` |
+| dbloc | `DEALBOT_PERSISTENCE_CONN` | the file (for sqlite) or db conn string from postgres |
+| gqlAccessToken | `DEALBOT_GRAPHQL_ACCESS_TOKEN` | a static key for querying non-public data from the graphql server |
+
+Dealbot Daemon
+
+| Flag | Env Var | Function |
+| :--- | :--- | --- |
+|  id | `DEALBOT_ID` | The worker name to report to the controller |
+| listen | `DEALBOT_LISTEN` | a `host:port` to bind to when metrics are exposed |
+| stage-timeout | `STAGE_TIMEOUT` | a list of stagenames and timeouts (example: DealAccepted=15m) |
+| tags | `DEALBOT_TAGS` | tags to use when accepting tasks |
+| workers | `DEALBOT_WORKERS` | how many tasks to accept at a time |
+| minfil | `DEALBOT_MIN_FIL` | minimum balance lotus must report before the bot will accept tasks |
+| mincap | `DEALBOT_MIN_CAP` | minimum dealcap lotus must report before the bot will accept tasks |
+| posthook | `DEALBOT_POST_HOOK` | a bash script that will be run as `bash $posthook $uuid` when a task finishes |
+| endpoint | `DEALBOT_CONTROLLER_ENDPOINT` | the `host:port` of the controller to ask for tasks |
+| data-dir | `DEALBOT_DATA_DIRECTORY` | the directory for the bot to make cars in or verify they have shown up in |
+| node-data-dir | `DEALBOT_NODE_DATA_DIRECTORY` | the directory for lotus to import the cars from or write them to |
+| wallet | `DEALBOT_WALLET_ADDRESS` | an explicit wallet to use with lotus if not the default one |
+ 
 ## Versioning and Releases
 
-TBD
+Tagged releases indicate versions run on our local deployment.
+Semver is used to indicate when data would be lost on downgrading (miner version bumps) and when data becomes incompatible (major version bumps)
 
 ## Code of Conduct
 
@@ -50,7 +82,7 @@ Dealbot follows the [Filecoin Project Code of Conduct](https://github.com/fileco
 
 ## Contributing
 
-Welcoming [new issues](https://github.com/filecoin-project/dealbot/issues/new) and [pull requests](https://github.com/filecoin-project/dealbot/pulls).
+We welcome [new issues](https://github.com/filecoin-project/dealbot/issues/new) and [pull requests](https://github.com/filecoin-project/dealbot/pulls).
 
 
 ## License
