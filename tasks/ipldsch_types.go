@@ -131,6 +131,7 @@ type _FinishedTask struct {
 	MinerVersion _String__Maybe
 	ClientVersion _String__Maybe
 	Size _Int__Maybe
+	PayloadCID _String__Maybe
 }
 
 // FinishedTasks matches the IPLD Schema type "FinishedTasks".  It has list kind.

@@ -564,6 +564,22 @@ func FinishedTask__Size__resolve(p graphql.ResolveParams) (interface{}, error) {
     }
     
 }
+func FinishedTask__PayloadCID__resolve(p graphql.ResolveParams) (interface{}, error) {
+    ts, ok := p.Source.(tasks.FinishedTask)
+    if !ok {
+        return nil, fmt.Errorf(errUnexpectedType, p.Source, "tasks.FinishedTask")
+    }
+    
+    f := ts.FieldPayloadCID()
+    if f.Exists() {
+        
+        return f.Must().AsString()
+        
+    } else {
+        return nil, nil
+    }
+    
+}
 var FinishedTask__type = graphql.NewObject(graphql.ObjectConfig{
     Name: "FinishedTask",
     Fields: graphql.Fields{
@@ -656,6 +672,12 @@ var FinishedTask__type = graphql.NewObject(graphql.ObjectConfig{
             Type: graphql.Int,
             
             Resolve: FinishedTask__Size__resolve,
+        },
+        "PayloadCID": &graphql.Field{
+            
+            Type: graphql.String,
+            
+            Resolve: FinishedTask__PayloadCID__resolve,
         },
     },
 })

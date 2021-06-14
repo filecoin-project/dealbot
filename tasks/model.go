@@ -276,6 +276,7 @@ func (t *_Task) Finalize(ctx context.Context, s ipld.Storer) (FinishedTask, erro
 		MinerVersion:       logs.minerVersion,
 		ClientVersion:      logs.clientVersion,
 		Size:               logs.size,
+		PayloadCID:         logs.payloadCID,
 	}
 	// events to dag item
 	logList := &_List_StageDetails{}
@@ -301,6 +302,7 @@ type logExtraction struct {
 	timeFirstByte _Int__Maybe
 	timeLastByte  _Int__Maybe
 	size          _Int__Maybe
+	payloadCID    _String__Maybe
 }
 
 func parseFinalLogs(t Task) *logExtraction {
@@ -313,6 +315,8 @@ func parseFinalLogs(t Task) *logExtraction {
 
 	if t.StorageTask.Exists() {
 		le.size = _Int__Maybe{m: schema.Maybe_Value, v: &t.StorageTask.Must().Size}
+	} else if t.RetrievalTask.Exists() {
+		le.payloadCID = _String__Maybe{m: schema.Maybe_Value, v: &t.RetrievalTask.Must().PayloadCID}
 	}
 
 	// If the task failed early, we might not have some of the info.
@@ -386,6 +390,10 @@ func parseFinalLogs(t Task) *logExtraction {
 				if err == nil {
 					le.size.v = &_Int{b}
 				}
+			}
+			if le.payloadCID.IsAbsent() && strings.Contains(entry, "PayloadCID:") {
+				le.payloadCID.m = schema.Maybe_Value
+				le.payloadCID.v = &_String{strings.TrimPrefix(entry, "PayloadCID: ")}
 			}
 		}
 	}

@@ -235,7 +235,7 @@ func (de *storageDealExecutor) generateFile(_ logFunc) error {
 	return nil
 }
 
-func (de *storageDealExecutor) importFile(_ logFunc) (err error) {
+func (de *storageDealExecutor) importFile(l logFunc) (err error) {
 	// import the file into the lotus node
 	ref := api.FileRef{
 		Path:  filepath.Join(de.config.NodeDataDir, de.fileName),
@@ -246,6 +246,7 @@ func (de *storageDealExecutor) importFile(_ logFunc) (err error) {
 	if err != nil {
 		return fmt.Errorf("error importing file: %w", err)
 	}
+	l(fmt.Sprintf("PayloadCID: %s", de.importRes.Root))
 	return nil
 }
 
