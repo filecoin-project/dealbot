@@ -139,6 +139,7 @@ func main() {
 		schema.SpawnStructField("MinerVersion", "String", true, true),
 		schema.SpawnStructField("ClientVersion", "String", true, true),
 		schema.SpawnStructField("Size", "Int", true, true),
+		schema.SpawnStructField("PayloadCID", "String", true, true),
 	}, schema.SpawnStructRepresentationMap(map[string]string{})))
 	ts.Accumulate(schema.SpawnList("FinishedTasks", "FinishedTask", false))
 	ts.Accumulate(schema.SpawnLinkReference("Link_FinishedTask", "FinishedTask"))
