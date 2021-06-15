@@ -78,6 +78,7 @@ func main() {
 			commands.ControllerCmd,
 			commands.QueueRetrievalCmd,
 			commands.QueueStorageCmd,
+			commands.DrainCmd,
 		},
 		Before: altsrc.InitInputSourceWithContext(append(appFlags, commands.AllFlags...), altsrc.NewYamlSourceFromFlagFunc("config")),
 	}
