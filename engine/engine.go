@@ -117,7 +117,17 @@ taskLoop:
 
 				// Add task to scheduler
 				log.Infow("scheduling task", "uuid", task.UUID.String(), "schedule", taskSchedule, "schedule_limit", limit)
-				e.sched.Add(taskSchedule, task, maxTaskRunTime, limit, 0)
+				jobID, err := e.sched.Add(taskSchedule, task, maxTaskRunTime, limit, 0)
+				if err != nil {
+					log.Errorw("failed to schedule task", "uuid", task.UUID.String(), "schedule", taskSchedule, "err", err)
+				} else {
+					nextRun, err := e.sched.NextRun(jobID)
+					if err != nil {
+						log.Error(err)
+					} else {
+						log.Infow("scheduled task", "job_id", jobID, "uuid", task.UUID.String(), "next_run", nextRun)
+					}
+				}
 				continue
 			}
 		}

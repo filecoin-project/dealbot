@@ -5,8 +5,11 @@ import (
 	"time"
 
 	"github.com/filecoin-project/dealbot/tasks"
+	logging "github.com/ipfs/go-log/v2"
 	"github.com/robfig/cron/v3"
 )
+
+var log = logging.Logger("engine")
 
 // job is the scheduler's internal record of a scheduled job
 type job struct {
@@ -37,6 +40,7 @@ type Job struct {
 func (j *job) Run() {
 	// If the schedule has expired remove job from scheduler.
 	if !j.expireAt.IsZero() && time.Now().After(j.expireAt) {
+		log.Infow("scheduling expired for job", "job_id", j.entryID)
 		j.cronSched.Remove(j.entryID)
 		return
 	}
@@ -50,6 +54,8 @@ func (j *job) Run() {
 
 func (j *job) run(wait bool) {
 	j.runCount++
+
+	log.Infow("starting job waiting for worker", "job_id", j.entryID)
 
 	// Create a context to manage the running time of the current task
 	runCtx, runCancel := context.WithTimeout(context.Background(), j.runTime)
@@ -70,6 +76,8 @@ func (j *job) run(wait bool) {
 		return
 	}
 
+	log.Infow("running job", "job_id", j.entryID)
+
 	waitDoneOrCancel := func() {
 		// Wait for worker to signal that job is completed or jobs to be
 		// canceled. Do not wait for shutdown here so that running jobs can
@@ -79,6 +87,7 @@ func (j *job) run(wait bool) {
 		case <-j.cancelJobs:
 		}
 		runCancel()
+		log.Infow("running finished", "job_id", j.entryID)
 	}
 
 	if wait {
