@@ -126,7 +126,11 @@ func TestScheduleLimit(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Log("added job", jid, "scheduling should end in", scheduleLimit)
+	next, err := s.NextRun(jid)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log("added job", jid, "scheduling should end in", scheduleLimit, "next run at", next)
 
 	// Continue running until deadline.
 	deadline := time.After(scheduleLimit + time.Second)

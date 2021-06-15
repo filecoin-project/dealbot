@@ -10,6 +10,7 @@ package scheduler
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/filecoin-project/dealbot/tasks"
@@ -87,6 +88,14 @@ func (s *Scheduler) Add(cronExp string, task tasks.Task, maxRunTime, scheduleLim
 // Remove removes a Task from the scheduler and stops it if it is running.
 func (s *Scheduler) Remove(jobID cron.EntryID) {
 	s.cronSched.Remove(jobID)
+}
+
+func (s *Scheduler) NextRun(jobID cron.EntryID) (time.Time, error) {
+	ent := s.cronSched.Entry(jobID)
+	if ent.Next.IsZero() {
+		return time.Time{}, errors.New("job is not scheduled")
+	}
+	return ent.Next, nil
 }
 
 // Close stops the scheduler and all its running jobs.  The context passed to
