@@ -5,7 +5,7 @@ source "$my_dir/header.sh"
 
 export DEALBOT_MINER_ADDRESS=t01000
 
-dealbot storage-deal
+dealbot storage-deal 2>&1 | tee dealbot.log
 
 returnValue=$?
 if [[ $returnValue -ne 0 ]]; then
@@ -13,7 +13,7 @@ if [[ $returnValue -ne 0 ]]; then
 	exit 1
 fi
 
-CID=$(lotus client local | tail -1 | awk '{print $2}')
+CID=$(cat dealbot.log | grep datacid | sed 's/.*datacid": "//' | sed 's/"}//')
 
 dealbot retrieval-deal --cid=$CID
 

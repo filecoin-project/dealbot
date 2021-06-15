@@ -76,7 +76,7 @@ if ! grep -q 'INFO.*controller.*storage task.*"miner": "t01000",.*"size": 1024,.
 	exit 1
 fi
 
-CID=$(lotus client local | tail -1 | awk '{print $2}')
+CID=$(cat dealbot-daemon.log | grep datacid | sed 's/.*datacid": "//' | sed 's/"}//')
 
 # Also queue a retrieval task of the data we just stored.
 curl --header "Content-Type: application/json" \

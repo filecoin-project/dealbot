@@ -54,6 +54,10 @@ func MakeStorageDeal(ctx context.Context, config NodeConfig, node api.FullNode, 
 		task: task,
 	}
 
+	defer func() {
+		_ = de.cleanupDeal()
+	}()
+
 	defaultTimeout := stageTimeouts[defaultStorageStageTimeoutName]
 	getStageCtx := func(stage string) (context.Context, context.CancelFunc) {
 		timeout, ok := stageTimeouts[stage]
@@ -251,6 +255,7 @@ func (de *storageDealExecutor) importFile(l logFunc) (err error) {
 }
 
 func (de *storageDealExecutor) executeAndMonitorDeal(ctx context.Context, updateStage UpdateStage, stageTimeouts map[string]time.Duration) error {
+
 	stage := "ProposeDeal"
 	dealStage := CommonStages[stage]()
 	err := updateStage(ctx, stage, dealStage)
@@ -375,6 +380,26 @@ func (de *storageDealExecutor) executeAndMonitorDeal(ctx context.Context, update
 		case <-ctx.Done():
 			return ctx.Err()
 		}
+	}
+	return nil
+}
+
+func (de *storageDealExecutor) cleanupDeal() error {
+	if de.importRes != nil {
+		// clear out the lotus import store for CIDs in this deal
+		err := de.node.ClientRemoveImport(de.ctx, de.importRes.ImportID)
+		if err != nil {
+			return err
+		}
+		de.importRes = nil
+	}
+	if de.fileName != "" {
+		// as a last step no matter what ended up happening with the deal, delete the generated file off to reclaim disk space
+		err := os.Remove(filepath.Join(de.config.DataDir, de.fileName))
+		if err != nil {
+			return err
+		}
+		de.fileName = ""
 	}
 	return nil
 }
