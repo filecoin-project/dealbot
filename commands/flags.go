@@ -113,12 +113,14 @@ var EndpointFlags = []cli.Flag{
 	}),
 }
 
+var idFlag = altsrc.NewStringFlag(&cli.StringFlag{
+	Name:    "id",
+	Usage:   "set bot worker id",
+	EnvVars: []string{"DEALBOT_ID"},
+})
+
 var DaemonFlags = append(DealFlags, append(CommonFlags, append(EndpointFlags, []cli.Flag{
-	altsrc.NewStringFlag(&cli.StringFlag{
-		Name:    "id",
-		Usage:   "set bot worker id",
-		EnvVars: []string{"DEALBOT_ID"},
-	}),
+	idFlag,
 	altsrc.NewStringFlag(&cli.StringFlag{
 		Name:    "listen",
 		Usage:   "host:port to bind http server on",
