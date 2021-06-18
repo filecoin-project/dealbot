@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -32,6 +33,8 @@ func TestControllerHTTPInterface(t *testing.T) {
 	ctx := context.Background()
 	testCases := map[string]func(ctx context.Context, t *testing.T, apiClient *client.Client, recorder *testrecorder.TestMetricsRecorder){
 		"list and update tasks": func(ctx context.Context, t *testing.T, apiClient *client.Client, recorder *testrecorder.TestMetricsRecorder) {
+			require.NoError(t, populateTestTasksFromFile(ctx, jsonTestDeals, apiClient))
+
 			currentTasks, err := apiClient.ListTasks(ctx)
 			require.NoError(t, err)
 			require.Len(t, currentTasks, 4)
@@ -83,6 +86,8 @@ func TestControllerHTTPInterface(t *testing.T) {
 			recorder.AssertExactObservedStatuses(t, mustString(currentTasks[1].UUID.AsString()), tasks.Successful)
 		},
 		"pop a task": func(ctx context.Context, t *testing.T, apiClient *client.Client, recorder *testrecorder.TestMetricsRecorder) {
+			require.NoError(t, populateTestTasksFromFile(ctx, jsonTestDeals, apiClient))
+
 			updatedTask, err := apiClient.PopTask(ctx, tasks.Type.PopTask.Of("dealbot 1", tasks.InProgress))
 			require.NoError(t, err)
 			require.Equal(t, *tasks.InProgress, updatedTask.Status)
@@ -101,6 +106,8 @@ func TestControllerHTTPInterface(t *testing.T) {
 			}
 		},
 		"creating tasks": func(ctx context.Context, t *testing.T, apiClient *client.Client, _ *testrecorder.TestMetricsRecorder) {
+			require.NoError(t, populateTestTasksFromFile(ctx, jsonTestDeals, apiClient))
+
 			newStorageTask := tasks.Type.StorageTask.Of("t01000",
 				100000000000000000, // 0.10 FIL
 				2048,               // 1kb
@@ -135,6 +142,8 @@ func TestControllerHTTPInterface(t *testing.T) {
 			require.Len(t, currentTasks, 6)
 		},
 		"export finished tasks": func(ctx context.Context, t *testing.T, apiClient *client.Client, recorder *testrecorder.TestMetricsRecorder) {
+			require.NoError(t, populateTestTasksFromFile(ctx, jsonTestDeals, apiClient))
+
 			// dealbot1 takes a task.
 			task, err := apiClient.PopTask(ctx, tasks.Type.PopTask.Of("dealbot1", tasks.InProgress))
 			require.NoError(t, err)
@@ -156,6 +165,118 @@ func TestControllerHTTPInterface(t *testing.T) {
 			require.Len(t, carContents.Header.Roots, 1)
 			_, err = carContents.Next()
 			require.NoError(t, err)
+		},
+		"reset worker tasks": func(ctx context.Context, t *testing.T, apiClient *client.Client, recorder *testrecorder.TestMetricsRecorder) {
+
+			var resetWorkerTasks = `
+	[{"Miner":"t01000","PayloadCID":"bafk2bzacedli6qxp43sf54feczjd26jgeyfxv4ucwylujd3xo5s6cohcqbg36","CARExport":false},
+	{"Miner":"t01000","PayloadCID":"bafk2bzacecettil4umy443e4ferok7jbxiqqseef7soa3ntelflf3zkvvndbg","CARExport":false},
+	{"Miner":"f0127896","PayloadCID":"bafykbzacedikkmeotawrxqquthryw3cijaonobygdp7fb5bujhuos6wdkwomm","CARExport":false},
+	{"Miner":"f0127897","PayloadCID":"bafykbzacedikkmeotawrxqquthryw3cijaonobygdp7fb5bujhuos6wdkwomm","CARExport":false},
+	{"Miner":"f0127898","PayloadCID":"bafykbzacedikkmeotawrxqquthryw3cijaonobygdp7fb5bujhuos6wdkwomm","CARExport":false},
+	{"Miner":"f0127899","PayloadCID":"bafykbzacedikkmeotawrxqquthryw3cijaonobygdp7fb5bujhuos6wdkwomm","CARExport":false},
+	{"Miner":"f0127900","PayloadCID":"bafykbzacedikkmeotawrxqquthryw3cijaonobygdp7fb5bujhuos6wdkwomm","CARExport":false}]
+	`
+			require.NoError(t, populateTestTasks(ctx, bytes.NewReader([]byte(resetWorkerTasks)), apiClient))
+
+			worker := fmt.Sprintf("tester")
+			otherWorker := fmt.Sprintf("other-worker")
+
+			// pop two tasks and leave them in progress
+			req := tasks.Type.PopTask.Of(worker, tasks.InProgress)
+			inProgressTask1, err := apiClient.PopTask(ctx, req)
+			require.NoError(t, err)
+			inProgressTask2, err := apiClient.PopTask(ctx, req)
+			require.NoError(t, err)
+
+			// add some stage logs to the second task
+			stage1 := tasks.Type.StageDetails.Of("Doing Stuff", "A good long while").WithLog("stuff happened")
+			stage2 := tasks.Type.StageDetails.Of("Doing More Stuff", "A good long while").WithLog("more stuff happened")
+
+			_, err = apiClient.UpdateTask(ctx, inProgressTask2.GetUUID(),
+				tasks.Type.UpdateTask.OfStage(inProgressTask2.WorkedBy.Must().String(), tasks.InProgress, "", "Stage1", stage1, 1))
+			require.NoError(t, err)
+			_, err = apiClient.UpdateTask(ctx, inProgressTask2.GetUUID(),
+				tasks.Type.UpdateTask.OfStage(inProgressTask2.WorkedBy.Must().String(), tasks.InProgress, "", "Stage2", stage2, 1))
+			require.NoError(t, err)
+
+			// pop a task and set it failed
+			req = tasks.Type.PopTask.Of(worker, tasks.Failed)
+			failedTask, err := apiClient.PopTask(ctx, req)
+			require.NoError(t, err)
+
+			// pop a task and set it successful
+			req = tasks.Type.PopTask.Of(worker, tasks.Successful)
+			successfulTask, err := apiClient.PopTask(ctx, req)
+			require.NoError(t, err)
+
+			// pop two tasks to the other worker and leave them in progress
+			req = tasks.Type.PopTask.Of(otherWorker, tasks.InProgress)
+			otherWorkerTask1, err := apiClient.PopTask(ctx, req)
+			require.NoError(t, err)
+			otherWorkerTask2, err := apiClient.PopTask(ctx, req)
+			require.NoError(t, err)
+
+			allTasks, err := apiClient.ListTasks(ctx)
+			require.NoError(t, err)
+
+			// find the remaining unassigned task
+			var unassignedTask tasks.Task
+			for _, task := range allTasks {
+				if task.Status == *tasks.Available {
+					unassignedTask = task
+					break
+				}
+			}
+			require.NotNil(t, unassignedTask)
+
+			apiClient.ResetWorker(ctx, worker)
+
+			// in progress task should now be available and unassigned
+			inProgressTask1, err = apiClient.GetTask(ctx, inProgressTask1.GetUUID())
+			require.Equal(t, *tasks.Available, inProgressTask1.Status)
+			require.Equal(t, "", inProgressTask1.WorkedBy.Must().String())
+
+			// in progress task should now be available and unassigned,
+			// and stage logs should be wiped
+			inProgressTask2, err = apiClient.GetTask(ctx, inProgressTask2.GetUUID())
+			require.Equal(t, *tasks.Available, inProgressTask2.Status)
+			require.Equal(t, "", inProgressTask2.WorkedBy.Must().String())
+			require.Equal(t, "", inProgressTask2.Stage.String())
+			require.False(t, inProgressTask2.CurrentStageDetails.Exists())
+			require.False(t, inProgressTask2.PastStageDetails.Exists())
+
+			// successful and failed records should not change
+			successfulTask, err = apiClient.GetTask(ctx, successfulTask.GetUUID())
+			require.Equal(t, *tasks.Successful, successfulTask.Status)
+			require.Equal(t, worker, successfulTask.WorkedBy.Must().String())
+			failedTask, err = apiClient.GetTask(ctx, failedTask.GetUUID())
+			require.Equal(t, *tasks.Failed, failedTask.Status)
+			require.Equal(t, worker, failedTask.WorkedBy.Must().String())
+
+			// tasks for other worker should not change
+			otherWorkerTask1, err = apiClient.GetTask(ctx, otherWorkerTask1.GetUUID())
+			require.Equal(t, *tasks.InProgress, otherWorkerTask1.Status)
+			require.Equal(t, otherWorker, otherWorkerTask1.WorkedBy.Must().String())
+			otherWorkerTask2, err = apiClient.GetTask(ctx, otherWorkerTask2.GetUUID())
+			require.Equal(t, *tasks.InProgress, otherWorkerTask2.Status)
+			require.Equal(t, otherWorker, otherWorkerTask2.WorkedBy.Must().String())
+
+			// unassigned task should not chang
+			unassignedTask, err = apiClient.GetTask(ctx, unassignedTask.GetUUID())
+			require.Equal(t, *tasks.Available, unassignedTask.Status)
+			require.Equal(t, "", unassignedTask.WorkedBy.Must().String())
+
+			// try assigning a task -- should reassign first newly available task
+			req = tasks.Type.PopTask.Of(otherWorker, tasks.InProgress)
+			newInProgressTask1, err := apiClient.PopTask(ctx, req)
+			require.NoError(t, err)
+			require.Equal(t, inProgressTask1.GetUUID(), newInProgressTask1.GetUUID())
+
+			req = tasks.Type.PopTask.Of(worker, tasks.InProgress)
+			newInProgressTask2, err := apiClient.PopTask(ctx, req)
+			require.NoError(t, err)
+			require.Equal(t, inProgressTask2.GetUUID(), newInProgressTask2.GetUUID())
 		},
 	}
 
@@ -206,18 +327,20 @@ func newHarness(ctx context.Context, t *testing.T) *harness {
 		}
 	}()
 
-	// populate test tasks
-	require.NoError(t, populateTestTasks(ctx, jsonTestDeals, h.apiClient))
-
 	return h
 }
 
-func populateTestTasks(ctx context.Context, jsonTests string, apiClient *client.Client) error {
+func populateTestTasksFromFile(ctx context.Context, jsonTests string, apiClient *client.Client) error {
 	sampleTaskFile, err := os.Open(jsonTestDeals)
 	if err != nil {
 		return err
 	}
 	defer sampleTaskFile.Close()
+	return populateTestTasks(ctx, sampleTaskFile, apiClient)
+}
+
+func populateTestTasks(ctx context.Context, sampleTaskFile io.Reader, apiClient *client.Client) error {
+
 	sampleTasks, err := ioutil.ReadAll(sampleTaskFile)
 	if err != nil {
 		return err
