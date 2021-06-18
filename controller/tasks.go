@@ -105,6 +105,27 @@ func (c *Controller) drainHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("\"OK\""))
 }
 
+func (c *Controller) resetWorkerHandler(w http.ResponseWriter, r *http.Request) {
+	logger := log.With("req_id", r.Header.Get("X-Request-ID"))
+
+	logger.Debugw("handle request", "command", "resetWorker")
+	defer logger.Debugw("request handled", "command", "resetWorker")
+
+	enableCors(&w, r)
+	vars := mux.Vars(r)
+	workedBy := vars["workedby"]
+
+	err := c.db.ResetWorkerTasks(r.Context(), workedBy)
+	if err != nil {
+		log.Errorw("reset worker DB error", "err", err.Error())
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("\"OK\""))
+}
+
 func (c *Controller) completeHandler(w http.ResponseWriter, r *http.Request) {
 	logger := log.With("req_id", r.Header.Get("X-Request-ID"))
 

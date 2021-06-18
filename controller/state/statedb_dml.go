@@ -97,4 +97,15 @@ const (
 	queryHeadSQL = `
 		SELECT cid FROM record_updates WHERE status = $1 AND worked_by = $2
 	`
+
+	workerTasksByStatusSQL = `
+	SELECT tasks.uuid, tasks.data FROM tasks
+	INNER JOIN task_status_ledger ON tasks.uuid=task_status_ledger.uuid
+	WHERE tasks.worked_by = $1 AND task_status_ledger.status = $2
+`
+
+	unassignTaskSQL = `
+		UPDATE tasks SET data = $2, worked_by = NULL, cid = $3
+		WHERE uuid = $1
+	`
 )

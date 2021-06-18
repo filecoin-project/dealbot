@@ -803,3 +803,63 @@ func (s *stateDB) DrainWorker(ctx context.Context, worker string) error {
 	}
 	return nil
 }
+
+// ResetWorkerTasks finds all in progress tasks for a worker and resets them to as if they had never been run
+func (s *stateDB) ResetWorkerTasks(ctx context.Context, worker string) error {
+	var resetTasks []tasks.Task
+	err := s.transact(ctx, func(tx *sql.Tx) error {
+		inProgressWorkerTasks, err := tx.QueryContext(ctx, workerTasksByStatusSQL, worker, tasks.InProgress.Int())
+		if err != nil {
+			return err
+		}
+
+		for inProgressWorkerTasks.Next() {
+			var uuid, serialized string
+			err := inProgressWorkerTasks.Scan(&uuid, &serialized)
+			if err != nil {
+				return err
+			}
+
+			tp := tasks.Type.Task.NewBuilder()
+			if err = dagjson.Decoder(tp, bytes.NewBufferString(serialized)); err != nil {
+				return err
+			}
+			task := tp.Build().(tasks.Task)
+
+			updatedTask := task.Reset()
+
+			lnk, data, err := serializeToJSON(ctx, updatedTask.Representation())
+			if err != nil {
+				return err
+			}
+
+			// save the update back to DB
+			_, err = tx.ExecContext(ctx, unassignTaskSQL, uuid, data, lnk.String())
+			if err != nil {
+				return err
+			}
+
+			// reset the task in the task status ledger
+			_, err = tx.ExecContext(ctx, upsertTaskStatusSQL, uuid, updatedTask.Status.Int(), updatedTask.Stage.String(), 0, time.Now())
+			if err != nil {
+				return err
+			}
+			resetTasks = append(resetTasks, updatedTask)
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return err
+	}
+
+	if s.recorder != nil && len(resetTasks) > 0 {
+		for _, resetTask := range resetTasks {
+			if err = s.recorder.ObserveTask(resetTask); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}

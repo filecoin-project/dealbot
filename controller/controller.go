@@ -140,6 +140,7 @@ func NewWithDependencies(listener, graphqlListener net.Listener, gqlToken string
 		return nil, err
 	}
 	r.HandleFunc("/drain/{workedby}", srv.drainHandler).Methods("POST")
+	r.HandleFunc("/reset-worker/{workedby}", srv.resetWorkerHandler).Methods("POST")
 	r.HandleFunc("/complete/{workedby}", srv.completeHandler).Methods("POST")
 	r.HandleFunc("/pop-task", srv.popTaskHandler).Methods("POST")
 	r.HandleFunc("/tasks", srv.getTasksHandler).Methods("GET")

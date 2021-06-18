@@ -71,6 +71,15 @@ func New(ctx context.Context, cliCtx *cli.Context) (*Engine, error) {
 
 	log.Infof("remote version: %s", v.Version)
 
+	// before we do anything, reset all this workers tasks
+	err = client.ResetWorker(cliCtx.Context, host_id)
+	if err != nil {
+		// for now, just log an error if this happens... seems like there are scenarios
+		// where we want to get the dealbot up and running even though reset worker failed for
+		// whatever eason
+		log.Errorf("error resetting tasks for worker: %s", err)
+	}
+
 	e := &Engine{
 		client:        client,
 		nodeConfig:    nodeConfig,

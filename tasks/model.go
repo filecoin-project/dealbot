@@ -238,6 +238,20 @@ func (tp *_Task__Prototype) New(r RetrievalTask, s StorageTask) Task {
 	return &t
 }
 
+func (t *_Task) Reset() Task {
+	newTask := _Task{
+		UUID:                _String{t.UUID.x},
+		Status:              *Available,
+		WorkedBy:            _String__Maybe{m: schema.Maybe_Value, v: &_String{""}},
+		Stage:               _String{""},
+		CurrentStageDetails: _StageDetails__Maybe{m: schema.Maybe_Absent},
+		StartedAt:           _Time__Maybe{m: schema.Maybe_Absent},
+		RetrievalTask:       t.RetrievalTask,
+		StorageTask:         t.StorageTask,
+	}
+	return &newTask
+}
+
 func (t *_Task) Assign(worker string, status Status) Task {
 	newTask := _Task{
 		UUID:                t.UUID,

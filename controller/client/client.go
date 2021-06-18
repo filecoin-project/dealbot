@@ -171,6 +171,19 @@ func (c *Client) Drain(ctx context.Context, worker string) error {
 	return nil
 }
 
+func (c *Client) ResetWorker(ctx context.Context, worker string) error {
+	resp, err := c.request(ctx, "POST", "/reset-worker/"+worker, nil)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return ErrRequestFailed{resp.StatusCode}
+	}
+	return nil
+}
+
 func (c *Client) Complete(ctx context.Context, worker string) error {
 	resp, err := c.request(ctx, "POST", "/complete/"+worker, nil)
 	if err != nil {

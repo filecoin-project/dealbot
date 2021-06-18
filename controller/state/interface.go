@@ -19,6 +19,7 @@ type State interface {
 	NewRetrievalTask(ctx context.Context, retrievalTask tasks.RetrievalTask) (tasks.Task, error)
 	DrainWorker(ctx context.Context, worker string) error
 	PublishRecordsFrom(ctx context.Context, worker string) error
+	ResetWorkerTasks(ctx context.Context, worker string) error
 	Store(ctx context.Context) Store
 }
 
