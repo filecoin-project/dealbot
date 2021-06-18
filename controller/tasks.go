@@ -4,12 +4,14 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/ipld/go-car"
+	"github.com/ipld/go-ipld-prime"
 	"github.com/ipld/go-ipld-prime/codec/dagjson"
 	basicnode "github.com/ipld/go-ipld-prime/node/basic"
 	"github.com/ipld/go-ipld-prime/traversal/selector"
@@ -275,8 +277,20 @@ func (c *Controller) getTaskHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
-	dagjson.Encoder(task.Representation(), w)
+	if _, set := vars["parsed"]; set {
+		nilStore := func(_ ipld.LinkContext) (io.Writer, ipld.StoreCommitter, error) {
+			return io.Discard, func(_ ipld.Link) error { return nil }, nil
+		}
+		finished, err := task.Finalize(r.Context(), nilStore)
+		if err != nil {
+			log.Errorw("finalize task error", "err", err.Error())
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		dagjson.Encoder(finished, w)
+	} else {
+		dagjson.Encoder(task.Representation(), w)
+	}
 }
 
 func (c *Controller) carHandler(w http.ResponseWriter, r *http.Request) {
