@@ -742,14 +742,37 @@ func (s *stateDB) PublishRecordsFrom(ctx context.Context, worker string) error {
 			if err != nil {
 				return err
 			}
-			sig, err := s.PrivKey.Sign([]byte(lnk))
-			if err != nil {
-				return err
-			}
 			c, err := cid.Decode(lnk)
 			if err != nil {
 				return err
 			}
+
+			// check if we should include it.
+			rcrdRdr, err := txContextLoader(ctx, tx)(cidlink.Link{c}, ipld.LinkContext{})
+			if err != nil {
+				return err
+			}
+			tskBuilder := tasks.Type.FinishedTask.NewBuilder()
+			if err := dagjson.Decoder(tskBuilder, rcrdRdr); err != nil {
+				return err
+			}
+			tsk := tskBuilder.Build().(tasks.FinishedTask)
+			if tsk.FieldErrorMessage().Exists() {
+				em := tsk.FieldErrorMessage().Must().String()
+				if strings.Contains(em, "there is an active retrieval deal with") ||
+					strings.Contains(em, "blockstore: block not found") ||
+					strings.Contains(em, "missing permission to invoke") ||
+					strings.Contains(em, "/efs/dealbot") ||
+					strings.Contains(em, "handler: websocket connection closed") {
+					continue
+				}
+			}
+
+			sig, err := s.PrivKey.Sign([]byte(lnk))
+			if err != nil {
+				return err
+			}
+
 			rcrd := tasks.Type.AuthenticatedRecord.Of(c, sig)
 			rcrds = append(rcrds, rcrd)
 		}
