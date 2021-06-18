@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -68,7 +69,7 @@ func TestAssignTask(t *testing.T) {
 	state, ok := stateInterface.(*stateDB)
 	require.True(t, ok, "returned wrong type")
 
-	err = populateTestTasks(ctx, jsonTestDeals, stateInterface)
+	err = populateTestTasksFromFile(ctx, jsonTestDeals, stateInterface)
 	require.NoError(t, err)
 
 	rt := tasks.Type.RetrievalTask.Of("t01000", "bafk2bzacedli6qxp43sf54feczjd26jgeyfxv4ucwylujd3xo5s6cohcqbg36", false, "")
@@ -131,7 +132,7 @@ func TestAssignConcurrentTask(t *testing.T) {
 	state, ok := stateInterface.(*stateDB)
 	require.True(t, ok, "returned wrong type")
 
-	err = populateTestTasks(ctx, jsonTestDeals, stateInterface)
+	err = populateTestTasksFromFile(ctx, jsonTestDeals, stateInterface)
 	require.NoError(t, err)
 
 	taskCount, err := state.countTasks(ctx)
@@ -258,7 +259,7 @@ func TestUpdateTasks(t *testing.T) {
 	state, ok := stateInterface.(*stateDB)
 	require.True(t, ok, "returned wrong type")
 
-	err = populateTestTasks(ctx, jsonTestDeals, stateInterface)
+	err = populateTestTasksFromFile(ctx, jsonTestDeals, stateInterface)
 	require.NoError(t, err)
 
 	taskCount, err := state.countTasks(ctx)
@@ -421,13 +422,148 @@ func TestUpdateTasks(t *testing.T) {
 	}
 }
 
-func populateTestTasks(ctx context.Context, jsonTests string, state State) error {
+func TestResetWorkerTasks(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	tmpDir, err := ioutil.TempDir("", "testdealbot")
+	if err != nil {
+		panic(err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	key, err := makeKey()
+	require.NoError(t, err)
+
+	stateInterface, err := NewStateDB(ctx, "sqlite", filepath.Join(tmpDir, "teststate.db"), key, nil)
+	require.NoError(t, err)
+	state, ok := stateInterface.(*stateDB)
+	require.True(t, ok, "returned wrong type")
+
+	var resetWorkerTasks = `
+[{"Miner":"t01000","PayloadCID":"bafk2bzacedli6qxp43sf54feczjd26jgeyfxv4ucwylujd3xo5s6cohcqbg36","CARExport":false},
+{"Miner":"t01000","PayloadCID":"bafk2bzacecettil4umy443e4ferok7jbxiqqseef7soa3ntelflf3zkvvndbg","CARExport":false},
+{"Miner":"f0127896","PayloadCID":"bafykbzacedikkmeotawrxqquthryw3cijaonobygdp7fb5bujhuos6wdkwomm","CARExport":false},
+{"Miner":"f0127897","PayloadCID":"bafykbzacedikkmeotawrxqquthryw3cijaonobygdp7fb5bujhuos6wdkwomm","CARExport":false},
+{"Miner":"f0127898","PayloadCID":"bafykbzacedikkmeotawrxqquthryw3cijaonobygdp7fb5bujhuos6wdkwomm","CARExport":false},
+{"Miner":"f0127899","PayloadCID":"bafykbzacedikkmeotawrxqquthryw3cijaonobygdp7fb5bujhuos6wdkwomm","CARExport":false},
+{"Miner":"f0127900","PayloadCID":"bafykbzacedikkmeotawrxqquthryw3cijaonobygdp7fb5bujhuos6wdkwomm","CARExport":false}]
+`
+	err = populateTestTasks(ctx, bytes.NewReader([]byte(resetWorkerTasks)), stateInterface)
+	require.NoError(t, err)
+
+	worker := fmt.Sprintf("tester")
+	otherWorker := fmt.Sprintf("other-worker")
+
+	// pop two tasks and leave them in progress
+	req := tasks.Type.PopTask.Of(worker, tasks.InProgress)
+	inProgressTask1, err := state.AssignTask(ctx, req)
+	require.NoError(t, err)
+	inProgressTask2, err := state.AssignTask(ctx, req)
+	require.NoError(t, err)
+
+	// add some stage logs to the second task
+	stage1 := tasks.Type.StageDetails.Of("Doing Stuff", "A good long while").WithLog("stuff happened")
+	stage2 := tasks.Type.StageDetails.Of("Doing More Stuff", "A good long while").WithLog("more stuff happened")
+
+	_, err = state.Update(ctx, inProgressTask2.GetUUID(),
+		tasks.Type.UpdateTask.OfStage(inProgressTask2.WorkedBy.Must().String(), tasks.InProgress, "", "Stage1", stage1, 1))
+	require.NoError(t, err)
+	_, err = state.Update(ctx, inProgressTask2.GetUUID(),
+		tasks.Type.UpdateTask.OfStage(inProgressTask2.WorkedBy.Must().String(), tasks.InProgress, "", "Stage2", stage2, 1))
+	require.NoError(t, err)
+
+	// pop a task and set it failed
+	req = tasks.Type.PopTask.Of(worker, tasks.Failed)
+	failedTask, err := state.AssignTask(ctx, req)
+	require.NoError(t, err)
+
+	// pop a task and set it successful
+	req = tasks.Type.PopTask.Of(worker, tasks.Successful)
+	successfulTask, err := state.AssignTask(ctx, req)
+	require.NoError(t, err)
+
+	// pop two tasks to the other worker and leave them in progress
+	req = tasks.Type.PopTask.Of(otherWorker, tasks.InProgress)
+	otherWorkerTask1, err := state.AssignTask(ctx, req)
+	require.NoError(t, err)
+	otherWorkerTask2, err := state.AssignTask(ctx, req)
+	require.NoError(t, err)
+
+	allTasks, err := state.GetAll(ctx)
+	require.NoError(t, err)
+
+	// find the remaining unassigned task
+	var unassignedTask tasks.Task
+	for _, task := range allTasks {
+		if task.Status == *tasks.Available {
+			unassignedTask = task
+			break
+		}
+	}
+	require.NotNil(t, unassignedTask)
+
+	state.ResetWorkerTasks(ctx, worker)
+
+	// in progress task should now be available and unassigned
+	inProgressTask1, err = state.Get(ctx, inProgressTask1.GetUUID())
+	require.Equal(t, *tasks.Available, inProgressTask1.Status)
+	require.Equal(t, "", inProgressTask1.WorkedBy.Must().String())
+
+	// in progress task should now be available and unassigned,
+	// and stage logs should be wiped
+	inProgressTask2, err = state.Get(ctx, inProgressTask2.GetUUID())
+	require.Equal(t, *tasks.Available, inProgressTask2.Status)
+	require.Equal(t, "", inProgressTask2.WorkedBy.Must().String())
+	require.Equal(t, "", inProgressTask2.Stage.String())
+	require.False(t, inProgressTask2.CurrentStageDetails.Exists())
+	require.False(t, inProgressTask2.PastStageDetails.Exists())
+
+	// successful and failed records should not change
+	successfulTask, err = state.Get(ctx, successfulTask.GetUUID())
+	require.Equal(t, *tasks.Successful, successfulTask.Status)
+	require.Equal(t, worker, successfulTask.WorkedBy.Must().String())
+	failedTask, err = state.Get(ctx, failedTask.GetUUID())
+	require.Equal(t, *tasks.Failed, failedTask.Status)
+	require.Equal(t, worker, failedTask.WorkedBy.Must().String())
+
+	// tasks for other worker should not change
+	otherWorkerTask1, err = state.Get(ctx, otherWorkerTask1.GetUUID())
+	require.Equal(t, *tasks.InProgress, otherWorkerTask1.Status)
+	require.Equal(t, otherWorker, otherWorkerTask1.WorkedBy.Must().String())
+	otherWorkerTask2, err = state.Get(ctx, otherWorkerTask2.GetUUID())
+	require.Equal(t, *tasks.InProgress, otherWorkerTask2.Status)
+	require.Equal(t, otherWorker, otherWorkerTask2.WorkedBy.Must().String())
+
+	// unassigned task should not chang
+	unassignedTask, err = state.Get(ctx, unassignedTask.GetUUID())
+	require.Equal(t, *tasks.Available, unassignedTask.Status)
+	require.Equal(t, "", unassignedTask.WorkedBy.Must().String())
+
+	// try assigning a task -- should reassign first newly available task
+	req = tasks.Type.PopTask.Of(otherWorker, tasks.InProgress)
+	newInProgressTask1, err := state.AssignTask(ctx, req)
+	require.NoError(t, err)
+	require.Equal(t, inProgressTask1.GetUUID(), newInProgressTask1.GetUUID())
+
+	req = tasks.Type.PopTask.Of(worker, tasks.InProgress)
+	newInProgressTask2, err := state.AssignTask(ctx, req)
+	require.NoError(t, err)
+	require.Equal(t, inProgressTask2.GetUUID(), newInProgressTask2.GetUUID())
+
+}
+
+func populateTestTasksFromFile(ctx context.Context, jsonTests string, state State) error {
 	sampleTaskFile, err := os.Open(jsonTestDeals)
 	if err != nil {
 		return err
 	}
 	defer sampleTaskFile.Close()
-	sampleTasks, err := ioutil.ReadAll(sampleTaskFile)
+	return populateTestTasks(ctx, sampleTaskFile, state)
+}
+
+func populateTestTasks(ctx context.Context, stream io.Reader, state State) error {
+	sampleTasks, err := ioutil.ReadAll(stream)
 	if err != nil {
 		return err
 	}
