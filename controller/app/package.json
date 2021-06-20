@@ -1,0 +1,23 @@
+{
+  "name": "dealbot-controller",
+  "version": "1.0.0",
+  "description": "dealbot controller webapp logic",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/filecoin-project/dealbot.git"
+  },
+  "author": "Protocol Labs",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/filecoin-project/dealbot/issues"
+  },
+  "homepage": "https://github.com/filecoin-project/dealbot#readme",
+  "devDependencies": {
+    "bootstrap-cron-picker": "^1.0.0",
+    "jquery": "^3.6.0"
+  }
+}

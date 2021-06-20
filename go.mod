@@ -4,6 +4,7 @@ go 1.16
 
 require (
 	github.com/c2h5oh/datasize v0.0.0-20200825124411-48ed595a09d2
+	github.com/evanw/esbuild v0.12.9
 	github.com/filecoin-project/go-address v0.0.5
 	github.com/filecoin-project/go-fil-markets v1.4.0
 	github.com/filecoin-project/go-jsonrpc v0.1.4-0.20210217175800-45ea43ac2bec

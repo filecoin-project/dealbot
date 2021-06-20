@@ -1,3 +1,5 @@
+//go:generate go run github.com/filecoin-project/dealbot/controller/webutil/gen "./app" static/script.js
+
 package controller
 
 import (

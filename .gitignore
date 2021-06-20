@@ -1,5 +1,6 @@
 dealbot.toml
 *~
+controller/static/script.js
 
 # Binaries for programs and plugins
 *.exe

@@ -1,22 +1,133 @@
-<html>
+<!doctype html>
+<html lang="en">
     <head>
         <title>Dealbot Controller</title>
-        <script src='script.js'></script>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-+0n0xVW2eSR5OomGNYDnhzAbDsOXxcvSN1TPprVMTNDbiYZCxYbOOl7+AMvyTG2x" crossorigin="anonymous" />
+        <link href="style.css" rel="stylesheet" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
     </head>
-    <body>
+    <body class="container">
         <h1>Dealbot</h1>
-        <section>
-            <header>Retrieval Ingest</header>
-            <form>
-                <label for='mc'>Miner-CID Pairs</label><br />
-                <textarea name='mc' id='retdat' cols=80 rows=10>
-f0102313	QmTroDkXhiD33bLR43Cejsc6dMye1DhqRrxwi27UdB4HCF
-f0157535	bafykbzaceb4n7h4sx2lznamkyeaoapz5rq5hzfycsik5yivxn36bkff34pt3e
-f0145874	bafykbzacedm4uaq6z3vswpsryfhqrsiygtl4xhfuoz4j36cnwjfkiu4iv6ei6                    
-                </textarea>
-                <br />
-                <input type='submit' id='submit' />
-            </form>
-        </section>
+        <div class="accordion" id="mainOptions">
+            <section class="accordion-item">
+                <h2 class="accordion-header" id="headingTasks">
+                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#tasksection" aria-expanded="true" aria-controls="tasksection">
+                        Tasks
+                    </button>
+                </h2>
+                <div id="tasksection" class="accordion-collapse collapse show" aria-labelledby="headingTasks" data-bs-parent="#mainOptions">
+                    <div class="accordion-body">
+                        List of tasks and ability to cancel them.
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">ID</th>
+                                    <th scope="col">Status</th>
+                                    <th scope="col">Task</th>
+                                    <th scope="col">Schedule</th>
+                                </tr>
+                            </thead>
+                        </table>
+                    </div>
+                </div>
+            </section>
+            <section class="accordion-item">
+                <h2 class="accordion-header" id="headingSchedule">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#schedulesection" aria-expanded="false" aria-controls="schedulesection">
+                        Schedule Tasks
+                    </button>
+                </h2>
+                <div id="schedulesection" class="accordion-collapse collapse" aria-labelledby="headingSchedule" data-bs-parent="#mainOptions">
+                    <div class="accordion-body">
+                        Schedule storage and retrieval tasks
+                        <form>
+                            <div class="mb-3">
+                                <label for="newMiner" class="form-label">Miner (1 per line)</label>
+                                <textarea class="form-control" id="newMiner" rows="3"></textarea>
+                            </div>
+
+                              <label class="form-check-label" for="newSR">Storage</label>
+                              <div class="form-check form-switch" style="display:inline-block">
+                                <input class="form-check-input" type="checkbox" id="newSR" />
+                                <label class="form-check-label" for="newSR">Retrieval</label>
+                              </div>
+
+                            <div id="newstorage">
+                                <div class="mb-3">
+                                    <select class="form-select" id="newSize">
+                                        <option value="5474836480">8 GB</option>
+                                        <option value="11474836480">16 GB</option>
+                                        <option value="21474836480" selected>32 GB</option>
+                                        <option value="41474836480">64 GB</option>
+                                      </select>
+                                      <label class="form-check-label" for="newSize">Deal Size</label>
+                                </div>       
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" value="" id="newVerified">
+                                    <label class="form-check-label" for="newVerified">
+                                      Verified
+                                    </label>
+                                  </div>
+                                  <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" value="" id="newFast">
+                                    <label class="form-check-label" for="newFast">
+                                      Fast Retrieval
+                                    </label>
+                                  </div>
+                            </div>
+                            <div id="newretrieval">
+                                <div class="mb-3">
+                                    <input class="form-control" value="" id="newCid">
+                                    <label class="form-label" for="newCid">
+                                      Piece CID
+                                    </label>
+                                  </div>
+
+                            </div>
+                            <div id="schedule">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="newRepeat" />
+                                    <label class="form-check-label" for="newRepeat">Repeat this task</label>
+                                </div>
+                                <div class="mb-3" id="setschedule">
+                                    <input type="text" id="newSchedule" value="5 14 * * *">
+                                </div>
+                                <div class="mb-3">
+                                    <input type="text" id="newScheduleLimit" value="30d">
+                                    <label class="form-label" for="newScheduleLimit">Duration in which schedule is valid</label>
+                                </div>
+                            </div>
+                            <div id="scheduletags">
+                                Restrict scheduling to dealbots with tag:
+                                <input type="text" id="newScheduleTag" value="">
+                            </div>
+                            <div id="addtask">
+                                <button type="button" class="btn btn-primary">Add Task</button>
+                                <label for="addtask" id="addDone">
+                                    Added!
+                                </label>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </section>
+            <section class="accordion-item">
+                <h2 class="accordion-header" id="headingBots">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#botsection" aria-expanded="false" aria-controls="botsection">
+                        Bots
+                    </button>
+                </h2>
+                <div id="botsection" class="accordion-collapse collapse" aria-labelledby="headingBots" data-bs-parent="#mainOptions">
+                    <div class="accordion-body">
+                        List of bots and ability to spin up / shutdown.
+                        <br />
+                        This section is not complete yet.
+                    </div>
+                </div>
+            </section>
+
+        </div>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-gtEjrD/SeCtmISkJkNUaaKMoLD0//ElJ19smozuHV6z3Iehds+3Ulb9Bn9Plx0x4" crossorigin="anonymous"></script>
+        <script src='script.js'></script>
     </body>
 </html>
