@@ -29,6 +29,10 @@ func main() {
 	data := webutil.Compile(os.Args[1], true)
 	if len(os.Args) < 3 {
 		fmt.Printf("%s\n", data)
+		os.Exit(0)
 	}
-	ioutil.WriteFile(os.Args[2], []byte(data), 0644)
+	if err := ioutil.WriteFile(os.Args[2], []byte(data), 0644); err != nil {
+		fmt.Printf("%s\n", err)
+		os.Exit(1)
+	}
 }

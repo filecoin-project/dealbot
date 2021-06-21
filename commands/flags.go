@@ -261,6 +261,10 @@ var ControllerFlags = []cli.Flag{
 		Usage:   "set an access secret for access to inprogress data over gql",
 		EnvVars: []string{"DEALBOT_GRAPHQL_ACCESS_TOKEN"},
 	}),
+	altsrc.NewStringFlag(&cli.StringFlag{
+		Name:  "devAssetDir",
+		Usage: "build frontend assets from directory instead of embedded version (set to location of 'controller'; the directory containing static and app)",
+	}),
 }
 
 var AllFlags = append(DealFlags, append(SingleTaskFlags, append(DaemonFlags, append(ControllerFlags, MockFlags...)...)...)...)
