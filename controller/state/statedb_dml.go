@@ -53,7 +53,7 @@ const (
 	oldestAvailableTaskWithTagsSQL = `
 		SELECT uuid, data FROM tasks
 		WHERE worked_by IS NULL
-		AND tag is NULL OR tag IN (?)
+		AND tag is NULL OR tag = ANY($1)
 		ORDER BY created
 		LIMIT 1
 	`
@@ -99,7 +99,7 @@ const (
 	`
 
 	workerTasksByStatusSQL = `
-	SELECT tasks.uuid, tasks.data FROM tasks
+	SELECT tasks.data FROM tasks
 	INNER JOIN task_status_ledger ON tasks.uuid=task_status_ledger.uuid
 	WHERE tasks.worked_by = $1 AND task_status_ledger.status = $2
 `

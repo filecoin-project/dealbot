@@ -3,6 +3,7 @@ package postgresdb
 import (
 	"database/sql"
 	"database/sql/driver"
+	"errors"
 	"fmt"
 	"math/rand"
 	"net"
@@ -114,7 +115,8 @@ func (db *PostgresDB) RetryableError(err error) bool {
 		errCannotConnectNow      = "57P03"
 	)
 
-	if e, ok := err.(*pq.Error); ok {
+	var e *pq.Error
+	if errors.As(err, &e) {
 		switch string(e.Code) {
 		case errSerializationFailure, errDeadlockDetected, errCannotConnectNow, errInsufficientResources:
 			time.Sleep(time.Duration(rand.Int63n(int64(serializationErrorRetryDelay + 1))))
