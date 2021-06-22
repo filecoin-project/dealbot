@@ -258,13 +258,6 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(ctx context.Context, upda
 					return err
 				}
 
-				if de.task.CARExport.x {
-					carPath := filepath.Join(de.config.NodeDataDir, de.task.PayloadCID.x+".car")
-					if err := de.node.ClientGenCar(de.ctx, *ref, carPath); err != nil {
-						return err
-					}
-				}
-
 				// clean up the data.
 				imports, err := de.node.ClientListImports(de.ctx)
 				if err != nil {
