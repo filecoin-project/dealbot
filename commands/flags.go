@@ -261,6 +261,16 @@ var ControllerFlags = []cli.Flag{
 		Usage:   "set an access secret for access to inprogress data over gql",
 		EnvVars: []string{"DEALBOT_GRAPHQL_ACCESS_TOKEN"},
 	}),
+	altsrc.NewStringFlag(&cli.StringFlag{
+		Name:    "daemon-driver",
+		Usage:   "system to use when starting daemons",
+		EnvVars: []string{"DEALBOT_DAEMON_DRIVER"},
+	}),
+	altsrc.NewStringSliceFlag(&cli.StringSliceFlag{
+		Name:    "daemon-regions",
+		Usage:   "list of regions where dealbots daemons should be started",
+		EnvVars: []string{"DEALBOT_REGIONS"},
+	}),
 }
 
 var AllFlags = append(DealFlags, append(SingleTaskFlags, append(DaemonFlags, append(ControllerFlags, MockFlags...)...)...)...)

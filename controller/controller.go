@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/filecoin-project/dealbot/controller/graphql"
+	"github.com/filecoin-project/dealbot/controller/spawn"
 	"github.com/filecoin-project/dealbot/controller/state"
 	"github.com/filecoin-project/dealbot/metrics"
 	metricslog "github.com/filecoin-project/dealbot/metrics/log"
@@ -42,6 +43,7 @@ type Controller struct {
 	doneCh          chan struct{}
 	db              state.State
 	metricsRecorder metrics.MetricsRecorder
+	spawner         spawn.Spawner
 }
 
 func New(ctx *cli.Context) (*Controller, error) {
@@ -106,7 +108,14 @@ func New(ctx *cli.Context) (*Controller, error) {
 		gqlToken = ctx.String("gqlAccessToken")
 	}
 
-	return NewWithDependencies(l, gl, gqlToken, recorder, backend)
+	var spawner spawn.Spawner
+	if ctx.String("daemon-driver") == "kubernetes" {
+		spawner = spawn.NewKubernetes(ctx.StringSlice("daemon-regions"))
+	} else {
+		spawner = spawn.NewLocal()
+	}
+
+	return NewWithDependencies(l, gl, gqlToken, recorder, backend, spawner)
 }
 
 type logEcapsulator struct {
@@ -121,9 +130,10 @@ func (fw *logEcapsulator) Write(p []byte) (n int, err error) {
 //go:embed static
 var static embed.FS
 
-func NewWithDependencies(listener, graphqlListener net.Listener, gqlToken string, recorder metrics.MetricsRecorder, backend state.State) (*Controller, error) {
+func NewWithDependencies(listener, graphqlListener net.Listener, gqlToken string, recorder metrics.MetricsRecorder, backend state.State, spawner spawn.Spawner) (*Controller, error) {
 	srv := new(Controller)
 	srv.db = backend
+	srv.spawner = spawner
 
 	r := mux.NewRouter().StrictSlash(true)
 
@@ -151,6 +161,12 @@ func NewWithDependencies(listener, graphqlListener net.Listener, gqlToken string
 	r.HandleFunc("/tasks/{uuid}", srv.getTaskHandler).Methods("GET")
 	r.HandleFunc("/car", srv.carHandler).Methods("GET")
 	r.HandleFunc("/health", srv.healthHandler).Methods("GET")
+	r.HandleFunc("/regions", srv.getRegionsHandler).Methods("GET")
+	r.HandleFunc("/regions/{regionid}", srv.getDaemonsHandler).Methods("GET")
+	r.HandleFunc("/regions/{regionid}", srv.newDaemonHandler).Methods("POST")
+	r.HandleFunc("/regions/{regionid}/{daemonid}", srv.getDaemonHandler).Methods("POST")
+	r.HandleFunc("/regions/{regionid}/{daemonid}/wallets", srv.getWalletsHandler).Methods("GET")
+	r.HandleFunc("/regions/{regionid}/{daemonid}/wallets", srv.newWalletHandler).Methods("POST")
 	r.Methods("OPTIONS").HandlerFunc(srv.sendCORSHeaders)
 	metricsHandler := recorder.Handler()
 	if metricsHandler != nil {
