@@ -164,7 +164,7 @@ func NewWithDependencies(listener, graphqlListener net.Listener, gqlToken string
 	r.HandleFunc("/regions", srv.getRegionsHandler).Methods("GET")
 	r.HandleFunc("/regions/{regionid}", srv.getDaemonsHandler).Methods("GET")
 	r.HandleFunc("/regions/{regionid}", srv.newDaemonHandler).Methods("POST")
-	r.HandleFunc("/regions/{regionid}/{daemonid}", srv.getDaemonHandler).Methods("POST")
+	r.HandleFunc("/regions/{regionid}/{daemonid}", srv.getDaemonHandler).Methods("GET")
 	r.HandleFunc("/regions/{regionid}/{daemonid}/wallets", srv.getWalletsHandler).Methods("GET")
 	r.HandleFunc("/regions/{regionid}/{daemonid}/wallets", srv.newWalletHandler).Methods("POST")
 	r.Methods("OPTIONS").HandlerFunc(srv.sendCORSHeaders)
