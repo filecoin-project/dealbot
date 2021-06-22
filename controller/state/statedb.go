@@ -596,7 +596,7 @@ func (s *stateDB) transact(ctx context.Context, f func(*sql.Tx) error) error {
 			s.txlock.Unlock()
 		}
 		if err != nil {
-			if s.dbconn.RetryableError(err) && time.Since(start) < maxRetryTime {
+			if s.dbconn.RetryableError(err) && (start.IsZero() || time.Since(start) < maxRetryTime) {
 				if start.IsZero() {
 					start = time.Now()
 				}
@@ -611,7 +611,9 @@ func (s *stateDB) transact(ctx context.Context, f func(*sql.Tx) error) error {
 
 func withTransaction(ctx context.Context, db *sql.DB, f func(*sql.Tx) error) (err error) {
 	var tx *sql.Tx
-	tx, err = db.BeginTx(ctx, nil)
+	tx, err = db.BeginTx(ctx, &sql.TxOptions{
+		Isolation: sql.LevelSerializable,
+	})
 	if err != nil {
 		return
 	}
@@ -724,6 +726,15 @@ func (s *stateDB) PublishRecordsFrom(ctx context.Context, worker string) error {
 			return err
 		}
 
+		var lnks []string
+		for itms.Next() {
+			var lnk string
+			if err := itms.Scan(&lnk); err != nil {
+				return err
+			}
+			lnks = append(lnks, lnk)
+		}
+
 		rcrds := []tasks.AuthenticatedRecord{}
 
 		updateHeadStmt, err := tx.PrepareContext(ctx, updateHeadSQL)
@@ -732,12 +743,7 @@ func (s *stateDB) PublishRecordsFrom(ctx context.Context, worker string) error {
 		}
 		defer updateHeadStmt.Close()
 
-		for itms.Next() {
-			var lnk string
-			if err := itms.Scan(&lnk); err != nil {
-				return err
-			}
-
+		for _, lnk := range lnks {
 			_, err = updateHeadStmt.ExecContext(ctx, ATTACHED_RECORD, lnk)
 			if err != nil {
 				return err
@@ -813,9 +819,10 @@ func (s *stateDB) ResetWorkerTasks(ctx context.Context, worker string) error {
 			return err
 		}
 
+		var queriedTasks []tasks.Task
 		for inProgressWorkerTasks.Next() {
-			var uuid, serialized string
-			err := inProgressWorkerTasks.Scan(&uuid, &serialized)
+			var serialized string
+			err := inProgressWorkerTasks.Scan(&serialized)
 			if err != nil {
 				return err
 			}
@@ -825,22 +832,23 @@ func (s *stateDB) ResetWorkerTasks(ctx context.Context, worker string) error {
 				return err
 			}
 			task := tp.Build().(tasks.Task)
+			queriedTasks = append(queriedTasks, task)
+		}
 
+		for _, task := range queriedTasks {
 			updatedTask := task.Reset()
 
 			lnk, data, err := serializeToJSON(ctx, updatedTask.Representation())
 			if err != nil {
 				return err
 			}
-
 			// save the update back to DB
-			_, err = tx.ExecContext(ctx, unassignTaskSQL, uuid, data, lnk.String())
+			_, err = tx.ExecContext(ctx, unassignTaskSQL, updatedTask.UUID.String(), data, lnk.String())
 			if err != nil {
 				return err
 			}
-
 			// reset the task in the task status ledger
-			_, err = tx.ExecContext(ctx, upsertTaskStatusSQL, uuid, updatedTask.Status.Int(), updatedTask.Stage.String(), 0, time.Now())
+			_, err = tx.ExecContext(ctx, upsertTaskStatusSQL, updatedTask.UUID.String(), updatedTask.Status.Int(), updatedTask.Stage.String(), 0, time.Now())
 			if err != nil {
 				return err
 			}
