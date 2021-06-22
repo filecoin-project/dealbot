@@ -61,6 +61,7 @@ function doSubmit(e) {
                 "Miner": miner,
                 "PayloadCID": $('#newCid').val(),
                 "CARExport": false,
+                "MaxPriceAttoFIL": 20000000000,
             }
         } else {
             data = {
@@ -69,7 +70,7 @@ function doSubmit(e) {
                 "StartOffset": 6152, // 3 days?
                 "FastRetrieval": $('#newFast').is(':checked'),
                 "Verified": $('#newVerified').is(':checked'),
-                "MaxPriceAttoFIL": 0,
+                "MaxPriceAttoFIL": 20000000000,
             }
         }
 
