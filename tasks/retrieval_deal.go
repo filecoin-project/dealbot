@@ -2,7 +2,6 @@ package tasks
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"math/big"
 	"os"
@@ -260,8 +259,31 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(ctx context.Context, upda
 				}
 
 				if de.task.CARExport.x {
-					return errors.New("car export not implemented")
+					carPath := filepath.Join(de.config.NodeDataDir, de.task.PayloadCID.x+".car")
+					if err := de.node.ClientGenCar(de.ctx, *ref, carPath); err != nil {
+						return err
+					}
 				}
+
+				// clean up the data.
+				imports, err := de.node.ClientListImports(de.ctx)
+				if err != nil {
+					return err
+				}
+				for _, i := range imports {
+					if i.Root.String() == de.task.PayloadCID.String() {
+						if err := de.node.ClientRemoveImport(de.ctx, i.Key); err != nil {
+							return err
+						}
+					}
+				}
+				dbPath := filepath.Join(de.config.DataDir, de.task.PayloadCID.x)
+				if _, err := os.Stat(dbPath); !os.IsNotExist(err) {
+					if err := os.Remove(dbPath); err != nil {
+						return err
+					}
+				}
+
 				// final stage
 				stage = RetrievalStageDealComplete
 				dealStage = RetrievalStages[stage]()
