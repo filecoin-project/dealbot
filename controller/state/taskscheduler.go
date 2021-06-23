@@ -25,6 +25,7 @@ type job struct {
 	limit     time.Duration
 	schedule  string
 	sdb       *stateDB
+	runCount  int
 	runNotice chan string
 	taskID    string
 }
@@ -34,7 +35,8 @@ func (j *job) Run() {
 	if j.entryID == noEnt {
 		j.entryID = <-j.idChan
 	}
-	newTaskID := j.sdb.runTask(j.taskID, j.schedule, j.expireAt, j.limit, j.entryID)
+	j.runCount++
+	newTaskID := j.sdb.runTask(j.taskID, j.schedule, j.expireAt, j.limit, j.runCount, j.entryID)
 	if j.runNotice != nil && newTaskID != "" {
 		select {
 		case j.runNotice <- newTaskID:
@@ -76,7 +78,7 @@ func (s *stateDB) scheduleTask(task tasks.Task, runNotice chan string) error {
 	return nil
 }
 
-func (s *stateDB) runTask(taskID, schedule string, expireAt time.Time, limit time.Duration, jobID cron.EntryID) string {
+func (s *stateDB) runTask(taskID, schedule string, expireAt time.Time, limit time.Duration, runCount int, jobID cron.EntryID) string {
 	task, tag, err := s.getWithTag(context.Background(), taskID)
 	if err != nil {
 		log.Errorw("cannot load scheduled task from database", "taskID", taskID, "err", err)
@@ -106,7 +108,7 @@ func (s *stateDB) runTask(taskID, schedule string, expireAt time.Time, limit tim
 		return ""
 	}
 
-	newTaskID, err := s.createRunableTask(task, tag)
+	newTaskID, err := s.createRunableTask(task, tag, runCount)
 	if err != nil {
 		log.Errorw("cannot create runable task", "scheduledTaskID", taskID, "err", err)
 		return ""
@@ -117,10 +119,9 @@ func (s *stateDB) runTask(taskID, schedule string, expireAt time.Time, limit tim
 	return newTaskID
 }
 
-func (s *stateDB) createRunableTask(task tasks.Task, tag string) (string, error) {
+func (s *stateDB) createRunableTask(task tasks.Task, tag string, runCount int) (string, error) {
 	newTaskID := uuid.New().String()
-	runableTask := task.MakeRunable(newTaskID)
-
+	runableTask := task.MakeRunable(newTaskID, runCount)
 	err := s.saveTask(context.Background(), runableTask, tag)
 	if err != nil {
 		return "", err

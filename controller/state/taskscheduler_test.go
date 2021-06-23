@@ -76,6 +76,9 @@ func TestScheduledTask(t *testing.T) {
 	require.NotNil(t, task, "Did not find runable task")
 	require.False(t, scheduled, "should not have found scheduled task")
 	require.Equal(t, worker, task.WorkedBy.Must().String(), "should be assigned to test_worker")
+	runCount, err := task.RunCount.AsInt()
+	require.NoError(t, err)
+	assert.Equal(t, 1, int(runCount))
 	t.Log("popped task assigned to", worker)
 
 	select {
@@ -88,4 +91,15 @@ func TestScheduledTask(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, newTask, "Did not find new generated task")
 	assert.Equal(t, newTaskID, newTask.UUID.String(), "wrong uuid for new task")
+
+	t.Log("popping next generated task")
+	task, scheduled, err = state.popTask(ctx, worker, tasks.InProgress, nil)
+	require.NoError(t, err)
+	require.NotNil(t, task, "Did not find runable task")
+	require.False(t, scheduled, "should not have found scheduled task")
+	require.Equal(t, worker, task.WorkedBy.Must().String(), "should be assigned to test_worker")
+	runCount, err = task.RunCount.AsInt()
+	require.NoError(t, err)
+	assert.Equal(t, 2, int(runCount))
+	t.Log("popped another task assigned to", worker)
 }

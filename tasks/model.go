@@ -252,7 +252,7 @@ func (t *_Task) Reset() Task {
 	return &newTask
 }
 
-func (t *_Task) MakeRunable(newUUID string) Task {
+func (t *_Task) MakeRunable(newUUID string, runCount int) Task {
 	newTask := _Task{
 		UUID:                _String{newUUID},
 		Status:              *Available,
@@ -260,7 +260,7 @@ func (t *_Task) MakeRunable(newUUID string) Task {
 		Stage:               _String{""},
 		CurrentStageDetails: _StageDetails__Maybe{m: schema.Maybe_Absent},
 		StartedAt:           _Time__Maybe{m: schema.Maybe_Absent},
-		RunCount:            t.RunCount,
+		RunCount:            _Int{int64(runCount)},
 		RetrievalTask:       _RetrievalTask__Maybe{m: schema.Maybe_Absent},
 		StorageTask:         _StorageTask__Maybe{m: schema.Maybe_Absent},
 	}
@@ -302,6 +302,7 @@ func (t *_Task) Assign(worker string, status Status) Task {
 		PastStageDetails:    t.PastStageDetails,
 		StartedAt:           _Time__Maybe{m: schema.Maybe_Value, v: &_Time{x: time.Now().UnixNano()}},
 		RetrievalTask:       t.RetrievalTask,
+		RunCount:            t.RunCount,
 		StorageTask:         t.StorageTask,
 	}
 

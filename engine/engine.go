@@ -92,14 +92,14 @@ func New(ctx context.Context, cliCtx *cli.Context) (*Engine, error) {
 		stageTimeouts: stageTimeouts,
 	}
 
-	var taskCtx context.Context
+	var tasksCtx context.Context
 	tasksCtx, e.cancelTasks = context.WithCancel(context.Background())
 
-	go e.run(taskCtx, workers)
+	go e.run(tasksCtx, workers)
 	return e, nil
 }
 
-func (e *Engine) run(taskCtx context.Context, workers int) {
+func (e *Engine) run(tasksCtx context.Context, workers int) {
 	defer close(e.stopped)
 	defer e.cancelTasks()
 
@@ -107,7 +107,7 @@ func (e *Engine) run(taskCtx context.Context, workers int) {
 	runChan := make(chan tasks.Task)
 
 	// Start workers
-	wg.Add(taskCtx, workers)
+	wg.Add(workers)
 	for i := 0; i < workers; i++ {
 		go e.worker(tasksCtx, i, &wg, runChan)
 	}
@@ -152,8 +152,8 @@ func (e *Engine) Close(ctx context.Context) {
 	select {
 	case <-e.stopped: // wait for workers to stop
 	case <-ctx.Done(): // if waiting too long
-		close(cancelTasks) // cancel any running tasks
-		<-e.stopped        // wait for stop
+		e.cancelTasks() // cancel any running tasks
+		<-e.stopped     // wait for stop
 	}
 	e.closer()
 }
@@ -185,7 +185,7 @@ func (e *Engine) worker(ctx context.Context, n int, wg *sync.WaitGroup, runChan 
 	defer wg.Done()
 	for {
 		select {
-		case task, ok := <-runchan:
+		case task, ok := <-runChan:
 			if !ok {
 				return
 			}
@@ -200,7 +200,8 @@ func (e *Engine) runTask(ctx context.Context, task tasks.Task, worker int) {
 	ctx, cancel := context.WithTimeout(ctx, maxTaskRunTime)
 	defer cancel()
 
-	runCount := task.RunCount
+	runCount64, _ := task.RunCount.AsInt()
+	runCount := int(runCount64)
 	var err error
 	log.Infow("worker running task", "uuid", task.UUID.String(), "run_count", runCount, "worker_id", worker)
 
