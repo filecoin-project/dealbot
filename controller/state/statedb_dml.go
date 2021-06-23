@@ -53,7 +53,7 @@ const (
 	oldestAvailableTaskWithTagsSQL = `
 		SELECT uuid, data FROM tasks
 		WHERE worked_by IS NULL
-		AND tag is NULL OR tag = ANY($1)
+		AND (tag is NULL OR tag = ANY($1))
 		ORDER BY created
 		LIMIT 1
 	`
@@ -61,7 +61,7 @@ const (
 	oldestAvailableTaskWithTagsSQLsqlite = `
 		SELECT uuid, data FROM tasks
 		WHERE worked_by IS NULL
-		AND tag is NULL OR tag IN (%s)
+		AND (tag is NULL OR tag IN (%s))
 		ORDER BY created
 		LIMIT 1
 	`

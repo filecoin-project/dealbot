@@ -199,6 +199,68 @@ func TestAssignTaskWithTag(t *testing.T) {
 		require.NotNil(t, task, "Did not get untagged task")
 	})
 }
+func TestAssignConcurrentTaskWithTag(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	withState(ctx, t, func(state *stateDB) {
+		taskCount := 4
+
+		for i := 0; i < taskCount; i++ {
+			tasktag := "testtag"
+			rt := tasks.Type.RetrievalTask.Of("t01000", "bafk2bzacedli6qxp43sf54feczjd26jgeyfxv4ucwylujd3xo5s6cohcqbg36", false, tasktag)
+			task := tasks.Type.Task.New(rt, nil)
+			err := state.saveTask(ctx, task, tasktag)
+			require.NoError(t, err)
+
+			tasktag = "sometag"
+			rt = tasks.Type.RetrievalTask.Of("f0127896", "bafk2bzacedli6qxp43sf54feczjd26jgeyfxv4ucwylujd3xo5s6cohcqbg36", false, tasktag)
+			task = tasks.Type.Task.New(rt, nil)
+			err = state.saveTask(ctx, task, tasktag)
+			require.NoError(t, err)
+
+		}
+
+		release := make(chan struct{})
+		assigned := make([]tasks.Task, taskCount)
+		errChan := make(chan error)
+		t.Log("concurrently assigning", taskCount, "tasks")
+		for i := 0; i < taskCount; i++ {
+			go func(n int) {
+				worker := fmt.Sprintf("worker-%d", n)
+				<-release
+				req := tasks.Type.PopTask.Of(worker, tasks.InProgress, "testtag")
+
+				task, err := state.AssignTask(ctx, req)
+				if err != nil {
+					errChan <- err
+					return
+				}
+				assigned[n] = task
+				errChan <- nil
+			}(i)
+		}
+
+		close(release)
+		for i := 0; i < taskCount; i++ {
+			err := <-errChan
+			require.NoError(t, err)
+		}
+
+		for i := 0; i < taskCount; i++ {
+			task := assigned[i]
+			if task == nil {
+				t.Log("did not find task to assign")
+				continue
+			}
+			history, err := state.TaskHistory(ctx, task.UUID.String())
+			require.NoError(t, err)
+
+			assert.Len(t, history, 2)
+			assert.Equal(t, tasks.Available, history[0].Status, "wrong status for 1st history")
+			assert.Equal(t, tasks.InProgress, history[1].Status, "wrong status for 2nd history")
+		}
+	})
+}
 
 func TestUpdateTasks(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
