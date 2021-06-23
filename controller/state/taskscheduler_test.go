@@ -78,7 +78,7 @@ func TestScheduledTask(t *testing.T) {
 	require.Equal(t, worker, task.WorkedBy.Must().String(), "should be assigned to test_worker")
 	runCount, err := task.RunCount.AsInt()
 	require.NoError(t, err)
-	assert.Equal(t, 1, int(runCount))
+	assert.Equal(t, 0, int(runCount))
 	t.Log("popped task assigned to", worker)
 
 	select {
@@ -100,6 +100,6 @@ func TestScheduledTask(t *testing.T) {
 	require.Equal(t, worker, task.WorkedBy.Must().String(), "should be assigned to test_worker")
 	runCount, err = task.RunCount.AsInt()
 	require.NoError(t, err)
-	assert.Equal(t, 2, int(runCount))
+	assert.Equal(t, 1, int(runCount))
 	t.Log("popped another task assigned to", worker)
 }
