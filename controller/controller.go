@@ -112,7 +112,7 @@ func New(ctx *cli.Context) (*Controller, error) {
 	if ctx.String("daemon-driver") == "kubernetes" {
 		spawner = spawn.NewKubernetes(ctx.StringSlice("daemon-regions"))
 	} else {
-		spawner = spawn.NewLocal()
+		spawner = spawn.NewLocal(ctx.String("listen"))
 	}
 
 	return NewWithDependencies(l, gl, gqlToken, recorder, backend, spawner)

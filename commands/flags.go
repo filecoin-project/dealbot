@@ -227,6 +227,7 @@ var ControllerFlags = []cli.Flag{
 		Usage:   "host:port to bind http server on",
 		Aliases: []string{"l"},
 		EnvVars: []string{"DEALBOT_LISTEN"},
+		Value:   "127.0.0.1:33258",
 	}),
 	altsrc.NewStringFlag(&cli.StringFlag{
 		Name:    "graphql",
