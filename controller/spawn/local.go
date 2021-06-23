@@ -108,6 +108,15 @@ func envMap(env []string) map[string]string {
 	return em
 }
 
+// convert map[string]string enviromnment into []string
+func envStr(em map[string]string) []string {
+	env := os.Environ()
+	for k, v := range em {
+		env = append(env, strings.Join([]string{k, v}, "="))
+	}
+	return env
+}
+
 func daemonFromCmd(daemoncmd exec.Cmd, daemonid string) *Daemon {
 	env := envMap(daemoncmd.Env)
 	workers, _ := strconv.Atoi(env["DEALBOT_WORKERS"])
@@ -122,13 +131,4 @@ func daemonFromCmd(daemoncmd exec.Cmd, daemonid string) *Daemon {
 		MinFil:  minfil,
 		MinCap:  mincap,
 	}
-}
-
-// convert map[string]string enviromnment into []string
-func envStr(em map[string]string) []string {
-	env := os.Environ()
-	for k, v := range em {
-		env = append(env, strings.Join([]string{k, v}, "="))
-	}
-	return env
 }
