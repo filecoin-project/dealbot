@@ -3,6 +3,7 @@ package tasks
 import (
 	"context"
 	"crypto/rand"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -348,13 +349,13 @@ func (de *storageDealExecutor) executeAndMonitorDeal(ctx context.Context, update
 				}
 			}
 			if info.State != lastState {
-				de.log("Deal status",
+				kandv := []interface{}{
 					"cid", info.ProposalCid,
 					"piece", info.PieceCID,
 					"state", storagemarket.DealStates[info.State],
-					"message", info.Message,
 					"provider", info.Provider,
-				)
+				}
+				de.log("Deal status", append(kandv, messageParser(info.Message)...)...)
 				lastState = info.State
 			}
 
@@ -437,7 +438,7 @@ func logStages(info api.DealInfo, log LogStatus) {
 	}
 
 	for _, stage := range info.DealStages.Stages {
-		log("Deal stage",
+		kandv := []interface{}{
 			"cid", info.ProposalCid,
 			"name", stage.Name,
 			"description", stage.Description,
@@ -448,11 +449,11 @@ func logStages(info api.DealInfo, log LogStatus) {
 			"duration", info.Duration,
 			"deal_id", info.DealID,
 			"piece_cid", info.PieceCID,
-			"message", info.Message,
 			"provider", info.Provider,
 			"price", info.PricePerEpoch,
 			"verfied", info.Verified,
-		)
+		}
+		log("Deal stage", append(kandv, messageParser(info.Message)...)...)
 	}
 }
 
@@ -467,4 +468,16 @@ func (sp _StorageTask__Prototype) Of(miner string, maxPrice, size, startOffset i
 		Tag:             asStrM(tag),
 	}
 	return &st
+}
+
+func messageParser(message string) []interface{} {
+	m := make(map[string]interface{})
+	if err := json.Unmarshal([]byte(message), &m); err != nil {
+		return []interface{}{"deal_message", message}
+	}
+	var ret []interface{}
+	for k, v := range m {
+		ret = append(ret, k, v)
+	}
+	return ret
 }
