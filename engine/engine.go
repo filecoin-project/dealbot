@@ -8,7 +8,6 @@ import (
 
 	"github.com/filecoin-project/dealbot/controller/client"
 	"github.com/filecoin-project/dealbot/lotus"
-	"github.com/filecoin-project/dealbot/scheduler"
 	"github.com/filecoin-project/dealbot/tasks"
 	"github.com/filecoin-project/lotus/api"
 	"github.com/google/uuid"
@@ -29,14 +28,14 @@ type Engine struct {
 	host   string
 	client *client.Client
 
-	nodeConfig tasks.NodeConfig
-	node       api.FullNode
-	closer     lotus.NodeCloser
-	sched      *scheduler.Scheduler
-	shutdown   chan struct{}
-	stopped    chan struct{}
-	tags       []string
-	workerPing chan struct{}
+	nodeConfig  tasks.NodeConfig
+	node        api.FullNode
+	closer      lotus.NodeCloser
+	shutdown    chan struct{}
+	stopped     chan struct{}
+	tags        []string
+	workerPing  chan struct{}
+	cancelTasks context.CancelFunc
 
 	stageTimeouts map[string]time.Duration
 }
@@ -86,7 +85,6 @@ func New(ctx context.Context, cliCtx *cli.Context) (*Engine, error) {
 		node:          node,
 		closer:        closer,
 		host:          host_id,
-		sched:         scheduler.New(),
 		shutdown:      make(chan struct{}),
 		stopped:       make(chan struct{}),
 		tags:          cliCtx.StringSlice("tags"),
@@ -94,18 +92,24 @@ func New(ctx context.Context, cliCtx *cli.Context) (*Engine, error) {
 		stageTimeouts: stageTimeouts,
 	}
 
-	go e.run(workers)
+	var taskCtx context.Context
+	tasksCtx, e.cancelTasks = context.WithCancel(context.Background())
+
+	go e.run(taskCtx, workers)
 	return e, nil
 }
 
-func (e *Engine) run(workers int) {
+func (e *Engine) run(taskCtx context.Context, workers int) {
 	defer close(e.stopped)
+	defer e.cancelTasks()
+
 	var wg sync.WaitGroup
+	runChan := make(chan tasks.Task)
 
 	// Start workers
-	wg.Add(workers)
+	wg.Add(taskCtx, workers)
 	for i := 0; i < workers; i++ {
-		go e.worker(i, &wg)
+		go e.worker(tasksCtx, i, &wg, runChan)
 	}
 
 	popTimer := time.NewTimer(noTasksWait)
@@ -121,27 +125,13 @@ taskLoop:
 			// Check if there is a new task
 			task := e.popTask()
 			if task != nil {
-				// Get task's schedule.  Tasks that have an empty schedule are run once, immediately.
-				taskSchedule, limit := getTaskSchedule(task)
-
-				// Add task to scheduler
-				log.Infow("scheduling task", "uuid", task.UUID.String(), "schedule", taskSchedule, "schedule_limit", limit)
-				jobID, err := e.sched.Add(taskSchedule, task, maxTaskRunTime, limit, 0)
-				if err != nil {
-					log.Errorw("failed to schedule task", "uuid", task.UUID.String(), "schedule", taskSchedule, "err", err)
-				} else {
-					nextRun, err := e.sched.NextRun(jobID)
-					if err != nil {
-						log.Error(err)
-					} else {
-						log.Infow("scheduled task", "job_id", jobID, "uuid", task.UUID.String(), "next_run", nextRun)
-					}
-				}
+				log.Infow("sending task to worker", "uuid", task.UUID.String())
+				runChan <- task
 				continue
 			}
 		}
 
-		// No tasks to run now, so wait for scheduler or timer
+		// No tasks to run now, so wait for timer
 		select {
 		case <-popTimer.C:
 			// Time to check for more new tasks
@@ -153,13 +143,18 @@ taskLoop:
 	}
 
 	// Stop workers and wait for all workers to exit
+	close(runChan)
 	wg.Wait()
 }
 
 func (e *Engine) Close(ctx context.Context) {
-	close(e.shutdown)  // signal to stop workers
-	e.sched.Close(ctx) // stop scheduler and wait for all running tasks to stop
-	<-e.stopped        // wait for workers to stop
+	close(e.shutdown) // signal to stop workers
+	select {
+	case <-e.stopped: // wait for workers to stop
+	case <-ctx.Done(): // if waiting too long
+		close(cancelTasks) // cancel any running tasks
+		<-e.stopped        // wait for stop
+	}
 	e.closer()
 }
 
@@ -185,24 +180,27 @@ func (e *Engine) popTask() tasks.Task {
 	return task // found a runable task
 }
 
-func (e *Engine) worker(n int, wg *sync.WaitGroup) {
+func (e *Engine) worker(ctx context.Context, n int, wg *sync.WaitGroup, runChan <-chan tasks.Task) {
 	log.Infow("engine worker started", "worker_id", n)
 	defer wg.Done()
-	runNow := e.sched.RunChan()
 	for {
 		select {
-		case job, ok := <-runNow:
+		case task, ok := <-runchan:
 			if !ok {
 				return
 			}
-			e.runTask(job.Context, job.Task, job.RunCount, n)
-			job.End()
+			e.runTask(ctx, task, n)
 		case <-e.workerPing:
 		}
 	}
 }
 
-func (e *Engine) runTask(ctx context.Context, task tasks.Task, runCount, worker int) {
+func (e *Engine) runTask(ctx context.Context, task tasks.Task, worker int) {
+	// Create a context to manage the running time of the current task
+	ctx, cancel := context.WithTimeout(ctx, maxTaskRunTime)
+	defer cancel()
+
+	runCount := task.RunCount
 	var err error
 	log.Infow("worker running task", "uuid", task.UUID.String(), "run_count", runCount, "worker_id", worker)
 
@@ -294,39 +292,6 @@ func (e *Engine) runTask(ctx context.Context, task tasks.Task, runCount, worker 
 			tlog.Errorw("could not run post hook", "err", err)
 		}
 	}
-}
-
-func getTaskSchedule(task tasks.Task) (string, time.Duration) {
-	var schedule, limit string
-	var duration time.Duration
-
-	if t := task.RetrievalTask; t.Exists() {
-		if sch := t.Must().Schedule; sch.Exists() {
-			schedule = sch.Must().String()
-			if lim := t.Must().ScheduleLimit; lim.Exists() {
-				limit = lim.Must().String()
-			}
-		}
-	}
-
-	if t := task.StorageTask; t.Exists() {
-		if sch := t.Must().Schedule; sch.Exists() {
-			schedule = sch.Must().String()
-			if lim := t.Must().ScheduleLimit; lim.Exists() {
-				limit = lim.Must().String()
-			}
-		}
-	}
-
-	if schedule != "" && limit != "" {
-		var err error
-		duration, err = time.ParseDuration(limit)
-		if err != nil {
-			log.Errorw("task has invalid value for ScheduleLimit", "uuid", task.UUID.String(), "err", err)
-		}
-	}
-
-	return schedule, duration
 }
 
 // pingWorker returns true if a worker is available to read the workerPing

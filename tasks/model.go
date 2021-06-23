@@ -252,6 +252,46 @@ func (t *_Task) Reset() Task {
 	return &newTask
 }
 
+func (t *_Task) MakeRunable(newUUID string) Task {
+	newTask := _Task{
+		UUID:                _String{newUUID},
+		Status:              *Available,
+		WorkedBy:            _String__Maybe{m: schema.Maybe_Value, v: &_String{""}},
+		Stage:               _String{""},
+		CurrentStageDetails: _StageDetails__Maybe{m: schema.Maybe_Absent},
+		StartedAt:           _Time__Maybe{m: schema.Maybe_Absent},
+		RunCount:            t.RunCount,
+		RetrievalTask:       _RetrievalTask__Maybe{m: schema.Maybe_Absent},
+		StorageTask:         _StorageTask__Maybe{m: schema.Maybe_Absent},
+	}
+
+	if rtm := t.RetrievalTask; rtm.Exists() {
+		rt := rtm.Must()
+		newTask.RetrievalTask.m = schema.Maybe_Value
+		newTask.RetrievalTask.v = &_RetrievalTask{
+			Miner:           rt.Miner,
+			PayloadCID:      rt.PayloadCID,
+			CARExport:       rt.CARExport,
+			Tag:             rt.Tag,
+			MaxPriceAttoFIL: rt.MaxPriceAttoFIL,
+		}
+	}
+	if stm := t.StorageTask; stm.Exists() {
+		st := stm.Must()
+		newTask.StorageTask.m = schema.Maybe_Value
+		newTask.StorageTask.v = &_StorageTask{
+			Miner:           st.Miner,
+			MaxPriceAttoFIL: st.MaxPriceAttoFIL,
+			Size:            st.Size,
+			StartOffset:     st.StartOffset,
+			FastRetrieval:   st.FastRetrieval,
+			Verified:        st.Verified,
+			Tag:             st.Tag,
+		}
+	}
+	return &newTask
+}
+
 func (t *_Task) Assign(worker string, status Status) Task {
 	newTask := _Task{
 		UUID:                t.UUID,

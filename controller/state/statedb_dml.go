@@ -31,8 +31,16 @@ const (
 		SELECT data FROM tasks
 	`
 
+	getAllTasksForOwnerSQL = `
+		SELECT data FROM tasks WHERE worked_by = $1
+	`
+
 	getTaskSQL = `
 		SELECT data FROM tasks WHERE uuid = $1
+	`
+
+	getTaskWithTagSQL = `
+		SELECT data, tag FROM tasks WHERE uuid = $1
 	`
 
 	getTaskByCidSQL = `
@@ -104,8 +112,18 @@ const (
 	WHERE tasks.worked_by = $1 AND task_status_ledger.status = $2
 `
 
+	unassignScheduledTaskSQL = `
+		UPDATE tasks SET worked_by = NULL
+		WHERE uuid = $1
+	`
+
 	unassignTaskSQL = `
 		UPDATE tasks SET data = $2, worked_by = NULL, cid = $3
+		WHERE uuid = $1
+	`
+
+	updateTaskWorkedBySQL = `
+		UPDATE tasks SET worked_by = $2
 		WHERE uuid = $1
 	`
 )

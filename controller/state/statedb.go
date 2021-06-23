@@ -23,6 +23,7 @@ import (
 	cidlink "github.com/ipld/go-ipld-prime/linking/cid"
 	crypto "github.com/libp2p/go-libp2p-crypto"
 	"github.com/multiformats/go-multicodec"
+	"github.com/robfig/cron/v3"
 
 	// DB interfaces
 	"github.com/filecoin-project/dealbot/controller/state/postgresdb"
@@ -83,7 +84,8 @@ func serializeToJSON(ctx context.Context, n ipld.Node) (cid.Cid, []byte, error) 
 
 // stateDB is a persisted implementation of the State interface
 type stateDB struct {
-	dbconn DBConnector
+	dbconn    DBConnector
+	cronSched *cron.Cron
 	crypto.PrivKey
 	recorder metrics.MetricsRecorder
 	txlock   sync.Mutex
@@ -154,10 +156,20 @@ func NewStateDB(ctx context.Context, driver, conn string, identity crypto.PrivKe
 		return nil, fmt.Errorf("%s database migration failed: %w", driver, err)
 	}
 
+	//cronSched := cron.New(cron.WithSeconds())
+	cronSched := cron.New()
+	cronSched.Start()
+
 	st := &stateDB{
-		dbconn:   dbConn,
-		PrivKey:  identity,
-		recorder: recorder,
+		dbconn:    dbConn,
+		cronSched: cronSched,
+		PrivKey:   identity,
+		recorder:  recorder,
+	}
+
+	err = st.recoverScheduledTasks(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	return st, nil
@@ -222,10 +234,17 @@ func (s *stateDB) db() *sql.DB {
 
 // Get returns a specific task identified by ID
 func (s *stateDB) Get(ctx context.Context, taskID string) (tasks.Task, error) {
+	task, _, err := s.getWithTag(ctx, taskID)
+	return task, err
+}
+
+func (s *stateDB) getWithTag(ctx context.Context, taskID string) (tasks.Task, string, error) {
 	var task tasks.Task
+	var tag string
 	err := s.transact(ctx, func(tx *sql.Tx) error {
 		var serialized string
-		err := tx.QueryRowContext(ctx, getTaskSQL, taskID).Scan(&serialized)
+		var tagString sql.NullString
+		err := tx.QueryRowContext(ctx, getTaskWithTagSQL, taskID).Scan(&serialized, &tagString)
 		if err != nil {
 			return err
 		}
@@ -235,12 +254,16 @@ func (s *stateDB) Get(ctx context.Context, taskID string) (tasks.Task, error) {
 			return err
 		}
 		task = tp.Build().(tasks.Task)
+
+		if tagString.Valid {
+			tag = tagString.String
+		}
 		return nil
 	})
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
-	return task, nil
+	return task, tag, nil
 }
 
 // Get returns a specific task identified by CID
@@ -313,6 +336,15 @@ func (s *stateDB) AssignTask(ctx context.Context, req tasks.PopTask) (tasks.Task
 		return nil, fmt.Errorf("cannot assign %q status to task", req.Status.String())
 	}
 
+	// Check if this worker is being drained
+	draining, err := s.drainingWorker(ctx, req.WorkedBy.String())
+	if err != nil {
+		return nil, err
+	}
+	if draining {
+		return nil, nil
+	}
+
 	var tags []interface{}
 	if req.Tags.Exists() {
 		reqTags := req.Tags.Must()
@@ -328,20 +360,66 @@ func (s *stateDB) AssignTask(ctx context.Context, req tasks.PopTask) (tasks.Task
 		}
 	}
 
+	// Keep popping tasks until there a runanable task is found or until there
+	// are no more tasks
 	var assigned tasks.Task
+	for {
+		task, scheduled, err := s.popTask(ctx, req.WorkedBy.String(), &req.Status, tags)
+		if err != nil {
+			return nil, err
+		}
+		if task == nil {
+			// No more tasks to pop
+			return nil, nil
+		}
+		if !scheduled {
+			// Found a task that is runable, stop looking for tasks
+			assigned = task
+			break
+		}
+		// Got a scheduled task, so schedule it.
+		err = s.scheduleTask(task, nil)
+		if err != nil {
+			log.Errorw("failed to schedule task", "taskID", task.UUID.String(), "err", err)
+		}
+	}
+
+	if s.recorder != nil {
+		if err = s.recorder.ObserveTask(assigned); err != nil {
+			return nil, err
+		}
+	}
+	return assigned, nil
+}
+
+func (s *stateDB) drainingWorker(ctx context.Context, worker string) (bool, error) {
+	var draining bool
 	err := s.transact(ctx, func(tx *sql.Tx) error {
 		var cnt int
-		err := tx.QueryRowContext(ctx, drainedQuerySQL, req.WorkedBy.String()).Scan(&cnt)
+		err := tx.QueryRowContext(ctx, drainedQuerySQL, worker).Scan(&cnt)
 		if err != nil {
 			return err
 		}
 
 		if cnt > 0 {
 			// worker is being drained
-			return nil
+			draining = true
 		}
+		return nil
+	})
+	if err != nil {
+		return false, err
+	}
+	return draining, nil
+}
 
+func (s *stateDB) popTask(ctx context.Context, workedBy string, status tasks.Status, tags []interface{}) (tasks.Task, bool, error) {
+	var assigned tasks.Task
+	var scheduled bool
+
+	err := s.transact(ctx, func(tx *sql.Tx) error {
 		var taskID, serialized string
+		var err error
 		if len(tags) == 0 {
 			err = tx.QueryRowContext(ctx, oldestAvailableTaskSQL).Scan(&taskID, &serialized)
 		} else {
@@ -367,7 +445,18 @@ func (s *stateDB) AssignTask(ctx context.Context, req tasks.PopTask) (tasks.Task
 		}
 		task := tp.Build().(tasks.Task)
 
-		assigned = task.Assign(req.WorkedBy.String(), &req.Status)
+		if hasSchedule(task) {
+			// Assign task to scheduler in DB only
+			_, err = tx.ExecContext(ctx, updateTaskWorkedBySQL, taskID, schedulerOwner)
+			if err != nil {
+				return fmt.Errorf("could not assign task: %w", err)
+			}
+			assigned = task
+			scheduled = true
+			return nil
+		}
+
+		assigned = task.Assign(workedBy, status)
 
 		lnk, data, err := serializeToJSON(ctx, assigned.Representation())
 		if err != nil {
@@ -375,13 +464,13 @@ func (s *stateDB) AssignTask(ctx context.Context, req tasks.PopTask) (tasks.Task
 		}
 
 		// Assign task to worker
-		_, err = tx.ExecContext(ctx, assignTaskSQL, taskID, data, req.WorkedBy.String(), lnk.String())
+		_, err = tx.ExecContext(ctx, assignTaskSQL, taskID, data, workedBy, lnk.String())
 		if err != nil {
 			return fmt.Errorf("could not assign task: %w", err)
 		}
 
 		// Set new status for task
-		_, err = tx.ExecContext(ctx, setTaskStatusSQL, taskID, req.Status.Int(), time.Now())
+		_, err = tx.ExecContext(ctx, setTaskStatusSQL, taskID, status.Int(), time.Now())
 		if err != nil {
 			return fmt.Errorf("could not update status task: %w", err)
 		}
@@ -389,15 +478,9 @@ func (s *stateDB) AssignTask(ctx context.Context, req tasks.PopTask) (tasks.Task
 		return nil
 	})
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
-
-	if s.recorder != nil && assigned != nil {
-		if err = s.recorder.ObserveTask(assigned); err != nil {
-			return nil, err
-		}
-	}
-	return assigned, nil
+	return assigned, scheduled, nil
 }
 
 func (s *stateDB) Update(ctx context.Context, taskID string, req tasks.UpdateTask) (tasks.Task, error) {
