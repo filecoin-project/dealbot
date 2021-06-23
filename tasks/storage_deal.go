@@ -340,13 +340,6 @@ func (de *storageDealExecutor) executeAndMonitorDeal(ctx context.Context, update
 				continue
 			}
 
-			if len(info.DealStages.Stages) > 0 {
-				err = updateStage(ctx, storagemarket.DealStates[info.State], toStageDetails(info.DealStages.Stages[len(info.DealStages.Stages)-1]))
-
-				if err != nil {
-					return err
-				}
-			}
 			if info.State != lastState {
 				de.log("Deal status",
 					"cid", info.ProposalCid,
@@ -370,10 +363,18 @@ func (de *storageDealExecutor) executeAndMonitorDeal(ctx context.Context, update
 
 				logStages(info, de.log)
 				return fmt.Errorf("storage deal failed: %s", info.Message)
+			}
+
+			if len(info.DealStages.Stages) > 0 {
+				err = updateStage(ctx, storagemarket.DealStates[info.State], toStageDetails(info.DealStages.Stages[len(info.DealStages.Stages)-1]))
+
+				if err != nil {
+					return err
+				}
+			}
 
 			// deal is on chain, exit successfully
-			case storagemarket.StorageDealActive:
-
+			if info.State == storagemarket.StorageDealActive {
 				logStages(info, de.log)
 				return nil
 			}
