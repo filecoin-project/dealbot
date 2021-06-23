@@ -201,7 +201,7 @@ func (e *Engine) runTask(ctx context.Context, task tasks.Task, worker int) {
 	defer cancel()
 
 	runCount64, _ := task.RunCount.AsInt()
-	runCount := int(runCount64)
+	runCount := int(runCount64) + 1
 	var err error
 	log.Infow("worker running task", "uuid", task.UUID.String(), "run_count", runCount, "worker_id", worker)
 

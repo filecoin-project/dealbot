@@ -35,7 +35,6 @@ func (j *job) Run() {
 	if j.entryID == noEnt {
 		j.entryID = <-j.idChan
 	}
-	j.runCount++
 	newTaskID := j.sdb.runTask(j.taskID, j.schedule, j.expireAt, j.limit, j.runCount, j.entryID)
 	if j.runNotice != nil && newTaskID != "" {
 		select {
@@ -43,6 +42,7 @@ func (j *job) Run() {
 		default:
 		}
 	}
+	j.runCount++
 }
 
 func (s *stateDB) scheduleTask(task tasks.Task, runNotice chan string) error {
