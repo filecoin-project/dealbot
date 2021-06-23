@@ -477,7 +477,7 @@ func messageParser(message string) []interface{} {
 	}
 	var ret []interface{}
 	for k, v := range m {
-		ret = append(ret, k, v)
+		ret = append(ret, "deal_"+k, v)
 	}
 	return ret
 }
