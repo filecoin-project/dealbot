@@ -345,7 +345,7 @@ func (de *storageDealExecutor) executeAndMonitorDeal(ctx context.Context, update
 					"cid", info.ProposalCid,
 					"piece", info.PieceCID,
 					"state", storagemarket.DealStates[info.State],
-					"message", info.Message,
+					"deal_message", info.Message,
 					"provider", info.Provider,
 				)
 				lastState = info.State
@@ -449,7 +449,7 @@ func logStages(info api.DealInfo, log LogStatus) {
 			"duration", info.Duration,
 			"deal_id", info.DealID,
 			"piece_cid", info.PieceCID,
-			"message", info.Message,
+			"deal_message", info.Message,
 			"provider", info.Provider,
 			"price", info.PricePerEpoch,
 			"verfied", info.Verified,
