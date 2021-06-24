@@ -96,7 +96,7 @@ func New(ctx *cli.Context) (*Controller, error) {
 		}
 	}
 
-	backend, err := state.NewStateDB(ctx.Context, ctx.String("driver"), ctx.String("dbloc"), key, recorder)
+	backend, err := state.NewStateDB(ctx.Context, ctx.String("driver"), ctx.String("dbloc"), key, recorder, nil)
 	if err != nil {
 		return nil, err
 	}

@@ -314,7 +314,7 @@ func newHarness(ctx context.Context, t *testing.T) *harness {
 	pr, _, _ := crypto.GenerateKeyPair(crypto.Ed25519, 0)
 	h.dbloc, err = ioutil.TempDir("", "dealbot_test_*")
 	require.NoError(t, err)
-	be, err := state.NewStateDB(ctx, "sqlite", h.dbloc+"/tmp.sqlite", pr, h.recorder)
+	be, err := state.NewStateDB(ctx, "sqlite", h.dbloc+"/tmp.sqlite", pr, h.recorder, nil)
 	require.NoError(t, err)
 	h.controller, err = controller.NewWithDependencies(listener, nil, "", h.recorder, be)
 

@@ -87,8 +87,9 @@ type stateDB struct {
 	dbconn    DBConnector
 	cronSched *cron.Cron
 	crypto.PrivKey
-	recorder metrics.MetricsRecorder
-	txlock   sync.Mutex
+	recorder  metrics.MetricsRecorder
+	txlock    sync.Mutex
+	runNotice chan string
 }
 
 func migratePostgres(db *sql.DB) error {
@@ -126,7 +127,7 @@ func migrateDatabase(dbName string, dbInstance database.Driver) error {
 }
 
 // NewStateDB creates a state instance with a given driver and identity
-func NewStateDB(ctx context.Context, driver, conn string, identity crypto.PrivKey, recorder metrics.MetricsRecorder) (State, error) {
+func NewStateDB(ctx context.Context, driver, conn string, identity crypto.PrivKey, recorder metrics.MetricsRecorder, runNotice chan string) (State, error) {
 	var dbConn DBConnector
 	var migrateFunc func(*sql.DB) error
 
@@ -165,6 +166,7 @@ func NewStateDB(ctx context.Context, driver, conn string, identity crypto.PrivKe
 		cronSched: cronSched,
 		PrivKey:   identity,
 		recorder:  recorder,
+		runNotice: runNotice,
 	}
 
 	err = st.recoverScheduledTasks(ctx)
@@ -378,7 +380,7 @@ func (s *stateDB) AssignTask(ctx context.Context, req tasks.PopTask) (tasks.Task
 			break
 		}
 		// Got a scheduled task, so schedule it.
-		err = s.scheduleTask(task, nil)
+		err = s.scheduleTask(task)
 		if err != nil {
 			log.Errorw("failed to schedule task", "taskID", task.UUID.String(), "err", err)
 		}
@@ -446,6 +448,12 @@ func (s *stateDB) popTask(ctx context.Context, workedBy string, status tasks.Sta
 		task := tp.Build().(tasks.Task)
 
 		if hasSchedule(task) {
+			// This task has a schedule, but is not owned by the scheduler.
+			// Normally tasks are scheduled on ingestion, before they are
+			// written to the DB.  However, this may have been a previously
+			// scheduled task that became that was rescheduled or inserted into
+			// the DB outside of the notmal ingestion process.
+
 			// Assign task to scheduler in DB only
 			_, err = tx.ExecContext(ctx, updateTaskWorkedBySQL, taskID, schedulerOwner)
 			if err != nil {
@@ -730,17 +738,39 @@ func (s *stateDB) saveTask(ctx context.Context, task tasks.Task, tag string) err
 		}
 	}
 
-	return s.transact(ctx, func(tx *sql.Tx) error {
+	taskID := task.UUID.String()
+	scheduledTask := hasSchedule(task)
+
+	err = s.transact(ctx, func(tx *sql.Tx) error {
 		now := time.Now()
-		if _, err := tx.ExecContext(ctx, createTaskSQL, task.UUID.String(), data, now, lnk.String(), tagCol); err != nil {
+		if _, err := tx.ExecContext(ctx, createTaskSQL, taskID, data, now, lnk.String(), tagCol); err != nil {
 			return err
 		}
 
-		if _, err := tx.ExecContext(ctx, setTaskStatusSQL, task.UUID.String(), tasks.Available.Int(), now); err != nil {
+		if _, err := tx.ExecContext(ctx, setTaskStatusSQL, taskID, tasks.Available.Int(), now); err != nil {
 			return err
 		}
+
+		if scheduledTask {
+			// Assign task to scheduler in DB only
+			if _, err = tx.ExecContext(ctx, updateTaskWorkedBySQL, taskID, schedulerOwner); err != nil {
+				return fmt.Errorf("could not assign task to scheduler: %w", err)
+			}
+		}
+
 		return nil
 	})
+	if err != nil {
+		return err
+	}
+
+	if scheduledTask {
+		// Got a scheduled task, so schedule it.
+		if err = s.scheduleTask(task); err != nil {
+			return fmt.Errorf("failed to schedule task %q: %w", taskID, err)
+		}
+	}
+	return nil
 }
 
 // countTasks retrieves the total number of tasks

@@ -19,15 +19,14 @@ var noEnt cron.EntryID
 
 // job is the scheduler's internal record of a scheduled job
 type job struct {
-	entryID   cron.EntryID
-	expireAt  time.Time
-	idChan    chan cron.EntryID
-	limit     time.Duration
-	schedule  string
-	sdb       *stateDB
-	runCount  int
-	runNotice chan string
-	taskID    string
+	entryID  cron.EntryID
+	expireAt time.Time
+	idChan   chan cron.EntryID
+	limit    time.Duration
+	schedule string
+	sdb      *stateDB
+	runCount int
+	taskID   string
 }
 
 // Run creates a copy of the task without the schedule for PopTask
@@ -35,21 +34,15 @@ func (j *job) Run() {
 	if j.entryID == noEnt {
 		j.entryID = <-j.idChan
 	}
-	newTaskID := j.sdb.runTask(j.taskID, j.schedule, j.expireAt, j.limit, j.runCount, j.entryID)
-	if j.runNotice != nil && newTaskID != "" {
-		select {
-		case j.runNotice <- newTaskID:
-		default:
-		}
-	}
+	j.sdb.runTask(j.taskID, j.schedule, j.expireAt, j.limit, j.runCount, j.entryID)
 	j.runCount++
 }
 
-func (s *stateDB) scheduleTask(task tasks.Task, runNotice chan string) error {
+func (s *stateDB) scheduleTask(task tasks.Task) error {
 	taskID := task.UUID.String()
 	taskSchedule, limit := getTaskSchedule(task)
 	if taskSchedule == "" {
-		log.Infow("task became unscheduled, resetting task", "taskID", taskID)
+		log.Infow("task became unscheduled, unassigning from scheduler", "taskID", taskID)
 		s.unassignScheduledTask(taskID)
 		return nil
 	}
@@ -57,12 +50,11 @@ func (s *stateDB) scheduleTask(task tasks.Task, runNotice chan string) error {
 	log.Infow("scheduling task", "uuid", taskID, "schedule", taskSchedule, "schedule_limit", limit)
 
 	j := &job{
-		idChan:    make(chan cron.EntryID, 1),
-		limit:     limit,
-		schedule:  taskSchedule,
-		sdb:       s,
-		runNotice: runNotice,
-		taskID:    taskID,
+		idChan:   make(chan cron.EntryID, 1),
+		limit:    limit,
+		schedule: taskSchedule,
+		sdb:      s,
+		taskID:   taskID,
 	}
 	if limit != 0 {
 		j.limit = limit
@@ -78,47 +70,55 @@ func (s *stateDB) scheduleTask(task tasks.Task, runNotice chan string) error {
 	return nil
 }
 
-func (s *stateDB) runTask(taskID, schedule string, expireAt time.Time, limit time.Duration, runCount int, jobID cron.EntryID) string {
+func (s *stateDB) runTask(taskID, schedule string, expireAt time.Time, limit time.Duration, runCount int, jobID cron.EntryID) {
 	task, tag, err := s.getWithTag(context.Background(), taskID)
 	if err != nil {
 		log.Errorw("cannot load scheduled task from database", "taskID", taskID, "err", err)
-		return ""
+		return
 	}
 
 	// If task removed then stop scheduling it
 	if task == nil {
 		log.Infow("scheduled task removed", "taskID", taskID)
 		s.cronSched.Remove(jobID)
-		return ""
+		return
 	}
 
-	// If schedule changed, unassign and let task be rescheduled
+	// If task's schedule changed, rescheduled it
 	taskSchedule, schedLimit := getTaskSchedule(task)
 	if taskSchedule != schedule || schedLimit != limit {
-		log.Infow("task scheduled changed, resetting task", "taskID", taskID)
-		s.unassignScheduledTask(taskID)
+		log.Infow("task scheduled changed, rescheduling task", "taskID", taskID)
 		s.cronSched.Remove(jobID)
-		return ""
+		s.scheduleTask(task)
+		return
 	}
 
-	// If the schedule has expired remove job from scheduler
+	// If the schedule has expired, remove job from scheduler
 	if !expireAt.IsZero() && time.Now().After(expireAt) {
 		log.Infow("scheduling expired for task", "taskID", taskID)
 		s.cronSched.Remove(jobID)
-		return ""
+		return
 	}
 
+	// Generate a new runable task
 	newTaskID, err := s.createRunableTask(task, tag, runCount)
 	if err != nil {
 		log.Errorw("cannot create runable task", "scheduledTaskID", taskID, "err", err)
-		return ""
+		return
 	}
 
 	log.Infow("created new runable task from scheduled task", "runableTaskID", newTaskID, "scheduledTaskID", taskID)
 	s.logNextRunTime(taskID, jobID)
-	return newTaskID
+
+	if s.runNotice != nil {
+		select {
+		case s.runNotice <- newTaskID:
+		default:
+		}
+	}
 }
 
+// createRunableTask generates a new runable (not scheduled) task from a scheduled task
 func (s *stateDB) createRunableTask(task tasks.Task, tag string, runCount int) (string, error) {
 	newTaskID := uuid.New().String()
 	runableTask := task.MakeRunable(newTaskID, runCount)
@@ -129,6 +129,7 @@ func (s *stateDB) createRunableTask(task tasks.Task, tag string, runCount int) (
 	return newTaskID, nil
 }
 
+// unassignScheduledTask clears task ownership, in DB table only
 func (s *stateDB) unassignScheduledTask(taskID string) error {
 	ctx := context.Background()
 	err := s.transact(ctx, func(tx *sql.Tx) error {
@@ -141,6 +142,9 @@ func (s *stateDB) unassignScheduledTask(taskID string) error {
 	return nil
 }
 
+// recoverScheduledTasks reads all tasks that are assigned to the scheduler and
+// schedules them.  This should only be called during controller startup to
+// recover tasks that were scheduled during a previous run of the controller.
 func (s *stateDB) recoverScheduledTasks(ctx context.Context) error {
 	var tasklist []tasks.Task
 	err := s.transact(ctx, func(tx *sql.Tx) error {
@@ -170,7 +174,7 @@ func (s *stateDB) recoverScheduledTasks(ctx context.Context) error {
 	}
 
 	for i := range tasklist {
-		err = s.scheduleTask(tasklist[i], nil)
+		err = s.scheduleTask(tasklist[i])
 		if err != nil {
 			log.Errorw("cannot reschedule task", "taskID", tasklist[i].UUID.String(), "err", err)
 		}
@@ -190,6 +194,11 @@ func (s *stateDB) logNextRunTime(taskID string, jobID cron.EntryID) {
 
 func hasSchedule(task tasks.Task) bool {
 	if t := task.RetrievalTask; t.Exists() {
+		if sch := t.Must().Schedule; sch.Exists() {
+			return sch.Must().String() != ""
+		}
+	}
+	if t := task.StorageTask; t.Exists() {
 		if sch := t.Must().Schedule; sch.Exists() {
 			return sch.Must().String() != ""
 		}

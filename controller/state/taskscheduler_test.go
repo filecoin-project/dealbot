@@ -30,10 +30,13 @@ func TestScheduledTask(t *testing.T) {
 	key, err := makeKey()
 	require.NoError(t, err)
 
-	stateInterface, err := NewStateDB(ctx, "sqlite", filepath.Join(tmpDir, "teststate.db"), key, nil)
+	runNotice := make(chan string, 1)
+
+	stateInterface, err := NewStateDB(ctx, "sqlite", filepath.Join(tmpDir, "teststate.db"), key, nil, runNotice)
 	require.NoError(t, err)
 	state := stateInterface.(*stateDB)
 
+	// Replace normal scheduler with one that accepts seconds
 	state.cronSched.Stop()
 	state.cronSched = cron.New(cron.WithSeconds())
 	state.cronSched.Start()
@@ -41,27 +44,20 @@ func TestScheduledTask(t *testing.T) {
 	err = populateTestTasks(ctx, bytes.NewReader([]byte(scheduledTasks)), stateInterface)
 	require.NoError(t, err)
 
-	t.Log("popping scheduled task")
 	worker := "test_worker"
 	task, scheduled, err := state.popTask(ctx, worker, tasks.InProgress, nil)
 	require.NoError(t, err)
-	require.NotNil(t, task, "Did not find task to schedule")
-	require.True(t, scheduled, "Task with schedule was not scheduled")
+	require.Nil(t, task, "should not find unassigned task")
 
-	taskID := task.UUID.String()
-	t.Log("scheduling task", taskID)
-
-	runNotice := make(chan string, 1)
-	err = state.scheduleTask(task, runNotice)
-	require.NoError(t, err)
-
+	t.Log("waiting for scheduled task 1st generation")
 	var newTaskID string
 	select {
 	case <-time.After(10 * time.Second):
 		t.Fatal("scheduled task did not run")
 	case newTaskID = <-runNotice:
-		t.Log("scheduled task", taskID, "generated task", newTaskID)
+		t.Log("scheduler generated task", newTaskID)
 	}
+
 	newTask, err := state.Get(ctx, newTaskID)
 	require.NoError(t, err)
 	require.NotNil(t, newTask, "Did not find new generated task")
@@ -81,11 +77,12 @@ func TestScheduledTask(t *testing.T) {
 	assert.Equal(t, 0, int(runCount))
 	t.Log("popped task assigned to", worker)
 
+	t.Log("waiting for scheduled task 2nd generation")
 	select {
 	case <-time.After(10 * time.Second):
 		t.Fatal("scheduled task did not run again")
 	case newTaskID = <-runNotice:
-		t.Log("scheduled task", taskID, "generated task", newTaskID)
+		t.Log("scheduler generated task", newTaskID)
 	}
 	newTask, err = state.Get(ctx, newTaskID)
 	require.NoError(t, err)
