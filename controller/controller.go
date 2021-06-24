@@ -1,18 +1,23 @@
+//go:generate go run ./webutil/gen app static/script.js
+
 package controller
 
 import (
 	"context"
 	"embed"
 	"fmt"
+	"io"
 	"io/fs"
 	"io/ioutil"
 	"net"
 	"net/http"
 	"os"
+	"path"
 	"time"
 
 	"github.com/filecoin-project/dealbot/controller/graphql"
 	"github.com/filecoin-project/dealbot/controller/state"
+	"github.com/filecoin-project/dealbot/controller/webutil"
 	"github.com/filecoin-project/dealbot/metrics"
 	metricslog "github.com/filecoin-project/dealbot/metrics/log"
 	"github.com/filecoin-project/dealbot/metrics/prometheus"
@@ -101,12 +106,7 @@ func New(ctx *cli.Context) (*Controller, error) {
 		return nil, err
 	}
 
-	gqlToken := ""
-	if ctx.IsSet("gqlAccessToken") {
-		gqlToken = ctx.String("gqlAccessToken")
-	}
-
-	return NewWithDependencies(l, gl, gqlToken, recorder, backend)
+	return NewWithDependencies(ctx, l, gl, recorder, backend)
 }
 
 type logEcapsulator struct {
@@ -121,7 +121,7 @@ func (fw *logEcapsulator) Write(p []byte) (n int, err error) {
 //go:embed static
 var static embed.FS
 
-func NewWithDependencies(listener, graphqlListener net.Listener, gqlToken string, recorder metrics.MetricsRecorder, backend state.State) (*Controller, error) {
+func NewWithDependencies(ctx *cli.Context, listener, graphqlListener net.Listener, recorder metrics.MetricsRecorder, backend state.State) (*Controller, error) {
 	srv := new(Controller)
 	srv.db = backend
 
@@ -156,7 +156,18 @@ func NewWithDependencies(listener, graphqlListener net.Listener, gqlToken string
 	if metricsHandler != nil {
 		r.Handle("/metrics", metricsHandler)
 	}
-	r.PathPrefix("/").Handler(http.FileServer(http.FS(statDir)))
+
+	if ctx.IsSet("devAssetDir") {
+		scriptResolver := func(w http.ResponseWriter, r *http.Request) {
+			data := webutil.Compile(path.Join(ctx.String("devAssetDir"), "app"), false)
+			w.Header().Set("Content-Type", "application/json")
+			io.WriteString(w, data)
+		}
+		r.HandleFunc("/script.js", scriptResolver)
+		r.PathPrefix("/").Handler(http.FileServer(http.Dir(path.Join(ctx.String("devAssetDir"), "static"))))
+	} else {
+		r.PathPrefix("/").Handler(http.FileServer(http.FS(statDir)))
+	}
 
 	srv.doneCh = make(chan struct{})
 	srv.server = &http.Server{
@@ -166,7 +177,7 @@ func NewWithDependencies(listener, graphqlListener net.Listener, gqlToken string
 	}
 
 	if graphqlListener != nil {
-		gqlHandler, err := graphql.GetHandler(srv.db, gqlToken)
+		gqlHandler, err := graphql.GetHandler(srv.db, ctx.String("gqlAccessToken"))
 		if err != nil {
 			return nil, err
 		}

@@ -877,7 +877,7 @@ func (s *stateDB) PublishRecordsFrom(ctx context.Context, worker string) error {
 			if err != nil {
 				return err
 			}
-			tskBuilder := tasks.Type.FinishedTask.NewBuilder()
+			tskBuilder := tasks.Type.FinishedTask__Repr.NewBuilder()
 			if err := dagjson.Decoder(tskBuilder, rcrdRdr); err != nil {
 				return err
 			}
