@@ -587,7 +587,7 @@ func withState(ctx context.Context, t *testing.T, fn func(*stateDB)) {
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
 	if postgresBin == "" {
-		stateInterface, err = NewStateDB(ctx, "sqlite", filepath.Join(tmpDir, "teststate.db"), key, nil, nil)
+		stateInterface, err = NewStateDB(ctx, "sqlite", filepath.Join(tmpDir, "teststate.db"), key, nil)
 		require.NoError(t, err)
 	} else {
 		err := exec.Command("./setup_pg_cluster.sh", tmpDir, defaultPGPort).Run()
@@ -595,7 +595,7 @@ func withState(ctx context.Context, t *testing.T, fn func(*stateDB)) {
 		require.NoError(t, err)
 		stateInterface, err = NewStateDB(ctx, "postgres", fmt.Sprintf(
 			"host=%s port=%s user=%s sslmode=disable",
-			"localhost", defaultPGPort, "postgres"), key, nil, nil)
+			"localhost", defaultPGPort, "postgres"), key, nil)
 		require.NoError(t, err)
 	}
 	state, ok := stateInterface.(*stateDB)

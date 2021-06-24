@@ -127,7 +127,12 @@ func migrateDatabase(dbName string, dbInstance database.Driver) error {
 }
 
 // NewStateDB creates a state instance with a given driver and identity
-func NewStateDB(ctx context.Context, driver, conn string, identity crypto.PrivKey, recorder metrics.MetricsRecorder, runNotice chan string) (State, error) {
+func NewStateDB(ctx context.Context, driver, conn string, identity crypto.PrivKey, recorder metrics.MetricsRecorder) (State, error) {
+	return newStateDBWithNotify(ctx, driver, conn, identity, recorder, nil)
+}
+
+// newStateDBWithNotify is NewStateDB with additional parameters for testing
+func newStateDBWithNotify(ctx context.Context, driver, conn string, identity crypto.PrivKey, recorder metrics.MetricsRecorder, runNotice chan string) (State, error) {
 	var dbConn DBConnector
 	var migrateFunc func(*sql.DB) error
 
@@ -447,7 +452,7 @@ func (s *stateDB) popTask(ctx context.Context, workedBy string, status tasks.Sta
 		}
 		task := tp.Build().(tasks.Task)
 
-		if hasSchedule(task) {
+		if task.HasSchedule() {
 			// This task has a schedule, but is not owned by the scheduler.
 			// Normally tasks are scheduled on ingestion, before they are
 			// written to the DB.  However, this may have been a previously
@@ -739,7 +744,7 @@ func (s *stateDB) saveTask(ctx context.Context, task tasks.Task, tag string) err
 	}
 
 	taskID := task.UUID.String()
-	scheduledTask := hasSchedule(task)
+	scheduledTask := task.HasSchedule()
 
 	err = s.transact(ctx, func(tx *sql.Tx) error {
 		now := time.Now()

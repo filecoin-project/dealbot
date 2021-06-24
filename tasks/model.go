@@ -292,6 +292,40 @@ func (t *_Task) MakeRunable(newUUID string, runCount int) Task {
 	return &newTask
 }
 
+func (t *_Task) HasSchedule() bool {
+	if rt := t.RetrievalTask; rt.Exists() {
+		if sch := rt.Must().Schedule; sch.Exists() {
+			return sch.Must().String() != ""
+		}
+	} else if st := t.StorageTask; st.Exists() {
+		if sch := st.Must().Schedule; sch.Exists() {
+			return sch.Must().String() != ""
+		}
+	}
+	return false
+}
+
+func (t *_Task) Schedule() (string, string) {
+	var schedule, limit string
+
+	if rt := t.RetrievalTask; rt.Exists() {
+		if sch := rt.Must().Schedule; sch.Exists() {
+			schedule = sch.Must().String()
+			if lim := rt.Must().ScheduleLimit; lim.Exists() {
+				limit = lim.Must().String()
+			}
+		}
+	} else if st := t.StorageTask; st.Exists() {
+		if sch := st.Must().Schedule; sch.Exists() {
+			schedule = sch.Must().String()
+			if lim := st.Must().ScheduleLimit; lim.Exists() {
+				limit = lim.Must().String()
+			}
+		}
+	}
+	return schedule, limit
+}
+
 func (t *_Task) Assign(worker string, status Status) Task {
 	newTask := _Task{
 		UUID:                t.UUID,

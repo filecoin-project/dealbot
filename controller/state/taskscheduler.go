@@ -25,7 +25,7 @@ type job struct {
 	entryID  cron.EntryID
 	expireAt time.Time
 	idChan   chan cron.EntryID
-	limit    time.Duration
+	limit    string
 	schedule string
 	sdb      *stateDB
 	runCount int
@@ -37,13 +37,13 @@ func (j *job) Run() {
 	if j.entryID == noEnt {
 		j.entryID = <-j.idChan
 	}
-	j.sdb.runTask(j.taskID, j.schedule, j.expireAt, j.limit, j.runCount, j.entryID)
+	j.sdb.runTask(j.taskID, j.schedule, j.limit, j.expireAt, j.runCount, j.entryID)
 	j.runCount++
 }
 
 func (s *stateDB) scheduleTask(task tasks.Task) error {
 	taskID := task.UUID.String()
-	taskSchedule, limit := getTaskSchedule(task)
+	taskSchedule, limit := task.Schedule()
 	if taskSchedule == "" {
 		log.Infow("task became unscheduled, unassigning from scheduler", "taskID", taskID)
 		s.unassignScheduledTask(taskID)
@@ -54,14 +54,18 @@ func (s *stateDB) scheduleTask(task tasks.Task) error {
 
 	j := &job{
 		idChan:   make(chan cron.EntryID, 1),
-		limit:    limit,
 		schedule: taskSchedule,
 		sdb:      s,
 		taskID:   taskID,
 	}
-	if limit != 0 {
+	if limit != "" {
+		duration, err := time.ParseDuration(limit)
+		if err != nil {
+			return fmt.Errorf("invalid schedule limit %q: %s", limit, err)
+		}
+
 		j.limit = limit
-		j.expireAt = time.Now().Add(limit)
+		j.expireAt = time.Now().Add(duration)
 	}
 	entID, err := s.cronSched.AddJob(taskSchedule, j)
 	if err != nil {
@@ -73,7 +77,7 @@ func (s *stateDB) scheduleTask(task tasks.Task) error {
 	return nil
 }
 
-func (s *stateDB) runTask(taskID, schedule string, expireAt time.Time, limit time.Duration, runCount int, jobID cron.EntryID) {
+func (s *stateDB) runTask(taskID, schedule, limit string, expireAt time.Time, runCount int, jobID cron.EntryID) {
 	task, tag, err := s.getWithTag(context.Background(), taskID)
 	if err != nil {
 		log.Errorw("cannot load scheduled task from database", "taskID", taskID, "err", err)
@@ -88,7 +92,7 @@ func (s *stateDB) runTask(taskID, schedule string, expireAt time.Time, limit tim
 	}
 
 	// If task's schedule changed, rescheduled it
-	taskSchedule, schedLimit := getTaskSchedule(task)
+	taskSchedule, schedLimit := task.Schedule()
 	if taskSchedule != schedule || schedLimit != limit {
 		log.Infow("task scheduled changed, rescheduling task", "taskID", taskID)
 		s.cronSched.Remove(jobID)
@@ -202,51 +206,4 @@ func (s *stateDB) logNextRunTime(taskID string, jobID cron.EntryID) {
 		log.Errorw("task is no longer scheduled", "taskID", taskID)
 	}
 	log.Infow("scheduled task", "taskID", taskID, "next_run", ent.Next)
-}
-
-func hasSchedule(task tasks.Task) bool {
-	if t := task.RetrievalTask; t.Exists() {
-		if sch := t.Must().Schedule; sch.Exists() {
-			return sch.Must().String() != ""
-		}
-	}
-	if t := task.StorageTask; t.Exists() {
-		if sch := t.Must().Schedule; sch.Exists() {
-			return sch.Must().String() != ""
-		}
-	}
-	return false
-}
-
-func getTaskSchedule(task tasks.Task) (string, time.Duration) {
-	var schedule, limit string
-	var duration time.Duration
-
-	if t := task.RetrievalTask; t.Exists() {
-		if sch := t.Must().Schedule; sch.Exists() {
-			schedule = sch.Must().String()
-			if lim := t.Must().ScheduleLimit; lim.Exists() {
-				limit = lim.Must().String()
-			}
-		}
-	}
-
-	if t := task.StorageTask; t.Exists() {
-		if sch := t.Must().Schedule; sch.Exists() {
-			schedule = sch.Must().String()
-			if lim := t.Must().ScheduleLimit; lim.Exists() {
-				limit = lim.Must().String()
-			}
-		}
-	}
-
-	if schedule != "" && limit != "" {
-		var err error
-		duration, err = time.ParseDuration(limit)
-		if err != nil {
-			log.Errorw("task has invalid value for ScheduleLimit", "uuid", task.UUID.String(), "err", err)
-		}
-	}
-
-	return schedule, duration
 }

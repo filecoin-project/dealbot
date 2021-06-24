@@ -32,7 +32,7 @@ func TestScheduledTask(t *testing.T) {
 
 	runNotice := make(chan string, 1)
 
-	stateInterface, err := NewStateDB(ctx, "sqlite", filepath.Join(tmpDir, "teststate.db"), key, nil, runNotice)
+	stateInterface, err := newStateDBWithNotify(ctx, "sqlite", filepath.Join(tmpDir, "teststate.db"), key, nil, runNotice)
 	require.NoError(t, err)
 	state := stateInterface.(*stateDB)
 
@@ -63,7 +63,7 @@ func TestScheduledTask(t *testing.T) {
 	require.NotNil(t, newTask, "Did not find new generated task")
 	assert.Equal(t, newTaskID, newTask.UUID.String(), "wrong uuid for new task")
 
-	sch, _ := getTaskSchedule(newTask)
+	sch, _ := newTask.Schedule()
 	assert.Equal(t, "", sch, "new task should not have schedule")
 
 	t.Log("popping generated task")
