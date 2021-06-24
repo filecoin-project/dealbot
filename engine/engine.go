@@ -332,6 +332,12 @@ func (e *Engine) apiGood() bool {
 		log.Errorw("could not query api for datacap", "error", err)
 		return false
 	}
+	log.Infow("local datacap", "datacap", localCap)
+
+	if e.nodeConfig.MinWalletCap.Int64() < 0 {
+		return true
+	}
+
 	if localCap == nil {
 		return e.nodeConfig.MinWalletCap.NilOrZero()
 	}
