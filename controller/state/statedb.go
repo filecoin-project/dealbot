@@ -458,6 +458,7 @@ func (s *stateDB) popTask(ctx context.Context, workedBy string, status tasks.Sta
 			// written to the DB.  However, this may have been a previously
 			// scheduled task that became that was rescheduled or inserted into
 			// the DB outside of the notmal ingestion process.
+			log.Warnw("found scheduled task with no owner, scheduling task", taskID)
 
 			// Assign task to scheduler in DB only
 			_, err = tx.ExecContext(ctx, updateTaskWorkedBySQL, taskID, schedulerOwner)
