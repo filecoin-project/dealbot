@@ -158,6 +158,11 @@ var DaemonFlags = append(DealFlags, append(CommonFlags, append(EndpointFlags, []
 		Usage:   "bash script to run when a deal finishes",
 		EnvVars: []string{"DEALBOT_POST_HOOK"},
 	}),
+	altsrc.NewStringFlag(&cli.StringFlag{
+		Name:    "finalizedlog",
+		Usage:   "file / stream to write out a json line for each task as it finishes",
+		EnvVars: []string{"DEALBOT_FINALIZED_LOG"},
+	}),
 }...)...)...)
 
 var MockFlags = []cli.Flag{
