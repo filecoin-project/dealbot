@@ -13,7 +13,10 @@ import (
 	"github.com/robfig/cron/v3"
 )
 
-const schedulerOwner = "dealbot_scheduler"
+const (
+	schedulerOwner   = "dealbot_scheduler"
+	expiredTaskOwner = "dealbot_expired"
+)
 
 var noEnt cron.EntryID
 
@@ -93,10 +96,19 @@ func (s *stateDB) runTask(taskID, schedule string, expireAt time.Time, limit tim
 		return
 	}
 
-	// If the schedule has expired, remove job from scheduler
+	// If the schedule has expired, remove job from scheduler and set ownership
+	// to the expired task owner.
 	if !expireAt.IsZero() && time.Now().After(expireAt) {
 		log.Infow("scheduling expired for task", "taskID", taskID)
 		s.cronSched.Remove(jobID)
+		ctx := context.Background()
+		err = s.transact(ctx, func(tx *sql.Tx) error {
+			_, err := tx.ExecContext(ctx, updateTaskWorkedBySQL, taskID, expiredTaskOwner)
+			return err
+		})
+		if err != nil {
+			log.Errorw("could not assign task to expired task owner", "taskID", taskID, "err", err)
+		}
 		return
 	}
 

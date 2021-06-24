@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var scheduledTasks = `[{"Miner":"t01000","PayloadCID":"bafk2bzacedli6qxp43sf54feczjd26jgeyfxv4ucwylujd3xo5s6cohcqbg36","CARExport":false,"Schedule":"*/5 * * * * *"}]`
+var scheduledTasks = `[{"Miner":"t01000","PayloadCID":"bafk2bzacedli6qxp43sf54feczjd26jgeyfxv4ucwylujd3xo5s6cohcqbg36","CARExport":false,"Schedule":"*/5 * * * * *","ScheduleLimit":"11s"}]`
 
 func TestScheduledTask(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
@@ -99,4 +99,11 @@ func TestScheduledTask(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 1, int(runCount))
 	t.Log("popped another task assigned to", worker)
+
+	t.Log("waiting to see that task is not scheduled for 3nd generation")
+	select {
+	case <-time.After(6 * time.Second):
+	case newTaskID = <-runNotice:
+		t.Error("scheduler should not have generated another task")
+	}
 }
