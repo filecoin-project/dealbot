@@ -580,8 +580,8 @@ func (s *stateDB) Update(ctx context.Context, taskID string, req tasks.UpdateTas
 				return err
 			}
 
-			taskBytes := &bytes.Buffer{}
-			if err := dagjson.Encoder(finalized, taskBytes); err != nil {
+			taskBytes := bytes.Buffer{}
+			if err := dagjson.Encoder(finalized, &taskBytes); err != nil {
 				return err
 			}
 			var rawJson interface{}
