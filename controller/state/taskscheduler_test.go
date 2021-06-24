@@ -101,9 +101,20 @@ func TestScheduledTask(t *testing.T) {
 	t.Log("popped another task assigned to", worker)
 
 	t.Log("waiting to see that task is not scheduled for 3nd generation")
+	// Wait for any additional scheduling
+	timeout := time.After(6 * time.Second)
+	for waited := false; !waited; {
+		select {
+		case <-timeout:
+			waited = true
+		case newTaskID = <-runNotice:
+		}
+	}
+	// Make sure there is no more scheduling
 	select {
 	case <-time.After(6 * time.Second):
 	case newTaskID = <-runNotice:
 		t.Error("scheduler should not have generated another task")
 	}
+
 }
