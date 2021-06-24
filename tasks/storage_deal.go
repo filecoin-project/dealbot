@@ -270,6 +270,14 @@ func (de *storageDealExecutor) executeAndMonitorDeal(ctx context.Context, update
 
 	de.log("imported deal file, got data cid", "datacid", de.importRes.Root)
 
+	// price is in fil/gib/epoch so total EpochPrice is price * deal size / 1GB
+	gib := big.NewInt(1 << 30)
+	dealSize, err := de.node.ClientDealSize(ctx, de.importRes.Root)
+	if err != nil {
+		return err
+	}
+	epochPrice := big.Div(big.Mul(de.price, big.NewInt(int64(dealSize.PieceSize))), gib)
+
 	// Prepare parameters for deal
 	params := &api.StartDealParams{
 		Data: &storagemarket.DataRef{
@@ -278,7 +286,7 @@ func (de *storageDealExecutor) executeAndMonitorDeal(ctx context.Context, update
 		},
 		Wallet:            de.config.WalletAddress,
 		Miner:             de.minerAddress,
-		EpochPrice:        de.price,
+		EpochPrice:        epochPrice,
 		MinBlocksDuration: 2880 * 180,
 		DealStartEpoch:    de.tipSet.Height() + abi.ChainEpoch(startOffset),
 		FastRetrieval:     de.task.FastRetrieval.x,
