@@ -578,7 +578,7 @@ func (s *stateDB) Update(ctx context.Context, taskID string, req tasks.UpdateTas
 
 		// finish if neccesary
 		if updatedTask.Status == *tasks.Successful || updatedTask.Status == *tasks.Failed {
-			finalized, err := updatedTask.Finalize(ctx, txContextStorer(ctx, tx))
+			finalized, err := updatedTask.Finalize(ctx, txContextStorer(ctx, tx), false)
 			if err != nil {
 				return err
 			}
@@ -616,7 +616,7 @@ func (s *stateDB) Update(ctx context.Context, taskID string, req tasks.UpdateTas
 }
 
 func (s *stateDB) log(ctx context.Context, task tasks.Task, tx *sql.Tx) {
-	finalized, err := task.Finalize(ctx, txContextStorer(ctx, tx))
+	finalized, err := task.Finalize(ctx, txContextStorer(ctx, tx), true)
 	if err != nil {
 		return
 	}
