@@ -26,6 +26,7 @@ import (
 	crypto "github.com/libp2p/go-libp2p-crypto"
 	"github.com/multiformats/go-multicodec"
 	"github.com/robfig/cron/v3"
+	dumpjson "github.com/willscott/ipld-dumpjson"
 
 	// DB interfaces
 	"github.com/filecoin-project/dealbot/controller/state/postgresdb"
@@ -622,7 +623,7 @@ func (s *stateDB) log(ctx context.Context, task tasks.Task, tx *sql.Tx) {
 	}
 
 	taskBytes := bytes.Buffer{}
-	if err := dagjson.Encoder(finalized, &taskBytes); err != nil {
+	if err := dumpjson.Encode(finalized, &taskBytes); err != nil {
 		return
 	}
 	var rawJSON json.RawMessage

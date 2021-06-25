@@ -24,3 +24,7 @@ func (l *localLink) Load(_ context.Context, _ ipld.LinkContext, na ipld.NodeAsse
 func (l *localLink) String() string {
 	return fmt.Sprintf("&%s", l.Node)
 }
+
+func (l *localLink) Representation() ipld.Node {
+	return l.Node
+}
