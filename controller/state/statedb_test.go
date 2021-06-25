@@ -35,7 +35,7 @@ func TestLoadTask(t *testing.T) {
 
 		rt := tasks.Type.RetrievalTask.Of("t01000", "bafk2bzacedli6qxp43sf54feczjd26jgeyfxv4ucwylujd3xo5s6cohcqbg36", false, "")
 		tsk := tasks.Type.Task.New(rt, nil)
-		err = state.saveTask(ctx, tsk, "")
+		err = state.saveTask(ctx, tsk, "", "")
 		require.NoError(t, err)
 
 		oldCount := count
@@ -55,7 +55,7 @@ func TestAssignTask(t *testing.T) {
 
 		rt := tasks.Type.RetrievalTask.Of("t01000", "bafk2bzacedli6qxp43sf54feczjd26jgeyfxv4ucwylujd3xo5s6cohcqbg36", false, "")
 		task := tasks.Type.Task.New(rt, nil)
-		err = state.saveTask(ctx, task, "")
+		err = state.saveTask(ctx, task, "", "")
 		require.NoError(t, err)
 
 		taskCount, err := state.countTasks(ctx)
@@ -161,13 +161,13 @@ func TestAssignTaskWithTag(t *testing.T) {
 		tasktag := "testtag"
 		rt := tasks.Type.RetrievalTask.Of("t01000", "bafk2bzacedli6qxp43sf54feczjd26jgeyfxv4ucwylujd3xo5s6cohcqbg36", false, tasktag)
 		task := tasks.Type.Task.New(rt, nil)
-		err := state.saveTask(ctx, task, tasktag)
+		err := state.saveTask(ctx, task, tasktag, "")
 		require.NoError(t, err)
 
 		tasktag = "sometag"
 		rt = tasks.Type.RetrievalTask.Of("f0127896", "bafk2bzacedli6qxp43sf54feczjd26jgeyfxv4ucwylujd3xo5s6cohcqbg36", false, tasktag)
 		task = tasks.Type.Task.New(rt, nil)
-		err = state.saveTask(ctx, task, tasktag)
+		err = state.saveTask(ctx, task, tasktag, "")
 		require.NoError(t, err)
 
 		// Should not get tagged task with unmatching tags
@@ -190,7 +190,7 @@ func TestAssignTaskWithTag(t *testing.T) {
 
 		rt = tasks.Type.RetrievalTask.Of("t01000", "bafk2bzacedli6qxp43sf54feczjd26jgeyfxv4ucwylujd3xo5s6cohcqbg36", false, "")
 		task = tasks.Type.Task.New(rt, nil)
-		err = state.saveTask(ctx, task, "")
+		err = state.saveTask(ctx, task, "", "")
 		require.NoError(t, err)
 
 		// Should get untagged task
@@ -209,13 +209,13 @@ func TestAssignConcurrentTaskWithTag(t *testing.T) {
 			tasktag := "testtag"
 			rt := tasks.Type.RetrievalTask.Of("t01000", "bafk2bzacedli6qxp43sf54feczjd26jgeyfxv4ucwylujd3xo5s6cohcqbg36", false, tasktag)
 			task := tasks.Type.Task.New(rt, nil)
-			err := state.saveTask(ctx, task, tasktag)
+			err := state.saveTask(ctx, task, tasktag, "")
 			require.NoError(t, err)
 
 			tasktag = "sometag"
 			rt = tasks.Type.RetrievalTask.Of("f0127896", "bafk2bzacedli6qxp43sf54feczjd26jgeyfxv4ucwylujd3xo5s6cohcqbg36", false, tasktag)
 			task = tasks.Type.Task.New(rt, nil)
-			err = state.saveTask(ctx, task, tasktag)
+			err = state.saveTask(ctx, task, tasktag, "")
 			require.NoError(t, err)
 
 		}

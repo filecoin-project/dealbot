@@ -100,12 +100,13 @@ func (s *stateDB) runTask(taskID, schedule, limit string, expireAt time.Time, ru
 		return
 	}
 
+	ctx := context.Background()
+
 	// If the schedule has expired, remove job from scheduler and set ownership
 	// to the expired task owner.
 	if !expireAt.IsZero() && time.Now().After(expireAt) {
 		log.Infow("scheduling expired for task", "taskID", taskID)
 		s.cronSched.Remove(jobID)
-		ctx := context.Background()
 		err = s.transact(ctx, func(tx *sql.Tx) error {
 			_, err := tx.ExecContext(ctx, updateTaskWorkedBySQL, taskID, expiredTaskOwner)
 			return err
@@ -116,8 +117,21 @@ func (s *stateDB) runTask(taskID, schedule, limit string, expireAt time.Time, ru
 		return
 	}
 
+	// Check for a previous generated task that is not yet finished
+	var count int
+	err = s.transact(ctx, func(tx *sql.Tx) error {
+		return s.db().QueryRowContext(ctx, countChildTasksLTStatusSQL, taskID, tasks.Successful.Int()).Scan(&count)
+	})
+	if err != nil {
+		log.Errorw("could not check for unfinished previous task", "err", err)
+	}
+	if count != 0 {
+		log.Warnw("skipping scheduled task generation, previous task incomplete", "parentTaskID", taskID)
+		return
+	}
+
 	// Generate a new runable task
-	newTaskID, err := s.createRunableTask(task, tag, runCount)
+	newTaskID, err := s.createRunableTask(task, tag, taskID, runCount)
 	if err != nil {
 		log.Errorw("cannot create runable task", "scheduledTaskID", taskID, "err", err)
 		return
@@ -135,10 +149,10 @@ func (s *stateDB) runTask(taskID, schedule, limit string, expireAt time.Time, ru
 }
 
 // createRunableTask generates a new runable (not scheduled) task from a scheduled task
-func (s *stateDB) createRunableTask(task tasks.Task, tag string, runCount int) (string, error) {
+func (s *stateDB) createRunableTask(task tasks.Task, tag, parent string, runCount int) (string, error) {
 	newTaskID := uuid.New().String()
 	runableTask := task.MakeRunable(newTaskID, runCount)
-	err := s.saveTask(context.Background(), runableTask, tag)
+	err := s.saveTask(context.Background(), runableTask, tag, parent)
 	if err != nil {
 		return "", err
 	}
@@ -161,7 +175,7 @@ func (s *stateDB) unassignScheduledTask(taskID string) error {
 // recoverScheduledTasks reads all tasks that are assigned to the scheduler and
 // schedules them.  This should only be called during controller startup to
 // recover tasks that were scheduled during a previous run of the controller.
-func (s *stateDB) recoverScheduledTasks(ctx context.Context) error {
+func (s *stateDB) recoverScheduledTasks(ctx context.Context) (int, error) {
 	var tasklist []tasks.Task
 	err := s.transact(ctx, func(tx *sql.Tx) error {
 		rows, err := tx.QueryContext(ctx, getAllTasksForOwnerSQL, schedulerOwner)
@@ -186,18 +200,20 @@ func (s *stateDB) recoverScheduledTasks(ctx context.Context) error {
 		return nil
 	})
 	if err != nil {
-		return err
+		return 0, err
 	}
 
+	var recovered int
 	for i := range tasklist {
 		err = s.scheduleTask(tasklist[i])
 		if err != nil {
 			log.Errorw("cannot reschedule task", "taskID", tasklist[i].UUID.String(), "err", err)
+		} else {
+			recovered++
 		}
 	}
 
-	log.Infow("recovered scheduled tasks", "task_count", len(tasklist))
-	return nil
+	return recovered, nil
 }
 
 func (s *stateDB) logNextRunTime(taskID string, jobID cron.EntryID) {
