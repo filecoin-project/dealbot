@@ -3,6 +3,7 @@ module github.com/filecoin-project/dealbot
 go 1.16
 
 require (
+	github.com/benbjohnson/clock v1.0.3
 	github.com/c2h5oh/datasize v0.0.0-20200825124411-48ed595a09d2
 	github.com/evanw/esbuild v0.12.9
 	github.com/filecoin-project/go-address v0.0.5

@@ -41,15 +41,16 @@ const (
 	startOffsetDefault = 30760
 )
 
-func MakeStorageDeal(ctx context.Context, config NodeConfig, node api.FullNode, task StorageTask, updateStage UpdateStage, log LogStatus, stageTimeouts map[string]time.Duration) error {
+func MakeStorageDeal(ctx context.Context, config NodeConfig, node api.FullNode, task StorageTask, updateStage UpdateStage, log LogStatus, stageTimeouts map[string]time.Duration, releaseWorker func()) error {
 	de := &storageDealExecutor{
 		dealExecutor: dealExecutor{
-			ctx:      ctx,
-			config:   config,
-			node:     node,
-			miner:    task.Miner.x,
-			log:      log,
-			makeHost: libp2p.New,
+			ctx:           ctx,
+			config:        config,
+			node:          node,
+			miner:         task.Miner.x,
+			log:           log,
+			makeHost:      libp2p.New,
+			releaseWorker: releaseWorker,
 		},
 		task: task,
 	}
@@ -112,16 +113,17 @@ func MakeStorageDeal(ctx context.Context, config NodeConfig, node api.FullNode, 
 }
 
 type dealExecutor struct {
-	ctx          context.Context
-	config       NodeConfig
-	node         api.FullNode
-	miner        string
-	log          LogStatus
-	tipSet       *types.TipSet
-	minerAddress address.Address
-	minerInfo    miner.MinerInfo
-	pi           peer.AddrInfo
-	makeHost     func(ctx context.Context, opts ...config.Option) (host.Host, error)
+	ctx           context.Context
+	config        NodeConfig
+	node          api.FullNode
+	miner         string
+	log           LogStatus
+	tipSet        *types.TipSet
+	minerAddress  address.Address
+	minerInfo     miner.MinerInfo
+	pi            peer.AddrInfo
+	releaseWorker func()
+	makeHost      func(ctx context.Context, opts ...config.Option) (host.Host, error)
 }
 
 type storageDealExecutor struct {
@@ -357,6 +359,9 @@ func (de *storageDealExecutor) executeAndMonitorDeal(ctx context.Context, update
 					"provider", info.Provider,
 				)
 				lastState = info.State
+				if info.State == storagemarket.StorageDealCheckForAcceptance {
+					de.releaseWorker()
+				}
 			}
 
 			switch info.State {

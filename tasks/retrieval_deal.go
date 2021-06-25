@@ -34,15 +34,16 @@ var RetrievalDealStages = []RetrievalStage{
 	RetrievalStageDealComplete,
 }
 
-func MakeRetrievalDeal(ctx context.Context, config NodeConfig, node api.FullNode, task RetrievalTask, updateStage UpdateStage, log LogStatus, stageTimeouts map[string]time.Duration) error {
+func MakeRetrievalDeal(ctx context.Context, config NodeConfig, node api.FullNode, task RetrievalTask, updateStage UpdateStage, log LogStatus, stageTimeouts map[string]time.Duration, releaseWorker func()) error {
 	de := &retrievalDealExecutor{
 		dealExecutor: dealExecutor{
-			ctx:      ctx,
-			config:   config,
-			node:     node,
-			miner:    task.Miner.x,
-			log:      log,
-			makeHost: libp2p.New,
+			ctx:           ctx,
+			config:        config,
+			node:          node,
+			miner:         task.Miner.x,
+			log:           log,
+			makeHost:      libp2p.New,
+			releaseWorker: releaseWorker,
 		},
 		task: task,
 	}

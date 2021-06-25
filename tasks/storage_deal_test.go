@@ -75,19 +75,28 @@ func TestExecuteDeal(t *testing.T) {
 	root := generateRandomCID(t)
 	proposalCid := generateRandomCID(t)
 	basePrice := abi.NewTokenAmount(1000000000000)
-	dealInfo := make(chan api.DealInfo, 1)
+	dealInfo := make(chan api.DealInfo, 2)
+	dealInfo <- api.DealInfo{
+		ProposalCid: proposalCid,
+		State:       storagemarket.StorageDealCheckForAcceptance,
+		DealStages:  &storagemarket.DealStages{},
+	}
 	dealInfo <- api.DealInfo{
 		ProposalCid: proposalCid,
 		State:       storagemarket.StorageDealActive,
 		DealStages:  &storagemarket.DealStages{},
 	}
 
+	released := false
 	de := &storageDealExecutor{
 		dealExecutor: dealExecutor{
 			ctx:    ctx,
 			node:   node,
 			log:    func(msg string, keysAndValues ...interface{}) {},
 			tipSet: &types.TipSet{},
+			releaseWorker: func() {
+				released = true
+			},
 		},
 		task: Type.StorageTask.Of("f1000", 1000000000000, 21474836480, 6152, true, true, "verified"),
 		importRes: &api.ImportRes{
@@ -118,6 +127,8 @@ func TestExecuteDeal(t *testing.T) {
 
 	err := de.executeAndMonitorDeal(ctx, func(ctx context.Context, stage string, stageDetails StageDetails) error { return nil }, map[string]time.Duration{})
 	require.NoError(t, err)
+
+	require.True(t, released)
 }
 
 func assertHasLogWithPrefix(t *testing.T, logs List_Logs, prefix string) (postfix string) {
