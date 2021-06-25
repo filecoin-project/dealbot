@@ -344,9 +344,11 @@ func (t *_Task) Assign(worker string, status Status) Task {
 	return &newTask
 }
 
-func (t *_Task) Finalize(ctx context.Context, s ipld.Storer) (FinishedTask, error) {
-	if t.Status != *Failed && t.Status != *Successful {
-		return nil, fmt.Errorf("task cannot be finalized as it is not in a finished state")
+func (t *_Task) Finalize(ctx context.Context, s ipld.Storer, local bool) (FinishedTask, error) {
+	if !local {
+		if t.Status != *Failed && t.Status != *Successful {
+			return nil, fmt.Errorf("task cannot be finalized as it is not in a finished state")
+		}
 	}
 
 	logs := parseFinalLogs(t)
@@ -372,11 +374,15 @@ func (t *_Task) Finalize(ctx context.Context, s ipld.Storer) (FinishedTask, erro
 	if t.PastStageDetails.Exists() {
 		logList = t.PastStageDetails.Must()
 	}
-	logLnk, err := linkProto.Build(ctx, ipld.LinkContext{}, logList, s)
-	if err != nil {
-		return nil, err
+	if local {
+		ft.Events = _Link_List_StageDetails{&localLink{logList}}
+	} else {
+		logLnk, err := linkProto.Build(ctx, ipld.LinkContext{}, logList, s)
+		if err != nil {
+			return nil, err
+		}
+		ft.Events = _Link_List_StageDetails{logLnk}
 	}
-	ft.Events = _Link_List_StageDetails{logLnk}
 
 	return &ft, nil
 }

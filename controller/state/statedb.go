@@ -26,6 +26,7 @@ import (
 	crypto "github.com/libp2p/go-libp2p-crypto"
 	"github.com/multiformats/go-multicodec"
 	"github.com/robfig/cron/v3"
+	dumpjson "github.com/willscott/ipld-dumpjson"
 
 	// DB interfaces
 	"github.com/filecoin-project/dealbot/controller/state/postgresdb"
@@ -578,7 +579,7 @@ func (s *stateDB) Update(ctx context.Context, taskID string, req tasks.UpdateTas
 
 		// finish if neccesary
 		if updatedTask.Status == *tasks.Successful || updatedTask.Status == *tasks.Failed {
-			finalized, err := updatedTask.Finalize(ctx, txContextStorer(ctx, tx))
+			finalized, err := updatedTask.Finalize(ctx, txContextStorer(ctx, tx), false)
 			if err != nil {
 				return err
 			}
@@ -616,13 +617,13 @@ func (s *stateDB) Update(ctx context.Context, taskID string, req tasks.UpdateTas
 }
 
 func (s *stateDB) log(ctx context.Context, task tasks.Task, tx *sql.Tx) {
-	finalized, err := task.Finalize(ctx, txContextStorer(ctx, tx))
+	finalized, err := task.Finalize(ctx, txContextStorer(ctx, tx), true)
 	if err != nil {
 		return
 	}
 
 	taskBytes := bytes.Buffer{}
-	if err := dagjson.Encoder(finalized, &taskBytes); err != nil {
+	if err := dumpjson.Encode(finalized, &taskBytes); err != nil {
 		return
 	}
 	var rawJSON json.RawMessage
