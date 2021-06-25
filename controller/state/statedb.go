@@ -580,21 +580,6 @@ func (s *stateDB) Update(ctx context.Context, taskID string, req tasks.UpdateTas
 				return err
 			}
 
-			taskBytes := bytes.Buffer{}
-			if err := dagjson.Encoder(finalized, &taskBytes); err != nil {
-				return err
-			}
-			var rawJSON json.RawMessage
-			if taskBytes.Bytes() != nil {
-				if err := json.Unmarshal(taskBytes.Bytes(), &rawJSON); err != nil {
-					return err
-				}
-				log.Infow("Task Finalized", task, rawJSON)
-				if _, err := s.outlog.Write(taskBytes.Bytes()); err != nil {
-					log.Warnw("could not write to outlog", "error", err)
-				}
-			}
-
 			flink, err := linkProto.Build(ctx, ipld.LinkContext{}, finalized.Representation(), txContextStorer(ctx, tx))
 			if err != nil {
 				return err
@@ -608,6 +593,7 @@ func (s *stateDB) Update(ctx context.Context, taskID string, req tasks.UpdateTas
 				return err
 			}
 		}
+		s.log(ctx, updatedTask, tx)
 
 		task = updatedTask
 		return nil
@@ -624,6 +610,28 @@ func (s *stateDB) Update(ctx context.Context, taskID string, req tasks.UpdateTas
 	}
 
 	return task, nil
+}
+
+func (s *stateDB) log(ctx context.Context, task tasks.Task, tx *sql.Tx) {
+	finalized, err := task.Finalize(ctx, txContextStorer(ctx, tx))
+	if err != nil {
+		return
+	}
+
+	taskBytes := bytes.Buffer{}
+	if err := dagjson.Encoder(finalized, &taskBytes); err != nil {
+		return
+	}
+	var rawJSON json.RawMessage
+	if taskBytes.Bytes() != nil {
+		if err := json.Unmarshal(taskBytes.Bytes(), &rawJSON); err != nil {
+			return
+		}
+		log.Infow("Task Finalized", task, rawJSON)
+		if _, err := s.outlog.Write(taskBytes.Bytes()); err != nil {
+			log.Warnw("could not write to outlog", "error", err)
+		}
+	}
 }
 
 func txContextStorer(ctx context.Context, tx *sql.Tx) ipld.Storer {

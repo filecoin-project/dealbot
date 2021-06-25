@@ -159,9 +159,9 @@ var DaemonFlags = append(DealFlags, append(CommonFlags, append(EndpointFlags, []
 		EnvVars: []string{"DEALBOT_POST_HOOK"},
 	}),
 	altsrc.NewStringFlag(&cli.StringFlag{
-		Name:    "finalizedlog",
-		Usage:   "file / stream to write out a json line for each task as it finishes",
-		EnvVars: []string{"DEALBOT_FINALIZED_LOG"},
+		Name:    "datapointlog",
+		Usage:   "file / stream to write out a json line for each task as it updates",
+		EnvVars: []string{"DEALBOT_DATAPOINT_LOG"},
 	}),
 }...)...)...)
 
