@@ -585,12 +585,14 @@ func (s *stateDB) Update(ctx context.Context, taskID string, req tasks.UpdateTas
 				return err
 			}
 			var rawJson interface{}
-			if err := json.Unmarshal(taskBytes.Bytes(), rawJson); err != nil {
-				return err
-			}
-			log.Infow("Task Finalized", task, rawJson)
-			if _, err := s.outlog.Write(taskBytes.Bytes()); err != nil {
-				log.Warnw("could not write to outlog", "error", err)
+			if taskBytes.Bytes() != nil {
+				if err := json.Unmarshal(taskBytes.Bytes(), rawJson); err != nil {
+					return err
+				}
+				log.Infow("Task Finalized", task, rawJson)
+				if _, err := s.outlog.Write(taskBytes.Bytes()); err != nil {
+					log.Warnw("could not write to outlog", "error", err)
+				}
 			}
 
 			flink, err := linkProto.Build(ctx, ipld.LinkContext{}, finalized.Representation(), txContextStorer(ctx, tx))
