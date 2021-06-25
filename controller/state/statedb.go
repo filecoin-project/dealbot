@@ -5,10 +5,12 @@ import (
 	"context"
 	"database/sql"
 	"embed"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -88,6 +90,7 @@ type stateDB struct {
 	cronSched *cron.Cron
 	crypto.PrivKey
 	recorder  metrics.MetricsRecorder
+	outlog    io.WriteCloser
 	txlock    sync.Mutex
 	runNotice chan string
 }
@@ -127,12 +130,12 @@ func migrateDatabase(dbName string, dbInstance database.Driver) error {
 }
 
 // NewStateDB creates a state instance with a given driver and identity
-func NewStateDB(ctx context.Context, driver, conn string, identity crypto.PrivKey, recorder metrics.MetricsRecorder) (State, error) {
-	return newStateDBWithNotify(ctx, driver, conn, identity, recorder, nil)
+func NewStateDB(ctx context.Context, driver, conn string, logfile string, identity crypto.PrivKey, recorder metrics.MetricsRecorder) (State, error) {
+	return newStateDBWithNotify(ctx, driver, conn, logfile, identity, recorder, nil)
 }
 
 // newStateDBWithNotify is NewStateDB with additional parameters for testing
-func newStateDBWithNotify(ctx context.Context, driver, conn string, identity crypto.PrivKey, recorder metrics.MetricsRecorder, runNotice chan string) (State, error) {
+func newStateDBWithNotify(ctx context.Context, driver, conn, logfile string, identity crypto.PrivKey, recorder metrics.MetricsRecorder, runNotice chan string) (State, error) {
 	var dbConn DBConnector
 	var migrateFunc func(*sql.DB) error
 
@@ -166,12 +169,21 @@ func newStateDBWithNotify(ctx context.Context, driver, conn string, identity cry
 	cronSched := cron.New()
 	cronSched.Start()
 
+	var outlog io.WriteCloser = &discard{}
+	if logfile != "" {
+		outlog, err = os.OpenFile(logfile, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
+		if err != nil {
+			return nil, fmt.Errorf("failed to open output log: %w", err)
+		}
+	}
+
 	st := &stateDB{
 		dbconn:    dbConn,
 		cronSched: cronSched,
 		PrivKey:   identity,
 		recorder:  recorder,
 		runNotice: runNotice,
+		outlog:    outlog,
 	}
 
 	count, err := st.recoverScheduledTasks(ctx)
@@ -183,6 +195,16 @@ func newStateDBWithNotify(ctx context.Context, driver, conn string, identity cry
 	}
 
 	return st, nil
+}
+
+type discard struct{}
+
+func (d *discard) Write(p []byte) (int, error) {
+	return len(p), nil
+}
+
+func (d *discard) Close() error {
+	return nil
 }
 
 func (s *stateDB) Store(ctx context.Context) Store {
@@ -560,6 +582,7 @@ func (s *stateDB) Update(ctx context.Context, taskID string, req tasks.UpdateTas
 			if err != nil {
 				return err
 			}
+
 			flink, err := linkProto.Build(ctx, ipld.LinkContext{}, finalized.Representation(), txContextStorer(ctx, tx))
 			if err != nil {
 				return err
@@ -573,6 +596,7 @@ func (s *stateDB) Update(ctx context.Context, taskID string, req tasks.UpdateTas
 				return err
 			}
 		}
+		s.log(ctx, updatedTask, tx)
 
 		task = updatedTask
 		return nil
@@ -589,6 +613,29 @@ func (s *stateDB) Update(ctx context.Context, taskID string, req tasks.UpdateTas
 	}
 
 	return task, nil
+}
+
+func (s *stateDB) log(ctx context.Context, task tasks.Task, tx *sql.Tx) {
+	finalized, err := task.Finalize(ctx, txContextStorer(ctx, tx))
+	if err != nil {
+		return
+	}
+
+	taskBytes := bytes.Buffer{}
+	if err := dagjson.Encoder(finalized, &taskBytes); err != nil {
+		return
+	}
+	var rawJSON json.RawMessage
+	if taskBytes.Bytes() != nil {
+		if err := json.Unmarshal(taskBytes.Bytes(), &rawJSON); err != nil {
+			return
+		}
+		log.Infow("Task Finalized", task, rawJSON)
+		if _, err := s.outlog.Write(taskBytes.Bytes()); err != nil {
+			log.Warnw("could not write to outlog", "error", err)
+		}
+		_, _ = s.outlog.Write([]byte("\n"))
+	}
 }
 
 func txContextStorer(ctx context.Context, tx *sql.Tx) ipld.Storer {

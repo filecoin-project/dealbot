@@ -33,7 +33,7 @@ func TestScheduledTask(t *testing.T) {
 
 	runNotice := make(chan string, 1)
 
-	stateInterface, err := newStateDBWithNotify(ctx, "sqlite", filepath.Join(tmpDir, "teststate.db"), key, nil, runNotice)
+	stateInterface, err := newStateDBWithNotify(ctx, "sqlite", filepath.Join(tmpDir, "teststate.db"), "", key, nil, runNotice)
 	require.NoError(t, err)
 	state := stateInterface.(*stateDB)
 
@@ -170,7 +170,7 @@ func TestScheduledTaskLimit(t *testing.T) {
 
 	runNotice := make(chan string, 1)
 
-	stateInterface, err := newStateDBWithNotify(ctx, "sqlite", filepath.Join(tmpDir, "teststate.db"), key, nil, runNotice)
+	stateInterface, err := newStateDBWithNotify(ctx, "sqlite", filepath.Join(tmpDir, "teststate.db"), "", key, nil, runNotice)
 	require.NoError(t, err)
 	state := stateInterface.(*stateDB)
 
