@@ -584,12 +584,12 @@ func (s *stateDB) Update(ctx context.Context, taskID string, req tasks.UpdateTas
 			if err := dagjson.Encoder(finalized, &taskBytes); err != nil {
 				return err
 			}
-			var rawJson interface{}
+			var rawJSON json.RawMessage
 			if taskBytes.Bytes() != nil {
-				if err := json.Unmarshal(taskBytes.Bytes(), rawJson); err != nil {
+				if err := json.Unmarshal(taskBytes.Bytes(), &rawJSON); err != nil {
 					return err
 				}
-				log.Infow("Task Finalized", task, rawJson)
+				log.Infow("Task Finalized", task, rawJSON)
 				if _, err := s.outlog.Write(taskBytes.Bytes()); err != nil {
 					log.Warnw("could not write to outlog", "error", err)
 				}
