@@ -631,6 +631,7 @@ func (s *stateDB) log(ctx context.Context, task tasks.Task, tx *sql.Tx) {
 		if _, err := s.outlog.Write(taskBytes.Bytes()); err != nil {
 			log.Warnw("could not write to outlog", "error", err)
 		}
+		_, _ = s.outlog.Write([]byte("\n"))
 	}
 }
 
