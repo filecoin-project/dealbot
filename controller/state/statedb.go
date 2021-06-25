@@ -174,9 +174,12 @@ func newStateDBWithNotify(ctx context.Context, driver, conn string, identity cry
 		runNotice: runNotice,
 	}
 
-	err = st.recoverScheduledTasks(ctx)
+	count, err := st.recoverScheduledTasks(ctx)
 	if err != nil {
 		return nil, err
+	}
+	if count != 0 {
+		log.Infow("recovered scheduled tasks", "task_count", count)
 	}
 
 	return st, nil
@@ -615,7 +618,7 @@ func (s *stateDB) NewStorageTask(ctx context.Context, storageTask tasks.StorageT
 		tag = storageTask.Tag.Must().String()
 	}
 	// save the update back to DB
-	if err := s.saveTask(ctx, task, tag); err != nil {
+	if err := s.saveTask(ctx, task, tag, ""); err != nil {
 		return nil, err
 	}
 
@@ -630,7 +633,7 @@ func (s *stateDB) NewRetrievalTask(ctx context.Context, retrievalTask tasks.Retr
 	}
 
 	// save the update back to DB
-	if err := s.saveTask(ctx, task, tag); err != nil {
+	if err := s.saveTask(ctx, task, tag, ""); err != nil {
 		return nil, err
 	}
 
@@ -730,7 +733,7 @@ func withTransaction(ctx context.Context, db *sql.DB, f func(*sql.Tx) error) (er
 }
 
 // createTask inserts a new task and new task status into the database
-func (s *stateDB) saveTask(ctx context.Context, task tasks.Task, tag string) error {
+func (s *stateDB) saveTask(ctx context.Context, task tasks.Task, tag, parent string) error {
 	lnk, data, err := serializeToJSON(ctx, task.Representation())
 	if err != nil {
 		return err
@@ -744,12 +747,20 @@ func (s *stateDB) saveTask(ctx context.Context, task tasks.Task, tag string) err
 		}
 	}
 
+	var parentCol sql.NullString
+	if parent != "" {
+		parentCol = sql.NullString{
+			String: parent,
+			Valid:  true,
+		}
+	}
+
 	taskID := task.UUID.String()
 	scheduledTask := task.HasSchedule()
 
 	err = s.transact(ctx, func(tx *sql.Tx) error {
 		now := time.Now()
-		if _, err := tx.ExecContext(ctx, createTaskSQL, taskID, data, now, lnk.String(), tagCol); err != nil {
+		if _, err := tx.ExecContext(ctx, createTaskSQL, taskID, data, now, lnk.String(), tagCol, parentCol); err != nil {
 			return err
 		}
 
