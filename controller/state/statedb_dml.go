@@ -27,11 +27,6 @@ const (
 		SELECT COUNT(1) FROM tasks
 	`
 
-	countChildTasksNotStartedSQL = `
-		SELECT COUNT(1) FROM tasks
-		WHERE tasks.parent = $1 AND tasks.worked_by IS NULL
-	`
-
 	countChildTasksLTStatusSQL = `
 		SELECT COUNT(1) FROM tasks AS t LEFT JOIN task_status_ledger AS tsl ON t.uuid=tsl.uuid
 		WHERE t.parent = $1 AND tsl.ts = (SELECT MAX(ts) FROM task_status_ledger AS tsl2 WHERE tsl2.uuid = t.uuid)
