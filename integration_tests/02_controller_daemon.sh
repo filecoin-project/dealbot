@@ -55,13 +55,47 @@ curl --header "Content-Type: application/json" \
 # On average, the storage deal takes about four minutes.
 # Use a timeout of ten minutes, just in case.
 for ((i = 0; ; i++)); do
+	if grep -q StorageDealCheckForAcceptance dealbot-daemon.log; then
+		echo "Storage deal data transfer complete!"
+		break
+	fi
+	if [ $(grep -c pop-task dealbot-controller.log) -gt 2 ]; then
+		echo "Should not have tried to pop task while worker busy"
+		exit 1
+	fi
+	if ((i > 10*60)); then
+		# The logs are already being printed out.
+		echo "Timed out waiting for storage data transfer to finish."
+		exit 0
+	fi
+	sleep 1
+done
+
+sleep 1
+
+for ((i = 0; ; i++)); do
+	if grep -q StorageDealProposalAccepted dealbot-daemon.log; then
+		echo "Storage deal accepted!"
+		break
+	fi
+	if ((i > 10*60)); then
+		# The logs are already being printed out.
+		echo "Timed out waiting for storage deal to be accepted."
+		exit 0
+	fi
+	sleep 1
+done
+
+# check to make sure task got released
+if [ $(grep -c pop-task dealbot-controller.log) -lt 3 ]; then
+	echo "Did not release task properly"
+	exit 1
+fi
+
+for ((i = 0; ; i++)); do
 	if grep -q StorageDealActive dealbot-daemon.log; then
 		echo "Storage deal is active!"
 		break
-	fi
-	if [ $(grep -c pop-task dealbot-controller.log) -gt 1 ]; then
-		echo "Should not have tried to pop task while worker busy"
-		exit 1
 	fi
 	if ((i > 10*60)); then
 		# The logs are already being printed out.

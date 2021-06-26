@@ -326,6 +326,20 @@ func (t *_Task) Schedule() (string, string) {
 	return schedule, limit
 }
 
+func (t *_Task) Tag() string {
+	if rt := t.RetrievalTask; rt.Exists() {
+		if tag := rt.Must().Tag; tag.Exists() {
+			return tag.Must().String()
+		}
+	}
+	if st := t.StorageTask; st.Exists() {
+		if tag := st.Must().Tag; tag.Exists() {
+			return tag.Must().String()
+		}
+	}
+	return ""
+}
+
 func (t *_Task) Assign(worker string, status Status) Task {
 	newTask := _Task{
 		UUID:                t.UUID,
