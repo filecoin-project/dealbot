@@ -364,3 +364,8 @@ func (c *Controller) sendCORSHeaders(w http.ResponseWriter, r *http.Request) {
 	enableCors(&w, r)
 	w.WriteHeader(http.StatusOK)
 }
+
+func (c *Controller) authHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/javascript")
+	w.Write([]byte(fmt.Sprintf("setauth(\"%s\");", c.basicauth)))
+}
