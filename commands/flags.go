@@ -163,6 +163,11 @@ var DaemonFlags = append(DealFlags, append(CommonFlags, append(EndpointFlags, []
 		Usage:   "file / stream to write out a json line for each task as it updates",
 		EnvVars: []string{"DEALBOT_DATAPOINT_LOG"},
 	}),
+	altsrc.NewStringFlag(&cli.StringFlag{
+		Name:    "basicauth",
+		Usage:   "the basic auth credentials needed to access the controller if in place",
+		EnvVars: []string{"DEALBOT_BASICAUTH"},
+	}),
 }...)...)...)
 
 var MockFlags = []cli.Flag{

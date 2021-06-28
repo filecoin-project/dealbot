@@ -46,6 +46,7 @@ type Controller struct {
 	gl              net.Listener
 	doneCh          chan struct{}
 	db              state.State
+	basicauth       string
 	metricsRecorder metrics.MetricsRecorder
 }
 
@@ -124,6 +125,7 @@ var static embed.FS
 func NewWithDependencies(ctx *cli.Context, listener, graphqlListener net.Listener, recorder metrics.MetricsRecorder, backend state.State) (*Controller, error) {
 	srv := new(Controller)
 	srv.db = backend
+	srv.basicauth = ctx.String("basicauth")
 
 	r := mux.NewRouter().StrictSlash(true)
 
@@ -151,6 +153,7 @@ func NewWithDependencies(ctx *cli.Context, listener, graphqlListener net.Listene
 	r.HandleFunc("/tasks/{uuid}", srv.getTaskHandler).Methods("GET")
 	r.HandleFunc("/car", srv.carHandler).Methods("GET")
 	r.HandleFunc("/health", srv.healthHandler).Methods("GET")
+	r.HandleFunc("/cred.js", srv.authHandler).Methods("GET")
 	r.Methods("OPTIONS").HandlerFunc(srv.sendCORSHeaders)
 	metricsHandler := recorder.Handler()
 	if metricsHandler != nil {

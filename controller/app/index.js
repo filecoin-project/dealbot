@@ -1,6 +1,11 @@
 import "./jquery-global";
 import "bootstrap-cron-picker/dist/cron-picker";
 
+let auth = "";
+window.setauth = (a) => {
+    auth = a;
+};
+
 $().ready(() => {
     $('#newSchedule').cronPicker();
 
@@ -51,6 +56,14 @@ function doSubmit(e) {
         }
     }
 
+    username = undefined;
+    password = undefined;
+    if (auth != "") {
+        let ap = auth.split(":");
+        username = ap[0];
+        password = ap[1];
+    }
+
     for (let i = 0; i < miners.length; i++) {
         let miner = miners[i];
         let url = "/tasks/storage";
@@ -86,6 +99,8 @@ function doSubmit(e) {
             type: "POST",
             url: url,
             data: data,
+            username: username,
+            password: password,
             success: done,
         });
     }
