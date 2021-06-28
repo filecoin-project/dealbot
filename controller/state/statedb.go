@@ -525,6 +525,9 @@ func (s *stateDB) popTask(ctx context.Context, workedBy string, status tasks.Sta
 
 func (s *stateDB) Update(ctx context.Context, taskID string, req tasks.UpdateTask) (tasks.Task, error) {
 	var task tasks.Task
+
+	var downstreamRetrieval tasks.RetrievalTask
+
 	err := s.transact(ctx, func(tx *sql.Tx) error {
 		var serialized string
 		err := tx.QueryRowContext(ctx, getTaskSQL, taskID).Scan(&serialized)
@@ -596,6 +599,25 @@ func (s *stateDB) Update(ctx context.Context, taskID string, req tasks.UpdateTas
 				UNATTACHED_RECORD); err != nil {
 				return err
 			}
+
+			if updatedTask.Status == *tasks.Successful &&
+				finalized.StorageTask.Exists() &&
+				finalized.StorageTask.Must().RetrievalSchedule.Exists() {
+				// we're in a tx context already. we'll enqueue these and put them in non-atomically.
+				tag := ""
+				if finalized.StorageTask.Must().Tag.Exists() {
+					tag = finalized.StorageTask.Must().Tag.Must().String()
+				}
+				ret := tasks.Type.RetrievalTask.OfSchedule(
+					finalized.StorageTask.Must().Miner.String(),
+					finalized.PayloadCID.Must().String(),
+					false,
+					tag,
+					finalized.StorageTask.Must().RetrievalSchedule.Must().String(),
+					finalized.StorageTask.Must().RetrievalScheduleLimit.Must().String(),
+				)
+				downstreamRetrieval = ret
+			}
 		}
 		s.log(ctx, updatedTask, tx)
 
@@ -609,6 +631,13 @@ func (s *stateDB) Update(ctx context.Context, taskID string, req tasks.UpdateTas
 
 	if s.recorder != nil {
 		if err = s.recorder.ObserveTask(task); err != nil {
+			return nil, err
+		}
+	}
+
+	if downstreamRetrieval != nil {
+		_, err := s.NewRetrievalTask(ctx, downstreamRetrieval)
+		if err != nil {
 			return nil, err
 		}
 	}

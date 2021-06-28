@@ -1857,6 +1857,38 @@ func StorageTask__Tag__resolve(p graphql.ResolveParams) (interface{}, error) {
     }
     
 }
+func StorageTask__RetrievalSchedule__resolve(p graphql.ResolveParams) (interface{}, error) {
+    ts, ok := p.Source.(tasks.StorageTask)
+    if !ok {
+        return nil, fmt.Errorf(errUnexpectedType, p.Source, "tasks.StorageTask")
+    }
+    
+    f := ts.FieldRetrievalSchedule()
+    if f.Exists() {
+        
+        return f.Must().AsString()
+        
+    } else {
+        return nil, nil
+    }
+    
+}
+func StorageTask__RetrievalScheduleLimit__resolve(p graphql.ResolveParams) (interface{}, error) {
+    ts, ok := p.Source.(tasks.StorageTask)
+    if !ok {
+        return nil, fmt.Errorf(errUnexpectedType, p.Source, "tasks.StorageTask")
+    }
+    
+    f := ts.FieldRetrievalScheduleLimit()
+    if f.Exists() {
+        
+        return f.Must().AsString()
+        
+    } else {
+        return nil, nil
+    }
+    
+}
 var StorageTask__type = graphql.NewObject(graphql.ObjectConfig{
     Name: "StorageTask",
     Fields: graphql.Fields{
@@ -1913,6 +1945,18 @@ var StorageTask__type = graphql.NewObject(graphql.ObjectConfig{
             Type: graphql.String,
             
             Resolve: StorageTask__Tag__resolve,
+        },
+        "RetrievalSchedule": &graphql.Field{
+            
+            Type: graphql.String,
+            
+            Resolve: StorageTask__RetrievalSchedule__resolve,
+        },
+        "RetrievalScheduleLimit": &graphql.Field{
+            
+            Type: graphql.String,
+            
+            Resolve: StorageTask__RetrievalScheduleLimit__resolve,
         },
     },
 })

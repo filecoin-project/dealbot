@@ -261,6 +261,8 @@ type _StorageTask struct {
 	Schedule _String__Maybe
 	ScheduleLimit _String__Maybe
 	Tag _String__Maybe
+	RetrievalSchedule _String__Maybe
+	RetrievalScheduleLimit _String__Maybe
 }
 
 // String matches the IPLD Schema type "String".  It has string kind.
