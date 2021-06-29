@@ -280,6 +280,59 @@ func TestControllerHTTPInterface(t *testing.T) {
 			require.NoError(t, err)
 			require.Equal(t, inProgressTask2.GetUUID(), newInProgressTask2.GetUUID())
 		},
+
+		"delete tasks": func(ctx context.Context, t *testing.T, apiClient *client.Client, recorder *testrecorder.TestMetricsRecorder) {
+
+			var resetWorkerTasks = `
+[{"Miner":"t01000","PayloadCID":"bafk2bzacecettil4umy443e4ferok7jbxiqqseef7soa3ntelflf3zkvvndbg","CARExport":false},
+{"Miner":"t01000","PayloadCID":"bafk2bzacedli6qxp43sf54feczjd26jgeyfxv4ucwylujd3xo5s6cohcqbg36","CARExport":false,"Schedule":"0 0 * * *","ScheduleLimit":"168h"},
+{"Miner":"f0127896","PayloadCID":"bafykbzacedikkmeotawrxqquthryw3cijaonobygdp7fb5bujhuos6wdkwomm","CARExport":false}]
+`
+
+			err := populateTestTasks(ctx, bytes.NewReader([]byte(resetWorkerTasks)), apiClient)
+			require.NoError(t, err)
+
+			worker := "testworker"
+			// pop a task
+			req := tasks.Type.PopTask.Of(worker, tasks.InProgress)
+			inProgressTask1, err := apiClient.PopTask(ctx, req)
+
+			allTasks, err := apiClient.ListTasks(ctx)
+			require.NoError(t, err)
+
+			var unassignedTask tasks.Task
+			for _, task := range allTasks {
+				if task.Status == *tasks.Available && !task.HasSchedule() {
+					unassignedTask = task
+					break
+				}
+			}
+			require.NotNil(t, unassignedTask)
+
+			var scheduledTask tasks.Task
+			for _, task := range allTasks {
+				if task.HasSchedule() {
+					scheduledTask = task
+					break
+				}
+			}
+			require.NotNil(t, scheduledTask)
+
+			err = apiClient.DeleteTask(ctx, unassignedTask.GetUUID())
+			require.NoError(t, err)
+			task, err := apiClient.GetTask(ctx, unassignedTask.GetUUID())
+			require.EqualError(t, err, client.ErrRequestFailed{http.StatusNotFound}.Error())
+			require.Nil(t, task)
+			err = apiClient.DeleteTask(ctx, scheduledTask.GetUUID())
+			require.NoError(t, err)
+			task, err = apiClient.GetTask(ctx, scheduledTask.GetUUID())
+			require.EqualError(t, err, client.ErrRequestFailed{http.StatusNotFound}.Error())
+			require.Nil(t, task)
+			err = apiClient.DeleteTask(ctx, inProgressTask1.GetUUID())
+			require.EqualError(t, err, client.ErrRequestFailed{http.StatusBadRequest}.Error())
+			err = apiClient.DeleteTask(ctx, "apples and oranges")
+			require.EqualError(t, err, client.ErrRequestFailed{http.StatusNotFound}.Error())
+		},
 	}
 
 	for testCase, run := range testCases {

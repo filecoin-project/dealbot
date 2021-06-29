@@ -151,6 +151,7 @@ func NewWithDependencies(ctx *cli.Context, listener, graphqlListener net.Listene
 	r.HandleFunc("/status", srv.reportStatusHandler).Methods("POST")
 	r.HandleFunc("/tasks/{uuid}", srv.updateTaskHandler).Methods("PATCH")
 	r.HandleFunc("/tasks/{uuid}", srv.getTaskHandler).Methods("GET")
+	r.HandleFunc("/tasks/{uuid}", srv.deleteTaskHandler).Methods("DELETE")
 	r.HandleFunc("/car", srv.carHandler).Methods("GET")
 	r.HandleFunc("/health", srv.healthHandler).Methods("GET")
 	r.HandleFunc("/cred.js", srv.authHandler).Methods("GET")

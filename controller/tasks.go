@@ -17,6 +17,7 @@ import (
 	"github.com/ipld/go-ipld-prime/traversal/selector"
 	"github.com/ipld/go-ipld-prime/traversal/selector/builder"
 
+	"github.com/filecoin-project/dealbot/controller/state"
 	"github.com/filecoin-project/dealbot/tasks"
 )
 
@@ -298,6 +299,12 @@ func (c *Controller) getTaskHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if task == nil {
+		log.Errorw("get task not found", "uuid", UUID)
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
 	if _, set := vars["parsed"]; set {
 		nilStore := func(_ ipld.LinkContext) (io.Writer, ipld.StoreCommitter, error) {
 			return io.Discard, func(_ ipld.Link) error { return nil }, nil
@@ -312,6 +319,29 @@ func (c *Controller) getTaskHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		dagjson.Encoder(task.Representation(), w)
 	}
+}
+
+func (c *Controller) deleteTaskHandler(w http.ResponseWriter, r *http.Request) {
+	logger := log.With("req_id", r.Header.Get("X-Request-ID"))
+
+	logger.Debugw("handle request", "command", "delete task")
+	defer logger.Debugw("request handled", "command", "delete task")
+
+	w.Header().Set("Content-Type", "application/json")
+	vars := mux.Vars(r)
+	UUID := vars["uuid"]
+
+	err := c.db.Delete(r.Context(), UUID)
+	if err != nil {
+		log.Errorw("get task DB error", "err", err.Error())
+		if err == state.ErrTaskNotFound {
+			w.WriteHeader(http.StatusNotFound)
+		} else {
+			w.WriteHeader(http.StatusBadRequest)
+		}
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (c *Controller) carHandler(w http.ResponseWriter, r *http.Request) {
