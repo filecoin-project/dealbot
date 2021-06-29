@@ -57,7 +57,7 @@ jobs:
     parameters:
       chart:
         type: string
-      chart_versoin:
+      chart_version:
         type: string
       namespace:
         type: string
@@ -144,7 +144,7 @@ workflows:
                 - dealbot-daemon-bundle-2
           name: deploy-mainnet-us-east-1-daemons
           chart: filecoin/lotus-bundle
-          chart_version: 0.0.1
+          chart_version: 0.0.2
           circle_context: filecoin-mainnet-aws
           kubernetes_cluster: mainnet-us-east-1-eks
           aws_region: us-east-1
