@@ -8,7 +8,7 @@ const (
 	`
 
 	createTaskSQL = `
-		INSERT INTO tasks (uuid, data, created, cid, tag) VALUES($1, $2, $3, $4, $5)
+		INSERT INTO tasks (uuid, data, created, cid, tag, parent) VALUES($1, $2, $3, $4, $5, $6)
 	`
 
 	setTaskStatusSQL = `
@@ -27,12 +27,26 @@ const (
 		SELECT COUNT(1) FROM tasks
 	`
 
+	countChildTasksLTStatusSQL = `
+		SELECT COUNT(1) FROM tasks AS t LEFT JOIN task_status_ledger AS tsl ON t.uuid=tsl.uuid
+		WHERE t.parent = $1 AND tsl.ts = (SELECT MAX(ts) FROM task_status_ledger AS tsl2 WHERE tsl2.uuid = t.uuid)
+		AND tsl.status < $2
+	`
+
 	getAllTasksSQL = `
 		SELECT data FROM tasks
 	`
 
+	getAllTasksForOwnerSQL = `
+		SELECT data FROM tasks WHERE worked_by = $1
+	`
+
 	getTaskSQL = `
 		SELECT data FROM tasks WHERE uuid = $1
+	`
+
+	getTaskWithTagSQL = `
+		SELECT data, tag FROM tasks WHERE uuid = $1
 	`
 
 	getTaskByCidSQL = `
@@ -53,7 +67,7 @@ const (
 	oldestAvailableTaskWithTagsSQL = `
 		SELECT uuid, data FROM tasks
 		WHERE worked_by IS NULL
-		AND tag is NULL OR tag IN (?)
+		AND (tag is NULL OR tag = ANY($1))
 		ORDER BY created
 		LIMIT 1
 	`
@@ -61,7 +75,7 @@ const (
 	oldestAvailableTaskWithTagsSQLsqlite = `
 		SELECT uuid, data FROM tasks
 		WHERE worked_by IS NULL
-		AND tag is NULL OR tag IN (%s)
+		AND (tag is NULL OR tag IN (%s))
 		ORDER BY created
 		LIMIT 1
 	`
@@ -99,13 +113,23 @@ const (
 	`
 
 	workerTasksByStatusSQL = `
-	SELECT tasks.uuid, tasks.data FROM tasks
+	SELECT tasks.data FROM tasks
 	INNER JOIN task_status_ledger ON tasks.uuid=task_status_ledger.uuid
 	WHERE tasks.worked_by = $1 AND task_status_ledger.status = $2
 `
 
+	unassignScheduledTaskSQL = `
+		UPDATE tasks SET worked_by = NULL
+		WHERE uuid = $1
+	`
+
 	unassignTaskSQL = `
 		UPDATE tasks SET data = $2, worked_by = NULL, cid = $3
+		WHERE uuid = $1
+	`
+
+	updateTaskWorkedBySQL = `
+		UPDATE tasks SET worked_by = $2
 		WHERE uuid = $1
 	`
 )

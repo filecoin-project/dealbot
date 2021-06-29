@@ -302,7 +302,7 @@ func (c *Controller) getTaskHandler(w http.ResponseWriter, r *http.Request) {
 		nilStore := func(_ ipld.LinkContext) (io.Writer, ipld.StoreCommitter, error) {
 			return io.Discard, func(_ ipld.Link) error { return nil }, nil
 		}
-		finished, err := task.Finalize(r.Context(), nilStore)
+		finished, err := task.Finalize(r.Context(), nilStore, true)
 		if err != nil {
 			log.Errorw("finalize task error", "err", err.Error())
 			w.WriteHeader(http.StatusInternalServerError)
@@ -363,4 +363,9 @@ func (c *Controller) healthHandler(w http.ResponseWriter, r *http.Request) {
 func (c *Controller) sendCORSHeaders(w http.ResponseWriter, r *http.Request) {
 	enableCors(&w, r)
 	w.WriteHeader(http.StatusOK)
+}
+
+func (c *Controller) authHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/javascript")
+	w.Write([]byte(fmt.Sprintf("setauth(\"%s\");", c.basicauth)))
 }

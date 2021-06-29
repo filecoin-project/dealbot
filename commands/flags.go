@@ -158,6 +158,11 @@ var DaemonFlags = append(DealFlags, append(CommonFlags, append(EndpointFlags, []
 		Usage:   "bash script to run when a deal finishes",
 		EnvVars: []string{"DEALBOT_POST_HOOK"},
 	}),
+	altsrc.NewStringFlag(&cli.StringFlag{
+		Name:    "datapointlog",
+		Usage:   "file / stream to write out a json line for each task as it updates",
+		EnvVars: []string{"DEALBOT_DATAPOINT_LOG"},
+	}),
 }...)...)...)
 
 var MockFlags = []cli.Flag{
@@ -270,6 +275,15 @@ var ControllerFlags = []cli.Flag{
 		Name:    "daemon-regions",
 		Usage:   "list of regions where dealbots daemons should be started",
 		EnvVars: []string{"DEALBOT_REGIONS"},
+	}),
+	altsrc.NewStringFlag(&cli.StringFlag{
+		Name:  "devAssetDir",
+		Usage: "build frontend assets from directory instead of embedded version (set to location of 'controller'; the directory containing static and app)",
+	}),
+	altsrc.NewStringFlag(&cli.StringFlag{
+		Name:    "basicauth",
+		Usage:   "the basic auth credentials needed to access the controller if in place",
+		EnvVars: []string{"DEALBOT_BASICAUTH"},
 	}),
 }
 

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -21,6 +22,7 @@ import (
 	"github.com/ipld/go-ipld-prime/codec/dagjson"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/stretchr/testify/require"
+	"github.com/urfave/cli/v2"
 )
 
 const jsonTestDeals = "../devnet/sample_tasks.json"
@@ -314,9 +316,10 @@ func newHarness(ctx context.Context, t *testing.T) *harness {
 	pr, _, _ := crypto.GenerateKeyPair(crypto.Ed25519, 0)
 	h.dbloc, err = ioutil.TempDir("", "dealbot_test_*")
 	require.NoError(t, err)
-	be, err := state.NewStateDB(ctx, "sqlite", h.dbloc+"/tmp.sqlite", pr, h.recorder)
+	be, err := state.NewStateDB(ctx, "sqlite", h.dbloc+"/tmp.sqlite", "", pr, h.recorder)
 	require.NoError(t, err)
-	h.controller, err = controller.NewWithDependencies(listener, nil, "", h.recorder, be)
+	cc := cli.NewContext(cli.NewApp(), &flag.FlagSet{}, nil)
+	h.controller, err = controller.NewWithDependencies(cc, listener, nil, h.recorder, be)
 
 	h.serveErr = make(chan error, 1)
 	go func() {

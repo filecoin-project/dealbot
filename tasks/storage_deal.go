@@ -41,15 +41,16 @@ const (
 	startOffsetDefault = 30760
 )
 
-func MakeStorageDeal(ctx context.Context, config NodeConfig, node api.FullNode, task StorageTask, updateStage UpdateStage, log LogStatus, stageTimeouts map[string]time.Duration) error {
+func MakeStorageDeal(ctx context.Context, config NodeConfig, node api.FullNode, task StorageTask, updateStage UpdateStage, log LogStatus, stageTimeouts map[string]time.Duration, releaseWorker func()) error {
 	de := &storageDealExecutor{
 		dealExecutor: dealExecutor{
-			ctx:      ctx,
-			config:   config,
-			node:     node,
-			miner:    task.Miner.x,
-			log:      log,
-			makeHost: libp2p.New,
+			ctx:           ctx,
+			config:        config,
+			node:          node,
+			miner:         task.Miner.x,
+			log:           log,
+			makeHost:      libp2p.New,
+			releaseWorker: releaseWorker,
 		},
 		task: task,
 	}
@@ -112,16 +113,17 @@ func MakeStorageDeal(ctx context.Context, config NodeConfig, node api.FullNode, 
 }
 
 type dealExecutor struct {
-	ctx          context.Context
-	config       NodeConfig
-	node         api.FullNode
-	miner        string
-	log          LogStatus
-	tipSet       *types.TipSet
-	minerAddress address.Address
-	minerInfo    miner.MinerInfo
-	pi           peer.AddrInfo
-	makeHost     func(ctx context.Context, opts ...config.Option) (host.Host, error)
+	ctx           context.Context
+	config        NodeConfig
+	node          api.FullNode
+	miner         string
+	log           LogStatus
+	tipSet        *types.TipSet
+	minerAddress  address.Address
+	minerInfo     miner.MinerInfo
+	pi            peer.AddrInfo
+	releaseWorker func()
+	makeHost      func(ctx context.Context, opts ...config.Option) (host.Host, error)
 }
 
 type storageDealExecutor struct {
@@ -270,6 +272,14 @@ func (de *storageDealExecutor) executeAndMonitorDeal(ctx context.Context, update
 
 	de.log("imported deal file, got data cid", "datacid", de.importRes.Root)
 
+	// price is in fil/gib/epoch so total EpochPrice is price * deal size / 1GB
+	gib := big.NewInt(1 << 30)
+	dealSize, err := de.node.ClientDealSize(ctx, de.importRes.Root)
+	if err != nil {
+		return err
+	}
+	epochPrice := big.Div(big.Mul(de.price, big.NewInt(int64(dealSize.PieceSize))), gib)
+
 	// Prepare parameters for deal
 	params := &api.StartDealParams{
 		Data: &storagemarket.DataRef{
@@ -278,7 +288,7 @@ func (de *storageDealExecutor) executeAndMonitorDeal(ctx context.Context, update
 		},
 		Wallet:            de.config.WalletAddress,
 		Miner:             de.minerAddress,
-		EpochPrice:        de.price,
+		EpochPrice:        epochPrice,
 		MinBlocksDuration: 2880 * 180,
 		DealStartEpoch:    de.tipSet.Height() + abi.ChainEpoch(startOffset),
 		FastRetrieval:     de.task.FastRetrieval.x,
@@ -340,22 +350,18 @@ func (de *storageDealExecutor) executeAndMonitorDeal(ctx context.Context, update
 				continue
 			}
 
-			if len(info.DealStages.Stages) > 0 {
-				err = updateStage(ctx, storagemarket.DealStates[info.State], toStageDetails(info.DealStages.Stages[len(info.DealStages.Stages)-1]))
-
-				if err != nil {
-					return err
-				}
-			}
 			if info.State != lastState {
 				de.log("Deal status",
 					"cid", info.ProposalCid,
 					"piece", info.PieceCID,
 					"state", storagemarket.DealStates[info.State],
-					"message", info.Message,
+					"deal_message", info.Message,
 					"provider", info.Provider,
 				)
 				lastState = info.State
+				if info.State == storagemarket.StorageDealCheckForAcceptance {
+					de.releaseWorker()
+				}
 			}
 
 			switch info.State {
@@ -370,10 +376,18 @@ func (de *storageDealExecutor) executeAndMonitorDeal(ctx context.Context, update
 
 				logStages(info, de.log)
 				return fmt.Errorf("storage deal failed: %s", info.Message)
+			}
+
+			if len(info.DealStages.Stages) > 0 {
+				err = updateStage(ctx, storagemarket.DealStates[info.State], toStageDetails(info.DealStages.Stages[len(info.DealStages.Stages)-1]))
+
+				if err != nil {
+					return err
+				}
+			}
 
 			// deal is on chain, exit successfully
-			case storagemarket.StorageDealActive:
-
+			if info.State == storagemarket.StorageDealActive {
 				logStages(info, de.log)
 				return nil
 			}
@@ -448,7 +462,7 @@ func logStages(info api.DealInfo, log LogStatus) {
 			"duration", info.Duration,
 			"deal_id", info.DealID,
 			"piece_cid", info.PieceCID,
-			"message", info.Message,
+			"deal_message", info.Message,
 			"provider", info.Provider,
 			"price", info.PricePerEpoch,
 			"verfied", info.Verified,

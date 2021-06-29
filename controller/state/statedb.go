@@ -5,10 +5,12 @@ import (
 	"context"
 	"database/sql"
 	"embed"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -23,6 +25,8 @@ import (
 	cidlink "github.com/ipld/go-ipld-prime/linking/cid"
 	crypto "github.com/libp2p/go-libp2p-crypto"
 	"github.com/multiformats/go-multicodec"
+	"github.com/robfig/cron/v3"
+	dumpjson "github.com/willscott/ipld-dumpjson"
 
 	// DB interfaces
 	"github.com/filecoin-project/dealbot/controller/state/postgresdb"
@@ -83,10 +87,13 @@ func serializeToJSON(ctx context.Context, n ipld.Node) (cid.Cid, []byte, error) 
 
 // stateDB is a persisted implementation of the State interface
 type stateDB struct {
-	dbconn DBConnector
+	dbconn    DBConnector
+	cronSched *cron.Cron
 	crypto.PrivKey
-	recorder metrics.MetricsRecorder
-	txlock   sync.Mutex
+	recorder  metrics.MetricsRecorder
+	outlog    io.WriteCloser
+	txlock    sync.Mutex
+	runNotice chan string
 }
 
 func migratePostgres(db *sql.DB) error {
@@ -124,7 +131,12 @@ func migrateDatabase(dbName string, dbInstance database.Driver) error {
 }
 
 // NewStateDB creates a state instance with a given driver and identity
-func NewStateDB(ctx context.Context, driver, conn string, identity crypto.PrivKey, recorder metrics.MetricsRecorder) (State, error) {
+func NewStateDB(ctx context.Context, driver, conn string, logfile string, identity crypto.PrivKey, recorder metrics.MetricsRecorder) (State, error) {
+	return newStateDBWithNotify(ctx, driver, conn, logfile, identity, recorder, nil)
+}
+
+// newStateDBWithNotify is NewStateDB with additional parameters for testing
+func newStateDBWithNotify(ctx context.Context, driver, conn, logfile string, identity crypto.PrivKey, recorder metrics.MetricsRecorder, runNotice chan string) (State, error) {
 	var dbConn DBConnector
 	var migrateFunc func(*sql.DB) error
 
@@ -154,13 +166,46 @@ func NewStateDB(ctx context.Context, driver, conn string, identity crypto.PrivKe
 		return nil, fmt.Errorf("%s database migration failed: %w", driver, err)
 	}
 
+	//cronSched := cron.New(cron.WithSeconds())
+	cronSched := cron.New()
+	cronSched.Start()
+
+	var outlog io.WriteCloser = &discard{}
+	if logfile != "" {
+		outlog, err = os.OpenFile(logfile, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
+		if err != nil {
+			return nil, fmt.Errorf("failed to open output log: %w", err)
+		}
+	}
+
 	st := &stateDB{
-		dbconn:   dbConn,
-		PrivKey:  identity,
-		recorder: recorder,
+		dbconn:    dbConn,
+		cronSched: cronSched,
+		PrivKey:   identity,
+		recorder:  recorder,
+		runNotice: runNotice,
+		outlog:    outlog,
+	}
+
+	count, err := st.recoverScheduledTasks(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if count != 0 {
+		log.Infow("recovered scheduled tasks", "task_count", count)
 	}
 
 	return st, nil
+}
+
+type discard struct{}
+
+func (d *discard) Write(p []byte) (int, error) {
+	return len(p), nil
+}
+
+func (d *discard) Close() error {
+	return nil
 }
 
 func (s *stateDB) Store(ctx context.Context) Store {
@@ -222,10 +267,17 @@ func (s *stateDB) db() *sql.DB {
 
 // Get returns a specific task identified by ID
 func (s *stateDB) Get(ctx context.Context, taskID string) (tasks.Task, error) {
+	task, _, err := s.getWithTag(ctx, taskID)
+	return task, err
+}
+
+func (s *stateDB) getWithTag(ctx context.Context, taskID string) (tasks.Task, string, error) {
 	var task tasks.Task
+	var tag string
 	err := s.transact(ctx, func(tx *sql.Tx) error {
 		var serialized string
-		err := tx.QueryRowContext(ctx, getTaskSQL, taskID).Scan(&serialized)
+		var tagString sql.NullString
+		err := tx.QueryRowContext(ctx, getTaskWithTagSQL, taskID).Scan(&serialized, &tagString)
 		if err != nil {
 			return err
 		}
@@ -235,12 +287,16 @@ func (s *stateDB) Get(ctx context.Context, taskID string) (tasks.Task, error) {
 			return err
 		}
 		task = tp.Build().(tasks.Task)
+
+		if tagString.Valid {
+			tag = tagString.String
+		}
 		return nil
 	})
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
-	return task, nil
+	return task, tag, nil
 }
 
 // Get returns a specific task identified by CID
@@ -313,6 +369,15 @@ func (s *stateDB) AssignTask(ctx context.Context, req tasks.PopTask) (tasks.Task
 		return nil, fmt.Errorf("cannot assign %q status to task", req.Status.String())
 	}
 
+	// Check if this worker is being drained
+	draining, err := s.drainingWorker(ctx, req.WorkedBy.String())
+	if err != nil {
+		return nil, err
+	}
+	if draining {
+		return nil, nil
+	}
+
 	var tags []interface{}
 	if req.Tags.Exists() {
 		reqTags := req.Tags.Must()
@@ -328,20 +393,66 @@ func (s *stateDB) AssignTask(ctx context.Context, req tasks.PopTask) (tasks.Task
 		}
 	}
 
+	// Keep popping tasks until there a runanable task is found or until there
+	// are no more tasks
 	var assigned tasks.Task
+	for {
+		task, scheduled, err := s.popTask(ctx, req.WorkedBy.String(), &req.Status, tags)
+		if err != nil {
+			return nil, err
+		}
+		if task == nil {
+			// No more tasks to pop
+			return nil, nil
+		}
+		if !scheduled {
+			// Found a task that is runable, stop looking for tasks
+			assigned = task
+			break
+		}
+		// Got a scheduled task, so schedule it.
+		err = s.scheduleTask(task)
+		if err != nil {
+			log.Errorw("failed to schedule task", "taskID", task.UUID.String(), "err", err)
+		}
+	}
+
+	if s.recorder != nil {
+		if err = s.recorder.ObserveTask(assigned); err != nil {
+			return nil, err
+		}
+	}
+	return assigned, nil
+}
+
+func (s *stateDB) drainingWorker(ctx context.Context, worker string) (bool, error) {
+	var draining bool
 	err := s.transact(ctx, func(tx *sql.Tx) error {
 		var cnt int
-		err := tx.QueryRowContext(ctx, drainedQuerySQL, req.WorkedBy.String()).Scan(&cnt)
+		err := tx.QueryRowContext(ctx, drainedQuerySQL, worker).Scan(&cnt)
 		if err != nil {
 			return err
 		}
 
 		if cnt > 0 {
 			// worker is being drained
-			return nil
+			draining = true
 		}
+		return nil
+	})
+	if err != nil {
+		return false, err
+	}
+	return draining, nil
+}
 
+func (s *stateDB) popTask(ctx context.Context, workedBy string, status tasks.Status, tags []interface{}) (tasks.Task, bool, error) {
+	var assigned tasks.Task
+	var scheduled bool
+
+	err := s.transact(ctx, func(tx *sql.Tx) error {
 		var taskID, serialized string
+		var err error
 		if len(tags) == 0 {
 			err = tx.QueryRowContext(ctx, oldestAvailableTaskSQL).Scan(&taskID, &serialized)
 		} else {
@@ -367,7 +478,25 @@ func (s *stateDB) AssignTask(ctx context.Context, req tasks.PopTask) (tasks.Task
 		}
 		task := tp.Build().(tasks.Task)
 
-		assigned = task.Assign(req.WorkedBy.String(), &req.Status)
+		if task.HasSchedule() {
+			// This task has a schedule, but is not owned by the scheduler.
+			// Normally tasks are scheduled on ingestion, before they are
+			// written to the DB.  However, this may have been a previously
+			// scheduled task that became that was rescheduled or inserted into
+			// the DB outside of the notmal ingestion process.
+			log.Warnw("found scheduled task with no owner, scheduling task", taskID)
+
+			// Assign task to scheduler in DB only
+			_, err = tx.ExecContext(ctx, updateTaskWorkedBySQL, taskID, schedulerOwner)
+			if err != nil {
+				return fmt.Errorf("could not assign task: %w", err)
+			}
+			assigned = task
+			scheduled = true
+			return nil
+		}
+
+		assigned = task.Assign(workedBy, status)
 
 		lnk, data, err := serializeToJSON(ctx, assigned.Representation())
 		if err != nil {
@@ -375,13 +504,13 @@ func (s *stateDB) AssignTask(ctx context.Context, req tasks.PopTask) (tasks.Task
 		}
 
 		// Assign task to worker
-		_, err = tx.ExecContext(ctx, assignTaskSQL, taskID, data, req.WorkedBy.String(), lnk.String())
+		_, err = tx.ExecContext(ctx, assignTaskSQL, taskID, data, workedBy, lnk.String())
 		if err != nil {
 			return fmt.Errorf("could not assign task: %w", err)
 		}
 
 		// Set new status for task
-		_, err = tx.ExecContext(ctx, setTaskStatusSQL, taskID, req.Status.Int(), time.Now())
+		_, err = tx.ExecContext(ctx, setTaskStatusSQL, taskID, status.Int(), time.Now())
 		if err != nil {
 			return fmt.Errorf("could not update status task: %w", err)
 		}
@@ -389,19 +518,16 @@ func (s *stateDB) AssignTask(ctx context.Context, req tasks.PopTask) (tasks.Task
 		return nil
 	})
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
-
-	if s.recorder != nil && assigned != nil {
-		if err = s.recorder.ObserveTask(assigned); err != nil {
-			return nil, err
-		}
-	}
-	return assigned, nil
+	return assigned, scheduled, nil
 }
 
 func (s *stateDB) Update(ctx context.Context, taskID string, req tasks.UpdateTask) (tasks.Task, error) {
 	var task tasks.Task
+
+	var downstreamRetrieval tasks.RetrievalTask
+
 	err := s.transact(ctx, func(tx *sql.Tx) error {
 		var serialized string
 		err := tx.QueryRowContext(ctx, getTaskSQL, taskID).Scan(&serialized)
@@ -456,10 +582,11 @@ func (s *stateDB) Update(ctx context.Context, taskID string, req tasks.UpdateTas
 
 		// finish if neccesary
 		if updatedTask.Status == *tasks.Successful || updatedTask.Status == *tasks.Failed {
-			finalized, err := updatedTask.Finalize(ctx, txContextStorer(ctx, tx))
+			finalized, err := updatedTask.Finalize(ctx, txContextStorer(ctx, tx), false)
 			if err != nil {
 				return err
 			}
+
 			flink, err := linkProto.Build(ctx, ipld.LinkContext{}, finalized.Representation(), txContextStorer(ctx, tx))
 			if err != nil {
 				return err
@@ -472,7 +599,27 @@ func (s *stateDB) Update(ctx context.Context, taskID string, req tasks.UpdateTas
 				UNATTACHED_RECORD); err != nil {
 				return err
 			}
+
+			if updatedTask.Status == *tasks.Successful &&
+				finalized.StorageTask.Exists() &&
+				finalized.StorageTask.Must().RetrievalSchedule.Exists() {
+				// we're in a tx context already. we'll enqueue these and put them in non-atomically.
+				tag := ""
+				if finalized.StorageTask.Must().Tag.Exists() {
+					tag = finalized.StorageTask.Must().Tag.Must().String()
+				}
+				ret := tasks.Type.RetrievalTask.OfSchedule(
+					finalized.StorageTask.Must().Miner.String(),
+					finalized.PayloadCID.Must().String(),
+					false,
+					tag,
+					finalized.StorageTask.Must().RetrievalSchedule.Must().String(),
+					finalized.StorageTask.Must().RetrievalScheduleLimit.Must().String(),
+				)
+				downstreamRetrieval = ret
+			}
 		}
+		s.log(ctx, updatedTask, tx)
 
 		task = updatedTask
 		return nil
@@ -488,7 +635,37 @@ func (s *stateDB) Update(ctx context.Context, taskID string, req tasks.UpdateTas
 		}
 	}
 
+	if downstreamRetrieval != nil {
+		_, err := s.NewRetrievalTask(ctx, downstreamRetrieval)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return task, nil
+}
+
+func (s *stateDB) log(ctx context.Context, task tasks.Task, tx *sql.Tx) {
+	finalized, err := task.Finalize(ctx, txContextStorer(ctx, tx), true)
+	if err != nil {
+		return
+	}
+
+	taskBytes := bytes.Buffer{}
+	if err := dumpjson.Encode(finalized, &taskBytes); err != nil {
+		return
+	}
+	var rawJSON json.RawMessage
+	if taskBytes.Bytes() != nil {
+		if err := json.Unmarshal(taskBytes.Bytes(), &rawJSON); err != nil {
+			return
+		}
+		log.Infow("Task Finalized", task, rawJSON)
+		if _, err := s.outlog.Write(taskBytes.Bytes()); err != nil {
+			log.Warnw("could not write to outlog", "error", err)
+		}
+		_, _ = s.outlog.Write([]byte("\n"))
+	}
 }
 
 func txContextStorer(ctx context.Context, tx *sql.Tx) ipld.Storer {
@@ -518,7 +695,7 @@ func (s *stateDB) NewStorageTask(ctx context.Context, storageTask tasks.StorageT
 		tag = storageTask.Tag.Must().String()
 	}
 	// save the update back to DB
-	if err := s.saveTask(ctx, task, tag); err != nil {
+	if err := s.saveTask(ctx, task, tag, ""); err != nil {
 		return nil, err
 	}
 
@@ -533,7 +710,7 @@ func (s *stateDB) NewRetrievalTask(ctx context.Context, retrievalTask tasks.Retr
 	}
 
 	// save the update back to DB
-	if err := s.saveTask(ctx, task, tag); err != nil {
+	if err := s.saveTask(ctx, task, tag, ""); err != nil {
 		return nil, err
 	}
 
@@ -596,7 +773,7 @@ func (s *stateDB) transact(ctx context.Context, f func(*sql.Tx) error) error {
 			s.txlock.Unlock()
 		}
 		if err != nil {
-			if s.dbconn.RetryableError(err) && time.Since(start) < maxRetryTime {
+			if s.dbconn.RetryableError(err) && (start.IsZero() || time.Since(start) < maxRetryTime) {
 				if start.IsZero() {
 					start = time.Now()
 				}
@@ -611,7 +788,9 @@ func (s *stateDB) transact(ctx context.Context, f func(*sql.Tx) error) error {
 
 func withTransaction(ctx context.Context, db *sql.DB, f func(*sql.Tx) error) (err error) {
 	var tx *sql.Tx
-	tx, err = db.BeginTx(ctx, nil)
+	tx, err = db.BeginTx(ctx, &sql.TxOptions{
+		Isolation: sql.LevelSerializable,
+	})
 	if err != nil {
 		return
 	}
@@ -631,7 +810,7 @@ func withTransaction(ctx context.Context, db *sql.DB, f func(*sql.Tx) error) (er
 }
 
 // createTask inserts a new task and new task status into the database
-func (s *stateDB) saveTask(ctx context.Context, task tasks.Task, tag string) error {
+func (s *stateDB) saveTask(ctx context.Context, task tasks.Task, tag, parent string) error {
 	lnk, data, err := serializeToJSON(ctx, task.Representation())
 	if err != nil {
 		return err
@@ -645,17 +824,47 @@ func (s *stateDB) saveTask(ctx context.Context, task tasks.Task, tag string) err
 		}
 	}
 
-	return s.transact(ctx, func(tx *sql.Tx) error {
+	var parentCol sql.NullString
+	if parent != "" {
+		parentCol = sql.NullString{
+			String: parent,
+			Valid:  true,
+		}
+	}
+
+	taskID := task.UUID.String()
+	scheduledTask := task.HasSchedule()
+
+	err = s.transact(ctx, func(tx *sql.Tx) error {
 		now := time.Now()
-		if _, err := tx.ExecContext(ctx, createTaskSQL, task.UUID.String(), data, now, lnk.String(), tagCol); err != nil {
+		if _, err := tx.ExecContext(ctx, createTaskSQL, taskID, data, now, lnk.String(), tagCol, parentCol); err != nil {
 			return err
 		}
 
-		if _, err := tx.ExecContext(ctx, setTaskStatusSQL, task.UUID.String(), tasks.Available.Int(), now); err != nil {
+		if _, err := tx.ExecContext(ctx, setTaskStatusSQL, taskID, tasks.Available.Int(), now); err != nil {
 			return err
 		}
+
+		if scheduledTask {
+			// Assign task to scheduler in DB only
+			if _, err = tx.ExecContext(ctx, updateTaskWorkedBySQL, taskID, schedulerOwner); err != nil {
+				return fmt.Errorf("could not assign task to scheduler: %w", err)
+			}
+		}
+
 		return nil
 	})
+	if err != nil {
+		return err
+	}
+
+	if scheduledTask {
+		// Got a scheduled task, so schedule it.
+		if err = s.scheduleTask(task); err != nil {
+			return fmt.Errorf("failed to schedule task %q: %w", taskID, err)
+		}
+	}
+	return nil
 }
 
 // countTasks retrieves the total number of tasks
@@ -724,6 +933,15 @@ func (s *stateDB) PublishRecordsFrom(ctx context.Context, worker string) error {
 			return err
 		}
 
+		var lnks []string
+		for itms.Next() {
+			var lnk string
+			if err := itms.Scan(&lnk); err != nil {
+				return err
+			}
+			lnks = append(lnks, lnk)
+		}
+
 		rcrds := []tasks.AuthenticatedRecord{}
 
 		updateHeadStmt, err := tx.PrepareContext(ctx, updateHeadSQL)
@@ -732,12 +950,7 @@ func (s *stateDB) PublishRecordsFrom(ctx context.Context, worker string) error {
 		}
 		defer updateHeadStmt.Close()
 
-		for itms.Next() {
-			var lnk string
-			if err := itms.Scan(&lnk); err != nil {
-				return err
-			}
-
+		for _, lnk := range lnks {
 			_, err = updateHeadStmt.ExecContext(ctx, ATTACHED_RECORD, lnk)
 			if err != nil {
 				return err
@@ -752,7 +965,7 @@ func (s *stateDB) PublishRecordsFrom(ctx context.Context, worker string) error {
 			if err != nil {
 				return err
 			}
-			tskBuilder := tasks.Type.FinishedTask.NewBuilder()
+			tskBuilder := tasks.Type.FinishedTask__Repr.NewBuilder()
 			if err := dagjson.Decoder(tskBuilder, rcrdRdr); err != nil {
 				return err
 			}
@@ -813,9 +1026,10 @@ func (s *stateDB) ResetWorkerTasks(ctx context.Context, worker string) error {
 			return err
 		}
 
+		var queriedTasks []tasks.Task
 		for inProgressWorkerTasks.Next() {
-			var uuid, serialized string
-			err := inProgressWorkerTasks.Scan(&uuid, &serialized)
+			var serialized string
+			err := inProgressWorkerTasks.Scan(&serialized)
 			if err != nil {
 				return err
 			}
@@ -825,22 +1039,23 @@ func (s *stateDB) ResetWorkerTasks(ctx context.Context, worker string) error {
 				return err
 			}
 			task := tp.Build().(tasks.Task)
+			queriedTasks = append(queriedTasks, task)
+		}
 
+		for _, task := range queriedTasks {
 			updatedTask := task.Reset()
 
 			lnk, data, err := serializeToJSON(ctx, updatedTask.Representation())
 			if err != nil {
 				return err
 			}
-
 			// save the update back to DB
-			_, err = tx.ExecContext(ctx, unassignTaskSQL, uuid, data, lnk.String())
+			_, err = tx.ExecContext(ctx, unassignTaskSQL, updatedTask.UUID.String(), data, lnk.String())
 			if err != nil {
 				return err
 			}
-
 			// reset the task in the task status ledger
-			_, err = tx.ExecContext(ctx, upsertTaskStatusSQL, uuid, updatedTask.Status.Int(), updatedTask.Stage.String(), 0, time.Now())
+			_, err = tx.ExecContext(ctx, upsertTaskStatusSQL, updatedTask.UUID.String(), updatedTask.Status.Int(), updatedTask.Stage.String(), 0, time.Now())
 			if err != nil {
 				return err
 			}

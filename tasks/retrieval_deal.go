@@ -34,15 +34,16 @@ var RetrievalDealStages = []RetrievalStage{
 	RetrievalStageDealComplete,
 }
 
-func MakeRetrievalDeal(ctx context.Context, config NodeConfig, node api.FullNode, task RetrievalTask, updateStage UpdateStage, log LogStatus, stageTimeouts map[string]time.Duration) error {
+func MakeRetrievalDeal(ctx context.Context, config NodeConfig, node api.FullNode, task RetrievalTask, updateStage UpdateStage, log LogStatus, stageTimeouts map[string]time.Duration, releaseWorker func()) error {
 	de := &retrievalDealExecutor{
 		dealExecutor: dealExecutor{
-			ctx:      ctx,
-			config:   config,
-			node:     node,
-			miner:    task.Miner.x,
-			log:      log,
-			makeHost: libp2p.New,
+			ctx:           ctx,
+			config:        config,
+			node:          node,
+			miner:         task.Miner.x,
+			log:           log,
+			makeHost:      libp2p.New,
+			releaseWorker: releaseWorker,
 		},
 		task: task,
 	}
@@ -300,6 +301,18 @@ func (rp _RetrievalTask__Prototype) Of(minerParam string, payloadCid string, car
 		PayloadCID: _String{payloadCid},
 		CARExport:  _Bool{carExport},
 		Tag:        asStrM(tag),
+	}
+	return &rt
+}
+
+func (rp _RetrievalTask__Prototype) OfSchedule(minerParam string, payloadCid string, carExport bool, tag string, schedule string, scheduleLimit string) RetrievalTask {
+	rt := _RetrievalTask{
+		Miner:         _String{minerParam},
+		PayloadCID:    _String{payloadCid},
+		CARExport:     _Bool{carExport},
+		Tag:           asStrM(tag),
+		Schedule:      asStrM(schedule),
+		ScheduleLimit: asStrM(scheduleLimit),
 	}
 	return &rt
 }

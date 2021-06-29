@@ -1,19 +1,24 @@
+//go:generate go run ./webutil/gen app static/script.js
+
 package controller
 
 import (
 	"context"
 	"embed"
 	"fmt"
+	"io"
 	"io/fs"
 	"io/ioutil"
 	"net"
 	"net/http"
 	"os"
+	"path"
 	"time"
 
 	"github.com/filecoin-project/dealbot/controller/graphql"
 	"github.com/filecoin-project/dealbot/controller/spawn"
 	"github.com/filecoin-project/dealbot/controller/state"
+	"github.com/filecoin-project/dealbot/controller/webutil"
 	"github.com/filecoin-project/dealbot/metrics"
 	metricslog "github.com/filecoin-project/dealbot/metrics/log"
 	"github.com/filecoin-project/dealbot/metrics/prometheus"
@@ -42,6 +47,7 @@ type Controller struct {
 	gl              net.Listener
 	doneCh          chan struct{}
 	db              state.State
+	basicauth       string
 	metricsRecorder metrics.MetricsRecorder
 	spawner         spawn.Spawner
 }
@@ -98,24 +104,27 @@ func New(ctx *cli.Context) (*Controller, error) {
 		}
 	}
 
-	backend, err := state.NewStateDB(ctx.Context, ctx.String("driver"), ctx.String("dbloc"), key, recorder)
+	backend, err := state.NewStateDB(ctx.Context, ctx.String("driver"), ctx.String("dbloc"), ctx.String("datapointlog"), key, recorder)
 	if err != nil {
 		return nil, err
 	}
 
-	gqlToken := ""
-	if ctx.IsSet("gqlAccessToken") {
-		gqlToken = ctx.String("gqlAccessToken")
-	}
+	// <<<<<<< HEAD
+	// 	gqlToken := ""
+	// 	if ctx.IsSet("gqlAccessToken") {
+	// 		gqlToken = ctx.String("gqlAccessToken")
+	// 	}
 
-	var spawner spawn.Spawner
-	if ctx.String("daemon-driver") == "kubernetes" {
-		spawner = spawn.NewKubernetes(ctx.StringSlice("daemon-regions"))
-	} else {
-		spawner = spawn.NewLocal()
-	}
+	// 	var spawner spawn.Spawner
+	// 	if ctx.String("daemon-driver") == "kubernetes" {
+	// 		spawner = spawn.NewKubernetes(ctx.StringSlice("daemon-regions"))
+	// 	} else {
+	// 		spawner = spawn.NewLocal()
+	// 	}
 
-	return NewWithDependencies(l, gl, gqlToken, recorder, backend, spawner)
+	// 	return NewWithDependencies(l, gl, gqlToken, recorder, backend, spawner)
+	// =======
+	return NewWithDependencies(ctx, l, gl, recorder, backend)
 }
 
 type logEcapsulator struct {
@@ -130,10 +139,15 @@ func (fw *logEcapsulator) Write(p []byte) (n int, err error) {
 //go:embed static
 var static embed.FS
 
-func NewWithDependencies(listener, graphqlListener net.Listener, gqlToken string, recorder metrics.MetricsRecorder, backend state.State, spawner spawn.Spawner) (*Controller, error) {
+func NewWithDependencies(ctx *cli.Context, listener, graphqlListener net.Listener, recorder metrics.MetricsRecorder, backend state.State) (*Controller, error) {
 	srv := new(Controller)
 	srv.db = backend
-	srv.spawner = spawner
+	srv.basicauth = ctx.String("basicauth")
+	if ctx.String("daemon-driver") == "kubernetes" {
+		srv.spawner = spawn.NewKubernetes(ctx.StringSlice("daemon-regions"))
+	} else {
+		srv.spawner = spawn.NewLocal()
+	}
 
 	r := mux.NewRouter().StrictSlash(true)
 
@@ -167,12 +181,24 @@ func NewWithDependencies(listener, graphqlListener net.Listener, gqlToken string
 	r.HandleFunc("/regions/{regionid}/{daemonid}", srv.getDaemonHandler).Methods("GET")
 	r.HandleFunc("/regions/{regionid}/{daemonid}/wallets", srv.getWalletsHandler).Methods("GET")
 	r.HandleFunc("/regions/{regionid}/{daemonid}/wallets", srv.newWalletHandler).Methods("POST")
+	r.HandleFunc("/cred.js", srv.authHandler).Methods("GET")
 	r.Methods("OPTIONS").HandlerFunc(srv.sendCORSHeaders)
 	metricsHandler := recorder.Handler()
 	if metricsHandler != nil {
 		r.Handle("/metrics", metricsHandler)
 	}
-	r.PathPrefix("/").Handler(http.FileServer(http.FS(statDir)))
+
+	if ctx.IsSet("devAssetDir") {
+		scriptResolver := func(w http.ResponseWriter, r *http.Request) {
+			data := webutil.Compile(path.Join(ctx.String("devAssetDir"), "app"), false)
+			w.Header().Set("Content-Type", "application/json")
+			io.WriteString(w, data)
+		}
+		r.HandleFunc("/script.js", scriptResolver)
+		r.PathPrefix("/").Handler(http.FileServer(http.Dir(path.Join(ctx.String("devAssetDir"), "static"))))
+	} else {
+		r.PathPrefix("/").Handler(http.FileServer(http.FS(statDir)))
+	}
 
 	srv.doneCh = make(chan struct{})
 	srv.server = &http.Server{
@@ -182,7 +208,7 @@ func NewWithDependencies(listener, graphqlListener net.Listener, gqlToken string
 	}
 
 	if graphqlListener != nil {
-		gqlHandler, err := graphql.GetHandler(srv.db, gqlToken)
+		gqlHandler, err := graphql.GetHandler(srv.db, ctx.String("gqlAccessToken"))
 		if err != nil {
 			return nil, err
 		}

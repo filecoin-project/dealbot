@@ -69,7 +69,7 @@ func SetupClientFromCLI(cctx *cli.Context) (tasks.NodeConfig, api.FullNode, Node
 			return tasks.NodeConfig{}, nil, nil, fmt.Errorf("could not parse min wallet balance: %s, %s", cctx.String("minfil"), err)
 		}
 	}
-	mc := big.NewInt(0)
+	mc := big.NewInt(-1)
 	if cctx.IsSet("mincap") {
 		log.Infow("using minimum wallet datacap for picking tasks", cctx.String("mincap"))
 		if _, ok := mf.SetString(cctx.String("mincap"), 0); !ok {

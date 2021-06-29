@@ -113,7 +113,7 @@ func GetHandler(db state.State, accessToken string) (*http.ServeMux, error) {
 							if err != nil {
 								return nil, err
 							}
-							finishedTask, err := tsk.Finalize(p.Context, storer)
+							finishedTask, err := tsk.Finalize(p.Context, storer, false)
 							if err != nil {
 								return nil, err
 							}

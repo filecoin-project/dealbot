@@ -252,6 +252,94 @@ func (t *_Task) Reset() Task {
 	return &newTask
 }
 
+func (t *_Task) MakeRunable(newUUID string, runCount int) Task {
+	newTask := _Task{
+		UUID:                _String{newUUID},
+		Status:              *Available,
+		WorkedBy:            _String__Maybe{m: schema.Maybe_Value, v: &_String{""}},
+		Stage:               _String{""},
+		CurrentStageDetails: _StageDetails__Maybe{m: schema.Maybe_Absent},
+		StartedAt:           _Time__Maybe{m: schema.Maybe_Absent},
+		RunCount:            _Int{int64(runCount)},
+		RetrievalTask:       _RetrievalTask__Maybe{m: schema.Maybe_Absent},
+		StorageTask:         _StorageTask__Maybe{m: schema.Maybe_Absent},
+	}
+
+	if rtm := t.RetrievalTask; rtm.Exists() {
+		rt := rtm.Must()
+		newTask.RetrievalTask.m = schema.Maybe_Value
+		newTask.RetrievalTask.v = &_RetrievalTask{
+			Miner:           rt.Miner,
+			PayloadCID:      rt.PayloadCID,
+			CARExport:       rt.CARExport,
+			Tag:             rt.Tag,
+			MaxPriceAttoFIL: rt.MaxPriceAttoFIL,
+		}
+	}
+	if stm := t.StorageTask; stm.Exists() {
+		st := stm.Must()
+		newTask.StorageTask.m = schema.Maybe_Value
+		newTask.StorageTask.v = &_StorageTask{
+			Miner:           st.Miner,
+			MaxPriceAttoFIL: st.MaxPriceAttoFIL,
+			Size:            st.Size,
+			StartOffset:     st.StartOffset,
+			FastRetrieval:   st.FastRetrieval,
+			Verified:        st.Verified,
+			Tag:             st.Tag,
+		}
+	}
+	return &newTask
+}
+
+func (t *_Task) HasSchedule() bool {
+	if rt := t.RetrievalTask; rt.Exists() {
+		if sch := rt.Must().Schedule; sch.Exists() {
+			return sch.Must().String() != ""
+		}
+	} else if st := t.StorageTask; st.Exists() {
+		if sch := st.Must().Schedule; sch.Exists() {
+			return sch.Must().String() != ""
+		}
+	}
+	return false
+}
+
+func (t *_Task) Schedule() (string, string) {
+	var schedule, limit string
+
+	if rt := t.RetrievalTask; rt.Exists() {
+		if sch := rt.Must().Schedule; sch.Exists() {
+			schedule = sch.Must().String()
+			if lim := rt.Must().ScheduleLimit; lim.Exists() {
+				limit = lim.Must().String()
+			}
+		}
+	} else if st := t.StorageTask; st.Exists() {
+		if sch := st.Must().Schedule; sch.Exists() {
+			schedule = sch.Must().String()
+			if lim := st.Must().ScheduleLimit; lim.Exists() {
+				limit = lim.Must().String()
+			}
+		}
+	}
+	return schedule, limit
+}
+
+func (t *_Task) Tag() string {
+	if rt := t.RetrievalTask; rt.Exists() {
+		if tag := rt.Must().Tag; tag.Exists() {
+			return tag.Must().String()
+		}
+	}
+	if st := t.StorageTask; st.Exists() {
+		if tag := st.Must().Tag; tag.Exists() {
+			return tag.Must().String()
+		}
+	}
+	return ""
+}
+
 func (t *_Task) Assign(worker string, status Status) Task {
 	newTask := _Task{
 		UUID:                t.UUID,
@@ -262,6 +350,7 @@ func (t *_Task) Assign(worker string, status Status) Task {
 		PastStageDetails:    t.PastStageDetails,
 		StartedAt:           _Time__Maybe{m: schema.Maybe_Value, v: &_Time{x: time.Now().UnixNano()}},
 		RetrievalTask:       t.RetrievalTask,
+		RunCount:            t.RunCount,
 		StorageTask:         t.StorageTask,
 	}
 
@@ -269,9 +358,11 @@ func (t *_Task) Assign(worker string, status Status) Task {
 	return &newTask
 }
 
-func (t *_Task) Finalize(ctx context.Context, s ipld.Storer) (FinishedTask, error) {
-	if t.Status != *Failed && t.Status != *Successful {
-		return nil, fmt.Errorf("task cannot be finalized as it is not in a finished state")
+func (t *_Task) Finalize(ctx context.Context, s ipld.Storer, local bool) (FinishedTask, error) {
+	if !local {
+		if t.Status != *Failed && t.Status != *Successful {
+			return nil, fmt.Errorf("task cannot be finalized as it is not in a finished state")
+		}
 	}
 
 	logs := parseFinalLogs(t)
@@ -297,11 +388,15 @@ func (t *_Task) Finalize(ctx context.Context, s ipld.Storer) (FinishedTask, erro
 	if t.PastStageDetails.Exists() {
 		logList = t.PastStageDetails.Must()
 	}
-	logLnk, err := linkProto.Build(ctx, ipld.LinkContext{}, logList, s)
-	if err != nil {
-		return nil, err
+	if local {
+		ft.Events = _Link_List_StageDetails{&localLink{logList}}
+	} else {
+		logLnk, err := linkProto.Build(ctx, ipld.LinkContext{}, logList, s)
+		if err != nil {
+			return nil, err
+		}
+		ft.Events = _Link_List_StageDetails{logLnk}
 	}
-	ft.Events = _Link_List_StageDetails{logLnk}
 
 	return &ft, nil
 }
