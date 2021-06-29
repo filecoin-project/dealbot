@@ -1097,15 +1097,6 @@ func (s *stateDB) Delete(ctx context.Context, uuid string) error {
 	}
 	return s.transact(ctx, func(tx *sql.Tx) error {
 		_, err := tx.ExecContext(ctx, deleteTaskSQL, uuid)
-		if err != nil {
-			return err
-		}
-		if s.dbconn.Name() == "sqlite" {
-			_, err := tx.ExecContext(ctx, deleteTaskStatusLedgerSQL, uuid)
-			if err != nil {
-				return err
-			}
-		}
-		return nil
+		return err
 	})
 }

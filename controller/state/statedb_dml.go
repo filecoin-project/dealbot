@@ -136,8 +136,4 @@ const (
 	deleteTaskSQL = `
 		DELETE FROM tasks WHERE uuid = $1
 	`
-
-	deleteTaskStatusLedgerSQL = `
-		DELETE FROM task_status_ledger WHERE uuid = $1
-	`
 )
