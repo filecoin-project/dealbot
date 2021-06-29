@@ -132,4 +132,12 @@ const (
 		UPDATE tasks SET worked_by = $2
 		WHERE uuid = $1
 	`
+
+	deleteTaskSQL = `
+		DELETE FROM tasks WHERE uuid = $1
+	`
+
+	deleteTaskStatusLedgerSQL = `
+		DELETE FROM task_status_ledger WHERE uuid = $1
+	`
 )

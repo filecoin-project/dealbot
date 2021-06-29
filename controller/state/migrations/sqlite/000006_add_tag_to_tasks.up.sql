@@ -1,0 +1,5 @@
+BEGIN;
+
+ALTER TABLE tasks ADD COLUMN tag text;
+
+COMMIT;

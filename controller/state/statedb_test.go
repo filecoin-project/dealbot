@@ -499,6 +499,9 @@ func TestResetWorkerTasks(t *testing.T) {
 		}
 		require.NotNil(t, unassignedTask)
 
+		history, _ := state.TaskHistory(ctx, inProgressTask1.GetUUID())
+		fmt.Println(history)
+
 		state.ResetWorkerTasks(ctx, worker)
 
 		// in progress task should now be available and unassigned
@@ -585,6 +588,87 @@ func TestComplete(t *testing.T) {
 		require.NoError(t, dagjson.Decoder(tskBuilder, bytes.NewReader(blk.RawData())))
 		tsk := tskBuilder.Build().(tasks.FinishedTask)
 		require.Equal(t, task.RetrievalTask.Must().PayloadCID.String(), tsk.PayloadCID.Must().String())
+	})
+}
+
+func TestDelete(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	withState(ctx, t, func(state *stateDB) {
+
+		var resetWorkerTasks = `
+[{"Miner":"t01000","PayloadCID":"bafk2bzacecettil4umy443e4ferok7jbxiqqseef7soa3ntelflf3zkvvndbg","CARExport":false},
+{"Miner":"t01000","PayloadCID":"bafk2bzacedli6qxp43sf54feczjd26jgeyfxv4ucwylujd3xo5s6cohcqbg36","CARExport":false,"Schedule":"0 0 * * *","ScheduleLimit":"168h"},
+{"Miner":"f0127896","PayloadCID":"bafykbzacedikkmeotawrxqquthryw3cijaonobygdp7fb5bujhuos6wdkwomm","CARExport":false}]
+`
+
+		err := populateTestTasks(ctx, bytes.NewReader([]byte(resetWorkerTasks)), state)
+		require.NoError(t, err)
+
+		worker := "testworker"
+		// pop a task
+		req := tasks.Type.PopTask.Of(worker, tasks.InProgress)
+		inProgressTask1, err := state.AssignTask(ctx, req)
+
+		allTasks, err := state.GetAll(ctx)
+		require.NoError(t, err)
+
+		var unassignedTask tasks.Task
+		for _, task := range allTasks {
+			if task.Status == *tasks.Available && !task.HasSchedule() {
+				unassignedTask = task
+				break
+			}
+		}
+		require.NotNil(t, unassignedTask)
+
+		var scheduledTask tasks.Task
+		for _, task := range allTasks {
+			if task.HasSchedule() {
+				scheduledTask = task
+				break
+			}
+		}
+		require.NotNil(t, scheduledTask)
+
+		testCases := map[string]struct {
+			uuid        string
+			expectedErr error
+		}{
+			"delete unassigned task": {
+				uuid: unassignedTask.GetUUID(),
+			},
+			"delete scheduled task": {
+				uuid: scheduledTask.GetUUID(),
+			},
+			"delete in progress task": {
+				uuid:        inProgressTask1.GetUUID(),
+				expectedErr: ErrNoDeleteInProgressTasks,
+			},
+			"delete unknown tasks": {
+				uuid:        "alate to ate apples and bananaes",
+				expectedErr: ErrTaskNotFound,
+			},
+		}
+
+		for testCase, data := range testCases {
+			t.Run(testCase, func(t *testing.T) {
+				ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+				defer cancel()
+				err := state.Delete(ctx, data.uuid)
+				if data.expectedErr != nil {
+					require.EqualError(t, err, data.expectedErr.Error())
+				} else {
+					require.NoError(t, err)
+					task, err := state.Get(ctx, data.uuid)
+					require.NoError(t, err)
+					require.Nil(t, task)
+					taskEvents, err := state.TaskHistory(ctx, data.uuid)
+					require.NoError(t, err)
+					require.Len(t, taskEvents, 0)
+				}
+			})
+		}
 	})
 }
 

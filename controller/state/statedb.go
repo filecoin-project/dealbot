@@ -45,7 +45,7 @@ import (
 const maxRetryTime = time.Minute
 
 // Embed all the *.sql files in migrations.
-//go:embed migrations/*.sql
+//go:embed migrations/sqlite/*.sql migrations/postgres/*.sql
 var migrations embed.FS
 
 var log = logging.Logger("controller-state")
@@ -58,6 +58,8 @@ func (e errorString) Error() string {
 
 const ErrNotAssigned = errorString("tasks must be acquired through pop task")
 const ErrWrongWorker = errorString("task already acquired by other worker")
+const ErrNoDeleteInProgressTasks = errorString("can only delete tasks that are not-started or tasks that are scheduled")
+const ErrTaskNotFound = errorString("task does not exist")
 
 var linkProto = cidlink.LinkBuilder{Prefix: cid.Prefix{
 	Version:  1,
@@ -113,7 +115,7 @@ func migrateSqlite(db *sql.DB) error {
 }
 
 func migrateDatabase(dbName string, dbInstance database.Driver) error {
-	source, err := iofs.New(migrations, "migrations")
+	source, err := iofs.New(migrations, "migrations/"+dbName)
 	if err != nil {
 		return err
 	}
@@ -278,6 +280,9 @@ func (s *stateDB) getWithTag(ctx context.Context, taskID string) (tasks.Task, st
 		var serialized string
 		var tagString sql.NullString
 		err := tx.QueryRowContext(ctx, getTaskWithTagSQL, taskID).Scan(&serialized, &tagString)
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil
+		}
 		if err != nil {
 			return err
 		}
@@ -1077,4 +1082,30 @@ func (s *stateDB) ResetWorkerTasks(ctx context.Context, worker string) error {
 		}
 	}
 	return nil
+}
+
+func (s *stateDB) Delete(ctx context.Context, uuid string) error {
+	task, _, err := s.getWithTag(ctx, uuid)
+	if err != nil {
+		return err
+	}
+	if task == nil {
+		return ErrTaskNotFound
+	}
+	if !(task.HasSchedule() || task.Status.Int() == tasks.Available.Int()) {
+		return ErrNoDeleteInProgressTasks
+	}
+	return s.transact(ctx, func(tx *sql.Tx) error {
+		_, err := tx.ExecContext(ctx, deleteTaskSQL, uuid)
+		if err != nil {
+			return err
+		}
+		if s.dbconn.Name() == "sqlite" {
+			_, err := tx.ExecContext(ctx, deleteTaskStatusLedgerSQL, uuid)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 }

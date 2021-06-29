@@ -20,6 +20,7 @@ type State interface {
 	DrainWorker(ctx context.Context, worker string) error
 	PublishRecordsFrom(ctx context.Context, worker string) error
 	ResetWorkerTasks(ctx context.Context, worker string) error
+	Delete(ctx context.Context, uuid string) error
 	Store(ctx context.Context) Store
 }
 
