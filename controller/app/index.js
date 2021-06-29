@@ -8,6 +8,7 @@ window.setauth = (a) => {
 
 $().ready(() => {
     $('#newSchedule').cronPicker();
+    $('#newretafterstoreSchedule').cronPicker();
 
     $("#addDone").hide();
     if ($('#newSR').is(':checked')) {
@@ -33,6 +34,17 @@ $().ready(() => {
             $("#setschedule").show();
         } else {
             $("#setschedule").hide();
+        } 
+    })
+
+    if (!$('#newRepeatRetAfterStore').is(':checked')) {
+        $("#retafterstoreschedule").hide();
+    }
+    $("#newRepeatRetAfterStore").on('change', () => {
+        if ($('#newRepeatRetAfterStore').is(':checked')) {
+            $("#retafterstoreschedule").show();
+        } else {
+            $("#retafterstoreschedule").hide();
         } 
     })
 
@@ -75,6 +87,10 @@ function doSubmit(e) {
                 "PayloadCID": $('#newCid').val(),
                 "CARExport": false,
                 "MaxPriceAttoFIL": 20000000000,
+            }
+            if ($('#newRepeatRetAfterStore').is(':checked')) {
+                data.RetrievalSchedule = $('#newretafterstoreSchedule').val()
+                data.RetrievalScheduleLimit = $('#newretafterstoreScheduleLimit').val()
             }
         } else {
             data = {
