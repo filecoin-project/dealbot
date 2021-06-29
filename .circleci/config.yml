@@ -57,6 +57,8 @@ jobs:
     parameters:
       chart:
         type: string
+      chart_versoin:
+        type: string
       namespace:
         type: string
       release:
@@ -83,8 +85,8 @@ jobs:
                 \"aws_region\": \"<< parameters.aws_region >>\",
                 \"namespace\": \"<< parameters.namespace >>\",
                 \"release\": \"<< parameters.release >>\",
-                \"chart\": \"parameters.chart\",
-                \"chart_version\": \"0.0.6\",
+                \"chart\": \"<< parameters.chart >>\",
+                \"chart_version\": \"<< parameters.chart_version >>\",
                 \"override_repository\": \"filecoin/dealbot\",
                 \"override_tag\": \"$CIRCLE_SHA1\"
               }}"
@@ -120,6 +122,7 @@ workflows:
       - deploy-lotusinfra:
           name: deploy-mainnet-us-east-1-controller
           chart: filecoin/dealbot
+          chart_version: 0.0.7
           circle_context: filecoin-mainnet-aws
           kubernetes_cluster: mainnet-us-east-1-eks
           aws_region: us-east-1
@@ -141,6 +144,7 @@ workflows:
                 - dealbot-daemon-bundle-2
           name: deploy-mainnet-us-east-1-daemons
           chart: filecoin/lotus-bundle
+          chart_version: 0.0.1
           circle_context: filecoin-mainnet-aws
           kubernetes_cluster: mainnet-us-east-1-eks
           aws_region: us-east-1
