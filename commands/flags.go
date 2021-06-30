@@ -271,11 +271,6 @@ var ControllerFlags = []cli.Flag{
 		Usage:   "system to use when starting daemons",
 		EnvVars: []string{"DEALBOT_DAEMON_DRIVER"},
 	}),
-	altsrc.NewStringSliceFlag(&cli.StringSliceFlag{
-		Name:    "daemon-regions",
-		Usage:   "list of regions where dealbots daemons should be started",
-		EnvVars: []string{"DEALBOT_REGIONS"},
-	}),
 	altsrc.NewStringFlag(&cli.StringFlag{
 		Name:  "devAssetDir",
 		Usage: "build frontend assets from directory instead of embedded version (set to location of 'controller'; the directory containing static and app)",

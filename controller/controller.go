@@ -108,22 +108,6 @@ func New(ctx *cli.Context) (*Controller, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	// <<<<<<< HEAD
-	// 	gqlToken := ""
-	// 	if ctx.IsSet("gqlAccessToken") {
-	// 		gqlToken = ctx.String("gqlAccessToken")
-	// 	}
-
-	// 	var spawner spawn.Spawner
-	// 	if ctx.String("daemon-driver") == "kubernetes" {
-	// 		spawner = spawn.NewKubernetes(ctx.StringSlice("daemon-regions"))
-	// 	} else {
-	// 		spawner = spawn.NewLocal()
-	// 	}
-
-	// 	return NewWithDependencies(l, gl, gqlToken, recorder, backend, spawner)
-	// =======
 	return NewWithDependencies(ctx, l, gl, recorder, backend)
 }
 
@@ -144,7 +128,7 @@ func NewWithDependencies(ctx *cli.Context, listener, graphqlListener net.Listene
 	srv.db = backend
 	srv.basicauth = ctx.String("basicauth")
 	if ctx.String("daemon-driver") == "kubernetes" {
-		srv.spawner = spawn.NewKubernetes(ctx.StringSlice("daemon-regions"))
+		srv.spawner = spawn.NewKubernetes()
 	} else {
 		srv.spawner = spawn.NewLocal()
 	}
