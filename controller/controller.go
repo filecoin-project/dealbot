@@ -130,7 +130,7 @@ func NewWithDependencies(ctx *cli.Context, listener, graphqlListener net.Listene
 	if ctx.String("daemon-driver") == "kubernetes" {
 		srv.spawner = spawn.NewKubernetes()
 	} else {
-		srv.spawner = spawn.NewLocal()
+		srv.spawner = spawn.NewLocal(ctx.String("listen"))
 	}
 
 	r := mux.NewRouter().StrictSlash(true)
