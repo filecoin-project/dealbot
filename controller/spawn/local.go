@@ -35,7 +35,7 @@ func (s *LocalSpawner) Spawn(d *Daemon) error {
 			"DEALBOT_ID":                  d.Id,
 			"DEALBOT_DATA_DIRECTORY":      data_dir,
 			"DEALBOT_TAGS":                strings.Join(d.Tags, ","),
-			"DEALBOT_WALLET_ADDRESS":      d.Wallet,
+			"DEALBOT_WALLET_ADDRESS":      d.Wallet.Address,
 			"DEALBOT_WORKERS":             strconv.Itoa(d.Workers),
 			"DEALBOT_CONTROLLER_ENDPOINT": s.endpoint,
 			"DEALBOT_MIN_FIL":             strconv.Itoa(d.MinFil),
@@ -67,21 +67,21 @@ func (s *LocalSpawner) Spawn(d *Daemon) error {
 	return nil
 }
 
-func (s *LocalSpawner) Get(regionid string, daemonid string) *Daemon {
+func (s *LocalSpawner) Get(regionid string, daemonid string) (*Daemon, error) {
 	daemoncmd, ok := s.cmds[daemonid]
 	if !ok {
-		return nil
+		return nil, DaemonNotFound
 	}
-	return daemonFromCmd(daemoncmd, daemonid)
+	return daemonFromCmd(daemoncmd, daemonid), nil
 }
 
-func (s *LocalSpawner) List(regionid string) []*Daemon {
+func (s *LocalSpawner) List(regionid string) ([]*Daemon, error) {
 	daemons := make([]*Daemon, 0)
 	for daemonid, cmd := range s.cmds {
 		daemon := daemonFromCmd(cmd, daemonid)
 		daemons = append(daemons, daemon)
 	}
-	return daemons
+	return daemons, nil
 }
 
 func (s *LocalSpawner) Regions() []string {
@@ -123,10 +123,12 @@ func daemonFromCmd(daemoncmd exec.Cmd, daemonid string) *Daemon {
 	minfil, _ := strconv.Atoi(env["DEALBOT_MIN_FIL"])
 	mincap, _ := strconv.Atoi(env["DEALBOT_MIN_CAP"])
 	return &Daemon{
-		Id:      daemonid,
-		Region:  "local",
-		Tags:    strings.Split(env["DEALBOT_TAGS"], ","),
-		Wallet:  env["DEALBOT_WALLET_ADDRESS"],
+		Id:     daemonid,
+		Region: "local",
+		Tags:   strings.Split(env["DEALBOT_TAGS"], ","),
+		Wallet: &Wallet{
+			Address: env["DEALBOT_WALLET_ADDRESS"],
+		},
 		Workers: workers,
 		MinFil:  minfil,
 		MinCap:  mincap,

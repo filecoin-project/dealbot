@@ -24,7 +24,7 @@ require (
 	github.com/ipld/go-ipld-graphql v0.0.0-20210608181858-5e7994523c5a
 	github.com/ipld/go-ipld-prime v0.7.1-0.20210519202903-3a67953d6ef3
 	github.com/ipld/go-ipld-prime-proto v0.1.1 // indirect
-	github.com/lib/pq v1.9.0
+	github.com/lib/pq v1.10.0
 	github.com/libp2p/go-libp2p v0.12.0
 	github.com/libp2p/go-libp2p-core v0.7.0
 	github.com/libp2p/go-libp2p-crypto v0.1.0
@@ -32,15 +32,19 @@ require (
 	github.com/multiformats/go-multiaddr v0.3.1
 	github.com/multiformats/go-multicodec v0.2.0
 	github.com/multiformats/go-multihash v0.0.15 // indirect
-	github.com/prometheus/client_golang v1.6.0
+	github.com/prometheus/client_golang v1.7.1
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/stretchr/testify v1.7.0
 	github.com/urfave/cli/v2 v2.3.0
 	github.com/willscott/ipld-dumpjson v0.0.0-20210625231845-eb416d94fa54
 	golang.org/x/net v0.0.0-20210224082022-3d97a244fca7
+	gopkg.in/yaml.v2 v2.4.0
+	helm.sh/helm/v3 v3.6.2
+	k8s.io/api v0.21.2
 	k8s.io/cli-runtime v0.21.2
 	k8s.io/client-go v0.21.2
 	modernc.org/sqlite v1.10.6
+	rsc.io/letsencrypt v0.0.3 // indirect
 )
 
 replace github.com/filecoin-project/filecoin-ffi => github.com/hannahhoward/ffi-stub v0.1.1-0.20210611194822-18d26dc20744
