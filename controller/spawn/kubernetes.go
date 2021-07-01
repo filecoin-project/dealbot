@@ -1,14 +1,17 @@
 package spawn
 
 import (
+	"encoding/json"
 	"io/ioutil"
 	"path"
+	"strconv"
 	"strings"
 
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart/loader"
 	helmcli "helm.sh/helm/v3/pkg/cli"
 	"helm.sh/helm/v3/pkg/release"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
@@ -78,19 +81,15 @@ func (s *KubernetesSpawner) List(regionid string) (daemons []*Daemon, err error)
 	}
 	client := action.NewList(actionConfig)
 	client.All = true
-	// client.Deployed = true
+	client.Deployed = true
 	releases, err := client.Run()
 	log.Info("how many releases?", len(releases))
 	if err != nil {
 		log.Infow("failed to list releases", "err", err)
 	}
-	// there could be helm installations other than dealbot daemons.
 	for _, r := range releases {
-		// if r.Labels["DEALBOT_CONTROLLER_MANAGED"] == "true" {
-		log.Info("release name outer", r.Name)
 		d := daemonFromRelease(r, regionid)
 		daemons = append(daemons, d)
-		// }
 	}
 	return daemons, nil
 }
@@ -158,17 +157,41 @@ func NewKubernetes() *KubernetesSpawner {
 	return s
 }
 
+// TODO
+// horrible. Just horrible.
+// config is map[string]interface{}, recursive
+// but we know that config["application"]["container"]
+// is a kubernetes container, and that configuration
+// is visible there in environment variables.
+// If the environment variables exist, use them to create
+// the Daemon struct. If they don't exist, the Daemon will
+// have zero-values
 func daemonFromRelease(r *release.Release, regionid string) (daemon *Daemon) {
+	container := r.Config["application"].(map[string]interface{})["container"]
+	kcontainer := new(corev1.Container)
+	buf, _ := json.Marshal(container)
+	json.Unmarshal(buf, kcontainer)
 	var minfil, mincap int
-	daemon = &Daemon{
+	var tags []string
+	var wallet *Wallet
+	for _, env := range kcontainer.Env {
+		switch env.Name {
+		case "DEALBOT_TAGS":
+			tags = strings.Split(env.Value, ",")
+		case "DEALBOT_WALLET_ADDRESS":
+			wallet.Address = env.Value
+		case "DEALBOT_MIN_FIL":
+			minfil, _ = strconv.Atoi(env.Value)
+		case "DEALBOT_MIN_CAP":
+			mincap, _ = strconv.Atoi(env.Value)
+		}
+	}
+	return &Daemon{
 		Id:     r.Name,
 		Region: regionid,
-		Tags:   strings.Split(r.Labels["DEALBOT_TAGS"], ","),
-		Wallet: &Wallet{
-			Address: r.Labels["DEALBOT_WALLET"],
-		},
+		Tags:   tags,
+		Wallet: wallet,
 		MinFil: minfil,
 		MinCap: mincap,
 	}
-	return daemon
 }

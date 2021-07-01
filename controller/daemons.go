@@ -103,7 +103,7 @@ func daemonDefaults(d *spawn.Daemon) {
 		}
 	}
 	if d.Id == "" {
-		d.Id = uuid.New().String()
+		d.Id = "daemon-" + uuid.New().String()[:8]
 	}
 	if d.Workers == 0 {
 		d.Workers = 1

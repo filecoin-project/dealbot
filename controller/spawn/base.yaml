@@ -2,14 +2,14 @@
 # https://github.com/filecoin-project/helm-charts/tree/master/charts/lotus-bundle
 #
 # This values file is used as the basis for dealbot daemon deployments.
-# More changes are made for each instance. See values.go.
+# See values.go to see how this is templated.
 #
 # what the controller does should be something similar to
-# installing this chart with helm
+# installing this chart with helm...with the template applied, of course.
 
 image:
-  repository: filecoin/dealbot
-  tag: latest
+  repository: {{ .DockerRepo }}
+  tag: {{ .DockerTag }}
   pullPolicy: Always
 
 application:
@@ -17,14 +17,20 @@ application:
   labels: []
   replicas: 
   container:
-    name: application
+    name: dealbot-daemon
     command: [ "sh" ]
     args: 
       - "-c"
       - "FULLNODE_API_INFO=$(cat $LOTUS_PATH/token):$(cat $LOTUS_PATH/api) ./dealbot daemon"
     env:
       - name: DEALBOT_ID
-        value: daemon-0
+        value: {{ .Id }}
+      - name: DEALBOT_WALLET_ADDRESS
+        value: {{ .Wallet.Address }}
+      - name: DEALBOT_MIN_FIL
+        value: "{{ .MinFil }}"
+      - name: DEALBOT_MIN_CAP
+        value: "{{ .MinCap }}"
       - name: DEALBOT_DATA_DIRECTORY
         value: /shared
       - name: DEALBOT_NODE_DATA_DIRECTORY
@@ -67,7 +73,9 @@ application:
 # wallets:
 #   - address: f3xxxyyy
 #     exported: aabbccdd
-wallets: []
+wallets:
+  - address: {{ .Wallet.Address }}
+    exported: {{ .Wallet.Exported }}
 
 # lotus configuration
 # By default, lotus will run as a full-node. In this mode, it will take

@@ -39,6 +39,7 @@ require (
 	github.com/willscott/ipld-dumpjson v0.0.0-20210625231845-eb416d94fa54
 	golang.org/x/net v0.0.0-20210224082022-3d97a244fca7
 	helm.sh/helm/v3 v3.6.2
+	k8s.io/api v0.21.2
 	k8s.io/cli-runtime v0.21.2
 	k8s.io/client-go v0.21.2
 	modernc.org/sqlite v1.10.6
