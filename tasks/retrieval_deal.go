@@ -265,7 +265,7 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(ctx context.Context, upda
 					return err
 				}
 				for _, i := range imports {
-					if i.Root.String() == de.task.PayloadCID.String() {
+					if i.Root != nil && i.Root.String() == de.task.PayloadCID.String() {
 						if err := de.node.ClientRemoveImport(de.ctx, i.Key); err != nil {
 							return err
 						}
