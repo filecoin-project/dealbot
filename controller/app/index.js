@@ -56,49 +56,62 @@ $().ready(() => {
 })
 
 function syncTable() {
-    let username = undefined;
-    let password = undefined;
-    if (auth != "") {
-        let ap = auth.split(":");
-        username = ap[0];
-        password = ap[1];
-    }
-    $.ajax({
-        type: "GET",
-        url: "./tasks",
-        username: username,
-        password: password,
-        success: gotTable,
-    });
+   fetch("./tasks", { method: "GET", headers: getHeaders()}).then((response) => response.json()).then(gotTable)
 }
 
 function operate(val, row) {
-    return '<a title="remove">Cancel</a>';
+    return '<a class="remove" title="remove">Cancel</a>';
 }
 
+let firstLoad = true
+
 function gotTable(data) {
-    for (let i = 0; i < data.length; i++) {
-        data[i].task = data[i].StorageTask || data[i].RetrievalTask;
-        data[i].sched = {
-            Schedule: data[i].task.Schedule,
-            Limit: data[i].task.ScheduleLimit,
+    const processedData = data.map((item) => {
+        let task = item.StorageTask || item.RetrievalTask
+        const sched = {
+            Schedule: task.Schedule,
+            Limit: task.ScheduleLimit,
         }
-        delete data[i].task.Schedule;
-        delete data[i].task.ScheduleLimit;
-    }
+        delete task.Schedule;
+        delete task.ScheduleLimit;
+        return Object.assign({ sched, task }, item)
+    }).filter((item) => item.Status == 1 || item.sched.Schedule)
+    if (firstLoad) {
     let stringify = (d) => JSON.stringify(d, null, 2);
-    console.log(data);
     $("#taskTable").bootstrapTable({
         idField: 'UUID',
         columns: [
             {title:'ID', field:'UUID'},
-            {title:'Status', field:'Status'},
             {title:'Task', field:'task', formatter: stringify},
             {title:'Schedule', field:'sched', formatter: stringify},
-            {title:'Delete', field: 'operate', align: 'center', formatter: operate}
+            {title:'Delete', field: 'operate', align: 'center', formatter: operate, events: { 'click .remove': cancel}}
         ],
-        data: data,
+        data: processedData,
     });
+    firstLoad = false
+} else {
+    $("#taskTable").bootstrapTable('load', processedData)
+}
+}
+
+function cancel(e, value, row, index) {
+    if (e.preventDefault) {
+        e.preventDefault()
+    }
+    let url = `./tasks/${row.UUID}`
+    fetch(url, { method: "DELETE", headers: getHeaders()}).then((_) => {
+        $("#taskTable").bootstrapTable('hideRow', { index })
+    });
+}
+
+function getHeaders() {
+    let headers = {
+        'Content-Type': "application/json",
+    }
+    if (auth != "") {
+       headers.Authorization =  `Basic ${btoa(auth)}`
+    }
+    return headers
 }
 
 function doSubmit(e) {
@@ -109,22 +122,7 @@ function doSubmit(e) {
     // loop over miners
     let miners = $("#newMiner").val().trim().split('\n')
 
-    let remaining = miners.length;
-    let done = () => {
-        remaining--;
-        if (!remaining) {
-            $("#addDone").show()
-        }
-    }
-
-    let username = undefined;
-    let password = undefined;
-    if (auth != "") {
-        let ap = auth.split(":");
-        username = ap[0];
-        password = ap[1];
-    }
-
+    let requests = []
     for (let i = 0; i < miners.length; i++) {
         let miner = miners[i];
         let url = "./tasks/storage";
@@ -137,10 +135,6 @@ function doSubmit(e) {
                 "CARExport": false,
                 "MaxPriceAttoFIL": 20000000000,
             }
-            if ($('#newRepeatRetAfterStore').is(':checked')) {
-                data.RetrievalSchedule = $('#newretafterstoreSchedule').val()
-                data.RetrievalScheduleLimit = $('#newretafterstoreScheduleLimit').val()
-            }
         } else {
             data = {
                 "Miner": miner,
@@ -149,6 +143,10 @@ function doSubmit(e) {
                 "FastRetrieval": $('#newFast').is(':checked'),
                 "Verified": $('#newVerified').is(':checked'),
                 "MaxPriceAttoFIL": 20000000000,
+            }
+            if ($('#newRepeatRetAfterStore').is(':checked')) {
+                data.RetrievalSchedule = $('#newretafterstoreSchedule').val()
+                data.RetrievalScheduleLimit = $('#newretafterstoreScheduleLimit').val()
             }
         }
 
@@ -160,16 +158,13 @@ function doSubmit(e) {
             data.Tag = $('#newScheduleTag').val()
         }
 
-        $.ajax({
-            type: "POST",
-            contentType: "application/json",
-            url: url,
-            data: JSON.stringify(data),
-            username: username,
-            password: password,
-            success: done,
-        });
+        requests.push(fetch(url, {method: "POST", headers: getHeaders(), body: JSON.stringify(data)}))
     }
+
+    Promise.all(requests).then((_) => {
+        $("#addDone").show()
+        syncTable()
+    })
 
     return false
 }
