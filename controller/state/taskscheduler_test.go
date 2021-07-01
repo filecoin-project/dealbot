@@ -4,9 +4,6 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
-	"io/ioutil"
-	"os"
-	"path/filepath"
 	"testing"
 	"time"
 
@@ -22,18 +19,14 @@ func TestScheduledTask(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	tmpDir, err := ioutil.TempDir("", "testdealbot")
-	if err != nil {
-		panic(err)
-	}
-	defer os.RemoveAll(tmpDir)
-
 	key, err := makeKey()
 	require.NoError(t, err)
 
 	runNotice := make(chan string, 1)
 
-	stateInterface, err := newStateDBWithNotify(ctx, "sqlite", filepath.Join(tmpDir, "teststate.db"), "", key, nil, runNotice)
+	err = WipeAndReset(dbConn, migrator)
+	require.NoError(t, err)
+	stateInterface, err := newStateDBWithNotify(ctx, dbConn, migrator, "", key, nil, runNotice)
 	require.NoError(t, err)
 	state := stateInterface.(*stateDB)
 
@@ -159,18 +152,14 @@ func TestScheduledTaskLimit(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	tmpDir, err := ioutil.TempDir("", "testdealbot")
-	if err != nil {
-		panic(err)
-	}
-	defer os.RemoveAll(tmpDir)
-
 	key, err := makeKey()
 	require.NoError(t, err)
 
 	runNotice := make(chan string, 1)
 
-	stateInterface, err := newStateDBWithNotify(ctx, "sqlite", filepath.Join(tmpDir, "teststate.db"), "", key, nil, runNotice)
+	err = WipeAndReset(dbConn, migrator)
+	require.NoError(t, err)
+	stateInterface, err := newStateDBWithNotify(ctx, dbConn, migrator, "", key, nil, runNotice)
 	require.NoError(t, err)
 	state := stateInterface.(*stateDB)
 

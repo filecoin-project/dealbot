@@ -102,7 +102,15 @@ func New(ctx *cli.Context) (*Controller, error) {
 		}
 	}
 
-	backend, err := state.NewStateDB(ctx.Context, ctx.String("driver"), ctx.String("dbloc"), ctx.String("datapointlog"), key, recorder)
+	connector, err := state.NewDBConnector(ctx.String("driver"), ctx.String("dbloc"))
+	if err != nil {
+		return nil, err
+	}
+	migrator, err := state.NewMigrator(ctx.String("driver"))
+	if err != nil {
+		return nil, err
+	}
+	backend, err := state.NewStateDB(ctx.Context, connector, migrator, ctx.String("datapointlog"), key, recorder)
 	if err != nil {
 		return nil, err
 	}
@@ -151,6 +159,7 @@ func NewWithDependencies(ctx *cli.Context, listener, graphqlListener net.Listene
 	r.HandleFunc("/status", srv.reportStatusHandler).Methods("POST")
 	r.HandleFunc("/tasks/{uuid}", srv.updateTaskHandler).Methods("PATCH")
 	r.HandleFunc("/tasks/{uuid}", srv.getTaskHandler).Methods("GET")
+	r.HandleFunc("/tasks/{uuid}", srv.deleteTaskHandler).Methods("DELETE")
 	r.HandleFunc("/car", srv.carHandler).Methods("GET")
 	r.HandleFunc("/health", srv.healthHandler).Methods("GET")
 	r.HandleFunc("/cred.js", srv.authHandler).Methods("GET")

@@ -265,6 +265,24 @@ func (c *Client) CreateRetrievalTask(ctx context.Context, retrievalTask tasks.Re
 	return tp.Build().(tasks.Task), nil
 }
 
+func (c *Client) DeleteTask(ctx context.Context, uuid string) error {
+	resp, err := c.request(ctx, "DELETE", "/tasks/"+uuid, nil)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusNoContent {
+		return nil
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return ErrRequestFailed{resp.StatusCode}
+	}
+
+	return nil
+}
+
 func (c *Client) request(ctx context.Context, method string, path string, body io.Reader, headers ...string) (*http.Response, error) {
 	if len(headers)%2 != 0 {
 		return nil, fmt.Errorf("headers must be tuples: key1, value1, key2, value2")
