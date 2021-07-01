@@ -18,7 +18,7 @@
                 <div id="tasksection" class="accordion-collapse collapse show" aria-labelledby="headingTasks" data-bs-parent="#mainOptions">
                     <div class="accordion-body">
                         List of tasks and ability to cancel them.
-                        <table class="table">
+                        <table class="table" id="taskTable">
                             <thead>
                                 <tr>
                                     <th scope="col">ID</th>
@@ -93,7 +93,7 @@
                                     <input type="text" id="newSchedule" value="5 14 * * *">
                                 </div>
                                 <div class="mb-3">
-                                    <input type="text" id="newScheduleLimit" value="30d">
+                                    <input type="text" id="newScheduleLimit" value="720h">
                                     <label class="form-label" for="newScheduleLimit">Duration in which schedule is valid</label>
                                 </div>
                             </div>
