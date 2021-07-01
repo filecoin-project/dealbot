@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"context"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -12,6 +11,8 @@ import (
 
 	"github.com/filecoin-project/lotus/chain/types"
 	"github.com/filecoin-project/lotus/chain/wallet"
+	_ "github.com/filecoin-project/lotus/lib/sigs/bls"
+	_ "github.com/filecoin-project/lotus/lib/sigs/secp"
 
 	"github.com/gorilla/mux"
 )
@@ -87,18 +88,17 @@ func (c *Controller) newDaemonHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+	// daemon is already created; sanatize output
+	daemon.Wallet.Exported = ""
 	json.NewEncoder(w).Encode(daemon)
 }
 
 func daemonDefaults(d *spawn.Daemon) {
 	if !(d.Wallet != nil && d.Wallet.Address != "" && d.Wallet.Exported != "") {
-		w, _ := wallet.NewWallet(wallet.NewMemKeyStore())
-		ctx := context.Background()
-		a, _ := w.WalletNew(ctx, types.KTBLS)
-		ki, _ := w.WalletExport(ctx, a)
-		b, _ := json.Marshal(ki)
+		k, _ := wallet.GenerateKey(types.KTSecp256k1)
+		b, _ := json.Marshal(k.KeyInfo)
 		d.Wallet = &spawn.Wallet{
-			Address:  a.String(),
+			Address:  k.Address.String(),
 			Exported: hex.EncodeToString(b),
 		}
 	}
