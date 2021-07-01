@@ -1,11 +1,18 @@
 package controller
 
 import (
+	"context"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"net/http"
 
 	"github.com/filecoin-project/dealbot/controller/spawn"
+	"github.com/google/uuid"
+
+	"github.com/filecoin-project/lotus/chain/types"
+	"github.com/filecoin-project/lotus/chain/wallet"
+
 	"github.com/gorilla/mux"
 )
 
@@ -73,9 +80,38 @@ func (c *Controller) newDaemonHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	regionid := mux.Vars(r)["regionid"]
 	daemon.Region = regionid
+	// generate random values if they aren't already setup
+	daemonDefaults(daemon)
 	if err := c.spawner.Spawn(daemon); err != nil {
 		log.Errorw("could not spawn daemon", "daemonid", daemon.Id, "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
+	}
+	json.NewEncoder(w).Encode(daemon)
+}
+
+func daemonDefaults(d *spawn.Daemon) {
+	if !(d.Wallet != nil && d.Wallet.Address != "" && d.Wallet.Exported != "") {
+		w, _ := wallet.NewWallet(wallet.NewMemKeyStore())
+		ctx := context.Background()
+		a, _ := w.WalletNew(ctx, types.KTBLS)
+		ki, _ := w.WalletExport(ctx, a)
+		b, _ := json.Marshal(ki)
+		d.Wallet = &spawn.Wallet{
+			Address:  a.String(),
+			Exported: hex.EncodeToString(b),
+		}
+	}
+	if d.Id == "" {
+		d.Id = uuid.New().String()
+	}
+	if d.Workers == 0 {
+		d.Workers = 1
+	}
+	if d.DockerRepo == "" {
+		d.DockerRepo = "filecoin/dealbot"
+	}
+	if d.DockerTag == "" {
+		d.DockerTag = "latest"
 	}
 }

@@ -14,11 +14,11 @@ var (
 
 type Daemon struct {
 	Id         string   `json:"id,omitempty"`
-	Region     string   `json:"region"`
-	Tags       []string `json:"tags" default:"[]"`
-	Workers    int      `json:"workers" default:"1"`
-	MinFil     int      `json:"minfil" default:"0"`
-	MinCap     int      `json:"mincap" default:"0"`
+	Region     string   `json:"region,omitempty"`
+	Tags       []string `json:"tags,omitempty"`
+	Workers    int      `json:"workers,omitempty"`
+	MinFil     int      `json:"minfil,omitempty"`
+	MinCap     int      `json:"mincap,omitempty"`
 	DockerRepo string   `json:"dockerrepo,omitempty"`
 	DockerTag  string   `json:"dockerrtag,omitempty"`
 	Wallet     *Wallet  `json:"wallet,omitempty"`
