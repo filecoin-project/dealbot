@@ -17,6 +17,8 @@ import (
 	"github.com/filecoin-project/dealbot/controller"
 	"github.com/filecoin-project/dealbot/controller/client"
 	"github.com/filecoin-project/dealbot/controller/state"
+	"github.com/filecoin-project/dealbot/controller/state/postgresdb"
+	"github.com/filecoin-project/dealbot/controller/state/postgresdb/temporary"
 	"github.com/filecoin-project/dealbot/metrics/testrecorder"
 	"github.com/filecoin-project/dealbot/tasks"
 	"github.com/ipld/go-ipld-prime/codec/dagjson"
@@ -33,6 +35,19 @@ func mustString(s string, _ error) string {
 
 func TestControllerHTTPInterface(t *testing.T) {
 	ctx := context.Background()
+	migrator, err := state.NewMigrator("postgres")
+	require.NoError(t, err)
+	var dbConn state.DBConnector
+	existingPGconn := postgresdb.PostgresConfig{}.String()
+	dbConn = postgresdb.New(existingPGconn)
+	err = dbConn.Connect()
+	if err != nil {
+		tempPG, err := temporary.NewTemporaryPostgres(ctx, temporary.Params{HostPort: defaultPGPort})
+		require.NoError(t, err)
+		dbConn = tempPG
+		defer tempPG.Shutdown(ctx)
+	}
+
 	testCases := map[string]func(ctx context.Context, t *testing.T, apiClient *client.Client, recorder *testrecorder.TestMetricsRecorder){
 		"list and update tasks": func(ctx context.Context, t *testing.T, apiClient *client.Client, recorder *testrecorder.TestMetricsRecorder) {
 			require.NoError(t, populateTestTasksFromFile(ctx, jsonTestDeals, apiClient))
@@ -339,7 +354,8 @@ func TestControllerHTTPInterface(t *testing.T) {
 		t.Run(testCase, func(t *testing.T) {
 			ctx, cancel := context.WithTimeout(ctx, time.Minute)
 			defer cancel()
-			h := newHarness(ctx, t)
+			state.WipeAndReset(dbConn, migrator)
+			h := newHarness(ctx, t, dbConn, migrator)
 			run(ctx, t, h.apiClient, h.recorder)
 
 			h.Shutdown(t)
@@ -357,7 +373,9 @@ type harness struct {
 	serveErr   chan error
 }
 
-func newHarness(ctx context.Context, t *testing.T) *harness {
+const defaultPGPort = 5434
+
+func newHarness(ctx context.Context, t *testing.T, connector state.DBConnector, migrator state.Migrator) *harness {
 	h := &harness{ctx: ctx}
 	h.recorder = testrecorder.NewTestMetricsRecorder()
 	listener, err := net.Listen("tcp", "localhost:0")
@@ -367,9 +385,9 @@ func newHarness(ctx context.Context, t *testing.T) *harness {
 	h.port = p
 	h.apiClient = client.NewFromEndpoint("http://localhost:" + p)
 	pr, _, _ := crypto.GenerateKeyPair(crypto.Ed25519, 0)
-	h.dbloc, err = ioutil.TempDir("", "dealbot_test_*")
 	require.NoError(t, err)
-	be, err := state.NewStateDB(ctx, "sqlite", h.dbloc+"/tmp.sqlite", "", pr, h.recorder)
+
+	be, err := state.NewStateDB(ctx, connector, migrator, "", pr, h.recorder)
 	require.NoError(t, err)
 	cc := cli.NewContext(cli.NewApp(), &flag.FlagSet{}, nil)
 	h.controller, err = controller.NewWithDependencies(cc, listener, nil, h.recorder, be)
@@ -434,8 +452,5 @@ func (h *harness) Shutdown(t *testing.T) {
 		t.Fatalf("no return from serve call")
 	case err = <-h.serveErr:
 		require.EqualError(t, err, http.ErrServerClosed.Error())
-	}
-	if _, err := os.Stat(h.dbloc); !os.IsNotExist(err) {
-		os.RemoveAll(h.dbloc)
 	}
 }

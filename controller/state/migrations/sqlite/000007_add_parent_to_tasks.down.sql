@@ -1,5 +1,0 @@
-BEGIN;
-
-ALTER TABLE tasks DROP COLUMN parent;
-
-COMMIT;

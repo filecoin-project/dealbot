@@ -102,7 +102,15 @@ func New(ctx *cli.Context) (*Controller, error) {
 		}
 	}
 
-	backend, err := state.NewStateDB(ctx.Context, ctx.String("driver"), ctx.String("dbloc"), ctx.String("datapointlog"), key, recorder)
+	connector, err := state.NewDBConnector(ctx.String("driver"), ctx.String("dbloc"))
+	if err != nil {
+		return nil, err
+	}
+	migrator, err := state.NewMigrator(ctx.String("migrator"))
+	if err != nil {
+		return nil, err
+	}
+	backend, err := state.NewStateDB(ctx.Context, connector, migrator, ctx.String("datapointlog"), key, recorder)
 	if err != nil {
 		return nil, err
 	}

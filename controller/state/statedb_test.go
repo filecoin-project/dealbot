@@ -8,11 +8,11 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"os/exec"
-	"path/filepath"
 	"testing"
 	"time"
 
+	"github.com/filecoin-project/dealbot/controller/state/postgresdb"
+	"github.com/filecoin-project/dealbot/controller/state/postgresdb/temporary"
 	"github.com/filecoin-project/dealbot/tasks"
 	"github.com/ipld/go-ipld-prime/codec/dagjson"
 	cidlink "github.com/ipld/go-ipld-prime/linking/cid"
@@ -22,6 +22,34 @@ import (
 )
 
 const jsonTestDeals = "../../devnet/sample_tasks.json"
+
+var dbConn DBConnector
+var migrator Migrator
+
+func TestMain(m *testing.M) {
+	var err error
+	migrator, err = NewMigrator("postgres")
+	if err != nil {
+		fmt.Println("could not setup migrator")
+		os.Exit(-1)
+	}
+	existingPGconn := postgresdb.PostgresConfig{}.String()
+	dbConn = postgresdb.New(existingPGconn)
+	err = dbConn.Connect()
+	if err == nil {
+		os.Exit(m.Run())
+	}
+
+	tempPG, err := temporary.NewTemporaryPostgres(context.Background(), temporary.Params{HostPort: defaultPGPort})
+	if err != nil {
+		fmt.Println("unable to establish postgres connection either on system or docker")
+		os.Exit(-1)
+	}
+	dbConn = tempPG
+	res := m.Run()
+	tempPG.Shutdown(context.Background())
+	os.Exit(res)
+}
 
 func TestLoadTask(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
@@ -720,30 +748,17 @@ func makeKey() (crypto.PrivKey, error) {
 	return pr, nil
 }
 
-const defaultPGPort = "5434"
+const defaultPGPort = 5434
 
 func withState(ctx context.Context, t *testing.T, fn func(*stateDB)) {
-	postgresBin := os.Getenv("POSTGRES_BIN")
-	var stateInterface State
 
 	key, err := makeKey()
 	require.NoError(t, err)
 
-	tmpDir, err := ioutil.TempDir("", "testdealbot")
+	err = WipeAndReset(dbConn, migrator)
 	require.NoError(t, err)
-	defer os.RemoveAll(tmpDir)
-	if postgresBin == "" {
-		stateInterface, err = NewStateDB(ctx, "sqlite", filepath.Join(tmpDir, "teststate.db"), "", key, nil)
-		require.NoError(t, err)
-	} else {
-		err := exec.Command("./setup_pg_cluster.sh", tmpDir, defaultPGPort).Run()
-		defer exec.Command("./teardown_pg_cluster.sh", tmpDir).Run()
-		require.NoError(t, err)
-		stateInterface, err = NewStateDB(ctx, "postgres", fmt.Sprintf(
-			"host=%s port=%s user=%s sslmode=disable",
-			"localhost", defaultPGPort, "postgres"), "", key, nil)
-		require.NoError(t, err)
-	}
+	stateInterface, err := NewStateDB(ctx, dbConn, migrator, "", key, nil)
+	require.NoError(t, err)
 	state, ok := stateInterface.(*stateDB)
 	require.True(t, ok, "returned wrong type")
 	fn(state)

@@ -259,7 +259,7 @@ var ControllerFlags = []cli.Flag{
 		Name:    "driver",
 		Usage:   "type of database backend to use",
 		EnvVars: []string{"DEALBOT_PERSISTENCE_DRIVER"},
-		Value:   "sqlite",
+		Value:   "postgres",
 	}),
 	altsrc.NewStringFlag(&cli.StringFlag{
 		Name:    "dbloc",

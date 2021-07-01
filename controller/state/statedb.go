@@ -12,7 +12,6 @@ import (
 	"io/ioutil"
 	"os"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/filecoin-project/dealbot/metrics"
@@ -29,23 +28,16 @@ import (
 	dumpjson "github.com/willscott/ipld-dumpjson"
 
 	// DB interfaces
-	"github.com/filecoin-project/dealbot/controller/state/postgresdb"
-	"github.com/filecoin-project/dealbot/controller/state/sqlitedb"
-	"github.com/lib/pq"
 
+	"github.com/lib/pq"
 	// DB migrations
-	"github.com/golang-migrate/migrate/v4"
-	"github.com/golang-migrate/migrate/v4/database"
-	"github.com/golang-migrate/migrate/v4/database/postgres"
-	"github.com/golang-migrate/migrate/v4/database/sqlite"
-	"github.com/golang-migrate/migrate/v4/source/iofs"
 )
 
 // Maximum time to retry transactions that fail due to temporary error
 const maxRetryTime = time.Minute
 
 // Embed all the *.sql files in migrations.
-//go:embed migrations/sqlite/*.sql migrations/postgres/*.sql
+//go:embed migrations/*.sql
 var migrations embed.FS
 
 var log = logging.Logger("controller-state")
@@ -94,67 +86,16 @@ type stateDB struct {
 	crypto.PrivKey
 	recorder  metrics.MetricsRecorder
 	outlog    io.WriteCloser
-	txlock    sync.Mutex
 	runNotice chan string
 }
 
-func migratePostgres(db *sql.DB) error {
-	dbInstance, err := postgres.WithInstance(db, &postgres.Config{})
-	if err != nil {
-		return err
-	}
-	return migrateDatabase("postgres", dbInstance)
-}
-
-func migrateSqlite(db *sql.DB) error {
-	dbInstance, err := sqlite.WithInstance(db, &sqlite.Config{NoTxWrap: true})
-	if err != nil {
-		return err
-	}
-	return migrateDatabase("sqlite", dbInstance)
-}
-
-func migrateDatabase(dbName string, dbInstance database.Driver) error {
-	source, err := iofs.New(migrations, "migrations/"+dbName)
-	if err != nil {
-		return err
-	}
-
-	m, err := migrate.NewWithInstance("iofs", source, dbName, dbInstance)
-	if err != nil {
-		return err
-	}
-
-	err = m.Up()
-	if err == migrate.ErrNoChange {
-		return nil
-	}
-	return err
-}
-
 // NewStateDB creates a state instance with a given driver and identity
-func NewStateDB(ctx context.Context, driver, conn string, logfile string, identity crypto.PrivKey, recorder metrics.MetricsRecorder) (State, error) {
-	return newStateDBWithNotify(ctx, driver, conn, logfile, identity, recorder, nil)
+func NewStateDB(ctx context.Context, dbConn DBConnector, migrator Migrator, logfile string, identity crypto.PrivKey, recorder metrics.MetricsRecorder) (State, error) {
+	return newStateDBWithNotify(ctx, dbConn, migrator, logfile, identity, recorder, nil)
 }
 
 // newStateDBWithNotify is NewStateDB with additional parameters for testing
-func newStateDBWithNotify(ctx context.Context, driver, conn, logfile string, identity crypto.PrivKey, recorder metrics.MetricsRecorder, runNotice chan string) (State, error) {
-	var dbConn DBConnector
-	var migrateFunc func(*sql.DB) error
-
-	switch driver {
-	case "postgres":
-		if conn == "" {
-			conn = postgresdb.PostgresConfig{}.String()
-		}
-		dbConn = postgresdb.New(conn)
-		migrateFunc = migratePostgres
-	case "sqlite":
-		dbConn = sqlitedb.New(conn)
-		migrateFunc = migrateSqlite
-	default:
-		return nil, fmt.Errorf("database driver %q is not supported", driver)
-	}
+func newStateDBWithNotify(ctx context.Context, dbConn DBConnector, migrator Migrator, logfile string, identity crypto.PrivKey, recorder metrics.MetricsRecorder, runNotice chan string) (State, error) {
 
 	// Open database connection
 	err := dbConn.Connect()
@@ -164,8 +105,8 @@ func newStateDBWithNotify(ctx context.Context, driver, conn, logfile string, ide
 	db := dbConn.SqlDB()
 
 	// Apply DB schema migrations
-	if err = migrateFunc(db); err != nil {
-		return nil, fmt.Errorf("%s database migration failed: %w", driver, err)
+	if err = migrator(db); err != nil {
+		return nil, fmt.Errorf("%s database migration failed: %w", dbConn.Name(), err)
 	}
 
 	//cronSched := cron.New(cron.WithSeconds())
@@ -461,13 +402,7 @@ func (s *stateDB) popTask(ctx context.Context, workedBy string, status tasks.Sta
 		if len(tags) == 0 {
 			err = tx.QueryRowContext(ctx, oldestAvailableTaskSQL).Scan(&taskID, &serialized)
 		} else {
-			if s.dbconn.Name() == "postgres" {
-				err = tx.QueryRowContext(ctx, oldestAvailableTaskWithTagsSQL, pq.Array(tags)).Scan(&taskID, &serialized)
-			} else {
-				// This SQL formation is needed for sqlite.  Is there a better way?
-				sql := fmt.Sprintf(oldestAvailableTaskWithTagsSQLsqlite, "?"+strings.Repeat(",?", len(tags)-1))
-				err = tx.QueryRowContext(ctx, sql, tags...).Scan(&taskID, &serialized)
-			}
+			err = tx.QueryRowContext(ctx, oldestAvailableTaskWithTagsSQL, pq.Array(tags)).Scan(&taskID, &serialized)
 		}
 		if err != nil {
 			if err == sql.ErrNoRows {
@@ -761,22 +696,9 @@ func (s *stateDB) transact(ctx context.Context, f func(*sql.Tx) error) error {
 		return err
 	}
 
-	// SQLite is not safe to use with multiple goroutines concurrently, so mutex
-	// lock around transaction is needed.
-	var needLock bool
-	if s.dbconn.Name() == "sqlite" {
-		needLock = true
-	}
-
 	var start time.Time
 	for {
-		if needLock {
-			s.txlock.Lock()
-		}
 		err = withTransaction(ctx, s.db(), f)
-		if needLock {
-			s.txlock.Unlock()
-		}
 		if err != nil {
 			if s.dbconn.RetryableError(err) && (start.IsZero() || time.Since(start) < maxRetryTime) {
 				if start.IsZero() {
