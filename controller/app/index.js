@@ -1,4 +1,5 @@
 import "./jquery-global";
+import "bootstrap-table";
 import "bootstrap-cron-picker/dist/cron-picker";
 
 let auth = "";
@@ -38,7 +39,55 @@ $().ready(() => {
 
     $("#addtask button").on('click', doSubmit);
     $("schedulesection form").on('submit', doSubmit);
+
+    syncTable();
 })
+
+function syncTable() {
+    let username = undefined;
+    let password = undefined;
+    if (auth != "") {
+        let ap = auth.split(":");
+        username = ap[0];
+        password = ap[1];
+    }
+    $.ajax({
+        type: "GET",
+        url: "./tasks",
+        username: username,
+        password: password,
+        success: gotTable,
+    });
+}
+
+function operate(val, row) {
+    return '<a title="remove">Cancel</a>';
+}
+
+function gotTable(data) {
+    for (let i = 0; i < data.length; i++) {
+        data[i].task = data[i].StorageTask || data[i].RetrievalTask;
+        data[i].sched = {
+            Schedule: data[i].task.Schedule,
+            Limit: data[i].task.ScheduleLimit,
+        }
+        delete data[i].task.Schedule;
+        delete data[i].task.ScheduleLimit;
+    }
+    let stringify = (d) => JSON.stringify(d, null, 2);
+    console.log(data);
+    $("#taskTable").bootstrapTable({
+        idField: 'UUID',
+        columns: [
+            {title:'ID', field:'UUID'},
+            {title:'Status', field:'Status'},
+            {title:'Task', field:'task', formatter: stringify},
+            {title:'Schedule', field:'sched', formatter: stringify},
+            {title:'Delete', field: 'operate', align: 'center', formatter: operate}
+        ],
+        data: data,
+    });
+}
 
 function doSubmit(e) {
     if (e.preventDefault) {
@@ -56,8 +105,8 @@ function doSubmit(e) {
         }
     }
 
-    username = undefined;
-    password = undefined;
+    let username = undefined;
+    let password = undefined;
     if (auth != "") {
         let ap = auth.split(":");
         username = ap[0];
@@ -66,10 +115,10 @@ function doSubmit(e) {
 
     for (let i = 0; i < miners.length; i++) {
         let miner = miners[i];
-        let url = "/tasks/storage";
+        let url = "./tasks/storage";
         let data = {};
         if ($('#newSR').is(':checked')) {
-            url = "/tasks/retrieval";
+            url = "./tasks/retrieval";
             data = {
                 "Miner": miner,
                 "PayloadCID": $('#newCid').val(),
@@ -79,7 +128,7 @@ function doSubmit(e) {
         } else {
             data = {
                 "Miner": miner,
-                "Size": $('#newSize').val(),
+                "Size": Number($('#newSize').val()),
                 "StartOffset": 6152, // 3 days?
                 "FastRetrieval": $('#newFast').is(':checked'),
                 "Verified": $('#newVerified').is(':checked'),
@@ -97,8 +146,9 @@ function doSubmit(e) {
 
         $.ajax({
             type: "POST",
+            contentType: "application/json",
             url: url,
-            data: data,
+            data: JSON.stringify(data),
             username: username,
             password: password,
             success: done,
