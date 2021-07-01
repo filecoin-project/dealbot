@@ -106,7 +106,7 @@ func New(ctx *cli.Context) (*Controller, error) {
 	if err != nil {
 		return nil, err
 	}
-	migrator, err := state.NewMigrator(ctx.String("migrator"))
+	migrator, err := state.NewMigrator(ctx.String("driver"))
 	if err != nil {
 		return nil, err
 	}
