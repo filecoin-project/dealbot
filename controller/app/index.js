@@ -1,4 +1,5 @@
 import "./jquery-global";
+import "bootstrap-table";
 import "bootstrap-cron-picker/dist/cron-picker";
 
 let auth = "";
@@ -8,6 +9,7 @@ window.setauth = (a) => {
 
 $().ready(() => {
     $('#newSchedule').cronPicker();
+    $('#newretafterstoreSchedule').cronPicker();
 
     $("#addDone").hide();
     if ($('#newSR').is(':checked')) {
@@ -36,9 +38,81 @@ $().ready(() => {
         } 
     })
 
+    if (!$('#newRepeatRetAfterStore').is(':checked')) {
+        $("#retafterstoreschedule").hide();
+    }
+    $("#newRepeatRetAfterStore").on('change', () => {
+        if ($('#newRepeatRetAfterStore').is(':checked')) {
+            $("#retafterstoreschedule").show();
+        } else {
+            $("#retafterstoreschedule").hide();
+        } 
+    })
+
     $("#addtask button").on('click', doSubmit);
     $("schedulesection form").on('submit', doSubmit);
+
+    syncTable();
 })
+
+function syncTable() {
+   fetch("./tasks", { method: "GET", headers: getHeaders()}).then((response) => response.json()).then(gotTable)
+}
+
+function operate(val, row) {
+    return '<a class="remove" title="remove">Cancel</a>';
+}
+
+let firstLoad = true
+
+function gotTable(data) {
+    const processedData = data.map((item) => {
+        let task = item.StorageTask || item.RetrievalTask
+        const sched = {
+            Schedule: task.Schedule,
+            Limit: task.ScheduleLimit,
+        }
+        delete task.Schedule;
+        delete task.ScheduleLimit;
+        return Object.assign({ sched, task }, item)
+    }).filter((item) => item.Status == 1 || item.sched.Schedule)
+    if (firstLoad) {
+    let stringify = (d) => JSON.stringify(d, null, 2);
+    $("#taskTable").bootstrapTable({
+        idField: 'UUID',
+        columns: [
+            {title:'ID', field:'UUID'},
+            {title:'Task', field:'task', formatter: stringify},
+            {title:'Schedule', field:'sched', formatter: stringify},
+            {title:'Delete', field: 'operate', align: 'center', formatter: operate, events: { 'click .remove': cancel}}
+        ],
+        data: processedData,
+    });
+    firstLoad = false
+} else {
+    $("#taskTable").bootstrapTable('load', processedData)
+}
+}
+
+function cancel(e, value, row, index) {
+    if (e.preventDefault) {
+        e.preventDefault()
+    }
+    let url = `./tasks/${row.UUID}`
+    fetch(url, { method: "DELETE", headers: getHeaders()}).then((_) => {
+        $("#taskTable").bootstrapTable('hideRow', { index })
+    });
+}
+
+function getHeaders() {
+    let headers = {
+        'Content-Type': "application/json",
+    }
+    if (auth != "") {
+       headers.Authorization =  `Basic ${btoa(auth)}`
+    }
+    return headers
+}
 
 function doSubmit(e) {
     if (e.preventDefault) {
@@ -48,28 +122,13 @@ function doSubmit(e) {
     // loop over miners
     let miners = $("#newMiner").val().trim().split('\n')
 
-    let remaining = miners.length;
-    let done = () => {
-        remaining--;
-        if (!remaining) {
-            $("#addDone").show()
-        }
-    }
-
-    username = undefined;
-    password = undefined;
-    if (auth != "") {
-        let ap = auth.split(":");
-        username = ap[0];
-        password = ap[1];
-    }
-
+    let requests = []
     for (let i = 0; i < miners.length; i++) {
         let miner = miners[i];
-        let url = "/tasks/storage";
+        let url = "./tasks/storage";
         let data = {};
         if ($('#newSR').is(':checked')) {
-            url = "/tasks/retrieval";
+            url = "./tasks/retrieval";
             data = {
                 "Miner": miner,
                 "PayloadCID": $('#newCid').val(),
@@ -79,11 +138,15 @@ function doSubmit(e) {
         } else {
             data = {
                 "Miner": miner,
-                "Size": $('#newSize').val(),
+                "Size": Number($('#newSize').val()),
                 "StartOffset": 6152, // 3 days?
                 "FastRetrieval": $('#newFast').is(':checked'),
                 "Verified": $('#newVerified').is(':checked'),
                 "MaxPriceAttoFIL": 20000000000,
+            }
+            if ($('#newRepeatRetAfterStore').is(':checked')) {
+                data.RetrievalSchedule = $('#newretafterstoreSchedule').val()
+                data.RetrievalScheduleLimit = $('#newretafterstoreScheduleLimit').val()
             }
         }
 
@@ -95,15 +158,13 @@ function doSubmit(e) {
             data.Tag = $('#newScheduleTag').val()
         }
 
-        $.ajax({
-            type: "POST",
-            url: url,
-            data: data,
-            username: username,
-            password: password,
-            success: done,
-        });
+        requests.push(fetch(url, {method: "POST", headers: getHeaders(), body: JSON.stringify(data)}))
     }
+
+    Promise.all(requests).then((_) => {
+        $("#addDone").show()
+        syncTable()
+    })
 
     return false
 }

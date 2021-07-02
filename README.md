@@ -49,8 +49,8 @@ Dealbot Controller
 | graphql | `DEALBOT_GRAPHQL_LISTEN` | exposed `host:port` for external public graphql queries |
 | metrics | `DEALBOT_METRICS` | either `prometheus` to expose a `/metrics` api, or `log` to write metrics to stdout |
 | identity | `DEALBOT_IDENTITY_KEYPAIR` | filepath of a libp2p identity to sign public records of dealbot activity |
-| driver | `DEALBOT_PERSISTENCE_DRIVER` | `sqlite` or `postgres` |
-| dbloc | `DEALBOT_PERSISTENCE_CONN` | the file (for sqlite) or db conn string from postgres |
+| driver | `DEALBOT_PERSISTENCE_DRIVER` | `postgres` |
+| dbloc | `DEALBOT_PERSISTENCE_CONN` |  db conn string from postgres |
 | gqlAccessToken | `DEALBOT_GRAPHQL_ACCESS_TOKEN` | a static key for querying non-public data from the graphql server |
 
 Dealbot Daemon

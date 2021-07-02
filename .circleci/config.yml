@@ -3,9 +3,10 @@ orbs:
   go: gotest/tools@0.0.13
 
 executors:
-  golang:
+  golang-with-postgres:
     docker:
       - image: cimg/go:1.16
+      - image: circleci/postgres:9.6.2-alpine
     resource_class: 2xlarge
 
 commands:
@@ -31,8 +32,23 @@ commands:
 
 jobs:
   build-and-test:
-    executor: golang
+    executor: golang-with-postgres
+    environment:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: ""
+      PGDATABASE: circle_test
+      PGSSLMODE: disable
     steps:
+      - run:
+          name: install dockerize
+          command: curl -LO https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && sudo tar -C /usr/local/bin -xzvf dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && rm dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz
+          environment:
+            DOCKERIZE_VERSION: v0.3.0
+      - run:
+          name: wait for database
+          command: dockerize -wait tcp://127.0.0.1:5432 -timeout 1m
       - checkout-dealbot
       - install-lotus
       - test-integration-dealbot
@@ -55,6 +71,10 @@ jobs:
     docker:
       - image: cimg/base:2021.04
     parameters:
+      chart:
+        type: string
+      chart_version:
+        type: string
       namespace:
         type: string
       release:
@@ -81,8 +101,8 @@ jobs:
                 \"aws_region\": \"<< parameters.aws_region >>\",
                 \"namespace\": \"<< parameters.namespace >>\",
                 \"release\": \"<< parameters.release >>\",
-                \"chart\": \"filecoin/dealbot\",
-                \"chart_version\": \"0.0.6\",
+                \"chart\": \"<< parameters.chart >>\",
+                \"chart_version\": \"<< parameters.chart_version >>\",
                 \"override_repository\": \"filecoin/dealbot\",
                 \"override_tag\": \"$CIRCLE_SHA1\"
               }}"
@@ -103,7 +123,9 @@ workflows:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*$/
       - deploy-lotusinfra:
-          name: deploy-nerpanet
+          name: deploy-nerpanet-controller
+          chart: filecoin/dealbot
+          chart_version: 0.0.7
           circle_context: sentinel-staging-deploy
           kubernetes_cluster: mainnet-us-east-2-dev-eks
           aws_region: us-east-2
@@ -116,12 +138,56 @@ workflows:
               only:
                 - main
       - deploy-lotusinfra:
-          name: deploy-mainnet-us-east-1
+          matrix:
+            parameters:
+              release:
+                - dealbot-daemon-bundle-0
+                - dealbot-daemon-bundle-1
+                - dealbot-daemon-bundle-2
+          name: deploy-nerpanet-daemons
+          chart: filecoin/lotus-bundle
+          chart_version: 0.0.2
+          circle_context: filecoin-mainnet-aws
+          kubernetes_cluster: mainnet-us-east-1-eks
+          aws_region: us-east-1
+          namespace: ntwk-mainnet-dealbot
+          requires:
+            - build-push
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*$/
+      - deploy-lotusinfra:
+          name: deploy-mainnet-controller
+          chart: filecoin/dealbot
+          chart_version: 0.0.7
           circle_context: filecoin-mainnet-aws
           kubernetes_cluster: mainnet-us-east-1-eks
           aws_region: us-east-1
           namespace: ntwk-mainnet-dealbot
           release: dealbot-0
+          requires:
+            - build-push
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*$/
+      - deploy-lotusinfra:
+          matrix:
+            parameters:
+              release:
+                - dealbot-daemon-bundle-0
+                - dealbot-daemon-bundle-1
+                - dealbot-daemon-bundle-2
+          name: deploy-mainnet-daemons
+          chart: filecoin/lotus-bundle
+          chart_version: 0.0.2
+          circle_context: filecoin-mainnet-aws
+          kubernetes_cluster: mainnet-us-east-1-eks
+          aws_region: us-east-1
+          namespace: ntwk-mainnet-dealbot
           requires:
             - build-push
           filters:

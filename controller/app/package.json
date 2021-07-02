@@ -18,6 +18,7 @@
   "homepage": "https://github.com/filecoin-project/dealbot#readme",
   "devDependencies": {
     "bootstrap-cron-picker": "^1.0.0",
+    "bootstrap-table": "^1.18.3",
     "jquery": "^3.6.0"
   }
 }

@@ -17,6 +17,8 @@ import (
 	"github.com/filecoin-project/dealbot/controller"
 	"github.com/filecoin-project/dealbot/controller/client"
 	"github.com/filecoin-project/dealbot/controller/state"
+	"github.com/filecoin-project/dealbot/controller/state/postgresdb"
+	"github.com/filecoin-project/dealbot/controller/state/postgresdb/temporary"
 	"github.com/filecoin-project/dealbot/metrics/testrecorder"
 	"github.com/filecoin-project/dealbot/tasks"
 	"github.com/ipld/go-ipld-prime/codec/dagjson"
@@ -33,6 +35,19 @@ func mustString(s string, _ error) string {
 
 func TestControllerHTTPInterface(t *testing.T) {
 	ctx := context.Background()
+	migrator, err := state.NewMigrator("postgres")
+	require.NoError(t, err)
+	var dbConn state.DBConnector
+	existingPGconn := postgresdb.PostgresConfig{}.String()
+	dbConn = postgresdb.New(existingPGconn)
+	err = dbConn.Connect()
+	if err != nil {
+		tempPG, err := temporary.NewTemporaryPostgres(ctx, temporary.Params{HostPort: defaultPGPort})
+		require.NoError(t, err)
+		dbConn = tempPG
+		defer tempPG.Shutdown(ctx)
+	}
+
 	testCases := map[string]func(ctx context.Context, t *testing.T, apiClient *client.Client, recorder *testrecorder.TestMetricsRecorder){
 		"list and update tasks": func(ctx context.Context, t *testing.T, apiClient *client.Client, recorder *testrecorder.TestMetricsRecorder) {
 			require.NoError(t, populateTestTasksFromFile(ctx, jsonTestDeals, apiClient))
@@ -280,13 +295,67 @@ func TestControllerHTTPInterface(t *testing.T) {
 			require.NoError(t, err)
 			require.Equal(t, inProgressTask2.GetUUID(), newInProgressTask2.GetUUID())
 		},
+
+		"delete tasks": func(ctx context.Context, t *testing.T, apiClient *client.Client, recorder *testrecorder.TestMetricsRecorder) {
+
+			var resetWorkerTasks = `
+[{"Miner":"t01000","PayloadCID":"bafk2bzacecettil4umy443e4ferok7jbxiqqseef7soa3ntelflf3zkvvndbg","CARExport":false},
+{"Miner":"t01000","PayloadCID":"bafk2bzacedli6qxp43sf54feczjd26jgeyfxv4ucwylujd3xo5s6cohcqbg36","CARExport":false,"Schedule":"0 0 * * *","ScheduleLimit":"168h"},
+{"Miner":"f0127896","PayloadCID":"bafykbzacedikkmeotawrxqquthryw3cijaonobygdp7fb5bujhuos6wdkwomm","CARExport":false}]
+`
+
+			err := populateTestTasks(ctx, bytes.NewReader([]byte(resetWorkerTasks)), apiClient)
+			require.NoError(t, err)
+
+			worker := "testworker"
+			// pop a task
+			req := tasks.Type.PopTask.Of(worker, tasks.InProgress)
+			inProgressTask1, err := apiClient.PopTask(ctx, req)
+
+			allTasks, err := apiClient.ListTasks(ctx)
+			require.NoError(t, err)
+
+			var unassignedTask tasks.Task
+			for _, task := range allTasks {
+				if task.Status == *tasks.Available && !task.HasSchedule() {
+					unassignedTask = task
+					break
+				}
+			}
+			require.NotNil(t, unassignedTask)
+
+			var scheduledTask tasks.Task
+			for _, task := range allTasks {
+				if task.HasSchedule() {
+					scheduledTask = task
+					break
+				}
+			}
+			require.NotNil(t, scheduledTask)
+
+			err = apiClient.DeleteTask(ctx, unassignedTask.GetUUID())
+			require.NoError(t, err)
+			task, err := apiClient.GetTask(ctx, unassignedTask.GetUUID())
+			require.EqualError(t, err, client.ErrRequestFailed{http.StatusNotFound}.Error())
+			require.Nil(t, task)
+			err = apiClient.DeleteTask(ctx, scheduledTask.GetUUID())
+			require.NoError(t, err)
+			task, err = apiClient.GetTask(ctx, scheduledTask.GetUUID())
+			require.EqualError(t, err, client.ErrRequestFailed{http.StatusNotFound}.Error())
+			require.Nil(t, task)
+			err = apiClient.DeleteTask(ctx, inProgressTask1.GetUUID())
+			require.EqualError(t, err, client.ErrRequestFailed{http.StatusBadRequest}.Error())
+			err = apiClient.DeleteTask(ctx, "apples and oranges")
+			require.EqualError(t, err, client.ErrRequestFailed{http.StatusNotFound}.Error())
+		},
 	}
 
 	for testCase, run := range testCases {
 		t.Run(testCase, func(t *testing.T) {
 			ctx, cancel := context.WithTimeout(ctx, time.Minute)
 			defer cancel()
-			h := newHarness(ctx, t)
+			state.WipeAndReset(dbConn, migrator)
+			h := newHarness(ctx, t, dbConn, migrator)
 			run(ctx, t, h.apiClient, h.recorder)
 
 			h.Shutdown(t)
@@ -304,7 +373,9 @@ type harness struct {
 	serveErr   chan error
 }
 
-func newHarness(ctx context.Context, t *testing.T) *harness {
+const defaultPGPort = 5434
+
+func newHarness(ctx context.Context, t *testing.T, connector state.DBConnector, migrator state.Migrator) *harness {
 	h := &harness{ctx: ctx}
 	h.recorder = testrecorder.NewTestMetricsRecorder()
 	listener, err := net.Listen("tcp", "localhost:0")
@@ -314,9 +385,9 @@ func newHarness(ctx context.Context, t *testing.T) *harness {
 	h.port = p
 	h.apiClient = client.NewFromEndpoint("http://localhost:" + p)
 	pr, _, _ := crypto.GenerateKeyPair(crypto.Ed25519, 0)
-	h.dbloc, err = ioutil.TempDir("", "dealbot_test_*")
 	require.NoError(t, err)
-	be, err := state.NewStateDB(ctx, "sqlite", h.dbloc+"/tmp.sqlite", "", pr, h.recorder)
+
+	be, err := state.NewStateDB(ctx, connector, migrator, "", pr, h.recorder)
 	require.NoError(t, err)
 	cc := cli.NewContext(cli.NewApp(), &flag.FlagSet{}, nil)
 	h.controller, err = controller.NewWithDependencies(cc, listener, nil, h.recorder, be)
@@ -381,8 +452,5 @@ func (h *harness) Shutdown(t *testing.T) {
 		t.Fatalf("no return from serve call")
 	case err = <-h.serveErr:
 		require.EqualError(t, err, http.ErrServerClosed.Error())
-	}
-	if _, err := os.Stat(h.dbloc); !os.IsNotExist(err) {
-		os.RemoveAll(h.dbloc)
 	}
 }

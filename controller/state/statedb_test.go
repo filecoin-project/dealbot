@@ -8,11 +8,11 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"os/exec"
-	"path/filepath"
 	"testing"
 	"time"
 
+	"github.com/filecoin-project/dealbot/controller/state/postgresdb"
+	"github.com/filecoin-project/dealbot/controller/state/postgresdb/temporary"
 	"github.com/filecoin-project/dealbot/tasks"
 	"github.com/ipld/go-ipld-prime/codec/dagjson"
 	cidlink "github.com/ipld/go-ipld-prime/linking/cid"
@@ -22,6 +22,34 @@ import (
 )
 
 const jsonTestDeals = "../../devnet/sample_tasks.json"
+
+var dbConn DBConnector
+var migrator Migrator
+
+func TestMain(m *testing.M) {
+	var err error
+	migrator, err = NewMigrator("postgres")
+	if err != nil {
+		fmt.Println("could not setup migrator")
+		os.Exit(-1)
+	}
+	existingPGconn := postgresdb.PostgresConfig{}.String()
+	dbConn = postgresdb.New(existingPGconn)
+	err = dbConn.Connect()
+	if err == nil {
+		os.Exit(m.Run())
+	}
+
+	tempPG, err := temporary.NewTemporaryPostgres(context.Background(), temporary.Params{HostPort: defaultPGPort})
+	if err != nil {
+		fmt.Println("unable to establish postgres connection either on system or docker")
+		os.Exit(-1)
+	}
+	dbConn = tempPG
+	res := m.Run()
+	tempPG.Shutdown(context.Background())
+	os.Exit(res)
+}
 
 func TestLoadTask(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
@@ -499,6 +527,9 @@ func TestResetWorkerTasks(t *testing.T) {
 		}
 		require.NotNil(t, unassignedTask)
 
+		history, _ := state.TaskHistory(ctx, inProgressTask1.GetUUID())
+		fmt.Println(history)
+
 		state.ResetWorkerTasks(ctx, worker)
 
 		// in progress task should now be available and unassigned
@@ -588,6 +619,87 @@ func TestComplete(t *testing.T) {
 	})
 }
 
+func TestDelete(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	withState(ctx, t, func(state *stateDB) {
+
+		var resetWorkerTasks = `
+[{"Miner":"t01000","PayloadCID":"bafk2bzacecettil4umy443e4ferok7jbxiqqseef7soa3ntelflf3zkvvndbg","CARExport":false},
+{"Miner":"t01000","PayloadCID":"bafk2bzacedli6qxp43sf54feczjd26jgeyfxv4ucwylujd3xo5s6cohcqbg36","CARExport":false,"Schedule":"0 0 * * *","ScheduleLimit":"168h"},
+{"Miner":"f0127896","PayloadCID":"bafykbzacedikkmeotawrxqquthryw3cijaonobygdp7fb5bujhuos6wdkwomm","CARExport":false}]
+`
+
+		err := populateTestTasks(ctx, bytes.NewReader([]byte(resetWorkerTasks)), state)
+		require.NoError(t, err)
+
+		worker := "testworker"
+		// pop a task
+		req := tasks.Type.PopTask.Of(worker, tasks.InProgress)
+		inProgressTask1, err := state.AssignTask(ctx, req)
+
+		allTasks, err := state.GetAll(ctx)
+		require.NoError(t, err)
+
+		var unassignedTask tasks.Task
+		for _, task := range allTasks {
+			if task.Status == *tasks.Available && !task.HasSchedule() {
+				unassignedTask = task
+				break
+			}
+		}
+		require.NotNil(t, unassignedTask)
+
+		var scheduledTask tasks.Task
+		for _, task := range allTasks {
+			if task.HasSchedule() {
+				scheduledTask = task
+				break
+			}
+		}
+		require.NotNil(t, scheduledTask)
+
+		testCases := map[string]struct {
+			uuid        string
+			expectedErr error
+		}{
+			"delete unassigned task": {
+				uuid: unassignedTask.GetUUID(),
+			},
+			"delete scheduled task": {
+				uuid: scheduledTask.GetUUID(),
+			},
+			"delete in progress task": {
+				uuid:        inProgressTask1.GetUUID(),
+				expectedErr: ErrNoDeleteInProgressTasks,
+			},
+			"delete unknown tasks": {
+				uuid:        "alate to ate apples and bananaes",
+				expectedErr: ErrTaskNotFound,
+			},
+		}
+
+		for testCase, data := range testCases {
+			t.Run(testCase, func(t *testing.T) {
+				ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+				defer cancel()
+				err := state.Delete(ctx, data.uuid)
+				if data.expectedErr != nil {
+					require.EqualError(t, err, data.expectedErr.Error())
+				} else {
+					require.NoError(t, err)
+					task, err := state.Get(ctx, data.uuid)
+					require.NoError(t, err)
+					require.Nil(t, task)
+					taskEvents, err := state.TaskHistory(ctx, data.uuid)
+					require.NoError(t, err)
+					require.Len(t, taskEvents, 0)
+				}
+			})
+		}
+	})
+}
+
 func populateTestTasksFromFile(ctx context.Context, jsonTests string, state State) error {
 	sampleTaskFile, err := os.Open(jsonTestDeals)
 	if err != nil {
@@ -636,30 +748,17 @@ func makeKey() (crypto.PrivKey, error) {
 	return pr, nil
 }
 
-const defaultPGPort = "5434"
+const defaultPGPort = 5434
 
 func withState(ctx context.Context, t *testing.T, fn func(*stateDB)) {
-	postgresBin := os.Getenv("POSTGRES_BIN")
-	var stateInterface State
 
 	key, err := makeKey()
 	require.NoError(t, err)
 
-	tmpDir, err := ioutil.TempDir("", "testdealbot")
+	err = WipeAndReset(dbConn, migrator)
 	require.NoError(t, err)
-	defer os.RemoveAll(tmpDir)
-	if postgresBin == "" {
-		stateInterface, err = NewStateDB(ctx, "sqlite", filepath.Join(tmpDir, "teststate.db"), "", key, nil)
-		require.NoError(t, err)
-	} else {
-		err := exec.Command("./setup_pg_cluster.sh", tmpDir, defaultPGPort).Run()
-		defer exec.Command("./teardown_pg_cluster.sh", tmpDir).Run()
-		require.NoError(t, err)
-		stateInterface, err = NewStateDB(ctx, "postgres", fmt.Sprintf(
-			"host=%s port=%s user=%s sslmode=disable",
-			"localhost", defaultPGPort, "postgres"), "", key, nil)
-		require.NoError(t, err)
-	}
+	stateInterface, err := NewStateDB(ctx, dbConn, migrator, "", key, nil)
+	require.NoError(t, err)
 	state, ok := stateInterface.(*stateDB)
 	require.True(t, ok, "returned wrong type")
 	fn(state)

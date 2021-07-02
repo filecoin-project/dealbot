@@ -72,14 +72,6 @@ const (
 		LIMIT 1
 	`
 
-	oldestAvailableTaskWithTagsSQLsqlite = `
-		SELECT uuid, data FROM tasks
-		WHERE worked_by IS NULL
-		AND (tag is NULL OR tag IN (%s))
-		ORDER BY created
-		LIMIT 1
-	`
-
 	taskHistorySQL = `
 		SELECT status, stage, run, ts FROM task_status_ledger WHERE uuid = $1 ORDER BY ts
 	`
@@ -131,5 +123,13 @@ const (
 	updateTaskWorkedBySQL = `
 		UPDATE tasks SET worked_by = $2
 		WHERE uuid = $1
+	`
+
+	deleteTaskSQL = `
+		DELETE FROM tasks WHERE uuid = $1
+	`
+
+	dropAllRecordsSQL = `
+		TRUNCATE tasks, task_status_ledger, record_updates, drained_workers, finalizedData CASCADE
 	`
 )
