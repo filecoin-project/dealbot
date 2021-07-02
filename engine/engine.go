@@ -260,13 +260,13 @@ func (e *Engine) tryPopTask() tasks.Task {
 		return nil
 	}
 
-	log.Infow("successfully acquired task", "uuid", task.UUID.String())
+	log.Infow("successfully acquired task", "taskID", task.UUID.String())
 	return task // found a runable task
 }
 
 func (e *Engine) runTask(ctx context.Context, task tasks.Task, runCount int, released chan<- struct{}) {
 	var err error
-	log.Infow("worker running task", "uuid", task.UUID.String(), "run_count", runCount)
+	log.Infow("worker running task", "taskID", task.UUID.String(), "run_count", runCount)
 
 	var releaseOnce sync.Once
 	releaseWorker := func() {
@@ -291,7 +291,7 @@ func (e *Engine) runTask(ctx context.Context, task tasks.Task, runCount int, rel
 
 	finalStatus := tasks.Successful
 	finalErrorMessage := ""
-	tlog := log.With("uuid", task.UUID.String())
+	tlog := log.With("taskID", task.UUID.String())
 
 	// Start deals
 	if task.RetrievalTask.Exists() {
@@ -374,7 +374,7 @@ func (e *Engine) apiGood() bool {
 	defer cancel()
 	localBalance, err := e.node.WalletBalance(ctx, e.nodeConfig.WalletAddress)
 	if err != nil {
-		log.Errorw("could not query api for wallet balance", "error", err)
+		log.Errorw("could not query api for wallet balance", "err", err)
 		return false
 	}
 	if localBalance.LessThan(e.nodeConfig.MinWalletBalance) {
@@ -384,12 +384,12 @@ func (e *Engine) apiGood() bool {
 
 	head, err := e.node.ChainHead(ctx)
 	if err != nil {
-		log.Errorw("could not query api for head", "error", err)
+		log.Errorw("could not query api for head", "err", err)
 		return false
 	}
 	localCap, err := e.node.StateVerifiedClientStatus(ctx, e.nodeConfig.WalletAddress, head.Key())
 	if err != nil {
-		log.Errorw("could not query api for datacap", "error", err)
+		log.Errorw("could not query api for datacap", "err", err)
 		return false
 	}
 	log.Infow("local datacap", "datacap", localCap)

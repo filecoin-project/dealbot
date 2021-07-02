@@ -53,10 +53,10 @@ func SetupClientFromCLI(cctx *cli.Context) (tasks.NodeConfig, api.FullNode, Node
 	// read addresses and assert they are addresses
 	var walletAddress address.Address
 	if cctx.IsSet("wallet") {
-		log.Infow("using set wallet", cctx.String("wallet"))
+		log.Infow("using set wallet", "addr", cctx.String("wallet"))
 		walletAddress, err = address.NewFromString(cctx.String("wallet"))
 	} else {
-		log.Infow("using default wallet")
+		log.Info("using default wallet")
 		walletAddress, err = node.WalletDefaultAddress(cctx.Context)
 	}
 	if err != nil {
@@ -64,14 +64,14 @@ func SetupClientFromCLI(cctx *cli.Context) (tasks.NodeConfig, api.FullNode, Node
 	}
 	mf := big.NewInt(defaultMinWalletFil)
 	if cctx.IsSet("minfil") {
-		log.Infow("using minimum wallet fil for picking tasks", cctx.String("minfil"))
+		log.Infow("using minimum wallet fil for picking tasks", "minfil", cctx.String("minfil"))
 		if _, ok := mf.SetString(cctx.String("minfil"), 0); !ok {
 			return tasks.NodeConfig{}, nil, nil, fmt.Errorf("could not parse min wallet balance: %s, %s", cctx.String("minfil"), err)
 		}
 	}
 	mc := big.NewInt(-1)
 	if cctx.IsSet("mincap") {
-		log.Infow("using minimum wallet datacap for picking tasks", cctx.String("mincap"))
+		log.Infow("using minimum wallet datacap for picking tasks", "mincap", cctx.String("mincap"))
 		if _, ok := mf.SetString(cctx.String("mincap"), 0); !ok {
 			return tasks.NodeConfig{}, nil, nil, fmt.Errorf("could not parse min wallet datacap: %s, %s", cctx.String("mincap"), err)
 		}
@@ -119,10 +119,10 @@ func SetupClient(ctx context.Context, cliCtx *cli.Context) (tasks.NodeConfig, ap
 	var walletAddress address.Address
 	wallet := cliCtx.String("wallet")
 	if wallet != "" {
-		log.Infow("using set wallet", wallet)
+		log.Infow("using set wallet", "addr", wallet)
 		walletAddress, err = address.NewFromString(wallet)
 	} else {
-		log.Infow("using default wallet")
+		log.Info("using default wallet")
 		walletAddress, err = node.WalletDefaultAddress(ctx)
 	}
 	if err != nil {
@@ -130,14 +130,14 @@ func SetupClient(ctx context.Context, cliCtx *cli.Context) (tasks.NodeConfig, ap
 	}
 	mf := big.NewInt(defaultMinWalletFil)
 	if cliCtx.IsSet("minfil") {
-		log.Infow("using minimum wallet fil for picking tasks", cliCtx.String("minfil"))
+		log.Infow("using minimum wallet fil for picking tasks", "minfil", cliCtx.String("minfil"))
 		if _, ok := mf.SetString(cliCtx.String("minfil"), 0); !ok {
 			return tasks.NodeConfig{}, nil, nil, fmt.Errorf("could not parse min wallet balance: %s, %s", cliCtx.String("minfil"), err)
 		}
 	}
 	mc := big.NewInt(0)
 	if cliCtx.IsSet("mincap") {
-		log.Infow("using minimum wallet datacap for picking tasks", cliCtx.String("mincap"))
+		log.Infow("using minimum wallet datacap for picking tasks", "mincap", cliCtx.String("mincap"))
 		if _, ok := mf.SetString(cliCtx.String("mincap"), 0); !ok {
 			return tasks.NodeConfig{}, nil, nil, fmt.Errorf("could not parse min wallet datacap: %s, %s", cliCtx.String("mincap"), err)
 		}
@@ -145,7 +145,7 @@ func SetupClient(ctx context.Context, cliCtx *cli.Context) (tasks.NodeConfig, ap
 
 	ph := ""
 	if cliCtx.IsSet("posthook") {
-		log.Infow("setting post hook", cliCtx.String("posthook"))
+		log.Infow("setting post hook", "posthook", cliCtx.String("posthook"))
 		ph = cliCtx.String("posthook")
 		if _, err := os.Stat(ph); os.IsNotExist(err) {
 			return tasks.NodeConfig{}, nil, nil, fmt.Errorf("posthook should be a single bash script. it will be passed a task uuid as its first argument")
