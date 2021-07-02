@@ -7,8 +7,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-
-	"github.com/google/uuid"
 )
 
 // Start dealbot daemons locally
@@ -24,7 +22,6 @@ func (s *LocalSpawner) Spawn(d *Daemon) error {
 	if err != nil {
 		return err
 	}
-	d.Id = uuid.New().String()
 	data_dir, err := ioutil.TempDir("/tmp", d.Id)
 	if err != nil {
 		return err
@@ -76,10 +73,12 @@ func (s *LocalSpawner) Get(regionid string, daemonid string) (*Daemon, error) {
 }
 
 func (s *LocalSpawner) List(regionid string) ([]*Daemon, error) {
-	daemons := make([]*Daemon, 0)
+	daemons := make([]*Daemon, len(s.cmds))
+	var idx int
 	for daemonid, cmd := range s.cmds {
 		daemon := daemonFromCmd(cmd, daemonid)
-		daemons = append(daemons, daemon)
+		daemons[idx] = daemon
+		idx += 1
 	}
 	return daemons, nil
 }
