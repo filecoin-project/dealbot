@@ -167,8 +167,8 @@ workflows:
           aws_region: us-east-1
           namespace: ntwk-mainnet-dealbot
           release: dealbot-0
-          requires:
-            - build-push
+          # requires:
+          #   - build-push
           # filters:
           #   branches:
           #     ignore: /.*/
