@@ -117,8 +117,8 @@ workflows:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*$/
       - build-push:
-          # requires:
-          #   - build-and-test
+          requires:
+            - build-and-test
           filters:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*$/
@@ -167,13 +167,13 @@ workflows:
           aws_region: us-east-1
           namespace: ntwk-mainnet-dealbot
           release: dealbot-0
-          # requires:
-          #   - build-push
-          # filters:
-          #   branches:
-          #     ignore: /.*/
-          #   tags:
-          #     only: /^v[0-9]+(\.[0-9]+)*$/
+          requires:
+            - build-push
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*$/
       - deploy-lotusinfra:
           matrix:
             parameters:
