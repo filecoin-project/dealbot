@@ -65,6 +65,8 @@ func (s *LocalSpawner) Spawn(d *Daemon) error {
 }
 
 func (s *LocalSpawner) Get(regionid string, daemonid string) (*Daemon, error) {
+	s.Lock()
+	defer s.Unlock()
 	daemoncmd, ok := s.cmds[daemonid]
 	if !ok {
 		return nil, DaemonNotFound
@@ -73,6 +75,8 @@ func (s *LocalSpawner) Get(regionid string, daemonid string) (*Daemon, error) {
 }
 
 func (s *LocalSpawner) List(regionid string) ([]*Daemon, error) {
+	s.Lock()
+	defer s.Unlock()
 	daemons := make([]*Daemon, len(s.cmds))
 	var idx int
 	for daemonid, cmd := range s.cmds {
