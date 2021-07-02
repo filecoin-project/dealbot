@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -397,5 +398,5 @@ func (c *Controller) sendCORSHeaders(w http.ResponseWriter, r *http.Request) {
 
 func (c *Controller) authHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/javascript")
-	w.Write([]byte(fmt.Sprintf("setauth(\"%s\");", c.basicauth)))
+	w.Write([]byte(fmt.Sprintf("setauth(\"%s\");", strings.TrimSuffix(c.basicauth, "\n"))))
 }
