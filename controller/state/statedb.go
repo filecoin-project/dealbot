@@ -600,7 +600,7 @@ func (s *stateDB) log(ctx context.Context, task tasks.Task, tx *sql.Tx) {
 		if err := json.Unmarshal(taskBytes.Bytes(), &rawJSON); err != nil {
 			return
 		}
-		log.Infow("Task Finalized", "taskId", task.UUID.String(), "taskOutput", rawJSON)
+		log.Infow("Task Finalized", "taskID", task.UUID.String(), "taskOutput", rawJSON)
 		if _, err := s.outlog.Write(taskBytes.Bytes()); err != nil {
 			log.Warnw("could not write to outlog", "error", err)
 		}
