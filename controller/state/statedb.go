@@ -24,6 +24,7 @@ import (
 	cidlink "github.com/ipld/go-ipld-prime/linking/cid"
 	crypto "github.com/libp2p/go-libp2p-crypto"
 	"github.com/multiformats/go-multicodec"
+	tokenjson "github.com/polydawn/refmt/json"
 	"github.com/robfig/cron/v3"
 	dumpjson "github.com/willscott/ipld-dumpjson"
 
@@ -592,7 +593,8 @@ func (s *stateDB) log(ctx context.Context, task tasks.Task, tx *sql.Tx) {
 	}
 
 	taskBytes := bytes.Buffer{}
-	if err := dumpjson.Encode(finalized, &taskBytes); err != nil {
+	err = dumpjson.Marshal(finalized, tokenjson.NewEncoder(&taskBytes, tokenjson.EncodeOptions{}), true)
+	if err != nil {
 		return
 	}
 	var rawJSON json.RawMessage
