@@ -382,7 +382,7 @@ func (c *Controller) carHandler(w http.ResponseWriter, r *http.Request) {
 func (c *Controller) healthHandler(w http.ResponseWriter, r *http.Request) {
 	// basic health check:
 	// * do i have a sane database
-	if _, err := c.db.GetHead(r.Context()); err != nil {
+	if _, err := c.db.GetHead(r.Context(), 0); err != nil {
 		w.WriteHeader(http.StatusFailedDependency)
 		return
 	}
