@@ -806,7 +806,7 @@ func (s *stateDB) countTasks(ctx context.Context) (int, error) {
 }
 
 // GetHead gets the latest record update from the controller.
-func (s *stateDB) GetHead(ctx context.Context) (tasks.RecordUpdate, error) {
+func (s *stateDB) GetHead(ctx context.Context, walkback int) (tasks.RecordUpdate, error) {
 	var recordUpdate tasks.RecordUpdate
 	err := s.transact(ctx, func(tx *sql.Tx) error {
 		var c string
@@ -825,6 +825,19 @@ func (s *stateDB) GetHead(ctx context.Context) (tasks.RecordUpdate, error) {
 			return err
 		}
 		recordUpdate = na.Build().(tasks.RecordUpdate)
+		for walkback > 0 {
+			if !recordUpdate.Previous.Exists() {
+				return fmt.Errorf("no previous update to walk back to")
+			}
+
+			na = tasks.Type.RecordUpdate.NewBuilder()
+			if err = recordUpdate.Previous.Must().Link().Load(ctx, ipld.LinkContext{}, na, loader); err != nil {
+				return err
+			}
+			recordUpdate = na.Build().(tasks.RecordUpdate)
+
+			walkback--
+		}
 		return nil
 	})
 	if err != nil {
