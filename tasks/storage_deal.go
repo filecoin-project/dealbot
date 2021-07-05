@@ -312,8 +312,13 @@ func (de *storageDealExecutor) executeAndMonitorDeal(ctx context.Context, update
 	}
 
 	de.log("got proposal cid", "cid", proposalCid)
+	dealStage = AddLog(dealStage, fmt.Sprintf("ProposalCID: %s", proposalCid))
+	if err := updateStage(ctx, stage, dealStage); err != nil {
+		return err
+	}
 
 	var prevStage string
+	var loggedID bool = false
 	defaultStageTimeout := stageTimeouts[defaultStorageStageTimeoutName]
 	timer := time.NewTimer(defaultStageTimeout)
 
@@ -339,7 +344,7 @@ func (de *storageDealExecutor) executeAndMonitorDeal(ctx context.Context, update
 				timeout = defaultStageTimeout
 			}
 			msg := fmt.Sprintf("timed out after %s", timeout)
-			AddLog(dealStage, msg)
+			dealStage = AddLog(dealStage, msg)
 			return fmt.Errorf("deal stage %q %s", stage, msg)
 		case info, ok := <-updates:
 			if !ok {
@@ -379,7 +384,14 @@ func (de *storageDealExecutor) executeAndMonitorDeal(ctx context.Context, update
 			}
 
 			if len(info.DealStages.Stages) > 0 {
-				err = updateStage(ctx, storagemarket.DealStates[info.State], toStageDetails(info.DealStages.Stages[len(info.DealStages.Stages)-1]))
+				newState := storagemarket.DealStates[info.State]
+				newDetails := toStageDetails(info.DealStages.Stages[len(info.DealStages.Stages)-1])
+
+				if !loggedID {
+					loggedID = true
+					newDetails = AddLog(newDetails, fmt.Sprintf("DealID: %d", info.DealID))
+				}
+				err = updateStage(ctx, newState, newDetails)
 
 				if err != nil {
 					return err

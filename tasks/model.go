@@ -382,6 +382,7 @@ func (t *_Task) Finalize(ctx context.Context, s ipld.Storer, local bool) (Finish
 		ClientVersion:      logs.clientVersion,
 		Size:               logs.size,
 		PayloadCID:         logs.payloadCID,
+		ProposalCID:        logs.proposalCID,
 	}
 	// events to dag item
 	logList := &_List_StageDetails{}
@@ -412,6 +413,7 @@ type logExtraction struct {
 	timeLastByte  _Int__Maybe
 	size          _Int__Maybe
 	payloadCID    _String__Maybe
+	proposalCID   _String__Maybe
 }
 
 func parseFinalLogs(t Task) *logExtraction {
@@ -503,6 +505,16 @@ func parseFinalLogs(t Task) *logExtraction {
 			if le.payloadCID.IsAbsent() && strings.Contains(entry, "PayloadCID:") {
 				le.payloadCID.m = schema.Maybe_Value
 				le.payloadCID.v = &_String{strings.TrimPrefix(entry, "PayloadCID: ")}
+			}
+			if le.proposalCID.IsAbsent() && strings.Contains(entry, "ProposalCID:") {
+				le.proposalCID.m = schema.Maybe_Value
+				le.proposalCID.v = &_String{strings.TrimPrefix(entry, "ProposalCID: ")}
+			}
+			if le.dealID == 0 && strings.Contains(entry, "DealID:") {
+				val, err := strconv.Atoi(strings.TrimPrefix(entry, "DealID: "))
+				if err == nil {
+					le.dealID = val
+				}
 			}
 		}
 	}
