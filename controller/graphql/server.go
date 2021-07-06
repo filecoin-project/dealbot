@@ -125,7 +125,26 @@ func GetHandler(db state.State, accessToken string) (*http.ServeMux, error) {
 				"RecordUpdate": &graphql.Field{
 					Type: RecordUpdate__type,
 					Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-						hd, err := db.GetHead(p.Context)
+						hd, err := db.GetHead(p.Context, 0)
+						if err != nil {
+							return nil, err
+						}
+						return hd, nil
+					},
+				},
+				"PreviousUpdate": &graphql.Field{
+					Type: RecordUpdate__type,
+					Args: map[string]*graphql.ArgumentConfig{
+						"walkback": {Type: graphql.Int, Description: "how many updates in the past"},
+					},
+					Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+						walkback := p.Args["walkback"]
+						wbnum, ok := walkback.(int)
+						if !ok {
+							return nil, fmt.Errorf("invalid walkback")
+						}
+
+						hd, err := db.GetHead(p.Context, wbnum)
 						if err != nil {
 							return nil, err
 						}

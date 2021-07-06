@@ -603,7 +603,7 @@ func TestComplete(t *testing.T) {
 		require.NoError(t, state.DrainWorker(ctx, "dealbot1"))
 		require.NoError(t, state.PublishRecordsFrom(ctx, "dealbot1"))
 
-		nextHead, err := state.GetHead(ctx)
+		nextHead, err := state.GetHead(ctx, 0)
 		require.NoError(t, err)
 		require.True(t, nextHead.Previous.IsNull())
 		require.Equal(t, int64(1), nextHead.Records.Length())
