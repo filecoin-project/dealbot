@@ -3,6 +3,7 @@ import "bootstrap-table";
 import "bootstrap-cron-picker/dist/cron-picker";
 
 let auth = "";
+let firstLoad = true;
 window.setauth = (a) => {
     auth = a;
 };
@@ -24,7 +25,7 @@ $().ready(() => {
         } else {
             $("#newretrieval").hide();
             $("#newstorage").show();
-        } 
+        }
     })
 
     if (!$('#newRepeat').is(':checked')) {
@@ -35,7 +36,7 @@ $().ready(() => {
             $("#setschedule").show();
         } else {
             $("#setschedule").hide();
-        } 
+        }
     })
 
     if (!$('#newRepeatRetAfterStore').is(':checked')) {
@@ -46,26 +47,27 @@ $().ready(() => {
             $("#retafterstoreschedule").show();
         } else {
             $("#retafterstoreschedule").hide();
-        } 
+        }
     })
 
     $("#addtask button").on('click', doSubmit);
     $("schedulesection form").on('submit', doSubmit);
 
-    syncTable();
+    syncData()
 })
 
-function syncTable() {
-   fetch("./tasks", { method: "GET", headers: getHeaders()}).then((response) => response.json()).then(gotTable)
+
+function syncData() {
+    fetch("./tasks", { method: "GET", headers: getHeaders()}).then((response) => response.json()).then(gotTasks)
+    fetch("./regions", { method: "GET", headers: getHeaders()}).then((response) => response.json()).then(gotRegions)
 }
 
 function operate(val, row) {
     return '<a class="remove" title="remove">Cancel</a>';
 }
 
-let firstLoad = true
 
-function gotTable(data) {
+function gotTasks(data) {
     const processedData = data.map((item) => {
         let task = item.StorageTask || item.RetrievalTask
         const sched = {
@@ -77,21 +79,65 @@ function gotTable(data) {
         return Object.assign({ sched, task }, item)
     }).filter((item) => item.Status == 1 || item.sched.Schedule)
     if (firstLoad) {
-    let stringify = (d) => JSON.stringify(d, null, 2);
-    $("#taskTable").bootstrapTable({
-        idField: 'UUID',
-        columns: [
-            {title:'ID', field:'UUID'},
-            {title:'Task', field:'task', formatter: stringify},
-            {title:'Schedule', field:'sched', formatter: stringify},
-            {title:'Delete', field: 'operate', align: 'center', formatter: operate, events: { 'click .remove': cancel}}
-        ],
-        data: processedData,
-    });
-    firstLoad = false
-} else {
-    $("#taskTable").bootstrapTable('load', processedData)
+        let stringify = (d) => JSON.stringify(d, null, 2);
+        $("#taskTable").bootstrapTable({
+            idField: 'UUID',
+            columns: [
+                {title:'ID', field:'UUID'},
+                {title:'Task', field:'task', formatter: stringify},
+                {title:'Schedule', field:'sched', formatter: stringify},
+                {title:'Delete', field: 'operate', align: 'center', formatter: operate, events: { 'click .remove': cancel}}
+            ],
+            data: processedData,
+        });
+    } else {
+        $("#taskTable").bootstrapTable('load', processedData)
+    }
 }
+
+function gotRegions(data) {
+    if (firstLoad) {
+        let regions = data["regions"]
+        $.each(regions, (reg) => {
+            let li = $('<li/>').appendTo($("#regionlist"));
+            let button = $('<button/>')
+                .addClass("list-group-action")
+                .text(regions[reg])
+                .click((regionid) => {
+                    fetch(`./regions/${regions[reg]}`, { method: "GET", headers: getHeaders()}).then((response) => response.json()).then(gotDaemons)
+                })
+                .appendTo(li);
+        });
+    }
+}
+
+function gotDaemons(data) {
+    $("#botlist").find($("li")).remove()
+    let daemons = data["daemons"]
+    $.each(daemons, (daemon) => {
+        let li = $('<li/>').appendTo($("#botlist"));
+        let button = $('<button/>')
+            .addClass("list-group-action")
+            .text(daemons[daemon]["id"])
+            .click((daemonid) => {
+                fetch(`./regions/${daemons[daemon]["region"]}/${daemons[daemon]["id"]}`, { method: "GET", headers: getHeaders()}).then((response) => response.json()).then(showDaemon)
+            })
+            .appendTo(li);
+    });
+}
+
+function showDaemon(data) {
+    let stringify = (d) => JSON.stringify(d, null, 2);
+    $("#botdetail").bootstrapTable({
+        idField: 'id',
+        columns: [
+            {title:'ID', field:'id'},
+            {title:'Region', field:'region'},
+            // {title:'Wallet', field:'wallet', formatter: stringify},
+            {title:'Wallet', field:'wallet.address'},
+        ],
+        data: [data],
+    });
 }
 
 function cancel(e, value, row, index) {
@@ -163,7 +209,7 @@ function doSubmit(e) {
 
     Promise.all(requests).then((_) => {
         $("#addDone").show()
-        syncTable()
+        syncData()
     })
 
     return false

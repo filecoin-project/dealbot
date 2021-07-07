@@ -124,15 +124,21 @@
                         Bots
                     </button>
                 </h2>
-                <div id="botsection" class="accordion-collapse collapse" aria-labelledby="headingBots" data-bs-parent="#mainOptions">
-                    <div class="accordion-body">
-                        List of bots and ability to spin up / shutdown.
-                        <br />
-                        This section is not complete yet.
+                <div id="botsection" class="accordion-collapse collapse container" aria-labelledby="headingBots" data-bs-parent="#mainOptions">
+                    <div class="accordion-body row">
+                        <div id="regionlistdiv" class="col-md-3">
+                            <ul id="regionlist" class="list-group">
+                            </ul>
+                        </div>
+                        <div id="botlistdiv" class="col-md-3">
+                            <ul id="botlist" class="list-group">
+                            </ul>
+                        </div>
+                        <div id="botdetail" class="col-md-6">
+                        </div>
                     </div>
                 </div>
             </section>
-
         </div>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-gtEjrD/SeCtmISkJkNUaaKMoLD0//ElJ19smozuHV6z3Iehds+3Ulb9Bn9Plx0x4" crossorigin="anonymous"></script>
         <script src='script.js'></script>

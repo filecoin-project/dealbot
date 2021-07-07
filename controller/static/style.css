@@ -1,6 +1,6 @@
 .cron-picker-dow {
     margin-bottom: 10px;
-}  
+}
 .cron-picker-dow button {
     margin-right: 3px;
 }
@@ -26,26 +26,25 @@
     margin-bottom: 10px;
 }
 
-.cron-picker-day-filter    .cron-picker-day-type-filter, .cron-picker-weekday-type-filter  {
+.cron-picker-day-filter .cron-picker-day-type-filter, .cron-picker-weekday-type-filter {
     display: inline-block;
 }
-  
+
 .cron-picker-day-filter  select {
     display: inline-block;
     width: 60px;
     margin: 0 5px;
 }
-  
+
 .cron-picker-day-filter .cron-picker-dow-select {
     width: 100px;
 }
 .cron-picker-dow button.active {
     background: #0c63e4;
 }
-  
+
 .cron-picker-time select {
     width: 60px;
     display: inline-block;
     margin: 0 5px;
 }
-
