@@ -11,7 +11,6 @@ import (
 
 	"github.com/filecoin-project/go-fil-markets/retrievalmarket"
 	"github.com/filecoin-project/go-fil-markets/retrievalmarket/impl/clientstates"
-	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/lotus/api"
 	"github.com/ipfs/go-cid"
 	"github.com/libp2p/go-libp2p"
@@ -221,29 +220,11 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(ctx context.Context, upda
 					dealStage = RetrievalStages[stage]()
 					//there should be a deal now.
 					allRetrievals, err := de.node.ClientListRetrievals(ctx)
-					expectedPayload, parseErr := cid.Parse(de.task.PayloadCID)
-					if parseErr != nil {
-						return err
-					}
-					expectedID := abi.DealID(0)
 					if err == nil {
 						for _, maybeOurRetrieval := range allRetrievals {
-							if maybeOurRetrieval.PayloadCID.Equals(expectedPayload) {
-								//todo: maybe also match on && maybeOurRetrieval.Provider == peer.ID(de.task.Miner.x)
+							if maybeOurRetrieval.Provider == de.pi.ID && maybeOurRetrieval.PayloadCID.Equals(de.offer.Root) && !clientstates.IsFinalityState(maybeOurRetrieval.Status) {
 								dealStage = AddLog(dealStage, fmt.Sprintf("DealID: %d", maybeOurRetrieval.ID))
-								expectedID = abi.DealID(maybeOurRetrieval.ID)
 								break
-							}
-						}
-					}
-					if expectedID != 0 {
-						allDeals, err := de.node.ClientListDeals(ctx)
-						if err != nil {
-							return err
-						}
-						for _, maybeOurDeal := range allDeals {
-							if maybeOurDeal.DealID == expectedID {
-								dealStage = AddLog(dealStage, fmt.Sprintf("ProposalCID: %s", maybeOurDeal.ProposalCid))
 							}
 						}
 					}

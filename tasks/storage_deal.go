@@ -387,7 +387,7 @@ func (de *storageDealExecutor) executeAndMonitorDeal(ctx context.Context, update
 				newState := storagemarket.DealStates[info.State]
 				newDetails := toStageDetails(info.DealStages.Stages[len(info.DealStages.Stages)-1])
 
-				if !loggedID {
+				if !loggedID && info.DealID != 0 {
 					loggedID = true
 					newDetails = AddLog(newDetails, fmt.Sprintf("DealID: %d", info.DealID))
 				}
@@ -407,7 +407,6 @@ func (de *storageDealExecutor) executeAndMonitorDeal(ctx context.Context, update
 			return ctx.Err()
 		}
 	}
-	return nil
 }
 
 func (de *storageDealExecutor) cleanupDeal() error {
