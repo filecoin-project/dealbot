@@ -205,7 +205,6 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(ctx context.Context, upda
 		case event, ok := <-events:
 			if ok {
 				// non-terminal event, process
-
 				if event.Status != lastStatus {
 					de.log("Deal status",
 						"cid", de.task.PayloadCID.x,
@@ -219,7 +218,17 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(ctx context.Context, upda
 				if event.Event == retrievalmarket.ClientEventDealAccepted {
 					stage = RetrievalStageDealAccepted
 					dealStage = RetrievalStages[stage]()
-					err := updateStage(ctx, stage, dealStage)
+					//there should be a deal now.
+					allRetrievals, err := de.node.ClientListRetrievals(ctx)
+					if err == nil {
+						for _, maybeOurRetrieval := range allRetrievals {
+							if maybeOurRetrieval.Provider == de.pi.ID && maybeOurRetrieval.PayloadCID.Equals(de.offer.Root) && !clientstates.IsFinalityState(maybeOurRetrieval.Status) {
+								dealStage = AddLog(dealStage, fmt.Sprintf("DealID: %d", maybeOurRetrieval.ID))
+								break
+							}
+						}
+					}
+					err = updateStage(ctx, stage, dealStage)
 					if err != nil {
 						return err
 					}

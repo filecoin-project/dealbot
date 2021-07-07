@@ -2549,6 +2549,9 @@ func (n _FinishedTask) FieldSize() MaybeInt {
 func (n _FinishedTask) FieldPayloadCID() MaybeString {
 	return &n.PayloadCID
 }
+func (n _FinishedTask) FieldProposalCID() MaybeString {
+	return &n.ProposalCID
+}
 type _FinishedTask__Maybe struct {
 	m schema.Maybe
 	v FinishedTask
@@ -2599,6 +2602,7 @@ var (
 	fieldName__FinishedTask_ClientVersion = _String{"ClientVersion"}
 	fieldName__FinishedTask_Size = _String{"Size"}
 	fieldName__FinishedTask_PayloadCID = _String{"PayloadCID"}
+	fieldName__FinishedTask_ProposalCID = _String{"ProposalCID"}
 )
 var _ ipld.Node = (FinishedTask)(&_FinishedTask{})
 var _ schema.TypedNode = (FinishedTask)(&_FinishedTask{})
@@ -2696,6 +2700,14 @@ func (n FinishedTask) LookupByString(key string) (ipld.Node, error) {
 			return ipld.Null, nil
 		}
 		return n.PayloadCID.v, nil
+	case "ProposalCID":
+		if n.ProposalCID.m == schema.Maybe_Absent {
+			return ipld.Absent, nil
+		}
+		if n.ProposalCID.m == schema.Maybe_Null {
+			return ipld.Null, nil
+		}
+		return n.ProposalCID.v, nil
 	default:
 		return nil, schema.ErrNoSuchField{Type: nil /*TODO*/, Field: ipld.PathSegmentOfString(key)}
 	}
@@ -2723,7 +2735,7 @@ type _FinishedTask__MapItr struct {
 }
 
 func (itr *_FinishedTask__MapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
-	if itr.idx >= 16 {
+	if itr.idx >= 17 {
 		return nil, nil, ipld.ErrIteratorOverread{}
 	}
 	switch itr.idx {
@@ -2851,6 +2863,17 @@ func (itr *_FinishedTask__MapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
 			break
 		}
 		v = itr.n.PayloadCID.v
+	case 16:
+		k = &fieldName__FinishedTask_ProposalCID
+		if itr.n.ProposalCID.m == schema.Maybe_Absent {
+			v = ipld.Absent
+			break
+		}
+		if itr.n.ProposalCID.m == schema.Maybe_Null {
+			v = ipld.Null
+			break
+		}
+		v = itr.n.ProposalCID.v
 	default:
 		panic("unreachable")
 	}
@@ -2858,14 +2881,14 @@ func (itr *_FinishedTask__MapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
 	return
 }
 func (itr *_FinishedTask__MapItr) Done() bool {
-	return itr.idx >= 16
+	return itr.idx >= 17
 }
 
 func (FinishedTask) ListIterator() ipld.ListIterator {
 	return nil
 }
 func (FinishedTask) Length() int64 {
-	return 16
+	return 17
 }
 func (FinishedTask) IsAbsent() bool {
 	return false
@@ -2939,6 +2962,7 @@ type _FinishedTask__Assembler struct {
 	ca_ClientVersion _String__Assembler
 	ca_Size _Int__Assembler
 	ca_PayloadCID _String__Assembler
+	ca_ProposalCID _String__Assembler
 	}
 
 func (na *_FinishedTask__Assembler) reset() {
@@ -2960,6 +2984,7 @@ func (na *_FinishedTask__Assembler) reset() {
 	na.ca_ClientVersion.reset()
 	na.ca_Size.reset()
 	na.ca_PayloadCID.reset()
+	na.ca_ProposalCID.reset()
 }
 
 var (
@@ -2979,6 +3004,7 @@ var (
 	fieldBit__FinishedTask_ClientVersion = 1 << 13
 	fieldBit__FinishedTask_Size = 1 << 14
 	fieldBit__FinishedTask_PayloadCID = 1 << 15
+	fieldBit__FinishedTask_ProposalCID = 1 << 16
 	fieldBits__FinishedTask_sufficient = 0 + 1 << 0 + 1 << 1 + 1 << 5 + 1 << 6 + 1 << 7 + 1 << 11
 )
 func (na *_FinishedTask__Assembler) BeginMap(int64) (ipld.MapAssembler, error) {
@@ -3249,6 +3275,18 @@ func (ma *_FinishedTask__Assembler) valueFinishTidy() bool {
 		default:
 			return false
 		}
+	case 16:
+		switch ma.w.ProposalCID.m {
+		case schema.Maybe_Null:
+			ma.state = maState_initial
+			return true
+		case schema.Maybe_Value:
+			ma.w.ProposalCID.v = ma.ca_ProposalCID.w
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
 	default:
 		panic("unreachable")
 	}
@@ -3438,6 +3476,17 @@ func (ma *_FinishedTask__Assembler) AssembleEntry(k string) (ipld.NodeAssembler,
 		ma.ca_PayloadCID.m = &ma.w.PayloadCID.m
 		ma.w.PayloadCID.m = allowNull
 		return &ma.ca_PayloadCID, nil
+	case "ProposalCID":
+		if ma.s & fieldBit__FinishedTask_ProposalCID != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_ProposalCID}
+		}
+		ma.s += fieldBit__FinishedTask_ProposalCID
+		ma.state = maState_midValue
+		ma.f = 16
+		ma.ca_ProposalCID.w = ma.w.ProposalCID.v
+		ma.ca_ProposalCID.m = &ma.w.ProposalCID.m
+		ma.w.ProposalCID.m = allowNull
+		return &ma.ca_ProposalCID, nil
 	default:
 		return nil, ipld.ErrInvalidKey{TypeName:"tasks.FinishedTask", Key:&_String{k}}
 	}
@@ -3548,6 +3597,11 @@ func (ma *_FinishedTask__Assembler) AssembleValue() ipld.NodeAssembler {
 		ma.ca_PayloadCID.m = &ma.w.PayloadCID.m
 		ma.w.PayloadCID.m = allowNull
 		return &ma.ca_PayloadCID
+	case 16:
+		ma.ca_ProposalCID.w = ma.w.ProposalCID.v
+		ma.ca_ProposalCID.m = &ma.w.ProposalCID.m
+		ma.w.ProposalCID.m = allowNull
+		return &ma.ca_ProposalCID
 	default:
 		panic("unreachable")
 	}
@@ -3735,6 +3789,13 @@ func (ka *_FinishedTask__KeyAssembler) AssignString(k string) error {
 		ka.s += fieldBit__FinishedTask_PayloadCID
 		ka.state = maState_expectValue
 		ka.f = 15
+	case "ProposalCID":
+		if ka.s & fieldBit__FinishedTask_ProposalCID != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_ProposalCID}
+		}
+		ka.s += fieldBit__FinishedTask_ProposalCID
+		ka.state = maState_expectValue
+		ka.f = 16
 	default:
 		return ipld.ErrInvalidKey{TypeName:"tasks.FinishedTask", Key:&_String{k}}
 	}
@@ -3780,6 +3841,7 @@ var (
 	fieldName__FinishedTask_ClientVersion_serial = _String{"ClientVersion"}
 	fieldName__FinishedTask_Size_serial = _String{"Size"}
 	fieldName__FinishedTask_PayloadCID_serial = _String{"PayloadCID"}
+	fieldName__FinishedTask_ProposalCID_serial = _String{"ProposalCID"}
 )
 var _ ipld.Node = &_FinishedTask__Repr{}
 func (_FinishedTask__Repr) Kind() ipld.Kind {
@@ -3876,6 +3938,14 @@ func (n *_FinishedTask__Repr) LookupByString(key string) (ipld.Node, error) {
 			return ipld.Null, nil
 		}
 		return n.PayloadCID.v.Representation(), nil
+	case "ProposalCID":
+		if n.ProposalCID.m == schema.Maybe_Absent {
+			return ipld.Absent, ipld.ErrNotExists{ipld.PathSegmentOfString(key)}
+		}
+		if n.ProposalCID.m == schema.Maybe_Null {
+			return ipld.Null, nil
+		}
+		return n.ProposalCID.v.Representation(), nil
 	default:
 		return nil, schema.ErrNoSuchField{Type: nil /*TODO*/, Field: ipld.PathSegmentOfString(key)}
 	}
@@ -3894,7 +3964,12 @@ func (n _FinishedTask__Repr) LookupBySegment(seg ipld.PathSegment) (ipld.Node, e
 	return n.LookupByString(seg.String())
 }
 func (n *_FinishedTask__Repr) MapIterator() ipld.MapIterator {
-	end := 16
+	end := 17
+	if n.ProposalCID.m == schema.Maybe_Absent {
+		end = 16
+	} else {
+		goto done
+	}
 	if n.PayloadCID.m == schema.Maybe_Absent {
 		end = 15
 	} else {
@@ -3926,7 +4001,7 @@ type _FinishedTask__ReprMapItr struct {
 }
 
 func (itr *_FinishedTask__ReprMapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
-advance:if itr.idx >= 16 {
+advance:if itr.idx >= 17 {
 		return nil, nil, ipld.ErrIteratorOverread{}
 	}
 	switch itr.idx {
@@ -4054,6 +4129,17 @@ advance:if itr.idx >= 16 {
 			break
 		}
 		v = itr.n.PayloadCID.v.Representation()
+	case 16:
+		k = &fieldName__FinishedTask_ProposalCID_serial
+		if itr.n.ProposalCID.m == schema.Maybe_Absent {
+			itr.idx++
+			goto advance
+		}
+		if itr.n.ProposalCID.m == schema.Maybe_Null {
+			v = ipld.Null
+			break
+		}
+		v = itr.n.ProposalCID.v.Representation()
 	default:
 		panic("unreachable")
 	}
@@ -4067,7 +4153,7 @@ func (_FinishedTask__Repr) ListIterator() ipld.ListIterator {
 	return nil
 }
 func (rn *_FinishedTask__Repr) Length() int64 {
-	l := 16
+	l := 17
 	if rn.ErrorMessage.m == schema.Maybe_Absent {
 		l--
 	}
@@ -4096,6 +4182,9 @@ func (rn *_FinishedTask__Repr) Length() int64 {
 		l--
 	}
 	if rn.PayloadCID.m == schema.Maybe_Absent {
+		l--
+	}
+	if rn.ProposalCID.m == schema.Maybe_Absent {
 		l--
 	}
 	return int64(l)
@@ -4172,6 +4261,7 @@ type _FinishedTask__ReprAssembler struct {
 	ca_ClientVersion _String__ReprAssembler
 	ca_Size _Int__ReprAssembler
 	ca_PayloadCID _String__ReprAssembler
+	ca_ProposalCID _String__ReprAssembler
 	}
 
 func (na *_FinishedTask__ReprAssembler) reset() {
@@ -4193,6 +4283,7 @@ func (na *_FinishedTask__ReprAssembler) reset() {
 	na.ca_ClientVersion.reset()
 	na.ca_Size.reset()
 	na.ca_PayloadCID.reset()
+	na.ca_ProposalCID.reset()
 }
 func (na *_FinishedTask__ReprAssembler) BeginMap(int64) (ipld.MapAssembler, error) {
 	switch *na.m {
@@ -4450,6 +4541,18 @@ func (ma *_FinishedTask__ReprAssembler) valueFinishTidy() bool {
 		default:
 			return false
 		}
+	case 16:
+		switch ma.w.ProposalCID.m {
+		case schema.Maybe_Null:
+			ma.state = maState_initial
+			return true
+		case schema.Maybe_Value:
+			ma.w.ProposalCID.v = ma.ca_ProposalCID.w
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
 	default:
 		panic("unreachable")
 	}
@@ -4640,6 +4743,17 @@ func (ma *_FinishedTask__ReprAssembler) AssembleEntry(k string) (ipld.NodeAssemb
 		ma.ca_PayloadCID.m = &ma.w.PayloadCID.m
 		ma.w.PayloadCID.m = allowNull
 		return &ma.ca_PayloadCID, nil
+	case "ProposalCID":
+		if ma.s & fieldBit__FinishedTask_ProposalCID != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_ProposalCID_serial}
+		}
+		ma.s += fieldBit__FinishedTask_ProposalCID
+		ma.state = maState_midValue
+		ma.f = 16
+		ma.ca_ProposalCID.w = ma.w.ProposalCID.v
+		ma.ca_ProposalCID.m = &ma.w.ProposalCID.m
+		ma.w.ProposalCID.m = allowNull
+		return &ma.ca_ProposalCID, nil
 	default:
 		return nil, ipld.ErrInvalidKey{TypeName:"tasks.FinishedTask.Repr", Key:&_String{k}}
 	}
@@ -4751,6 +4865,11 @@ func (ma *_FinishedTask__ReprAssembler) AssembleValue() ipld.NodeAssembler {
 		ma.ca_PayloadCID.m = &ma.w.PayloadCID.m
 		ma.w.PayloadCID.m = allowNull
 		return &ma.ca_PayloadCID
+	case 16:
+		ma.ca_ProposalCID.w = ma.w.ProposalCID.v
+		ma.ca_ProposalCID.m = &ma.w.ProposalCID.m
+		ma.w.ProposalCID.m = allowNull
+		return &ma.ca_ProposalCID
 	default:
 		panic("unreachable")
 	}
@@ -4938,6 +5057,13 @@ func (ka *_FinishedTask__ReprKeyAssembler) AssignString(k string) error {
 		ka.s += fieldBit__FinishedTask_PayloadCID
 		ka.state = maState_expectValue
 		ka.f = 15
+	case "ProposalCID":
+		if ka.s & fieldBit__FinishedTask_ProposalCID != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_ProposalCID_serial}
+		}
+		ka.s += fieldBit__FinishedTask_ProposalCID
+		ka.state = maState_expectValue
+		ka.f = 16
 	default:
 		return ipld.ErrInvalidKey{TypeName:"tasks.FinishedTask.Repr", Key:&_String{k}}
 	}
