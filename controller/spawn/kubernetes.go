@@ -15,6 +15,7 @@ import (
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
+	"sigs.k8s.io/yaml"
 )
 
 type KubernetesSpawner struct {
@@ -83,7 +84,6 @@ func (s *KubernetesSpawner) List(regionid string) (daemons []*Daemon, err error)
 	client.All = true
 	client.Deployed = true
 	releases, err := client.Run()
-	log.Info("how many releases?", len(releases))
 	if err != nil {
 		log.Infow("failed to list releases", "err", err)
 	}
@@ -169,7 +169,7 @@ func NewKubernetes() *KubernetesSpawner {
 func daemonFromRelease(r *release.Release, regionid string) (daemon *Daemon) {
 	container := r.Config["application"].(map[string]interface{})["container"]
 	kcontainer := new(corev1.Container)
-	buf, _ := json.Marshal(container)
+	buf, _ := yaml.Marshal(container)
 	json.Unmarshal(buf, kcontainer)
 	var minfil, mincap int
 	var tags []string
