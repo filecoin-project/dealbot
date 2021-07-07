@@ -1,7 +1,6 @@
 package spawn
 
 import (
-	"encoding/json"
 	"io/ioutil"
 	"path"
 	"strconv"
@@ -170,10 +169,10 @@ func daemonFromRelease(r *release.Release, regionid string) (daemon *Daemon) {
 	container := r.Config["application"].(map[string]interface{})["container"]
 	kcontainer := new(corev1.Container)
 	buf, _ := yaml.Marshal(container)
-	json.Unmarshal(buf, kcontainer)
+	yaml.Unmarshal(buf, kcontainer)
 	var minfil, mincap int
 	var tags []string
-	var wallet *Wallet
+	wallet := new(Wallet)
 	for _, env := range kcontainer.Env {
 		switch env.Name {
 		case "DEALBOT_TAGS":
