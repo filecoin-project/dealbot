@@ -232,6 +232,7 @@ var ControllerFlags = []cli.Flag{
 		Usage:   "host:port to bind http server on",
 		Aliases: []string{"l"},
 		EnvVars: []string{"DEALBOT_LISTEN"},
+		Value:   "127.0.0.1:33258",
 	}),
 	altsrc.NewStringFlag(&cli.StringFlag{
 		Name:    "graphql",
@@ -265,6 +266,11 @@ var ControllerFlags = []cli.Flag{
 		Name:    "gqlAccessToken",
 		Usage:   "set an access secret for access to inprogress data over gql",
 		EnvVars: []string{"DEALBOT_GRAPHQL_ACCESS_TOKEN"},
+	}),
+	altsrc.NewStringFlag(&cli.StringFlag{
+		Name:    "daemon-driver",
+		Usage:   "system to use when starting daemons",
+		EnvVars: []string{"DEALBOT_DAEMON_DRIVER"},
 	}),
 	altsrc.NewStringFlag(&cli.StringFlag{
 		Name:  "devAssetDir",

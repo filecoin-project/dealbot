@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/filecoin-project/dealbot/controller/graphql"
+	"github.com/filecoin-project/dealbot/controller/spawn"
 	"github.com/filecoin-project/dealbot/controller/state"
 	"github.com/filecoin-project/dealbot/controller/webutil"
 	"github.com/filecoin-project/dealbot/metrics"
@@ -48,6 +49,7 @@ type Controller struct {
 	db              state.State
 	basicauth       string
 	metricsRecorder metrics.MetricsRecorder
+	spawner         spawn.Spawner
 }
 
 func New(ctx *cli.Context) (*Controller, error) {
@@ -114,7 +116,6 @@ func New(ctx *cli.Context) (*Controller, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	return NewWithDependencies(ctx, l, gl, recorder, backend)
 }
 
@@ -134,6 +135,11 @@ func NewWithDependencies(ctx *cli.Context, listener, graphqlListener net.Listene
 	srv := new(Controller)
 	srv.db = backend
 	srv.basicauth = ctx.String("basicauth")
+	if ctx.String("daemon-driver") == "kubernetes" {
+		srv.spawner = spawn.NewKubernetes()
+	} else {
+		srv.spawner = spawn.NewLocal(ctx.String("listen"))
+	}
 
 	r := mux.NewRouter().StrictSlash(true)
 
@@ -162,6 +168,10 @@ func NewWithDependencies(ctx *cli.Context, listener, graphqlListener net.Listene
 	r.HandleFunc("/tasks/{uuid}", srv.deleteTaskHandler).Methods("DELETE")
 	r.HandleFunc("/car", srv.carHandler).Methods("GET")
 	r.HandleFunc("/health", srv.healthHandler).Methods("GET")
+	r.HandleFunc("/regions", srv.getRegionsHandler).Methods("GET")
+	r.HandleFunc("/regions/{regionid}", srv.getDaemonsHandler).Methods("GET")
+	r.HandleFunc("/regions/{regionid}", srv.newDaemonHandler).Methods("POST")
+	r.HandleFunc("/regions/{regionid}/{daemonid}", srv.getDaemonHandler).Methods("GET")
 	r.HandleFunc("/cred.js", srv.authHandler).Methods("GET")
 	r.Methods("OPTIONS").HandlerFunc(srv.sendCORSHeaders)
 	metricsHandler := recorder.Handler()

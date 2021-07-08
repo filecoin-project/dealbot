@@ -1,0 +1,183 @@
+# For more information see the following helm chart
+# https://github.com/filecoin-project/helm-charts/tree/master/charts/lotus-bundle
+#
+# This values file is used as the basis for dealbot daemon deployments.
+# See values.go to see how this is templated.
+#
+# what the controller does should be something similar to
+# installing this chart with helm...with the template applied, of course.
+
+image:
+  repository: {{ .DockerRepo }}
+  tag: {{ .DockerTag }}
+  pullPolicy: Always
+
+application:
+  name: "dealbot-daemon"
+  labels: []
+  replicas: 
+  container:
+    name: dealbot-daemon
+    command: [ "sh" ]
+    args: 
+      - "-c"
+      - "FULLNODE_API_INFO=$(cat $LOTUS_PATH/token):$(cat $LOTUS_PATH/api) ./dealbot daemon"
+    env:
+      - name: DEALBOT_ID
+        value: {{ .Id }}
+      - name: DEALBOT_WALLET_ADDRESS
+        value: {{ .Wallet.Address }}
+      - name: DEALBOT_MIN_FIL
+        value: "{{ .MinFil }}"
+      - name: DEALBOT_MIN_CAP
+        value: "{{ .MinCap }}"
+      - name: DEALBOT_DATA_DIRECTORY
+        value: /shared
+      - name: DEALBOT_NODE_DATA_DIRECTORY
+        value: /shared
+      - name: DEALBOT_DATAPOINT_LOG
+        value: /var/log/dealbot/datapoint.log
+      - name: DEALBOT_LISTEN
+        value: "0.0.0.0:8764"
+      - name: DEALBOT_CONTROLLER_ENDPOINT
+        value: http://dealbot-0-controller:8764
+      - name: DEALBOT_TAGS
+        value: {{ StringsJoin .Tags "," }}
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 1000Mi
+      requests:
+        cpu: 500m
+        memory: 1000Mi
+    ports:
+      - containerPort: 8764
+        name: dealbot
+  secrets: []
+  configMaps: []
+  service:
+    enabled: true
+    type: ClusterIP
+    ports:
+      - protocol: TCP
+        port: 8764
+        targetPort: 8764
+        name: dealbot
+  ingress:
+    enabled: false
+  storage: # storage volume shared between application and lotus node
+    size: 1000Gi
+    mount: /shared
+
+# Wallets are added to the wallet secret.
+# if you don't want to specify wallets in values.yaml,
+# you can add them later by editing the secret.
+# wallets:
+#   - address: f3xxxyyy
+#     exported: aabbccdd
+wallets:
+  - address: {{ .Wallet.Address }}
+    exported: {{ .Wallet.Exported }}
+
+# lotus configuration
+# By default, lotus will run as a full-node. In this mode, it will take
+# time to sync the block chain and additiona resources will be needed
+# to keep it in sync.
+# Lotus can also be run as a lite-node. In this mode, wallets are local
+# and lotus clients connect to the same lotus-lite node, but messages
+# must be passed to a back-end lotus node. The backend can be a fullnode
+# or gateway service you run yourself or a public endpoint
+#
+# note:
+# api.chain.love is a lotus-gateway instance managed by Protocol Labs.
+# It provides a limited set of lotus API endpoints.
+lotus:
+  image: coryschwartz/lotus:sidecar
+  lite:
+    enabled: false
+    backend: wss://api.chain.love
+
+prometheus:
+  serviceMonitor: false
+  path: /metrics
+  port: ""
+
+filebeat:
+  enabled: true
+  external: true
+  externalSecret: filebeat-config
+  image: store/elastic/filebeat:7.13.2
+  path: /var/log/dealbot
+  secrets:
+    - name: logzio-certs
+      keys:
+        SectigoRSADomainValidationSecureSerA.crt: |
+          -----BEGIN CERTIFICATE-----
+          MIIGEzCCA/ugAwIBAgIQfVtRJrR2uhHbdBYLvFMNpzANBgkqhkiG9w0BAQwFADCB
+          iDELMAkGA1UEBhMCVVMxEzARBgNVBAgTCk5ldyBKZXJzZXkxFDASBgNVBAcTC0pl
+          cnNleSBDaXR5MR4wHAYDVQQKExVUaGUgVVNFUlRSVVNUIE5ldHdvcmsxLjAsBgNV
+          BAMTJVVTRVJUcnVzdCBSU0EgQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkwHhcNMTgx
+          MTAyMDAwMDAwWhcNMzAxMjMxMjM1OTU5WjCBjzELMAkGA1UEBhMCR0IxGzAZBgNV
+          BAgTEkdyZWF0ZXIgTWFuY2hlc3RlcjEQMA4GA1UEBxMHU2FsZm9yZDEYMBYGA1UE
+          ChMPU2VjdGlnbyBMaW1pdGVkMTcwNQYDVQQDEy5TZWN0aWdvIFJTQSBEb21haW4g
+          VmFsaWRhdGlvbiBTZWN1cmUgU2VydmVyIENBMIIBIjANBgkqhkiG9w0BAQEFAAOC
+          AQ8AMIIBCgKCAQEA1nMz1tc8INAA0hdFuNY+B6I/x0HuMjDJsGz99J/LEpgPLT+N
+          TQEMgg8Xf2Iu6bhIefsWg06t1zIlk7cHv7lQP6lMw0Aq6Tn/2YHKHxYyQdqAJrkj
+          eocgHuP/IJo8lURvh3UGkEC0MpMWCRAIIz7S3YcPb11RFGoKacVPAXJpz9OTTG0E
+          oKMbgn6xmrntxZ7FN3ifmgg0+1YuWMQJDgZkW7w33PGfKGioVrCSo1yfu4iYCBsk
+          Haswha6vsC6eep3BwEIc4gLw6uBK0u+QDrTBQBbwb4VCSmT3pDCg/r8uoydajotY
+          uK3DGReEY+1vVv2Dy2A0xHS+5p3b4eTlygxfFQIDAQABo4IBbjCCAWowHwYDVR0j
+          BBgwFoAUU3m/WqorSs9UgOHYm8Cd8rIDZsswHQYDVR0OBBYEFI2MXsRUrYrhd+mb
+          +ZsF4bgBjWHhMA4GA1UdDwEB/wQEAwIBhjASBgNVHRMBAf8ECDAGAQH/AgEAMB0G
+          A1UdJQQWMBQGCCsGAQUFBwMBBggrBgEFBQcDAjAbBgNVHSAEFDASMAYGBFUdIAAw
+          CAYGZ4EMAQIBMFAGA1UdHwRJMEcwRaBDoEGGP2h0dHA6Ly9jcmwudXNlcnRydXN0
+          LmNvbS9VU0VSVHJ1c3RSU0FDZXJ0aWZpY2F0aW9uQXV0aG9yaXR5LmNybDB2Bggr
+          BgEFBQcBAQRqMGgwPwYIKwYBBQUHMAKGM2h0dHA6Ly9jcnQudXNlcnRydXN0LmNv
+          bS9VU0VSVHJ1c3RSU0FBZGRUcnVzdENBLmNydDAlBggrBgEFBQcwAYYZaHR0cDov
+          L29jc3AudXNlcnRydXN0LmNvbTANBgkqhkiG9w0BAQwFAAOCAgEAMr9hvQ5Iw0/H
+          ukdN+Jx4GQHcEx2Ab/zDcLRSmjEzmldS+zGea6TvVKqJjUAXaPgREHzSyrHxVYbH
+          7rM2kYb2OVG/Rr8PoLq0935JxCo2F57kaDl6r5ROVm+yezu/Coa9zcV3HAO4OLGi
+          H19+24rcRki2aArPsrW04jTkZ6k4Zgle0rj8nSg6F0AnwnJOKf0hPHzPE/uWLMUx
+          RP0T7dWbqWlod3zu4f+k+TY4CFM5ooQ0nBnzvg6s1SQ36yOoeNDT5++SR2RiOSLv
+          xvcRviKFxmZEJCaOEDKNyJOuB56DPi/Z+fVGjmO+wea03KbNIaiGCpXZLoUmGv38
+          sbZXQm2V0TP2ORQGgkE49Y9Y3IBbpNV9lXj9p5v//cWoaasm56ekBYdbqbe4oyAL
+          l6lFhd2zi+WJN44pDfwGF/Y4QA5C5BIG+3vzxhFoYt/jmPQT2BVPi7Fp2RBgvGQq
+          6jG35LWjOhSbJuMLe/0CjraZwTiXWTb2qHSihrZe68Zk6s+go/lunrotEbaGmAhY
+          LcmsJWTyXnW0OMGuf1pGg+pRyrbxmRE1a6Vqe8YAsOf4vmSyrcjC8azjUeqkk+B5
+          yOGBQMkKW+ESPMFgKuOXwIlCypTPRpgSabuY0MLTDXJLR27lk8QyKGOHQ+SwMj4K
+          00u/I5sUKUErmgQfky3xxzlIPK1aEn8=
+          -----END CERTIFICATE-----
+      mount: /certs
+  config: |
+    ############################# Filebeat #####################################
+    filebeat.inputs:
+    - type: log
+      paths:
+        - /var/log/dealbot/*
+      fields:
+        logzio_codec: plain
+        token: abcxyz
+        type: dealbot
+      fields_under_root: true
+      encoding: utf-8
+      ignore_older: 3h
+    processors:
+    - rename:
+        fields:
+         - from: "agent"
+           to: "beat_agent"
+        ignore_missing: true
+    - rename:
+        fields:
+         - from: "log.file.path"
+           to: "source"
+        ignore_missing: true
+    
+    ############################# Output ##########################################
+    output:
+      logstash:
+        hosts: 
+          - "listener.logz.io:5015"
+        ssl:
+          certificate_authorities: 
+            - "/certs/SectigoRSADomainValidationSecureSerA.crt"
