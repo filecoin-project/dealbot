@@ -95,8 +95,7 @@ func (s *KubernetesSpawner) List(regionid string) (daemons []*Daemon, err error)
 
 func (s *KubernetesSpawner) Regions() []string {
 	var regions []string
-	for region, getter := range s.getters {
-		log.Info("getter", getter)
+	for region := range s.getters {
 		regions = append(regions, region)
 	}
 	return regions
