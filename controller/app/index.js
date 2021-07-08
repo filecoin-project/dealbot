@@ -14,6 +14,7 @@ $().ready(() => {
     $('#newretafterstoreSchedule').cronPicker();
 
     $("#addDone").hide();
+    $("#addBotDone").hide();
     if ($('#newSR').is(':checked')) {
         $("#newstorage").hide();
     } else {
@@ -205,19 +206,21 @@ function doSubmit(e) {
 }
 
 function doCreateBot(e) {
-    let region = $("#botRegion").val()
+    let region = $("#newBotRegion").val()
     let url = `./regions/${region}`
 
     data = {
-        "id": $("#botId").val(),
-        "labels": $("#botLabels").val().trim().split('\n'),
-        "workers": $("#botWorkers").val(),
-        "mincap": $("#botMinCap").val(),
-        "minfil": $("#botMinFil").val(),
+        "id": $("#newBotId").val(),
+        "labels": $("#newBotLabels").val().trim().split('\n'),
+        "workers": parseInt($("#newBotWorkers").val()),
+        "mincap": parseInt($("#newBotMinCap").val()),
+        "minfil": parseInt($("#newBotMinFil").val()),
         "wallet": {
-            "address": $("#botWalletAddress").val(),
-            "exported": $("#botWalletExported").val(),
+            "address": $("#newBotWalletAddress").val(),
+            "exported": $("#newBotWalletExported").val(),
         },
     }
-    fetch(url, {method: "POST", headers: getHeaders(), body: JSON.stringify(data)})
+    fetch(url, {method: "POST", headers: getHeaders(), body: JSON.stringify(data)}).then(() => {
+	      $("#addBotDone").show()
+    })
 }
