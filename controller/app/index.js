@@ -4,6 +4,7 @@ import "bootstrap-cron-picker/dist/cron-picker";
 
 let auth = "";
 let firstLoad = true;
+let regionList = [];
 window.setauth = (a) => {
     auth = a;
 };
@@ -97,14 +98,14 @@ function gotTasks(data) {
 
 function gotRegions(data) {
     if (firstLoad) {
-        let regions = data["regions"]
-        $.each(regions, (reg) => {
+        regionList = data["regions"]
+        $.each(regionList, (reg) => {
             let li = $('<li/>').appendTo($("#regionlist"));
             let button = $('<button/>')
                 .addClass("list-group-action")
-                .text(regions[reg])
+                .text(regionList[reg])
                 .click((regionid) => {
-                    fetch(`./regions/${regions[reg]}`, { method: "GET", headers: getHeaders()}).then((response) => response.json()).then(gotDaemons)
+                    fetch(`./regions/${regionList[reg]}`, { method: "GET", headers: getHeaders()}).then((response) => response.json()).then(gotDaemons)
                 })
                 .appendTo(li);
         });
@@ -112,32 +113,19 @@ function gotRegions(data) {
 }
 
 function gotDaemons(data) {
-    $("#botlist").find($("li")).remove()
     let daemons = data["daemons"]
-    $.each(daemons, (daemon) => {
-        let li = $('<li/>').appendTo($("#botlist"));
-        let button = $('<button/>')
-            .addClass("list-group-action")
-            .text(daemons[daemon]["id"])
-            .click((daemonid) => {
-                fetch(`./regions/${daemons[daemon]["region"]}/${daemons[daemon]["id"]}`, { method: "GET", headers: getHeaders()}).then((response) => response.json()).then(showDaemon)
-            })
-            .appendTo(li);
-    });
-}
-
-function showDaemon(data) {
     let stringify = (d) => JSON.stringify(d, null, 2);
     $("#botdetail").bootstrapTable({
         idField: 'id',
         columns: [
             {title:'ID', field:'id'},
             {title:'Region', field:'region'},
-            // {title:'Wallet', field:'wallet', formatter: stringify},
             {title:'Wallet', field:'wallet.address'},
+            {title:'Min Cap', field:'mincap'},
+            {title:'Min Fil', field:'minfil'},
         ],
-        data: [data],
-    });
+        data: daemons,
+		});
 }
 
 function cancel(e, value, row, index) {
