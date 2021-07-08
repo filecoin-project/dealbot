@@ -41,6 +41,8 @@ application:
         value: "0.0.0.0:8764"
       - name: DEALBOT_CONTROLLER_ENDPOINT
         value: http://dealbot-0-controller:8764
+      - name: DEALBOT_TAGS
+        value: {{ StringsJoin .Tags "," }}
     resources:
       limits:
         cpu: 1000m

@@ -3,6 +3,7 @@ package spawn
 import (
 	"bytes"
 	_ "embed"
+	"strings"
 	"text/template"
 
 	"sigs.k8s.io/yaml"
@@ -15,7 +16,10 @@ var valuesBase string
 // gives a values object that is ready to be used by helm
 func dealbotValues(d *Daemon) (map[string]interface{}, error) {
 	buf := bytes.NewBuffer([]byte{})
-	tmpl, err := template.New("base").Parse(valuesBase)
+	tmpl := template.New("base").Funcs(template.FuncMap{
+		"StringsJoin": strings.Join,
+	})
+	tmpl, err := tmpl.Parse(valuesBase)
 	if err != nil {
 		return nil, err
 	}
