@@ -348,7 +348,7 @@ func (de *storageDealExecutor) executeAndMonitorDeal(ctx context.Context, update
 			return fmt.Errorf("deal stage %q %s", stage, msg)
 		case info, ok := <-updates:
 			if !ok {
-				return nil
+				return fmt.Errorf("Client error: Update channel closed before deal is active")
 			}
 
 			if !proposalCid.Equals(info.ProposalCid) {
