@@ -53,6 +53,7 @@ $().ready(() => {
 
     $("#addtask button").on('click', doSubmit);
     $("schedulesection form").on('submit', doSubmit);
+    $("#addbot button").on('click', doCreateBot);
 
     syncData()
 })
@@ -201,4 +202,22 @@ function doSubmit(e) {
     })
 
     return false
+}
+
+function doCreateBot(e) {
+    let region = $("#botRegion").val()
+    let url = `./regions/${region}`
+
+    data = {
+        "id": $("#botId").val(),
+        "labels": $("#botLabels").val().trim().split('\n'),
+        "workers": $("#botWorkers").val(),
+        "mincap": $("#botMinCap").val(),
+        "minfil": $("#botMinFil").val(),
+        "wallet": {
+            "address": $("#botWalletAddress").val(),
+            "exported": $("#botWalletExported").val(),
+        },
+    }
+    fetch(url, {method: "POST", headers: getHeaders(), body: JSON.stringify(data)})
 }
