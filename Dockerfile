@@ -2,12 +2,13 @@
 FROM node:14-alpine AS js
 WORKDIR /usr/src/app
 COPY ./controller/app .
+run apk add npm
 RUN npm install
 
 FROM golang:alpine AS builder
 RUN apk update
 RUN apk upgrade
-RUN apk add --update gcc>=9.3.0 g++>=9.3.0 alpine-sdk
+RUN apk add --update gcc>=9.3.0 g++>=9.3.0 alpine-sdk linux-headers
 
 WORKDIR /go/src/app/
 
