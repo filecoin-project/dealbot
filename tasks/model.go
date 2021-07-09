@@ -383,6 +383,7 @@ func (t *_Task) Finalize(ctx context.Context, s ipld.Storer, local bool) (Finish
 		Size:               logs.size,
 		PayloadCID:         logs.payloadCID,
 		ProposalCID:        logs.proposalCID,
+		DealIDString:       logs.DealIDString(),
 	}
 	// events to dag item
 	logList := &_List_StageDetails{}
@@ -416,6 +417,12 @@ type logExtraction struct {
 	proposalCID   _String__Maybe
 }
 
+func (l *logExtraction) DealIDString() _String__Maybe {
+	if l.dealID == 0 {
+		return _String__Maybe{m: schema.Maybe_Absent}
+	}
+	return _String__Maybe{m: schema.Maybe_Value, v: &_String{strconv.Itoa(l.dealID)}}
+}
 func parseFinalLogs(t Task) *logExtraction {
 	le := &logExtraction{
 		minerVersion:  _String__Maybe{m: schema.Maybe_Absent},

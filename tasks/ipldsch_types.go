@@ -133,6 +133,7 @@ type _FinishedTask struct {
 	Size _Int__Maybe
 	PayloadCID _String__Maybe
 	ProposalCID _String__Maybe
+	DealIDString _String__Maybe
 }
 
 // FinishedTasks matches the IPLD Schema type "FinishedTasks".  It has list kind.

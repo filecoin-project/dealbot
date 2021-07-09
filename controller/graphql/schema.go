@@ -596,6 +596,22 @@ func FinishedTask__ProposalCID__resolve(p graphql.ResolveParams) (interface{}, e
     }
     
 }
+func FinishedTask__DealIDString__resolve(p graphql.ResolveParams) (interface{}, error) {
+    ts, ok := p.Source.(tasks.FinishedTask)
+    if !ok {
+        return nil, fmt.Errorf(errUnexpectedType, p.Source, "tasks.FinishedTask")
+    }
+    
+    f := ts.FieldDealIDString()
+    if f.Exists() {
+        
+        return f.Must().AsString()
+        
+    } else {
+        return nil, nil
+    }
+    
+}
 var FinishedTask__type = graphql.NewObject(graphql.ObjectConfig{
     Name: "FinishedTask",
     Fields: graphql.Fields{
@@ -700,6 +716,12 @@ var FinishedTask__type = graphql.NewObject(graphql.ObjectConfig{
             Type: graphql.String,
             
             Resolve: FinishedTask__ProposalCID__resolve,
+        },
+        "DealIDString": &graphql.Field{
+            
+            Type: graphql.String,
+            
+            Resolve: FinishedTask__DealIDString__resolve,
         },
     },
 })
