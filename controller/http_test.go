@@ -373,7 +373,7 @@ type harness struct {
 	serveErr   chan error
 }
 
-const defaultPGPort = 5434
+const defaultPGPort = 5435
 
 func newHarness(ctx context.Context, t *testing.T, connector state.DBConnector, migrator state.Migrator) *harness {
 	h := &harness{ctx: ctx}
