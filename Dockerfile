@@ -20,6 +20,15 @@ RUN go generate ./...
 RUN go build -o dealbot -ldflags "-X github.com/filecoin-project/dealbot/controller.buildDate=`date -u +%d/%m/%Y@%H:%M:%S`" ./
 
 FROM alpine
+# Fetch needed k8s / aws support.
+ARG AWS_IAM_AUTHENTICTOR_URL=https://amazon-eks.s3.us-west-2.amazonaws.com/1.19.6/2021-01-05/bin/linux/amd64/aws-iam-authenticator
+ARG KUBECTL_URL=https://amazon-eks.s3.us-west-2.amazonaws.com/1.20.4/2021-04-12/bin/linux/amd64/kubectl
+ADD ${AWS_IAM_AUTHENTICATOR_URL} /usr/local/bin/aws-iam-authenticator
+ADD ${KUBECTL_URL} /usr/local/bin/kubectl
+RUN apk add --update ca-certificates gettext && \
+    chmod +x /usr/local/bin/kubectl && \
+    chmod +x /usr/local/bin/aws-iam-authenticator
+
 # Copy our static executable.
 COPY --from=builder /go/src/app/dealbot /dealbot
 ENV DEALBOT_LOG_JSON=true
