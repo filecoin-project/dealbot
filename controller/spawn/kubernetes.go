@@ -88,7 +88,9 @@ func (s *KubernetesSpawner) List(regionid string) (daemons []*Daemon, err error)
 	}
 	for _, r := range releases {
 		d := daemonFromRelease(r, regionid)
-		daemons = append(daemons, d)
+		if d != nil {
+			daemons = append(daemons, d)
+		}
 	}
 	return daemons, nil
 }
@@ -165,6 +167,9 @@ func NewKubernetes() *KubernetesSpawner {
 // the Daemon struct. If they don't exist, the Daemon will
 // have zero-values
 func daemonFromRelease(r *release.Release, regionid string) (daemon *Daemon) {
+	if r.Config["application"] == nil {
+		return nil
+	}
 	container := r.Config["application"].(map[string]interface{})["container"]
 	kcontainer := new(corev1.Container)
 	buf, _ := yaml.Marshal(container)
