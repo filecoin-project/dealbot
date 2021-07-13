@@ -30,7 +30,8 @@ func (s *KubernetesSpawner) Spawn(d *Daemon) error {
 		return err
 	}
 	client := action.NewInstall(actionConfig)
-	chartPath, err := client.ChartPathOptions.LocateChart("filecoin/lotus-bundle",
+	client.ChartPathOptions.RepoURL = "https://filecoin-project.github.io/helm-charts"
+	chartPath, err := client.ChartPathOptions.LocateChart("lotus-bundle",
 		helmcli.New())
 	if err != nil {
 		log.Infow("could not determine chart path", "err", err)
