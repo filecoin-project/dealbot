@@ -3,6 +3,7 @@ import "bootstrap-table";
 import "bootstrap-cron-picker/dist/cron-picker";
 
 let auth = "";
+let regionList = [];
 window.setauth = (a) => {
     auth = a;
 };
@@ -12,6 +13,7 @@ $().ready(() => {
     $('#newretafterstoreSchedule').cronPicker();
 
     $("#addDone").hide();
+    $("#addBotDone").hide();
     if ($('#newSR').is(':checked')) {
         $("#newstorage").hide();
     } else {
@@ -24,7 +26,7 @@ $().ready(() => {
         } else {
             $("#newretrieval").hide();
             $("#newstorage").show();
-        } 
+        }
     })
 
     if (!$('#newRepeat').is(':checked')) {
@@ -35,7 +37,7 @@ $().ready(() => {
             $("#setschedule").show();
         } else {
             $("#setschedule").hide();
-        } 
+        }
     })
 
     if (!$('#newRepeatRetAfterStore').is(':checked')) {
@@ -46,17 +48,20 @@ $().ready(() => {
             $("#retafterstoreschedule").show();
         } else {
             $("#retafterstoreschedule").hide();
-        } 
+        }
     })
 
     $("#addtask button").on('click', doSubmit);
     $("schedulesection form").on('submit', doSubmit);
+    $("#addbot button").on('click', doCreateBot);
 
-    syncTable();
+    fetch("./regions", { method: "GET", headers: getHeaders()}).then((response) => response.json()).then(gotRegions)
+    syncData()
 })
 
-function syncTable() {
-   fetch("./tasks", { method: "GET", headers: getHeaders()}).then((response) => response.json()).then(gotTable)
+
+function syncData() {
+    fetch("./tasks", { method: "GET", headers: getHeaders()}).then((response) => response.json()).then(gotTasks)
 }
 
 function operate(val, row) {
@@ -65,7 +70,7 @@ function operate(val, row) {
 
 let firstLoad = true
 
-function gotTable(data) {
+function gotTasks(data) {
     const processedData = data.map((item) => {
         let task = item.StorageTask || item.RetrievalTask
         const sched = {
@@ -77,21 +82,57 @@ function gotTable(data) {
         return Object.assign({ sched, task }, item)
     }).filter((item) => item.Status == 1 || item.sched.Schedule)
     if (firstLoad) {
-    let stringify = (d) => JSON.stringify(d, null, 2);
-    $("#taskTable").bootstrapTable({
-        idField: 'UUID',
-        columns: [
-            {title:'ID', field:'UUID'},
-            {title:'Task', field:'task', formatter: stringify},
-            {title:'Schedule', field:'sched', formatter: stringify},
-            {title:'Delete', field: 'operate', align: 'center', formatter: operate, events: { 'click .remove': cancel}}
-        ],
-        data: processedData,
-    });
-    firstLoad = false
-} else {
-    $("#taskTable").bootstrapTable('load', processedData)
+        let stringify = (d) => JSON.stringify(d, null, 2);
+        $("#taskTable").bootstrapTable({
+            idField: 'UUID',
+            columns: [
+                {title:'ID', field:'UUID'},
+                {title:'Task', field:'task', formatter: stringify},
+                {title:'Schedule', field:'sched', formatter: stringify},
+                {title:'Delete', field: 'operate', align: 'center', formatter: operate, events: { 'click .remove': cancel}}
+            ],
+            data: processedData,
+        });
+        firstLoad = false
+    } else {
+        $("#taskTable").bootstrapTable('load', processedData)
+    }
 }
+
+function gotRegions(data) {
+    regionList = data["regions"]
+    $.each(regionList, (reg) => {
+        $('<button/>')
+            .addClass("list-group-item list-group-item-action")
+            .text(regionList[reg])
+            .on('click', function() {
+                $("#regionList .list-group-item").removeClass("active")
+                $(this).addClass("active")
+                fetch(`./regions/${regionList[reg]}`, { method: "GET", headers: getHeaders()}).then((response) => response.json()).then(gotDaemons)
+            })
+            .appendTo($("#regionlist"));
+    });
+}
+
+let firstDaemonsLoad = true
+function gotDaemons(data) {
+    let daemons = data["daemons"]
+    if (firstDaemonsLoad) {
+    $("#botdetail").bootstrapTable({
+        idField: 'id',
+        columns: [
+            {title:'ID', field:'id'},
+            {title:'Region', field:'region'},
+            {title:'Wallet', field:'wallet.address'},
+            {title:'Min Cap', field:'mincap'},
+            {title:'Min Fil', field:'minfil'},
+        ],
+        data: daemons,
+		});
+        firstDaemonsLoad = false
+    } else {
+        $("#botdetail").bootstrapTable('load', daemons) 
+    }
 }
 
 function cancel(e, value, row, index) {
@@ -163,8 +204,28 @@ function doSubmit(e) {
 
     Promise.all(requests).then((_) => {
         $("#addDone").show()
-        syncTable()
+        syncData()
     })
 
     return false
+}
+
+function doCreateBot(e) {
+    let region = $("#newBotRegion").val()
+    let url = `./regions/${region}`
+
+    data = {
+        "id": $("#newBotId").val(),
+        "tags": $("#newBotTags").val().trim().split('\n'),
+        "workers": parseInt($("#newBotWorkers").val()),
+        "mincap": parseInt($("#newBotMinCap").val()),
+        "minfil": parseInt($("#newBotMinFil").val()),
+        "wallet": {
+            "address": $("#newBotWalletAddress").val(),
+            "exported": $("#newBotWalletExported").val(),
+        },
+    }
+    fetch(url, {method: "POST", headers: getHeaders(), body: JSON.stringify(data)}).then(() => {
+	      $("#addBotDone").show()
+    })
 }
