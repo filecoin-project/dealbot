@@ -3,7 +3,6 @@ import "bootstrap-table";
 import "bootstrap-cron-picker/dist/cron-picker";
 
 let auth = "";
-let firstLoad = true;
 let regionList = [];
 window.setauth = (a) => {
     auth = a;
@@ -56,19 +55,20 @@ $().ready(() => {
     $("schedulesection form").on('submit', doSubmit);
     $("#addbot button").on('click', doCreateBot);
 
+    fetch("./regions", { method: "GET", headers: getHeaders()}).then((response) => response.json()).then(gotRegions)
     syncData()
 })
 
 
 function syncData() {
     fetch("./tasks", { method: "GET", headers: getHeaders()}).then((response) => response.json()).then(gotTasks)
-    fetch("./regions", { method: "GET", headers: getHeaders()}).then((response) => response.json()).then(gotRegions)
 }
 
 function operate(val, row) {
     return '<a class="remove" title="remove">Cancel</a>';
 }
 
+let firstLoad = true
 
 function gotTasks(data) {
     const processedData = data.map((item) => {
@@ -93,31 +93,31 @@ function gotTasks(data) {
             ],
             data: processedData,
         });
+        firstLoad = false
     } else {
         $("#taskTable").bootstrapTable('load', processedData)
     }
 }
 
 function gotRegions(data) {
-    if (firstLoad) {
-        regionList = data["regions"]
-        $.each(regionList, (reg) => {
-            $('<button/>')
-                .addClass("list-group-item list-group-item-action")
-                .text(regionList[reg])
-                .on('click', function() {
-                    $("#regionList .list-group-item").removeClass("active")
-                    $(this).addClass("active")
-                    fetch(`./regions/${regionList[reg]}`, { method: "GET", headers: getHeaders()}).then((response) => response.json()).then(gotDaemons)
-                })
-                .appendTo($("#regionlist"));
-        });
-    }
+    regionList = data["regions"]
+    $.each(regionList, (reg) => {
+        $('<button/>')
+            .addClass("list-group-item list-group-item-action")
+            .text(regionList[reg])
+            .on('click', function() {
+                $("#regionList .list-group-item").removeClass("active")
+                $(this).addClass("active")
+                fetch(`./regions/${regionList[reg]}`, { method: "GET", headers: getHeaders()}).then((response) => response.json()).then(gotDaemons)
+            })
+            .appendTo($("#regionlist"));
+    });
 }
 
+let firstDaemonsLoad = true
 function gotDaemons(data) {
     let daemons = data["daemons"]
-    if (firstLoad) {
+    if (firstDaemonsLoad) {
     $("#botdetail").bootstrapTable({
         idField: 'id',
         columns: [
@@ -129,6 +129,7 @@ function gotDaemons(data) {
         ],
         data: daemons,
 		});
+        firstDaemonsLoad = false
     } else {
         $("#botdetail").bootstrapTable('load', daemons) 
     }
