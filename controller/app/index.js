@@ -102,21 +102,22 @@ function gotRegions(data) {
     if (firstLoad) {
         regionList = data["regions"]
         $.each(regionList, (reg) => {
-            let li = $('<li/>').appendTo($("#regionlist"));
-            let button = $('<button/>')
-                .addClass("list-group-action")
+            $('<button/>')
+                .addClass("list-group-item list-group-item-action")
                 .text(regionList[reg])
-                .click((regionid) => {
+                .on('click', function() {
+                    $("#regionList .list-group-item").removeClass("active")
+                    $(this).addClass("active")
                     fetch(`./regions/${regionList[reg]}`, { method: "GET", headers: getHeaders()}).then((response) => response.json()).then(gotDaemons)
                 })
-                .appendTo(li);
+                .appendTo($("#regionlist"));
         });
     }
 }
 
 function gotDaemons(data) {
     let daemons = data["daemons"]
-    let stringify = (d) => JSON.stringify(d, null, 2);
+    if (firstLoad) {
     $("#botdetail").bootstrapTable({
         idField: 'id',
         columns: [
@@ -128,6 +129,9 @@ function gotDaemons(data) {
         ],
         data: daemons,
 		});
+    } else {
+        $("#botdetail").bootstrapTable('load', daemons) 
+    }
 }
 
 function cancel(e, value, row, index) {
@@ -211,7 +215,7 @@ function doCreateBot(e) {
 
     data = {
         "id": $("#newBotId").val(),
-        "labels": $("#newBotLabels").val().trim().split('\n'),
+        "tags": $("#newBotTags").val().trim().split('\n'),
         "workers": parseInt($("#newBotWorkers").val()),
         "mincap": parseInt($("#newBotMinCap").val()),
         "minfil": parseInt($("#newBotMinFil").val()),

@@ -12,11 +12,11 @@
         <div class="accordion" id="mainOptions">
             <section class="accordion-item">
                 <h2 class="accordion-header" id="headingTasks">
-                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#tasksection" aria-expanded="true" aria-controls="tasksection">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#tasksection" aria-expanded="false" aria-controls="tasksection">
                         Tasks
                     </button>
                 </h2>
-                <div id="tasksection" class="accordion-collapse collapse show" aria-labelledby="headingTasks" data-bs-parent="#mainOptions">
+                <div id="tasksection" class="accordion-collapse collapse" aria-labelledby="headingTasks" data-bs-parent="#mainOptions">
                     <div class="accordion-body">
                         List of tasks scheduled and upcoming tasks
                         <table id="taskTable"></table>
@@ -25,11 +25,11 @@
             </section>
             <section class="accordion-item">
                 <h2 class="accordion-header" id="headingSchedule">
-                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#schedulesection" aria-expanded="false" aria-controls="schedulesection">
+                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#schedulesection" aria-expanded="true" aria-controls="schedulesection">
                         Schedule Tasks
                     </button>
                 </h2>
-                <div id="schedulesection" class="accordion-collapse collapse" aria-labelledby="headingSchedule" data-bs-parent="#mainOptions">
+                <div id="schedulesection" class="accordion-collapse collapse show" aria-labelledby="headingSchedule" data-bs-parent="#mainOptions">
                     <div class="accordion-body">
                         Schedule storage and retrieval tasks
                         <form>
@@ -102,10 +102,10 @@
                                     <label class="form-label" for="newScheduleLimit">Duration in which schedule is valid</label>
                                 </div>
                             </div>
-                            <div id="scheduletags">
-                                Restrict scheduling to dealbots with tag:
-                                <input type="text" id="newScheduleTag" value="">
-                            </div>
+                                <div id="scheduletags">
+                                    <label for="newScheduleTag" class="form-label">Restrict scheduling to dealbots with tag:</label>
+                                    <input class="form-control" type="text" id="newScheduleTag" value="">
+                                </div>
                             <div id="addtask">
                                 <button type="button" class="btn btn-primary">Add Task</button>
                                 <label for="addtask" id="addDone">
@@ -124,22 +124,16 @@
                 </h2>
                 <div id="botsection" class="accordion-collapse collapse container" aria-labelledby="headingBots" data-bs-parent="#mainOptions">
                     <div class="accordion-body">
-                        <div class=row>
-                            <div id="regionlistdiv" class="col-md-3">
                                 Region list:
-                                <ul id="regionlist" class="list-group">
-                                </ul>
-                            </div>
-                            <div class="col-md-6">
-                                Bot Details:
-                                <div id="botdetail">
+                                <div id="regionlist" class="list-group">
                                 </div>
-                            </div>
-                        </div>
+                                Bot Details:
+                                <table id="botdetail">
+                                </table>
                     </div>
                 </div>
             </section>
-            <section class="accordian-item">
+            <section class="accordion-item">
                 <h2 class="accordion-header" id="headingBotCreate">
                     <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#botcreatesection" aria-expanded="false" aria-controls="botcreatesection">
                         Create Bots
@@ -147,32 +141,31 @@
                 </h2>
                 <div id="botcreatesection" class="accordion-collapse collapse container" aria-labelledby="headingBotCreate" data-bs-parent="#mainOptions">
                     <div class="accordion-body">
-                        <div class=row>
-                            Create a new bot:
+                            Create a new bot
                             <form>
                                 <div id="botRegion">
-                                    Region: (required)
-                                    <input type="text" id="newBotRegion" value="">
+                                    <label for="newBotRegion" class="form-lable">Region: (required)</label>
+                                    <input class="form-control" type="text" id="newBotRegion" value="">
                                 </div>
                                 <div id="botId">
-                                    Bot ID: (optional)
-                                    <input type="text" id="newBotId" value="">
+                                    <label for="newBotId" class="form-label">Bot ID: (optional)</label>
+                                    <input class="form-control" type="text" id="newBotId" value="">
                                 </div>
-                                <div id="botLabels">
-                                    Labels: (optional, 1 per line)
-                                    <textarea class="form-control" id="newBotLabels" rows="3"></textarea>
+                                <div id="botTags">
+                                    Tags: (optional, 1 per line)
+                                    <textarea class="form-control" id="newBotTags" rows="3"></textarea>
                                 </div>
                                 <div id="botWorkers">
-                                    Workers: (optional)
-                                    <input type="number" id="newBotWorkers" value="1">
+                                    <label for="newBotWorkers" class="form-label">Workers: (optional)</label>
+                                    <input class="form-control" type="number" id="newBotWorkers" value="1">
                                 </div>
                                 <div id="botMinCap">
-                                    Minimum Cap: (optional)
-                                    <input type="number" id="newBotMinCap" value="0">
+                                    <label for="newBotMinCap" class="form-label">Minimum Cap: (optional)</label>
+                                    <input class="form-control" type="number" id="newBotMinCap" value="0">
                                 </div>
                                 <div id="botMinFil">
-                                    Minimum Fil: (optional)
-                                    <input type="number" id="newBotMinFil" value="0">
+                                    <label for="newBotMinFil" class="form-label">Minimum Fil: (optional)</label>
+                                    <input class="form-control" type="number" id="newBotMinFil" value="0">
                                 </div>
 
                                 If you would like to provide a wallet, add details below.
@@ -180,12 +173,12 @@
                                 When wallets are generated for you, the private key will not be
                                 visible on this page.
                                 <div id="botWalletAddress">
-                                    Address: (optional)
-                                    <input type="text" id="newBotWalletAddress" value="">
+                                    <label for="newBotWalletAddress" class="form-label">Address: (optional)</label>
+                                    <input class="form-control" type="text" id="newBotWalletAddress" value="">
                                 </div>
                                 <div id="botWalletExported">
-                                    Exported, i.e. `lotus wallet export`: (optional)
-                                    <input type="text" id="newBotWalletExported" value="">
+                                    <label for="newBotWalletExported" class="form-label">Exported, i.e. `lotus wallet export`: (optional)</label>
+                                    <input class="form-control" type="text" id="newBotWalletExported" value="">
                                 </div>
 
                                 <div id="addbot">
