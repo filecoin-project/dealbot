@@ -1,14 +1,17 @@
 package controller
 
 import (
+	"context"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"net/http"
 
 	"github.com/filecoin-project/dealbot/controller/spawn"
+	"github.com/filecoin-project/go-address"
 	"github.com/google/uuid"
 
+	"github.com/filecoin-project/lotus/api"
 	"github.com/filecoin-project/lotus/chain/types"
 	"github.com/filecoin-project/lotus/chain/wallet"
 	_ "github.com/filecoin-project/lotus/lib/sigs/bls"
@@ -17,8 +20,18 @@ import (
 	"github.com/gorilla/mux"
 )
 
+type Funds struct {
+	Balance int `json:"balance,omitempty"`
+	DataCap int `json:"datacap,omitempty"`
+}
+
+type DaemonWithFunds struct {
+	Daemon *spawn.Daemon `json:"daemon"`
+	Funds  Funds         `json:"funds,omitempty"`
+}
+
 type DaemonList struct {
-	Daemons []*spawn.Daemon `json:"daemons"`
+	Daemons []DaemonWithFunds `json:"daemons"`
 }
 
 func (c *Controller) getDaemonsHandler(w http.ResponseWriter, r *http.Request) {
@@ -39,8 +52,12 @@ func (c *Controller) getDaemonsHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+	daemonsWithFunds := make([]DaemonWithFunds, 0, len(daemons))
+	for _, daemon := range daemons {
+		daemonsWithFunds = append(daemonsWithFunds, toDaemonWithFunds(r.Context(), daemon, c.gateway))
+	}
 	json.NewEncoder(w).Encode(&DaemonList{
-		Daemons: daemons,
+		Daemons: daemonsWithFunds,
 	})
 }
 
@@ -63,7 +80,7 @@ func (c *Controller) getDaemonHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	json.NewEncoder(w).Encode(daemon)
+	json.NewEncoder(w).Encode(toDaemonWithFunds(r.Context(), daemon, c.gateway))
 }
 
 func (c *Controller) newDaemonHandler(w http.ResponseWriter, r *http.Request) {
@@ -90,7 +107,7 @@ func (c *Controller) newDaemonHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	// daemon is already created; sanatize output
 	daemon.Wallet.Exported = ""
-	json.NewEncoder(w).Encode(daemon)
+	json.NewEncoder(w).Encode(toDaemonWithFunds(r.Context(), daemon, c.gateway))
 }
 
 func daemonDefaults(d *spawn.Daemon) {
@@ -114,4 +131,31 @@ func daemonDefaults(d *spawn.Daemon) {
 	if d.DockerTag == "" {
 		d.DockerTag = "latest"
 	}
+}
+
+func toDaemonWithFunds(ctx context.Context, daemon *spawn.Daemon, gateway api.Gateway) (daemonWithFunds DaemonWithFunds) {
+	daemonWithFunds.Daemon = daemon
+	if gateway == nil {
+		return
+	}
+	if daemon.Wallet == nil {
+		return
+	}
+	addr, err := address.NewFromString(daemon.Wallet.Address)
+	if err != nil {
+		return
+	}
+	balance, err := gateway.WalletBalance(ctx, addr)
+	if err == nil {
+		daemonWithFunds.Funds.Balance = int(balance.Int64())
+	}
+
+	head, err := gateway.ChainHead(ctx)
+	if err == nil {
+		dataCap, err := gateway.StateVerifiedClientStatus(ctx, addr, head.Key())
+		if err == nil && dataCap != nil {
+			daemonWithFunds.Funds.DataCap = int(dataCap.Int64())
+		}
+	}
+	return
 }

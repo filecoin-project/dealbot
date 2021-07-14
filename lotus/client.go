@@ -161,3 +161,22 @@ func SetupClient(ctx context.Context, cliCtx *cli.Context) (tasks.NodeConfig, ap
 		PostHook:         ph,
 	}, node, closer, nil
 }
+
+func SetupGateway(ctx *cli.Context) (api.Gateway, NodeCloser, error) {
+	opener, apiCloser, err := NewGatewayOpener(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	node, jsoncloser, err := opener.Open(ctx.Context)
+	if err != nil {
+		apiCloser()
+		return nil, nil, err
+	}
+
+	closer := func() {
+		apiCloser()
+		jsoncloser()
+	}
+	return node, closer, nil
+}

@@ -9,11 +9,10 @@ import (
 	"github.com/filecoin-project/go-jsonrpc"
 	"github.com/filecoin-project/lotus/api"
 	"github.com/filecoin-project/lotus/api/client"
+	cliutil "github.com/filecoin-project/lotus/cli/util"
 	"github.com/filecoin-project/lotus/node/repo"
 	logging "github.com/ipfs/go-log/v2"
 	"github.com/mitchellh/go-homedir"
-	ma "github.com/multiformats/go-multiaddr"
-	manet "github.com/multiformats/go-multiaddr/net"
 	"github.com/urfave/cli/v2"
 )
 
@@ -27,17 +26,12 @@ type APIOpener struct {
 type APICloser func()
 
 func NewAPIOpenerFromCLI(cctx *cli.Context) (*APIOpener, APICloser, error) {
-	var rawaddr, rawtoken string
+
+	var apiInfo cliutil.APIInfo
 
 	if cctx.IsSet("api") {
 		tokenMaddr := cctx.String("api")
-		toks := strings.Split(tokenMaddr, ":")
-		if len(toks) != 2 {
-			return nil, nil, fmt.Errorf("invalid api tokens, expected <token>:<maddr>, got: %s", tokenMaddr)
-		}
-
-		rawtoken = toks[0]
-		rawaddr = toks[1]
+		apiInfo = cliutil.ParseApiInfo(tokenMaddr)
 	} else if cctx.IsSet("lotus-path") {
 		repoPath := cctx.String("lotus-path")
 		p, err := homedir.Expand(repoPath)
@@ -60,25 +54,20 @@ func NewAPIOpenerFromCLI(cctx *cli.Context) (*APIOpener, APICloser, error) {
 			return nil, nil, fmt.Errorf("api token: %w", err)
 		}
 
-		rawaddr = ma.String()
-		rawtoken = string(token)
+		apiInfo.Addr = ma.String()
+		apiInfo.Token = token
 	} else {
 		return nil, nil, fmt.Errorf("cannot connect to lotus api: missing --api or --repo flags")
 	}
 
-	parsedAddr, err := ma.NewMultiaddr(rawaddr)
+	addr, err := apiInfo.DialArgs("v1")
 	if err != nil {
 		return nil, nil, fmt.Errorf("parse listen address: %w", err)
 	}
 
-	_, addr, err := manet.DialArgs(parsedAddr)
-	if err != nil {
-		return nil, nil, fmt.Errorf("dial multiaddress: %w", err)
-	}
-
 	o := &APIOpener{
-		addr:    apiURI(addr),
-		headers: apiHeaders(rawtoken),
+		addr:    addr,
+		headers: apiInfo.AuthHeader(),
 	}
 
 	return o, APICloser(func() {}), nil
@@ -86,16 +75,6 @@ func NewAPIOpenerFromCLI(cctx *cli.Context) (*APIOpener, APICloser, error) {
 
 func (o *APIOpener) Open(ctx context.Context) (api.FullNode, jsonrpc.ClientCloser, error) {
 	return client.NewFullNodeRPCV1(ctx, o.addr, o.headers)
-}
-
-func apiURI(addr string) string {
-	return "ws://" + addr + "/rpc/v0"
-}
-
-func apiHeaders(token string) http.Header {
-	headers := http.Header{}
-	headers.Add("Authorization", "Bearer "+token)
-	return headers
 }
 
 func setupLogging(cctx *cli.Context) error {
@@ -128,30 +107,19 @@ func setupLogging(cctx *cli.Context) error {
 }
 
 func NewAPIOpener(ctx *cli.Context) (*APIOpener, APICloser, error) {
-	var rawaddr, rawtoken string
 
 	tokenMaddr := ctx.String("api")
-	toks := strings.Split(tokenMaddr, ":")
-	if len(toks) != 2 {
-		return nil, nil, fmt.Errorf("invalid api tokens, expected <token>:<maddr>, got: %s", tokenMaddr)
-	}
 
-	rawtoken = toks[0]
-	rawaddr = toks[1]
+	apiInfo := cliutil.ParseApiInfo(tokenMaddr)
 
-	parsedAddr, err := ma.NewMultiaddr(rawaddr)
+	addr, err := apiInfo.DialArgs("v1")
 	if err != nil {
 		return nil, nil, fmt.Errorf("parse listen address: %w", err)
 	}
 
-	_, addr, err := manet.DialArgs(parsedAddr)
-	if err != nil {
-		return nil, nil, fmt.Errorf("dial multiaddress: %w", err)
-	}
-
 	o := &APIOpener{
-		addr:    apiURI(addr),
-		headers: apiHeaders(rawtoken),
+		addr:    addr,
+		headers: apiInfo.AuthHeader(),
 	}
 
 	return o, APICloser(func() {}), nil

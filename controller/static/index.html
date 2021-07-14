@@ -127,9 +127,49 @@
                                 Region list:
                                 <div id="regionlist" class="list-group">
                                 </div>
-                                Bot Details:
-                                <table id="botdetail">
-                                </table>
+                                <div id="botlist">
+                                    Bot Details:
+                                    <table id="botdetail">
+                                    </table>
+                                    Legend:
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            Balance
+                                            <table class="table table-bordered">
+                                                <tr>
+                                                    <td class="table-success">
+                                                        Balance more than Minimum by more than 1 Fil
+                                                    </td>
+                                                    <td class="table-warning">
+                                                        Balance more than Minimum by less than 1 Fil
+                                                    </td>
+                                                    <td class="table-danger">
+                                                        Balance less than Minimum
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                        </div>
+                                        <div class="col-md-6">
+                                            DataCap
+                                            <table class="table table-bordered">
+                                                <tr>
+                                                    <td class="table-success">
+                                                        DataCap more than Minimum by more than 32 GB
+                                                    </td>
+                                                    <td class="table-warning">
+                                                        DataCap more than Minimum by less than 32 GB
+                                                    </td>
+                                                    <td class="table-danger">
+                                                        DataCap less than Minimum
+                                                    </td>
+                                                    <td>
+                                                        DataCap & Minimum are both zero (unverfied dealbot)
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
                     </div>
                 </div>
             </section>
