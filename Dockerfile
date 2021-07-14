@@ -21,7 +21,7 @@ RUN go build -o dealbot -ldflags "-X github.com/filecoin-project/dealbot/control
 
 FROM alpine
 # Fetch needed k8s / aws support.
-ARG AWS_IAM_AUTHENTICTOR_URL=https://amazon-eks.s3.us-west-2.amazonaws.com/1.19.6/2021-01-05/bin/linux/amd64/aws-iam-authenticator
+ARG AWS_IAM_AUTHENTICATOR_URL=https://amazon-eks.s3.us-west-2.amazonaws.com/1.19.6/2021-01-05/bin/linux/amd64/aws-iam-authenticator
 ARG KUBECTL_URL=https://amazon-eks.s3.us-west-2.amazonaws.com/1.20.4/2021-04-12/bin/linux/amd64/kubectl
 ADD ${AWS_IAM_AUTHENTICATOR_URL} /usr/local/bin/aws-iam-authenticator
 ADD ${KUBECTL_URL} /usr/local/bin/kubectl
