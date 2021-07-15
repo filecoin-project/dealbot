@@ -286,6 +286,11 @@ var ControllerFlags = []cli.Flag{
 		Usage:   "file / stream to write out a json line for each task as it updates",
 		EnvVars: []string{"DEALBOT_DATAPOINT_LOG"},
 	}),
+	altsrc.NewStringFlag(&cli.StringFlag{
+		Name:    "gateway-api",
+		Usage:   "address for a lotus gateway to collect chain information",
+		EnvVars: []string{"DEALBOT_LOTUS_GATEWAY"},
+	}),
 }
 
 var AllFlags = append(DealFlags, append(SingleTaskFlags, append(DaemonFlags, append(ControllerFlags, MockFlags...)...)...)...)

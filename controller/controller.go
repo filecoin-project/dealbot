@@ -19,9 +19,11 @@ import (
 	"github.com/filecoin-project/dealbot/controller/spawn"
 	"github.com/filecoin-project/dealbot/controller/state"
 	"github.com/filecoin-project/dealbot/controller/webutil"
+	"github.com/filecoin-project/dealbot/lotus"
 	"github.com/filecoin-project/dealbot/metrics"
 	metricslog "github.com/filecoin-project/dealbot/metrics/log"
 	"github.com/filecoin-project/dealbot/metrics/prometheus"
+	"github.com/filecoin-project/lotus/api"
 	"github.com/libp2p/go-libp2p-core/crypto"
 
 	logging "github.com/ipfs/go-log/v2"
@@ -50,6 +52,8 @@ type Controller struct {
 	basicauth       string
 	metricsRecorder metrics.MetricsRecorder
 	spawner         spawn.Spawner
+	gateway         api.Gateway
+	nodeCloser      lotus.NodeCloser
 }
 
 func New(ctx *cli.Context) (*Controller, error) {
@@ -139,6 +143,14 @@ func NewWithDependencies(ctx *cli.Context, listener, graphqlListener net.Listene
 		srv.spawner = spawn.NewKubernetes()
 	} else {
 		srv.spawner = spawn.NewLocal(ctx.String("listen"))
+	}
+
+	if ctx.IsSet("gateway-api") {
+		var err error
+		srv.gateway, srv.nodeCloser, err = lotus.SetupGateway(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("Error setting up lotus gateway: %w", err)
+		}
 	}
 
 	r := mux.NewRouter().StrictSlash(true)
@@ -249,6 +261,9 @@ func (c *Controller) Shutdown(ctx context.Context) error {
 	defer close(c.doneCh)
 	if c.gserver != nil {
 		c.gserver.Shutdown(ctx)
+	}
+	if c.gateway != nil {
+		c.nodeCloser()
 	}
 	return c.server.Shutdown(ctx)
 }

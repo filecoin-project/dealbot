@@ -1,6 +1,8 @@
 import "./jquery-global";
 import "bootstrap-table";
 import "bootstrap-cron-picker/dist/cron-picker";
+import { FilecoinNumber } from "@glif/filecoin-number"
+import prettyBytes from 'pretty-bytes'
 
 let auth = "";
 let regionList = [];
@@ -54,6 +56,7 @@ $().ready(() => {
     $("#addtask button").on('click', doSubmit);
     $("schedulesection form").on('submit', doSubmit);
     $("#addbot button").on('click', doCreateBot);
+    $("#botlist").hide()
 
     fetch("./regions", { method: "GET", headers: getHeaders()}).then((response) => response.json()).then(gotRegions)
     syncData()
@@ -116,22 +119,60 @@ function gotRegions(data) {
 
 let firstDaemonsLoad = true
 function gotDaemons(data) {
-    let daemons = data["daemons"]
+    const daemons = data["daemons"]
+    const processedDaemons = daemons.map((daemon) => {
+        let daemonData = daemon.daemon
+        if (daemon.funds) {
+            daemonData.balance = daemon.funds.balance
+            daemonData.datacap = daemon.funds.datacap
+        }
+        return daemonData
+    })
     if (firstDaemonsLoad) {
+        let filFormatter = (d) => d ? (new FilecoinNumber(d, 'attofil')).toFil() + " FIL" : "-"
+        let capFormatter = (c) => c ? prettyBytes(c) : "-"
+        let capStyler = (value, row) => {
+            // assume no value + no data-cap = miner making unverified deals = no styling
+            if (!value && !row.mincap) {
+                return {}
+            }
+            const valNumber = value || 0
+            const minCap = row.mincap || 0
+            if (valNumber < minCap) {
+                return { classes: 'table-danger' }
+            }
+            if (valNumber - minCap < ((1 << 30)*32)) {
+                return { classes: 'table-warning' }
+            }
+            return { classes: 'table-success' }
+        }
+        let filStyler = (value, row) => {
+            const minBal = row.minbal || 0
+            const valNumber = value || 0
+            if (value < row.minbal) {
+                return { classes: 'table-danger' }
+            }
+            if (valNumber - minBal < Math.pow(10, 18)) {
+                return { classes: 'table-warning' }
+            }
+            return { classes: 'table-success' }
+        }
+        $("#botlist").show()
+
     $("#botdetail").bootstrapTable({
         idField: 'id',
         columns: [
             {title:'ID', field:'id'},
             {title:'Region', field:'region'},
             {title:'Wallet', field:'wallet.address'},
-            {title:'Min Cap', field:'mincap'},
-            {title:'Min Fil', field:'minfil'},
+            {title: 'Balance', field: 'balance', formatter: filFormatter, cellStyle: filStyler},
+            {title: 'Data Cap', field: 'datacap', formatter: capFormatter, cellStyle: capStyler}
         ],
-        data: daemons,
+        data: processedDaemons,
 		});
         firstDaemonsLoad = false
     } else {
-        $("#botdetail").bootstrapTable('load', daemons) 
+        $("#botdetail").bootstrapTable('load', processedDaemons) 
     }
 }
 
