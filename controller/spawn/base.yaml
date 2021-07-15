@@ -65,9 +65,6 @@ application:
         name: dealbot
   ingress:
     enabled: false
-  storage: # storage volume shared between application and lotus node
-    size: 1000Gi
-    mount: /shared
 
 # Wallets are added to the wallet secret.
 # if you don't want to specify wallets in values.yaml,
