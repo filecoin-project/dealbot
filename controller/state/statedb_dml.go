@@ -105,9 +105,13 @@ const (
 	`
 
 	workerTasksByStatusSQL = `
-	SELECT tasks.data FROM tasks
-	INNER JOIN task_status_ledger ON tasks.uuid=task_status_ledger.uuid
-	WHERE tasks.worked_by = $1 AND task_status_ledger.status = $2
+	SELECT unique_statuses.data FROM (
+		SELECT DISTINCT ON(tasks.uuid) tasks.data, task_status_ledger.status 
+		  FROM tasks
+			INNER JOIN task_status_ledger ON tasks.uuid=task_status_ledger.uuid
+			WHERE tasks.worked_by = $1 
+			ORDER BY tasks.uuid, task_status_ledger.ts DESC 
+	 ) unique_statuses WHERE unique_statuses.status = $2
 `
 
 	unassignScheduledTaskSQL = `
