@@ -13,15 +13,16 @@ var (
 )
 
 type Daemon struct {
-	Id         string   `json:"id,omitempty"`
-	Region     string   `json:"region,omitempty"`
-	Tags       []string `json:"tags,omitempty"`
-	Workers    int      `json:"workers,omitempty"`
-	MinFil     int      `json:"minfil,omitempty"`
-	MinCap     int      `json:"mincap,omitempty"`
-	DockerRepo string   `json:"dockerrepo,omitempty"`
-	DockerTag  string   `json:"dockerrtag,omitempty"`
-	Wallet     *Wallet  `json:"wallet,omitempty"`
+	Id               string   `json:"id,omitempty"`
+	Region           string   `json:"region,omitempty"`
+	Tags             []string `json:"tags,omitempty"`
+	Workers          int      `json:"workers,omitempty"`
+	MinFil           int      `json:"minfil,omitempty"`
+	MinCap           int      `json:"mincap,omitempty"`
+	DockerRepo       string   `json:"dockerrepo,omitempty"`
+	DockerTag        string   `json:"dockertag,omitempty"`
+	HelmChartVersion string   `json:"helmchartversion,omitempty"`
+	Wallet           *Wallet  `json:"wallet,omitempty"`
 }
 
 type Wallet struct {
