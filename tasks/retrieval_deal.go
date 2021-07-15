@@ -3,6 +3,7 @@ package tasks
 import (
 	"context"
 	"fmt"
+	"io"
 	"math/big"
 	"os"
 	"path/filepath"
@@ -13,6 +14,7 @@ import (
 	"github.com/filecoin-project/go-fil-markets/retrievalmarket/impl/clientstates"
 	"github.com/filecoin-project/lotus/api"
 	"github.com/ipfs/go-cid"
+	"github.com/ipld/go-car"
 	"github.com/libp2p/go-libp2p"
 )
 
@@ -266,6 +268,30 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(ctx context.Context, upda
 				err = updateStage(ctx, stage, dealStage)
 				if err != nil {
 					return err
+				}
+
+				// See if car and estimate number of CIDs in the piece.
+				fp, err := os.Open(filepath.Join(de.config.DataDir, de.task.PayloadCID.x))
+				if err == nil {
+					defer fp.Close()
+					cr, err := car.NewCarReader(fp)
+					if err == nil {
+						numCids := 0
+						for err == nil {
+							_, err = cr.Next()
+							if err == io.EOF {
+								err = nil
+								break
+							}
+							numCids++
+						}
+						dealStage = AddLog(dealStage, fmt.Sprintf("CIDCount: %d", numCids))
+					}
+					dealStage = AddLog(dealStage, fmt.Sprintf("CARReadClean: %t", err == nil))
+					err = updateStage(ctx, stage, dealStage)
+					if err != nil {
+						return err
+					}
 				}
 
 				// clean up the data.
