@@ -501,10 +501,14 @@ func TestResetWorkerTasks(t *testing.T) {
 		req = tasks.Type.PopTask.Of(worker, tasks.Failed)
 		failedTask, err := state.AssignTask(ctx, req)
 		require.NoError(t, err)
+		failedTask, err = state.Update(ctx, failedTask.GetUUID(), tasks.Type.UpdateTask.Of(inProgressTask2.WorkedBy.Must().String(), tasks.Failed, 1))
+		require.NoError(t, err)
 
-		// pop a task and set it successful
-		req = tasks.Type.PopTask.Of(worker, tasks.Successful)
+		// pop a task to in progress, then set it successful
+		req = tasks.Type.PopTask.Of(worker, tasks.InProgress)
 		successfulTask, err := state.AssignTask(ctx, req)
+		require.NoError(t, err)
+		successfulTask, err = state.Update(ctx, successfulTask.GetUUID(), tasks.Type.UpdateTask.Of(inProgressTask2.WorkedBy.Must().String(), tasks.Successful, 1))
 		require.NoError(t, err)
 
 		// pop two tasks to the other worker and leave them in progress
@@ -526,9 +530,6 @@ func TestResetWorkerTasks(t *testing.T) {
 			}
 		}
 		require.NotNil(t, unassignedTask)
-
-		history, _ := state.TaskHistory(ctx, inProgressTask1.GetUUID())
-		fmt.Println(history)
 
 		state.ResetWorkerTasks(ctx, worker)
 
