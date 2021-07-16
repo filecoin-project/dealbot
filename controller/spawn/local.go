@@ -38,7 +38,7 @@ func (s *LocalSpawner) Spawn(d *Daemon) error {
 			"DEALBOT_WORKERS":             strconv.Itoa(d.Workers),
 			"DEALBOT_CONTROLLER_ENDPOINT": s.endpoint,
 			"DEALBOT_MIN_FIL":             d.MinFil.String(),
-			"DEALBOT_MIN_CAP":             strconv.Itoa(d.MinCap),
+			"DEALBOT_MIN_CAP":             d.MinCap.String(),
 		}),
 		Args:   []string{exe, "daemon"},
 		Stdout: os.Stdout,
@@ -126,7 +126,7 @@ func daemonFromCmd(daemoncmd exec.Cmd, daemonid string) *Daemon {
 	env := envMap(daemoncmd.Env)
 	workers, _ := strconv.Atoi(env["DEALBOT_WORKERS"])
 	minfil, _ := big.FromString(env["DEALBOT_MIN_FIL"])
-	mincap, _ := strconv.Atoi(env["DEALBOT_MIN_CAP"])
+	mincap, _ := big.FromString(env["DEALBOT_MIN_CAP"])
 	return &Daemon{
 		Id:     daemonid,
 		Region: "local",

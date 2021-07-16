@@ -3,7 +3,6 @@ package spawn
 import (
 	"io/ioutil"
 	"path"
-	"strconv"
 	"strings"
 
 	"github.com/filecoin-project/go-state-types/big"
@@ -176,8 +175,7 @@ func daemonFromRelease(r *release.Release, regionid string) (daemon *Daemon) {
 	kcontainer := new(corev1.Container)
 	buf, _ := yaml.Marshal(container)
 	yaml.Unmarshal(buf, kcontainer)
-	var mincap int
-	var minfil big.Int
+	var minfil, mincap big.Int
 	var tags []string
 	wallet := new(Wallet)
 	for _, env := range kcontainer.Env {
@@ -189,7 +187,7 @@ func daemonFromRelease(r *release.Release, regionid string) (daemon *Daemon) {
 		case "DEALBOT_MIN_FIL":
 			minfil, _ = big.FromString(env.Value)
 		case "DEALBOT_MIN_CAP":
-			mincap, _ = strconv.Atoi(env.Value)
+			mincap, _ = big.FromString(env.Value)
 		}
 	}
 	return &Daemon{

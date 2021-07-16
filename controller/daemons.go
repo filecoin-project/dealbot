@@ -23,7 +23,7 @@ import (
 
 type Funds struct {
 	Balance big.Int `json:"balance,omitempty"`
-	DataCap int     `json:"datacap,omitempty"`
+	DataCap big.Int `json:"datacap,omitempty"`
 }
 
 type DaemonWithFunds struct {
@@ -155,7 +155,7 @@ func toDaemonWithFunds(ctx context.Context, daemon *spawn.Daemon, gateway api.Ga
 	if err == nil {
 		dataCap, err := gateway.StateVerifiedClientStatus(ctx, addr, head.Key())
 		if err == nil && dataCap != nil {
-			daemonWithFunds.Funds.DataCap = int(dataCap.Int64())
+			daemonWithFunds.Funds.DataCap = *dataCap
 		}
 	}
 	return

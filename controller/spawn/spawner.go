@@ -19,7 +19,7 @@ type Daemon struct {
 	Tags       []string `json:"tags,omitempty"`
 	Workers    int      `json:"workers,omitempty"`
 	MinFil     big.Int  `json:"minfil,omitempty"`
-	MinCap     int      `json:"mincap,omitempty"`
+	MinCap     big.Int  `json:"mincap,omitempty"`
 	DockerRepo string   `json:"dockerrepo,omitempty"`
 	DockerTag  string   `json:"dockerrtag,omitempty"`
 	Wallet     *Wallet  `json:"wallet,omitempty"`
