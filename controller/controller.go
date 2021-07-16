@@ -193,7 +193,7 @@ func NewWithDependencies(ctx *cli.Context, listener, graphqlListener net.Listene
 
 	if ctx.IsSet("devAssetDir") {
 		scriptResolver := func(w http.ResponseWriter, r *http.Request) {
-			data := webutil.Compile(path.Join(ctx.String("devAssetDir"), "app"), false)
+			data, _ := webutil.Compile(path.Join(ctx.String("devAssetDir"), "app"), false)
 			w.Header().Set("Content-Type", "application/json")
 			io.WriteString(w, data)
 		}

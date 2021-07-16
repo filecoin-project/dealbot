@@ -1,13 +1,14 @@
 package webutil
 
 import (
+	"errors"
 	"path"
 
 	"github.com/evanw/esbuild/pkg/api"
 )
 
 // Compile executes esbuild to bundle client-side app logic
-func Compile(rootPath string, minify bool) string {
+func Compile(rootPath string, minify bool) (string, error) {
 	opts := api.BuildOptions{
 		EntryPoints: []string{path.Join(rootPath, "index.js")},
 		Outfile:     "script.js",
@@ -22,7 +23,7 @@ func Compile(rootPath string, minify bool) string {
 	}
 	res := api.Build(opts)
 	if len(res.Errors) > 0 {
-		return ""
+		return "", errors.New("failed to compile web js")
 	}
-	return string(res.OutputFiles[0].Contents)
+	return string(res.OutputFiles[0].Contents), nil
 }
