@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/filecoin-project/go-state-types/big"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart/loader"
 	helmcli "helm.sh/helm/v3/pkg/cli"
@@ -175,7 +176,8 @@ func daemonFromRelease(r *release.Release, regionid string) (daemon *Daemon) {
 	kcontainer := new(corev1.Container)
 	buf, _ := yaml.Marshal(container)
 	yaml.Unmarshal(buf, kcontainer)
-	var minfil, mincap int
+	var mincap int
+	var minfil big.Int
 	var tags []string
 	wallet := new(Wallet)
 	for _, env := range kcontainer.Env {
@@ -185,7 +187,7 @@ func daemonFromRelease(r *release.Release, regionid string) (daemon *Daemon) {
 		case "DEALBOT_WALLET_ADDRESS":
 			wallet.Address = env.Value
 		case "DEALBOT_MIN_FIL":
-			minfil, _ = strconv.Atoi(env.Value)
+			minfil, _ = big.FromString(env.Value)
 		case "DEALBOT_MIN_CAP":
 			mincap, _ = strconv.Atoi(env.Value)
 		}

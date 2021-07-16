@@ -3,6 +3,7 @@ package spawn
 import (
 	"errors"
 
+	"github.com/filecoin-project/go-state-types/big"
 	logging "github.com/ipfs/go-log/v2"
 )
 
@@ -17,7 +18,7 @@ type Daemon struct {
 	Region     string   `json:"region,omitempty"`
 	Tags       []string `json:"tags,omitempty"`
 	Workers    int      `json:"workers,omitempty"`
-	MinFil     int      `json:"minfil,omitempty"`
+	MinFil     big.Int  `json:"minfil,omitempty"`
 	MinCap     int      `json:"mincap,omitempty"`
 	DockerRepo string   `json:"dockerrepo,omitempty"`
 	DockerTag  string   `json:"dockerrtag,omitempty"`
