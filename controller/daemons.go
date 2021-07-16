@@ -9,6 +9,7 @@ import (
 
 	"github.com/filecoin-project/dealbot/controller/spawn"
 	"github.com/filecoin-project/go-address"
+	"github.com/filecoin-project/go-state-types/big"
 	"github.com/google/uuid"
 
 	"github.com/filecoin-project/lotus/api"
@@ -21,8 +22,8 @@ import (
 )
 
 type Funds struct {
-	Balance int `json:"balance,omitempty"`
-	DataCap int `json:"datacap,omitempty"`
+	Balance big.Int `json:"balance,omitempty"`
+	DataCap big.Int `json:"datacap,omitempty"`
 }
 
 type DaemonWithFunds struct {
@@ -147,14 +148,14 @@ func toDaemonWithFunds(ctx context.Context, daemon *spawn.Daemon, gateway api.Ga
 	}
 	balance, err := gateway.WalletBalance(ctx, addr)
 	if err == nil {
-		daemonWithFunds.Funds.Balance = int(balance.Int64())
+		daemonWithFunds.Funds.Balance = balance
 	}
 
 	head, err := gateway.ChainHead(ctx)
 	if err == nil {
 		dataCap, err := gateway.StateVerifiedClientStatus(ctx, addr, head.Key())
 		if err == nil && dataCap != nil {
-			daemonWithFunds.Funds.DataCap = int(dataCap.Int64())
+			daemonWithFunds.Funds.DataCap = *dataCap
 		}
 	}
 	return
