@@ -122,37 +122,35 @@ function gotDaemons(data) {
     const daemons = data["daemons"]
     const processedDaemons = daemons.map((daemon) => {
         let daemonData = daemon.daemon
+        daemonData.minfil = new FilecoinNumber(daemonData.minfil, 'attofil')
+        daemonData.mincap = BigInt(daemonData.mincap)
         if (daemon.funds) {
-            daemonData.balance = daemon.funds.balance
-            daemonData.datacap = daemon.funds.datacap
+            daemonData.balance = new FilecoinNumber(daemon.funds.balance, 'attofil')
+            daemonData.datacap = BigInt(daemon.funds.datacap)
         }
         return daemonData
     })
     if (firstDaemonsLoad) {
-        let filFormatter = (d) => d ? (new FilecoinNumber(d, 'attofil')).toFil() + " FIL" : "-"
-        let capFormatter = (c) => c ? prettyBytes(c) : "-"
+        let filFormatter = (d) => d ? d.toFil() + " FIL" : "-"
+        let capFormatter = (c) => c ? prettyBytes(Number(c)) : "-"
         let capStyler = (value, row) => {
             // assume no value + no data-cap = miner making unverified deals = no styling
-            if (!value && !row.mincap) {
+            if (value == 0 && row.mincap == 0) {
                 return {}
             }
-            const valNumber = value || 0
-            const minCap = row.mincap || 0
-            if (valNumber < minCap) {
+            if (value < row.mincap) {
                 return { classes: 'table-danger' }
             }
-            if (valNumber - minCap < ((1 << 30)*32)) {
+            if (value - row.mincap < ((1 << 30)*32)) {
                 return { classes: 'table-warning' }
             }
             return { classes: 'table-success' }
         }
         let filStyler = (value, row) => {
-            const minBal = row.minbal || 0
-            const valNumber = value || 0
-            if (value < row.minbal) {
+            if (value < row.minfil) {
                 return { classes: 'table-danger' }
             }
-            if (valNumber - minBal < Math.pow(10, 18)) {
+            if (value - row.minfil < 1) {
                 return { classes: 'table-warning' }
             }
             return { classes: 'table-success' }
