@@ -138,27 +138,6 @@ workflows:
               only:
                 - main
       - deploy-lotusinfra:
-          matrix:
-            parameters:
-              release:
-                - dealbot-daemon-bundle-0
-                - dealbot-daemon-bundle-1
-                - dealbot-daemon-bundle-2
-          name: deploy-nerpanet-daemons
-          chart: filecoin/lotus-bundle
-          chart_version: 0.0.2
-          circle_context: filecoin-mainnet-aws
-          kubernetes_cluster: mainnet-us-east-1-eks
-          aws_region: us-east-1
-          namespace: ntwk-mainnet-dealbot
-          requires:
-            - build-push
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /^v[0-9]+(\.[0-9]+)*$/
-      - deploy-lotusinfra:
           name: deploy-mainnet-controller
           chart: filecoin/dealbot
           chart_version: 0.0.12
@@ -167,27 +146,6 @@ workflows:
           aws_region: us-east-1
           namespace: ntwk-mainnet-dealbot
           release: dealbot-0
-          requires:
-            - build-push
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /^v[0-9]+(\.[0-9]+)*$/
-      - deploy-lotusinfra:
-          matrix:
-            parameters:
-              release:
-                - dealbot-daemon-bundle-0
-                - dealbot-daemon-bundle-1
-                - dealbot-daemon-bundle-2
-          name: deploy-mainnet-daemons
-          chart: filecoin/lotus-bundle
-          chart_version: 0.0.3
-          circle_context: filecoin-mainnet-aws
-          kubernetes_cluster: mainnet-us-east-1-eks
-          aws_region: us-east-1
-          namespace: ntwk-mainnet-dealbot
           requires:
             - build-push
           filters:
