@@ -65,6 +65,12 @@ application:
         name: dealbot
   ingress:
     enabled: false
+  storage:
+    - mount: /shared
+      volume:
+        - name: shared-volume
+          persistentVolumeClaim:
+              claimName: chain-exports
 
 # Wallets are added to the wallet secret.
 # if you don't want to specify wallets in values.yaml,
