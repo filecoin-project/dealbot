@@ -84,6 +84,28 @@ func (c *Controller) getDaemonHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(toDaemonWithFunds(r.Context(), daemon, c.gateway))
 }
 
+func (c *Controller) deleteDaemonHandler(w http.ResponseWriter, r *http.Request) {
+	logger := log.With("req_id", r.Header.Get("X-Request-ID"))
+	logger.Debugw("handle request", "command", "list tasks")
+	defer logger.Debugw("request handled", "command", "list tasks")
+	w.Header().Set("Content-Type", "application/json")
+	enableCors(&w, r)
+
+	regionid := mux.Vars(r)["regionid"]
+	daemonid := mux.Vars(r)["daemonid"]
+	err := c.spawner.Shutdown(regionid, daemonid)
+	if err != nil {
+		if errors.Is(err, spawn.DaemonNotFound) {
+			w.WriteHeader(http.StatusNotFound)
+		} else {
+			log.Errorw("error getting daemon", "err", err)
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (c *Controller) newDaemonHandler(w http.ResponseWriter, r *http.Request) {
 	logger := log.With("req_id", r.Header.Get("X-Request-ID"))
 	logger.Debugw("handle request", "command", "list tasks")

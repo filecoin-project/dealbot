@@ -74,6 +74,20 @@ func (s *KubernetesSpawner) Get(regionid string, daemonid string) (daemon *Daemo
 	return daemon, nil
 }
 
+func (s *KubernetesSpawner) Shutdown(regionid string, daemonid string) error {
+	actionConfig, err := s.actionConfig(regionid)
+	if err != nil {
+		log.Infow("could not create actionConfig during daemon Get", "err", err)
+		return err
+	}
+	client := action.NewUninstall(actionConfig)
+	_, err = client.Run(daemonid)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *KubernetesSpawner) List(regionid string) (daemons []*Daemon, err error) {
 	actionConfig, err := s.actionConfig(regionid)
 	if err != nil {

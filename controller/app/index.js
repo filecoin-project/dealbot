@@ -3,6 +3,7 @@ import "bootstrap-table";
 import "bootstrap-cron-picker/dist/cron-picker";
 import { FilecoinNumber } from "@glif/filecoin-number"
 import prettyBytes from 'pretty-bytes'
+import { data } from "jquery";
 
 let auth = "";
 let regionList = [];
@@ -10,7 +11,14 @@ window.setauth = (a) => {
     auth = a;
 };
 
+let modal = null
+let shutdownDaemonID = ""
+let shutdownDaemonIndex = 0
+let notificationMessage = null
 $().ready(() => {
+    modal = new bootstrap.Modal(document.getElementById('confirmationModal'), {})
+    notificationMessage = new bootstrap.Toast(document.getElementById('notificationMessage'), {})
+
     $('#newSchedule').cronPicker();
     $('#newretafterstoreSchedule').cronPicker();
 
@@ -58,6 +66,7 @@ $().ready(() => {
     $("#addbot button").on('click', doCreateBot);
     $("#botlist").hide()
 
+    $("#shutdownConfirm").on('click', confirmShutdown)
     fetch("./regions", { method: "GET", headers: getHeaders()}).then((response) => response.json()).then(gotRegions)
     syncData()
 })
@@ -68,7 +77,7 @@ function syncData() {
 }
 
 function operate(val, row) {
-    return '<a class="remove" title="remove">Cancel</a>';
+    return '<div class="remove btn btn-primary" title="remove">Cancel</div>';
 }
 
 let firstLoad = true
@@ -102,6 +111,8 @@ function gotTasks(data) {
     }
 }
 
+let currentRegion = ""
+
 function gotRegions(data) {
     regionList = data["regions"]
     $.each(regionList, (reg) => {
@@ -111,10 +122,20 @@ function gotRegions(data) {
             .on('click', function() {
                 $("#regionList .list-group-item").removeClass("active")
                 $(this).addClass("active")
+                currentRegion = regionList[reg]
                 fetch(`./regions/${regionList[reg]}`, { method: "GET", headers: getHeaders()}).then((response) => response.json()).then(gotDaemons)
             })
             .appendTo($("#regionlist"));
     });
+}
+
+
+function operateDaemon(val, row) {
+    return `
+        <div class="drain btn btn-primary" title="drain">Drain</div>
+        <div class="reset btn btn-primary" title="reset">Reset</div>
+        <div class="complete btn btn-primary" title="reset">Complete</div>
+        <div class="shutdown btn btn-danger" title="shutdown">Shutdown</div>`;
 }
 
 let firstDaemonsLoad = true
@@ -164,7 +185,8 @@ function gotDaemons(data) {
             {title:'Region', field:'region'},
             {title:'Wallet', field:'wallet.address'},
             {title: 'Balance', field: 'balance', formatter: filFormatter, cellStyle: filStyler},
-            {title: 'Data Cap', field: 'datacap', formatter: capFormatter, cellStyle: capStyler}
+            {title: 'Data Cap', field: 'datacap', formatter: capFormatter, cellStyle: capStyler},
+            {title:'Actions', field: 'operate', align: 'center', formatter: operateDaemon, events: { 'click .drain': drain, 'click .reset': reset, 'click .complete': complete,'click .shutdown': shutdown}}
         ],
         data: processedDaemons,
 		});
@@ -174,13 +196,98 @@ function gotDaemons(data) {
     }
 }
 
+function errorToast(message) {
+$('#notificationMessage').removeClass('bg-primary')
+  $('#notificationMessage').addClass("bg-danger")
+  $('#notificationMessage .toast-body').text(message)
+  notificationMessage.show()
+}
+
+function successToast(message) {
+    $('#notificationMessage').removeClass('bg-danger')
+      $('#notificationMessage').addClass("bg-primary")
+      $('#notificationMessage .toast-body').text(message)
+      notificationMessage.show()
+    }
+    
+function drain(e, value, row, index) {
+    if (e.preventDefault) {
+        e.preventDefault()
+    }
+    let url = `./drain/${row.id}`
+    fetch(url, { method: "POST", headers: getHeaders()}).then((response) => {
+      if (response.ok) {
+        successToast(`Daemon ${row.id} will receive no new tasks`)
+      } else {
+        errorToast(`Error attempting to drain daemon ${row.id}`)
+      }
+    });
+}
+
+function reset(e, value, row, index) {
+    if (e.preventDefault) {
+        e.preventDefault()
+    }
+    let url = `./reset-worker/${row.id}`
+    fetch(url, { method: "POST", headers: getHeaders()}).then((response) => {
+        if (response.ok) {
+          successToast(`All tasks on daemon ${row.id} will be reset to unstarted`)
+        } else {
+          errorToast(`Error attempting to reset daemon ${row.id}`)
+        }
+      });
+}
+
+function complete(e, value, row, index) {
+    if (e.preventDefault) {
+        e.preventDefault()
+    }
+    let url = `./complete/${row.id}`
+    fetch(url, { method: "POST", headers: getHeaders()}).then((response) => {
+        if (response.ok) {
+          successToast(`Tasks for daemon ${row.id} will be published`)
+        } else {
+          errorToast(`Error attempting to publish tasks for daemon ${row.id}`)
+        }
+      });
+}
+
+
+function shutdown(e, value, row, index) {
+    if (e.preventDefault) {
+        e.preventDefault()
+    }
+    shutdownDaemonID = row.id
+    shutdownDaemonIndex = index
+    modal.show()
+}
+
+function confirmShutdown(e) {
+    modal.hide()
+   let url = `./regions/${currentRegion}/${shutdownDaemonID}`
+    fetch(url, { method: "DELETE", headers: getHeaders()}).then((response) => {
+        if (response.ok) {
+            $("#botdetail").bootstrapTable('hideRow', { index: shutdownDaemonIndex })
+            successToast(`Daemon ${row.id} has been shutdown`)
+          } else {
+            errorToast(`Error attempting to shutdown daemon ${row.id}`)
+          }
+    });
+}
+
+
 function cancel(e, value, row, index) {
     if (e.preventDefault) {
         e.preventDefault()
     }
     let url = `./tasks/${row.UUID}`
-    fetch(url, { method: "DELETE", headers: getHeaders()}).then((_) => {
-        $("#taskTable").bootstrapTable('hideRow', { index })
+    fetch(url, { method: "DELETE", headers: getHeaders()}).then((response) => {
+        if (response.ok) {
+            $("#taskTable").bootstrapTable('hideRow', { index })
+            successToast(`Task ${row.UUID} has been cancelled`)
+          } else {
+            errorToast(`Error attempting to cancel task ${row.id}`)
+          }
     });
 }
 
@@ -242,7 +349,7 @@ function doSubmit(e) {
     }
 
     Promise.all(requests).then((_) => {
-        $("#addDone").show()
+        successToast("Tasks scheduled!")
         syncData()
     })
 
@@ -253,18 +360,18 @@ function doCreateBot(e) {
     let region = $("#newBotRegion").val()
     let url = `./regions/${region}`
 
-    data = {
+    let data = {
         "id": $("#newBotId").val(),
         "tags": $("#newBotTags").val().trim().split('\n'),
         "workers": parseInt($("#newBotWorkers").val()),
-        "mincap": parseInt($("#newBotMinCap").val()),
-        "minfil": parseInt($("#newBotMinFil").val()),
+        "mincap": $("#newBotMinCap").val(),
+        "minfil": (new FilecoinNumber($("#newBotMinFil").val(), 'fil')).toAttoFil(),
         "wallet": {
             "address": $("#newBotWalletAddress").val(),
             "exported": $("#newBotWalletExported").val(),
         },
     }
     fetch(url, {method: "POST", headers: getHeaders(), body: JSON.stringify(data)}).then(() => {
-	      $("#addBotDone").show()
+        successToast("Bot created!")
     })
 }

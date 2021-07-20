@@ -184,6 +184,7 @@ func NewWithDependencies(ctx *cli.Context, listener, graphqlListener net.Listene
 	r.HandleFunc("/regions/{regionid}", srv.getDaemonsHandler).Methods("GET")
 	r.HandleFunc("/regions/{regionid}", srv.newDaemonHandler).Methods("POST")
 	r.HandleFunc("/regions/{regionid}/{daemonid}", srv.getDaemonHandler).Methods("GET")
+	r.HandleFunc("/regions/{regionid}/{daemonid}", srv.deleteDaemonHandler).Methods("DELETE")
 	r.HandleFunc("/cred.js", srv.authHandler).Methods("GET")
 	r.Methods("OPTIONS").HandlerFunc(srv.sendCORSHeaders)
 	metricsHandler := recorder.Handler()
