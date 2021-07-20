@@ -3,9 +3,9 @@ package spawn
 import (
 	"io/ioutil"
 	"path"
-	"strconv"
 	"strings"
 
+	"github.com/filecoin-project/go-state-types/big"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart/loader"
 	helmcli "helm.sh/helm/v3/pkg/cli"
@@ -75,6 +75,20 @@ func (s *KubernetesSpawner) Get(regionid string, daemonid string) (daemon *Daemo
 	}
 	daemon = daemonFromRelease(r, regionid)
 	return daemon, nil
+}
+
+func (s *KubernetesSpawner) Shutdown(regionid string, daemonid string) error {
+	actionConfig, err := s.actionConfig(regionid)
+	if err != nil {
+		log.Infow("could not create actionConfig during daemon Get", "err", err)
+		return err
+	}
+	client := action.NewUninstall(actionConfig)
+	_, err = client.Run(daemonid)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s *KubernetesSpawner) List(regionid string) (daemons []*Daemon, err error) {
@@ -178,7 +192,7 @@ func daemonFromRelease(r *release.Release, regionid string) (daemon *Daemon) {
 	kcontainer := new(corev1.Container)
 	buf, _ := yaml.Marshal(container)
 	yaml.Unmarshal(buf, kcontainer)
-	var minfil, mincap int
+	var minfil, mincap big.Int
 	var tags []string
 	wallet := new(Wallet)
 	for _, env := range kcontainer.Env {
@@ -188,9 +202,9 @@ func daemonFromRelease(r *release.Release, regionid string) (daemon *Daemon) {
 		case "DEALBOT_WALLET_ADDRESS":
 			wallet.Address = env.Value
 		case "DEALBOT_MIN_FIL":
-			minfil, _ = strconv.Atoi(env.Value)
+			minfil, _ = big.FromString(env.Value)
 		case "DEALBOT_MIN_CAP":
-			mincap, _ = strconv.Atoi(env.Value)
+			mincap, _ = big.FromString(env.Value)
 		}
 	}
 	return &Daemon{

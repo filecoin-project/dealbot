@@ -8,7 +8,7 @@ RUN npm install
 FROM golang:alpine AS builder
 RUN apk update
 RUN apk upgrade
-RUN apk add --update gcc>=9.3.0 g++>=9.3.0 alpine-sdk linux-headers
+RUN apk add --update gcc>=9.3.0 g++>=9.3.0 alpine-sdk linux-headers binutils-gold
 
 WORKDIR /go/src/app/
 

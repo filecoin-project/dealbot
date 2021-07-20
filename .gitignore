@@ -1,4 +1,5 @@
 dealbot.toml
+.dealbot.key
 *~
 controller/static/script.js
 node_modules

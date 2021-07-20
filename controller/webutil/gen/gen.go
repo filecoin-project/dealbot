@@ -26,7 +26,11 @@ func main() {
 		}
 	}
 
-	data := webutil.Compile(os.Args[1], true)
+	data, err := webutil.Compile(os.Args[1], true)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 	if len(os.Args) < 3 {
 		fmt.Printf("%s\n", data)
 		os.Exit(0)

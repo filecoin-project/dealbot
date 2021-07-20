@@ -308,7 +308,7 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(ctx context.Context, upda
 				}
 				dbPath := filepath.Join(de.config.DataDir, de.task.PayloadCID.x)
 				if _, err := os.Stat(dbPath); !os.IsNotExist(err) {
-					if err := os.Remove(dbPath); err != nil {
+					if err := os.RemoveAll(dbPath); err != nil {
 						return err
 					}
 				}
