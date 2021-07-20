@@ -121,19 +121,11 @@ func (c *Controller) newDaemonHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	regionid := mux.Vars(r)["regionid"]
 	daemon.Region = regionid
-	helmchartversion := mux.Vars(r)["helmchartversion"]
-	daemon.HelmChartVersion = helmchartversion
-	helmchartrepourl := mux.Vars(r)["helmchartrepourl"]
-	daemon.HelmChartRepoUrl = helmchartrepourl
-	lotusdockerrepo := mux.Vars(r)["lotusdockerrepo"]
-	daemon.LotusDockerRepo = "coryschwartz/lotus"
-	if  lotusdockerrepo != "" {
-		daemon.LotusDockerRepo = lotusdockerrepo
+	if daemon.LotusDockerRepo == "" {
+		daemon.LotusDockerRepo = "coryschwartz/lotus"
 	}
-	lotusdockertag := mux.Vars(r)["lotusdockertag"]
-	daemon.LotusDockerTag = "sidecar"
-	if  lotusdockertag != "" {
-		daemon.LotusDockerTag = lotusdockertag
+	if daemon.LotusDockerTag == "" {
+		daemon.LotusDockerTag = "sidecar"
 	}
 	// generate random values if they aren't already setup
 	daemonDefaults(daemon)
