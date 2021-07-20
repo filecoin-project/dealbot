@@ -76,6 +76,16 @@ func (s *LocalSpawner) Get(regionid string, daemonid string) (*Daemon, error) {
 	return daemonFromCmd(daemoncmd, daemonid), nil
 }
 
+func (s *LocalSpawner) Shutdown(regionid string, daemonid string) error {
+	s.Lock()
+	defer s.Unlock()
+	daemoncmd, ok := s.cmds[daemonid]
+	if !ok {
+		return DaemonNotFound
+	}
+	return daemoncmd.Process.Signal(os.Interrupt)
+}
+
 func (s *LocalSpawner) List(regionid string) ([]*Daemon, error) {
 	s.Lock()
 	defer s.Unlock()

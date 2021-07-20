@@ -33,6 +33,7 @@ type Wallet struct {
 type Spawner interface {
 	Spawn(*Daemon) error
 	Get(string, string) (*Daemon, error)
+	Shutdown(string, string) error
 	List(string) ([]*Daemon, error)
 	Regions() []string
 }
