@@ -22,6 +22,9 @@ type Daemon struct {
 	DockerRepo       string   `json:"dockerrepo,omitempty"`
 	DockerTag        string   `json:"dockertag,omitempty"`
 	HelmChartVersion string   `json:"helmchartversion,omitempty"`
+	HelmChartRepoUrl string   `json:"helmchartrepourl,omitempty"`
+	LotusDockerRepo  string   `json:"lotusdockerrepo,omitempty"`
+	LotusDockerTag   string   `json:"lotusdockertag,omitempty"`
 	Wallet           *Wallet  `json:"wallet,omitempty"`
 }
 

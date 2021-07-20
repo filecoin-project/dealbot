@@ -265,6 +265,10 @@ function doCreateBot(e) {
             "address": $("#newBotWalletAddress").val(),
             "exported": $("#newBotWalletExported").val(),
         },
+        "helmchartrepourl": $("#newBotHelmChartRepoUrl").val(),
+        "helmchartversion": $("#newBotHelmChartVersion").val(),
+        "lotusdockerrepo": $("#newBotLotusDockerRepo").val(),
+        "lotusdockertag": $("#newBotLotusDockerTag").val()
     }
     fetch(url, {method: "POST", headers: getHeaders(), body: JSON.stringify(data)}).then(() => {
 	      $("#addBotDone").show()
