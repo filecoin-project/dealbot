@@ -19,7 +19,7 @@ import (
 
 type KubernetesSpawner struct {
 	// map of regions (kuberentes contexts) to RESTClientGetter
-	getters   map[string]*genericclioptions.ConfigFlags
+	getters   map[string]genericclioptions.RESTClientGetter
 	rawConfig clientcmdapi.Config
 }
 
@@ -131,7 +131,7 @@ func (s *KubernetesSpawner) actionConfig(regionid string) (*action.Configuration
 
 func NewKubernetes() *KubernetesSpawner {
 	s := new(KubernetesSpawner)
-	s.getters = make(map[string]*genericclioptions.ConfigFlags)
+	s.getters = make(map[string]genericclioptions.RESTClientGetter)
 	// load kubeconfig following the usual kubernetes rules.
 	// i.e. obeys KUBECONFIG
 	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
