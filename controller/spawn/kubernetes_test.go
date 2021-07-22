@@ -2,50 +2,15 @@ package spawn
 
 import (
 	"errors"
-	"io/ioutil"
 	"net/http"
-	"os"
 	"testing"
 
-	"helm.sh/helm/v3/pkg/action"
-	"helm.sh/helm/v3/pkg/chartutil"
-	kubefake "helm.sh/helm/v3/pkg/kube/fake"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/cli-runtime/pkg/resource"
 	k8sfake "k8s.io/client-go/rest/fake"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	k8stesting "k8s.io/kubectl/pkg/cmd/testing"
 )
-
-// this function was stolen from https://github.com/helm/helm/blob/main/pkg/action/action_test.go
-// with some modifications
-func actionConfigFixture(t *testing.T) *action.Configuration {
-	t.Helper()
-
-	tdir, err := ioutil.TempDir("", "helm-action-test")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	t.Cleanup(func() { os.RemoveAll(tdir) })
-
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	return &action.Configuration{
-		KubeClient: &kubefake.FailingKubeClient{
-			PrintingKubeClient: kubefake.PrintingKubeClient{
-				Out: ioutil.Discard,
-			},
-		},
-		Capabilities: chartutil.DefaultCapabilities,
-		Log: func(format string, v ...interface{}) {
-			t.Helper()
-			t.Logf(format, v...)
-		},
-	}
-}
 
 // inspiration for the mock k8s client:
 // https://github.com/helm/helm/blob/main/pkg/kube/client_test.go#L114
