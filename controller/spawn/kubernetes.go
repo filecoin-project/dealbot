@@ -31,6 +31,12 @@ func (s *KubernetesSpawner) Spawn(d *Daemon) error {
 	}
 	client := action.NewInstall(actionConfig)
 	client.ChartPathOptions.RepoURL = "https://filecoin-project.github.io/helm-charts"
+	if d.HelmChartRepoUrl != "" {
+		client.ChartPathOptions.RepoURL = d.HelmChartRepoUrl
+	}
+	if d.HelmChartVersion != "" {
+		client.ChartPathOptions.Version = d.HelmChartVersion
+	}
 	chartPath, err := client.ChartPathOptions.LocateChart("lotus-bundle",
 		helmcli.New())
 	if err != nil {

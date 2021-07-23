@@ -121,6 +121,12 @@ func (c *Controller) newDaemonHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	regionid := mux.Vars(r)["regionid"]
 	daemon.Region = regionid
+	if daemon.LotusDockerRepo == "" {
+		daemon.LotusDockerRepo = "filecoin/lotus"
+	}
+	if daemon.LotusDockerTag == "" {
+		daemon.LotusDockerTag = "nightly"
+	}
 	// generate random values if they aren't already setup
 	daemonDefaults(daemon)
 	if err := c.spawner.Spawn(daemon); err != nil {

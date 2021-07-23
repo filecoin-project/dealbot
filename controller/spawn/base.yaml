@@ -95,7 +95,7 @@ wallets:
 # api.chain.love is a lotus-gateway instance managed by Protocol Labs.
 # It provides a limited set of lotus API endpoints.
 lotus:
-  image: coryschwartz/lotus:sidecar
+  image: {{ .LotusDockerRepo }}:{{ .LotusDockerTag }}
   lite:
     enabled: false
     backend: wss://api.chain.love
