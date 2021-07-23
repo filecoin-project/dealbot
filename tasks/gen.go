@@ -108,6 +108,7 @@ func main() {
 		schema.SpawnStructField("Tag", "String", true, true),
 		schema.SpawnStructField("RetrievalSchedule", "String", true, true),
 		schema.SpawnStructField("RetrievalScheduleLimit", "String", true, true),
+		schema.SpawnStructField("RetrievalMaxPriceAttoFIL", "Int", true, true),
 	}, schema.SpawnStructRepresentationMap(map[string]string{})))
 
 	ts.Accumulate(schema.SpawnStruct("Task", []schema.StructField{

@@ -340,14 +340,15 @@ func (rp _RetrievalTask__Prototype) Of(minerParam string, payloadCid string, car
 	return &rt
 }
 
-func (rp _RetrievalTask__Prototype) OfSchedule(minerParam string, payloadCid string, carExport bool, tag string, schedule string, scheduleLimit string) RetrievalTask {
+func (rp _RetrievalTask__Prototype) OfSchedule(minerParam string, payloadCid string, carExport bool, tag string, schedule string, scheduleLimit string, maxPrice int64) RetrievalTask {
 	rt := _RetrievalTask{
-		Miner:         _String{minerParam},
-		PayloadCID:    _String{payloadCid},
-		CARExport:     _Bool{carExport},
-		Tag:           asStrM(tag),
-		Schedule:      asStrM(schedule),
-		ScheduleLimit: asStrM(scheduleLimit),
+		Miner:           _String{minerParam},
+		PayloadCID:      _String{payloadCid},
+		CARExport:       _Bool{carExport},
+		Tag:             asStrM(tag),
+		Schedule:        asStrM(schedule),
+		ScheduleLimit:   asStrM(scheduleLimit),
+		MaxPriceAttoFIL: asIntM(maxPrice),
 	}
 	return &rt
 }

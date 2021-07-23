@@ -75,6 +75,9 @@
                             <div id="newstorage">
                                 <div class="mb-3">
                                     <select class="form-select" id="newSize">
+                                        <option value="674836480">1 GB</option>
+                                        <option value="1474836480">2 GB</option>
+                                        <option value="3174836480">4 GB</option>
                                         <option value="5474836480">8 GB</option>
                                         <option value="11474836480">16 GB</option>
                                         <option value="21474836480" selected>32 GB</option>
@@ -82,6 +85,10 @@
                                       </select>
                                       <label class="form-check-label" for="newSize">Deal Size</label>
                                 </div>
+                                <div class="mb-3">
+                                    <label for="newStoragePriceFil" class="form-label">Max Price: (nanoFIL/GB/Epoch)</label>
+                                    <input class="form-control" type="number" id="newStoragePriceFil" value="2">
+                                  </div>
                                 <div class="form-check mb-3">
                                     <input class="form-check-input" type="checkbox" value="" id="newVerified">
                                     <label class="form-check-label" for="newVerified">
@@ -106,16 +113,23 @@
                                         <input type="text" id="newretafterstoreScheduleLimit" value="720h">
                                         <label class="form-label" for="newretafterstoreScheduleLimit">Duration in which retrieval schedule is valid</label>
                                     </div>
+                                    <div class="mb-3">
+                                        <label for="newretafterstorePrice" class="form-label">Retrieval Max Price: (total price in nanoFIL)</label>
+                                        <input class="form-control" type="number" id="newretafterstorePrice" value="2">
+                                      </div>
                                 </div>
                             </div>
                             <div id="newretrieval">
                                 <div class="mb-3">
                                     <input class="form-control" value="" id="newCid">
                                     <label class="form-label" for="newCid">
-                                      Piece CID
+                                      Payload CID
                                     </label>
                                   </div>
-
+                                <div class="mb-3">
+                                    <label for="newRetrievalPriceFil" class="form-label">Max Price: (total price in nanoFIL)</label>
+                                    <input class="form-control" type="number" id="newRetrievalPriceFil" value="2">
+                                </div>
                             </div>
                             <div id="schedule">
                                 <div class="form-check form-switch">
@@ -212,8 +226,7 @@
                             Create a new bot
                             <form>
                                 <div id="botRegion">
-                                    <label for="newBotRegion" class="form-lable">Region: (required)</label>
-                                    <input class="form-control" type="text" id="newBotRegion" value="">
+                                    <select class="form-select" id="newBotRegion"></select>
                                 </div>
                                 <div id="botId">
                                     <label for="newBotId" class="form-label">Bot ID: (optional)</label>
@@ -225,7 +238,7 @@
                                 </div>
                                 <div id="botWorkers">
                                     <label for="newBotWorkers" class="form-label">Workers: (optional)</label>
-                                    <input class="form-control" type="number" id="newBotWorkers" value="1">
+                                    <input class="form-control" type="number" id="newBotWorkers" value="10">
                                 </div>
                                 <div id="botMinCap">
                                     <label for="newBotMinCap" class="form-label">Minimum Cap: (optional)</label>

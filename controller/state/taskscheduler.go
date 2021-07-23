@@ -14,8 +14,7 @@ import (
 )
 
 const (
-	schedulerOwner   = "dealbot_scheduler"
-	expiredTaskOwner = "dealbot_expired"
+	schedulerOwner = "dealbot_scheduler"
 )
 
 var noEnt cron.EntryID
@@ -108,7 +107,7 @@ func (s *stateDB) runTask(taskID, schedule, limit string, expireAt time.Time, ru
 		log.Infow("scheduling expired for task", "taskID", taskID)
 		s.cronSched.Remove(jobID)
 		err = s.transact(ctx, func(tx *sql.Tx) error {
-			_, err := tx.ExecContext(ctx, updateTaskWorkedBySQL, taskID, expiredTaskOwner)
+			_, err := tx.ExecContext(ctx, deleteTaskSQL, taskID)
 			return err
 		})
 		if err != nil {
