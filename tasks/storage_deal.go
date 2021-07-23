@@ -436,6 +436,9 @@ func mktime(t time.Time) _Time {
 func asStrM(s string) _String__Maybe {
 	return _String__Maybe{m: schema.Maybe_Value, v: &_String{s}}
 }
+func asIntM(i int64) _Int__Maybe {
+	return _Int__Maybe{m: schema.Maybe_Value, v: &_Int{i}}
+}
 
 func toStageDetails(stage *storagemarket.DealStage) StageDetails {
 	logs := make([]_Logs, 0, len(stage.Logs))

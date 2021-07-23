@@ -27,6 +27,8 @@ application:
         value: {{ .Id }}
       - name: DEALBOT_WALLET_ADDRESS
         value: {{ .Wallet.Address }}
+      - name: DEALBOT_WORKERS
+        value: "{{ .Workers }}"
       - name: DEALBOT_MIN_FIL
         value: "{{ .MinFil }}"
       - name: DEALBOT_MIN_CAP

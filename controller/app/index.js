@@ -126,6 +126,10 @@ function gotRegions(data) {
                 fetch(`./regions/${regionList[reg]}`, { method: "GET", headers: getHeaders()}).then((response) => response.json()).then(gotDaemons)
             })
             .appendTo($("#regionlist"));
+        $('<option/>')
+            .text(regionList[reg])
+            .val(regionList[reg])
+            .appendTo($("#newBotRegion"))
     });
 }
 
@@ -320,7 +324,7 @@ function doSubmit(e) {
                 "Miner": miner,
                 "PayloadCID": $('#newCid').val(),
                 "CARExport": false,
-                "MaxPriceAttoFIL": 20000000000,
+                "MaxPriceAttoFIL": Number($("#newRetrievalPriceFil").val())*1000000000,
             }
         } else {
             data = {
@@ -329,11 +333,12 @@ function doSubmit(e) {
                 "StartOffset": 6152, // 3 days?
                 "FastRetrieval": $('#newFast').is(':checked'),
                 "Verified": $('#newVerified').is(':checked'),
-                "MaxPriceAttoFIL": 20000000000,
+                "MaxPriceAttoFIL": Number($("#newStoragePriceFil").val())*1000000000,
             }
             if ($('#newRepeatRetAfterStore').is(':checked')) {
                 data.RetrievalSchedule = $('#newretafterstoreSchedule').val()
                 data.RetrievalScheduleLimit = $('#newretafterstoreScheduleLimit').val()
+                data.RetrievalMaxPriceAttoFIL = Number($('#newretafterstorePrice').val())*1000000000
             }
         }
 
@@ -370,10 +375,6 @@ function doCreateBot(e) {
             "address": $("#newBotWalletAddress").val(),
             "exported": $("#newBotWalletExported").val(),
         },
-        "helmchartrepourl": $("#newBotHelmChartRepoUrl").val(),
-        "helmchartversion": $("#newBotHelmChartVersion").val(),
-        "lotusdockerrepo": $("#newBotLotusDockerRepo").val(),
-        "lotusdockertag": $("#newBotLotusDockerTag").val()
     }
     fetch(url, {method: "POST", headers: getHeaders(), body: JSON.stringify(data)}).then(() => {
         successToast("Bot created!")

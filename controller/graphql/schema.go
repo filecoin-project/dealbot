@@ -1933,6 +1933,22 @@ func StorageTask__RetrievalScheduleLimit__resolve(p graphql.ResolveParams) (inte
     }
     
 }
+func StorageTask__RetrievalMaxPriceAttoFIL__resolve(p graphql.ResolveParams) (interface{}, error) {
+    ts, ok := p.Source.(tasks.StorageTask)
+    if !ok {
+        return nil, fmt.Errorf(errUnexpectedType, p.Source, "tasks.StorageTask")
+    }
+    
+    f := ts.FieldRetrievalMaxPriceAttoFIL()
+    if f.Exists() {
+        
+        return f.Must().AsInt()
+        
+    } else {
+        return nil, nil
+    }
+    
+}
 var StorageTask__type = graphql.NewObject(graphql.ObjectConfig{
     Name: "StorageTask",
     Fields: graphql.Fields{
@@ -2001,6 +2017,12 @@ var StorageTask__type = graphql.NewObject(graphql.ObjectConfig{
             Type: graphql.String,
             
             Resolve: StorageTask__RetrievalScheduleLimit__resolve,
+        },
+        "RetrievalMaxPriceAttoFIL": &graphql.Field{
+            
+            Type: graphql.Int,
+            
+            Resolve: StorageTask__RetrievalMaxPriceAttoFIL__resolve,
         },
     },
 })

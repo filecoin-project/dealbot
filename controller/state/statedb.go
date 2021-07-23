@@ -549,6 +549,11 @@ func (s *stateDB) Update(ctx context.Context, taskID string, req tasks.UpdateTas
 				if finalized.StorageTask.Must().Tag.Exists() {
 					tag = finalized.StorageTask.Must().Tag.Must().String()
 				}
+				var maxPrice int64 = 0
+				if finalized.StorageTask.Must().RetrievalMaxPriceAttoFIL.Exists() {
+					maxPrice = finalized.StorageTask.Must().RetrievalMaxPriceAttoFIL.Must().Int()
+				}
+
 				ret := tasks.Type.RetrievalTask.OfSchedule(
 					finalized.StorageTask.Must().Miner.String(),
 					finalized.PayloadCID.Must().String(),
@@ -556,6 +561,7 @@ func (s *stateDB) Update(ctx context.Context, taskID string, req tasks.UpdateTas
 					tag,
 					finalized.StorageTask.Must().RetrievalSchedule.Must().String(),
 					finalized.StorageTask.Must().RetrievalScheduleLimit.Must().String(),
+					maxPrice,
 				)
 				downstreamRetrieval = ret
 			}
