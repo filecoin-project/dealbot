@@ -396,6 +396,8 @@ func (de *storageDealExecutor) executeAndMonitorDeal(ctx context.Context, update
 				if err != nil {
 					return err
 				}
+
+				stage = newState
 			}
 
 			// deal is on chain, exit successfully
