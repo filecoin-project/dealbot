@@ -384,6 +384,7 @@ func (t *_Task) Finalize(ctx context.Context, s ipld.Storer, local bool) (Finish
 		PayloadCID:         logs.payloadCID,
 		ProposalCID:        logs.proposalCID,
 		DealIDString:       logs.DealIDString(),
+		MinerPeerID:        logs.minerPeerID,
 	}
 	// events to dag item
 	logList := &_List_StageDetails{}
@@ -415,6 +416,7 @@ type logExtraction struct {
 	size          _Int__Maybe
 	payloadCID    _String__Maybe
 	proposalCID   _String__Maybe
+	minerPeerID   _String__Maybe
 }
 
 func (l *logExtraction) DealIDString() _String__Maybe {
@@ -522,6 +524,10 @@ func parseFinalLogs(t Task) *logExtraction {
 				if err == nil {
 					le.dealID = val
 				}
+			}
+			if le.minerPeerID.IsAbsent() && strings.Contains(entry, "RemotePeerID:") {
+				le.minerPeerID.m = schema.Maybe_Value
+				le.minerPeerID.v = &_String{strings.TrimPrefix(entry, "RemotePeerID: ")}
 			}
 		}
 	}

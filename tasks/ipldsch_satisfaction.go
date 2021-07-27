@@ -2555,6 +2555,9 @@ func (n _FinishedTask) FieldProposalCID() MaybeString {
 func (n _FinishedTask) FieldDealIDString() MaybeString {
 	return &n.DealIDString
 }
+func (n _FinishedTask) FieldMinerPeerID() MaybeString {
+	return &n.MinerPeerID
+}
 type _FinishedTask__Maybe struct {
 	m schema.Maybe
 	v FinishedTask
@@ -2607,6 +2610,7 @@ var (
 	fieldName__FinishedTask_PayloadCID = _String{"PayloadCID"}
 	fieldName__FinishedTask_ProposalCID = _String{"ProposalCID"}
 	fieldName__FinishedTask_DealIDString = _String{"DealIDString"}
+	fieldName__FinishedTask_MinerPeerID = _String{"MinerPeerID"}
 )
 var _ ipld.Node = (FinishedTask)(&_FinishedTask{})
 var _ schema.TypedNode = (FinishedTask)(&_FinishedTask{})
@@ -2720,6 +2724,14 @@ func (n FinishedTask) LookupByString(key string) (ipld.Node, error) {
 			return ipld.Null, nil
 		}
 		return n.DealIDString.v, nil
+	case "MinerPeerID":
+		if n.MinerPeerID.m == schema.Maybe_Absent {
+			return ipld.Absent, nil
+		}
+		if n.MinerPeerID.m == schema.Maybe_Null {
+			return ipld.Null, nil
+		}
+		return n.MinerPeerID.v, nil
 	default:
 		return nil, schema.ErrNoSuchField{Type: nil /*TODO*/, Field: ipld.PathSegmentOfString(key)}
 	}
@@ -2747,7 +2759,7 @@ type _FinishedTask__MapItr struct {
 }
 
 func (itr *_FinishedTask__MapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
-	if itr.idx >= 18 {
+	if itr.idx >= 19 {
 		return nil, nil, ipld.ErrIteratorOverread{}
 	}
 	switch itr.idx {
@@ -2897,6 +2909,17 @@ func (itr *_FinishedTask__MapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
 			break
 		}
 		v = itr.n.DealIDString.v
+	case 18:
+		k = &fieldName__FinishedTask_MinerPeerID
+		if itr.n.MinerPeerID.m == schema.Maybe_Absent {
+			v = ipld.Absent
+			break
+		}
+		if itr.n.MinerPeerID.m == schema.Maybe_Null {
+			v = ipld.Null
+			break
+		}
+		v = itr.n.MinerPeerID.v
 	default:
 		panic("unreachable")
 	}
@@ -2904,14 +2927,14 @@ func (itr *_FinishedTask__MapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
 	return
 }
 func (itr *_FinishedTask__MapItr) Done() bool {
-	return itr.idx >= 18
+	return itr.idx >= 19
 }
 
 func (FinishedTask) ListIterator() ipld.ListIterator {
 	return nil
 }
 func (FinishedTask) Length() int64 {
-	return 18
+	return 19
 }
 func (FinishedTask) IsAbsent() bool {
 	return false
@@ -2987,6 +3010,7 @@ type _FinishedTask__Assembler struct {
 	ca_PayloadCID _String__Assembler
 	ca_ProposalCID _String__Assembler
 	ca_DealIDString _String__Assembler
+	ca_MinerPeerID _String__Assembler
 	}
 
 func (na *_FinishedTask__Assembler) reset() {
@@ -3010,6 +3034,7 @@ func (na *_FinishedTask__Assembler) reset() {
 	na.ca_PayloadCID.reset()
 	na.ca_ProposalCID.reset()
 	na.ca_DealIDString.reset()
+	na.ca_MinerPeerID.reset()
 }
 
 var (
@@ -3031,6 +3056,7 @@ var (
 	fieldBit__FinishedTask_PayloadCID = 1 << 15
 	fieldBit__FinishedTask_ProposalCID = 1 << 16
 	fieldBit__FinishedTask_DealIDString = 1 << 17
+	fieldBit__FinishedTask_MinerPeerID = 1 << 18
 	fieldBits__FinishedTask_sufficient = 0 + 1 << 0 + 1 << 1 + 1 << 5 + 1 << 6 + 1 << 7 + 1 << 11
 )
 func (na *_FinishedTask__Assembler) BeginMap(int64) (ipld.MapAssembler, error) {
@@ -3325,6 +3351,18 @@ func (ma *_FinishedTask__Assembler) valueFinishTidy() bool {
 		default:
 			return false
 		}
+	case 18:
+		switch ma.w.MinerPeerID.m {
+		case schema.Maybe_Null:
+			ma.state = maState_initial
+			return true
+		case schema.Maybe_Value:
+			ma.w.MinerPeerID.v = ma.ca_MinerPeerID.w
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
 	default:
 		panic("unreachable")
 	}
@@ -3536,6 +3574,17 @@ func (ma *_FinishedTask__Assembler) AssembleEntry(k string) (ipld.NodeAssembler,
 		ma.ca_DealIDString.m = &ma.w.DealIDString.m
 		ma.w.DealIDString.m = allowNull
 		return &ma.ca_DealIDString, nil
+	case "MinerPeerID":
+		if ma.s & fieldBit__FinishedTask_MinerPeerID != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_MinerPeerID}
+		}
+		ma.s += fieldBit__FinishedTask_MinerPeerID
+		ma.state = maState_midValue
+		ma.f = 18
+		ma.ca_MinerPeerID.w = ma.w.MinerPeerID.v
+		ma.ca_MinerPeerID.m = &ma.w.MinerPeerID.m
+		ma.w.MinerPeerID.m = allowNull
+		return &ma.ca_MinerPeerID, nil
 	default:
 		return nil, ipld.ErrInvalidKey{TypeName:"tasks.FinishedTask", Key:&_String{k}}
 	}
@@ -3656,6 +3705,11 @@ func (ma *_FinishedTask__Assembler) AssembleValue() ipld.NodeAssembler {
 		ma.ca_DealIDString.m = &ma.w.DealIDString.m
 		ma.w.DealIDString.m = allowNull
 		return &ma.ca_DealIDString
+	case 18:
+		ma.ca_MinerPeerID.w = ma.w.MinerPeerID.v
+		ma.ca_MinerPeerID.m = &ma.w.MinerPeerID.m
+		ma.w.MinerPeerID.m = allowNull
+		return &ma.ca_MinerPeerID
 	default:
 		panic("unreachable")
 	}
@@ -3857,6 +3911,13 @@ func (ka *_FinishedTask__KeyAssembler) AssignString(k string) error {
 		ka.s += fieldBit__FinishedTask_DealIDString
 		ka.state = maState_expectValue
 		ka.f = 17
+	case "MinerPeerID":
+		if ka.s & fieldBit__FinishedTask_MinerPeerID != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_MinerPeerID}
+		}
+		ka.s += fieldBit__FinishedTask_MinerPeerID
+		ka.state = maState_expectValue
+		ka.f = 18
 	default:
 		return ipld.ErrInvalidKey{TypeName:"tasks.FinishedTask", Key:&_String{k}}
 	}
@@ -3904,6 +3965,7 @@ var (
 	fieldName__FinishedTask_PayloadCID_serial = _String{"PayloadCID"}
 	fieldName__FinishedTask_ProposalCID_serial = _String{"ProposalCID"}
 	fieldName__FinishedTask_DealIDString_serial = _String{"DealIDString"}
+	fieldName__FinishedTask_MinerPeerID_serial = _String{"MinerPeerID"}
 )
 var _ ipld.Node = &_FinishedTask__Repr{}
 func (_FinishedTask__Repr) Kind() ipld.Kind {
@@ -4016,6 +4078,14 @@ func (n *_FinishedTask__Repr) LookupByString(key string) (ipld.Node, error) {
 			return ipld.Null, nil
 		}
 		return n.DealIDString.v.Representation(), nil
+	case "MinerPeerID":
+		if n.MinerPeerID.m == schema.Maybe_Absent {
+			return ipld.Absent, ipld.ErrNotExists{ipld.PathSegmentOfString(key)}
+		}
+		if n.MinerPeerID.m == schema.Maybe_Null {
+			return ipld.Null, nil
+		}
+		return n.MinerPeerID.v.Representation(), nil
 	default:
 		return nil, schema.ErrNoSuchField{Type: nil /*TODO*/, Field: ipld.PathSegmentOfString(key)}
 	}
@@ -4034,7 +4104,12 @@ func (n _FinishedTask__Repr) LookupBySegment(seg ipld.PathSegment) (ipld.Node, e
 	return n.LookupByString(seg.String())
 }
 func (n *_FinishedTask__Repr) MapIterator() ipld.MapIterator {
-	end := 18
+	end := 19
+	if n.MinerPeerID.m == schema.Maybe_Absent {
+		end = 18
+	} else {
+		goto done
+	}
 	if n.DealIDString.m == schema.Maybe_Absent {
 		end = 17
 	} else {
@@ -4076,7 +4151,7 @@ type _FinishedTask__ReprMapItr struct {
 }
 
 func (itr *_FinishedTask__ReprMapItr) Next() (k ipld.Node, v ipld.Node, _ error) {
-advance:if itr.idx >= 18 {
+advance:if itr.idx >= 19 {
 		return nil, nil, ipld.ErrIteratorOverread{}
 	}
 	switch itr.idx {
@@ -4226,6 +4301,17 @@ advance:if itr.idx >= 18 {
 			break
 		}
 		v = itr.n.DealIDString.v.Representation()
+	case 18:
+		k = &fieldName__FinishedTask_MinerPeerID_serial
+		if itr.n.MinerPeerID.m == schema.Maybe_Absent {
+			itr.idx++
+			goto advance
+		}
+		if itr.n.MinerPeerID.m == schema.Maybe_Null {
+			v = ipld.Null
+			break
+		}
+		v = itr.n.MinerPeerID.v.Representation()
 	default:
 		panic("unreachable")
 	}
@@ -4239,7 +4325,7 @@ func (_FinishedTask__Repr) ListIterator() ipld.ListIterator {
 	return nil
 }
 func (rn *_FinishedTask__Repr) Length() int64 {
-	l := 18
+	l := 19
 	if rn.ErrorMessage.m == schema.Maybe_Absent {
 		l--
 	}
@@ -4274,6 +4360,9 @@ func (rn *_FinishedTask__Repr) Length() int64 {
 		l--
 	}
 	if rn.DealIDString.m == schema.Maybe_Absent {
+		l--
+	}
+	if rn.MinerPeerID.m == schema.Maybe_Absent {
 		l--
 	}
 	return int64(l)
@@ -4352,6 +4441,7 @@ type _FinishedTask__ReprAssembler struct {
 	ca_PayloadCID _String__ReprAssembler
 	ca_ProposalCID _String__ReprAssembler
 	ca_DealIDString _String__ReprAssembler
+	ca_MinerPeerID _String__ReprAssembler
 	}
 
 func (na *_FinishedTask__ReprAssembler) reset() {
@@ -4375,6 +4465,7 @@ func (na *_FinishedTask__ReprAssembler) reset() {
 	na.ca_PayloadCID.reset()
 	na.ca_ProposalCID.reset()
 	na.ca_DealIDString.reset()
+	na.ca_MinerPeerID.reset()
 }
 func (na *_FinishedTask__ReprAssembler) BeginMap(int64) (ipld.MapAssembler, error) {
 	switch *na.m {
@@ -4656,6 +4747,18 @@ func (ma *_FinishedTask__ReprAssembler) valueFinishTidy() bool {
 		default:
 			return false
 		}
+	case 18:
+		switch ma.w.MinerPeerID.m {
+		case schema.Maybe_Null:
+			ma.state = maState_initial
+			return true
+		case schema.Maybe_Value:
+			ma.w.MinerPeerID.v = ma.ca_MinerPeerID.w
+			ma.state = maState_initial
+			return true
+		default:
+			return false
+		}
 	default:
 		panic("unreachable")
 	}
@@ -4868,6 +4971,17 @@ func (ma *_FinishedTask__ReprAssembler) AssembleEntry(k string) (ipld.NodeAssemb
 		ma.ca_DealIDString.m = &ma.w.DealIDString.m
 		ma.w.DealIDString.m = allowNull
 		return &ma.ca_DealIDString, nil
+	case "MinerPeerID":
+		if ma.s & fieldBit__FinishedTask_MinerPeerID != 0 {
+			return nil, ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_MinerPeerID_serial}
+		}
+		ma.s += fieldBit__FinishedTask_MinerPeerID
+		ma.state = maState_midValue
+		ma.f = 18
+		ma.ca_MinerPeerID.w = ma.w.MinerPeerID.v
+		ma.ca_MinerPeerID.m = &ma.w.MinerPeerID.m
+		ma.w.MinerPeerID.m = allowNull
+		return &ma.ca_MinerPeerID, nil
 	default:
 		return nil, ipld.ErrInvalidKey{TypeName:"tasks.FinishedTask.Repr", Key:&_String{k}}
 	}
@@ -4989,6 +5103,11 @@ func (ma *_FinishedTask__ReprAssembler) AssembleValue() ipld.NodeAssembler {
 		ma.ca_DealIDString.m = &ma.w.DealIDString.m
 		ma.w.DealIDString.m = allowNull
 		return &ma.ca_DealIDString
+	case 18:
+		ma.ca_MinerPeerID.w = ma.w.MinerPeerID.v
+		ma.ca_MinerPeerID.m = &ma.w.MinerPeerID.m
+		ma.w.MinerPeerID.m = allowNull
+		return &ma.ca_MinerPeerID
 	default:
 		panic("unreachable")
 	}
@@ -5190,6 +5309,13 @@ func (ka *_FinishedTask__ReprKeyAssembler) AssignString(k string) error {
 		ka.s += fieldBit__FinishedTask_DealIDString
 		ka.state = maState_expectValue
 		ka.f = 17
+	case "MinerPeerID":
+		if ka.s & fieldBit__FinishedTask_MinerPeerID != 0 {
+			return ipld.ErrRepeatedMapKey{&fieldName__FinishedTask_MinerPeerID_serial}
+		}
+		ka.s += fieldBit__FinishedTask_MinerPeerID
+		ka.state = maState_expectValue
+		ka.f = 18
 	default:
 		return ipld.ErrInvalidKey{TypeName:"tasks.FinishedTask.Repr", Key:&_String{k}}
 	}
