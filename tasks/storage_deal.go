@@ -187,6 +187,7 @@ func (de *dealExecutor) netDiag(l logFunc) error {
 
 	l(fmt.Sprintf("NetAgentVersion: %s", av))
 	l(fmt.Sprintf("ClientVersion: %s", cv.Version))
+	l(fmt.Sprintf("RemotePeerID: %s", de.pi.ID))
 	if err != nil {
 		return err
 	}
