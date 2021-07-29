@@ -52,6 +52,10 @@ Dealbot Controller
 | driver | `DEALBOT_PERSISTENCE_DRIVER` | `postgres` |
 | dbloc | `DEALBOT_PERSISTENCE_CONN` |  db conn string from postgres |
 | gqlAccessToken | `DEALBOT_GRAPHQL_ACCESS_TOKEN` | a static key for querying non-public data from the graphql server |
+| devAssetDir| - | serve controller assets from disk rather the compiled binary for development |
+| basicauth | `DEALBOT_BASICAUTH` | basic authentication credentials if the controller is being served behind them to make xhrs work in that environment |
+| datapointlog | `DEALBOT_DATAPOINT_LOG` | file / stream to write out a json line for each completed task |
+| gateway-api | `DEALBOT_LOTUS_GATEWAY` | address of lotus gateway to query for wallet balances for controller UX |
 
 Dealbot Daemon
 
