@@ -71,6 +71,8 @@ application:
     - mount: /shared
       volume:
         - name: shared-volume
+          chownLotus: true
+          subdirPerRelease: true
           persistentVolumeClaim:
               claimName: chain-exports
 
