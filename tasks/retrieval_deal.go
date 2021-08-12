@@ -82,7 +82,17 @@ func MakeRetrievalDeal(ctx context.Context, config NodeConfig, node api.FullNode
 		return err
 	}
 
-	return de.executeAndMonitorDeal(ctx, updateStage, stageTimeouts)
+	err = de.executeAndMonitorDeal(ctx, updateStage, stageTimeouts)
+	cleanupErr := de.cleanupDeal()
+	if err != nil {
+		return err
+	}
+	if cleanupErr != nil {
+		return cleanupErr
+	}
+	stage = RetrievalStageDealComplete
+	dealStage := RetrievalStages[stage]()
+	return updateStage(ctx, stage, dealStage)
 }
 
 type retrievalDealExecutor struct {
@@ -293,30 +303,7 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(ctx context.Context, upda
 						return err
 					}
 				}
-
-				// clean up the data.
-				imports, err := de.node.ClientListImports(de.ctx)
-				if err != nil {
-					return err
-				}
-				for _, i := range imports {
-					if i.Root != nil && i.Root.String() == de.task.PayloadCID.String() {
-						if err := de.node.ClientRemoveImport(de.ctx, i.Key); err != nil {
-							return err
-						}
-					}
-				}
-				dbPath := filepath.Join(de.config.DataDir, de.task.PayloadCID.x)
-				if _, err := os.Stat(dbPath); !os.IsNotExist(err) {
-					if err := os.RemoveAll(dbPath); err != nil {
-						return err
-					}
-				}
-
-				// final stage
-				stage = RetrievalStageDealComplete
-				dealStage = RetrievalStages[stage]()
-				return updateStage(ctx, stage, dealStage)
+				return nil
 			}
 
 			// if the event has an error message, then something went wrong and deal failed
@@ -328,6 +315,28 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(ctx context.Context, upda
 		}
 	}
 
+}
+
+func (de *retrievalDealExecutor) cleanupDeal() error {
+	// clean up the data.
+	imports, err := de.node.ClientListImports(de.ctx)
+	if err != nil {
+		return err
+	}
+	for _, i := range imports {
+		if i.Root != nil && i.Root.String() == de.task.PayloadCID.String() {
+			if err := de.node.ClientRemoveImport(de.ctx, i.Key); err != nil {
+				return err
+			}
+		}
+	}
+	dbPath := filepath.Join(de.config.DataDir, de.task.PayloadCID.x)
+	if _, err := os.Stat(dbPath); !os.IsNotExist(err) {
+		if err := os.RemoveAll(dbPath); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (rp _RetrievalTask__Prototype) Of(minerParam string, payloadCid string, carExport bool, tag string) RetrievalTask {
