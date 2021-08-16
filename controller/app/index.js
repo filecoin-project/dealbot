@@ -91,6 +91,12 @@ function gotTasks(data) {
         }
         delete task.Schedule;
         delete task.ScheduleLimit;
+        if (task.WorkedBy != "" && task.Status == 2) {
+            if (!tasksByWorkers[task.WorkedBy]) {
+                tasksByWorkers[task.WorkedBy] = 0
+            }
+            tasksByWorkers[task.WorkedBy]++
+        }
         return Object.assign({ sched, task }, item)
     }).filter((item) => item.Status == 1 || item.sched.Schedule)
     if (firstLoad) {
@@ -98,7 +104,7 @@ function gotTasks(data) {
         $("#taskTable").bootstrapTable({
             idField: 'UUID',
             columns: [
-                {title:'ID', field:'UUID'},
+                {title:'ID', field:'UUID', cellStyle: taskActiveStyle},
                 {title:'Task', field:'task', formatter: stringify},
                 {title:'Schedule', field:'sched', formatter: stringify},
                 {title:'Delete', field: 'operate', align: 'center', formatter: operate, events: { 'click .remove': cancel}}
@@ -110,6 +116,20 @@ function gotTasks(data) {
         $("#taskTable").bootstrapTable('load', processedData)
     }
 }
+
+let taskActiveStyle = (value, row) => {
+    if (row.Status == 0 || row.Status == 1) {
+        return ''; //available
+    } else if (row.Status == 2) {
+        return 'table-warning'; // in progress
+    } else if (row.Status == 3) {
+        return 'table-success';
+    } else {
+        return 'table-danger';
+    }
+}
+
+let tasksByWorkers = {}
 
 let currentRegion = ""
 
@@ -181,6 +201,12 @@ function gotDaemons(data) {
             return { classes: 'table-success' }
         }
         $("#botlist").show()
+        let activeFormatter = (val) => {
+            if (tasksByWorkers[val] != undefined) {
+                return tasksByWorkers[val];
+            }
+            return '-';
+        }
 
     $("#botdetail").bootstrapTable({
         idField: 'id',
@@ -190,6 +216,7 @@ function gotDaemons(data) {
             {title:'Wallet', field:'wallet.address'},
             {title: 'Balance', field: 'balance', formatter: filFormatter, cellStyle: filStyler},
             {title: 'Data Cap', field: 'datacap', formatter: capFormatter, cellStyle: capStyler},
+            {active: 'Active Tasks', field:'id', formatter: activeFormatter},
             {title:'Actions', field: 'operate', align: 'center', formatter: operateDaemon, events: { 'click .drain': drain, 'click .reset': reset, 'click .complete': complete,'click .shutdown': shutdown}}
         ],
         data: processedDaemons,
