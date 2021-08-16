@@ -216,7 +216,7 @@ function gotDaemons(data) {
             {title:'Wallet', field:'wallet.address'},
             {title: 'Balance', field: 'balance', formatter: filFormatter, cellStyle: filStyler},
             {title: 'Data Cap', field: 'datacap', formatter: capFormatter, cellStyle: capStyler},
-            {active: 'Active Tasks', field:'id', formatter: activeFormatter},
+            {title: 'Active Tasks', field:'id', formatter: activeFormatter},
             {title:'Actions', field: 'operate', align: 'center', formatter: operateDaemon, events: { 'click .drain': drain, 'click .reset': reset, 'click .complete': complete,'click .shutdown': shutdown}}
         ],
         data: processedDaemons,
