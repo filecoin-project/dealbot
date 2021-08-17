@@ -138,6 +138,11 @@ func (c *Controller) newDaemonHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+	// this will mostly error because the daemon in most cases shouldn't be listed
+	// as drained, but if it does happen to be there from before, lets undrain
+	// at creation to be sure it'll get tasks that it should get.
+	_ = c.db.UndrainWorker(r.Context(), daemon.Id)
+
 	// daemon is already created; sanatize output
 	daemon.Wallet.Exported = ""
 	json.NewEncoder(w).Encode(toDaemonWithFunds(r.Context(), daemon, c.gateway))
