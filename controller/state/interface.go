@@ -18,6 +18,7 @@ type State interface {
 	NewStorageTask(ctx context.Context, storageTask tasks.StorageTask) (tasks.Task, error)
 	NewRetrievalTask(ctx context.Context, retrievalTask tasks.RetrievalTask) (tasks.Task, error)
 	DrainWorker(ctx context.Context, worker string) error
+	UndrainWorker(ctx context.Context, worker string) error
 	PublishRecordsFrom(ctx context.Context, worker string) error
 	ResetWorkerTasks(ctx context.Context, worker string) error
 	Delete(ctx context.Context, uuid string) error
