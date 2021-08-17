@@ -88,6 +88,10 @@ const (
 		INSERT INTO drained_workers (worked_by) VALUES ($1)
 	`
 
+	drainedDelSQL = `
+		DELETE FROM drained_workers WHERE worked_by = $1
+	`
+
 	drainedQuerySQL = `
 		SELECT COUNT(*) as cnt FROM drained_workers WHERE worked_by = $1
 	`

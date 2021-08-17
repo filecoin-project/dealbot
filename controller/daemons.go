@@ -86,8 +86,8 @@ func (c *Controller) getDaemonHandler(w http.ResponseWriter, r *http.Request) {
 
 func (c *Controller) deleteDaemonHandler(w http.ResponseWriter, r *http.Request) {
 	logger := log.With("req_id", r.Header.Get("X-Request-ID"))
-	logger.Debugw("handle request", "command", "list tasks")
-	defer logger.Debugw("request handled", "command", "list tasks")
+	logger.Debugw("handle request", "command", "delete daemon")
+	defer logger.Debugw("request handled", "command", "delete  daemon")
 	w.Header().Set("Content-Type", "application/json")
 	enableCors(&w, r)
 
@@ -103,13 +103,17 @@ func (c *Controller) deleteDaemonHandler(w http.ResponseWriter, r *http.Request)
 		}
 		return
 	}
+	if err := c.db.UndrainWorker(r.Context(), daemonid); err != nil {
+		log.Errorw("error cleaning up drained state of daemon daemon", "err", err)
+	}
+
 	w.WriteHeader(http.StatusNoContent)
 }
 
 func (c *Controller) newDaemonHandler(w http.ResponseWriter, r *http.Request) {
 	logger := log.With("req_id", r.Header.Get("X-Request-ID"))
-	logger.Debugw("handle request", "command", "list tasks")
-	defer logger.Debugw("request handled", "command", "list tasks")
+	logger.Debugw("handle request", "command", "new daemon")
+	defer logger.Debugw("request handled", "command", "new daemon")
 	w.Header().Set("Content-Type", "application/json")
 	enableCors(&w, r)
 
@@ -134,6 +138,11 @@ func (c *Controller) newDaemonHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+	// this will mostly error because the daemon in most cases shouldn't be listed
+	// as drained, but if it does happen to be there from before, lets undrain
+	// at creation to be sure it'll get tasks that it should get.
+	_ = c.db.UndrainWorker(r.Context(), daemon.Id)
+
 	// daemon is already created; sanatize output
 	daemon.Wallet.Exported = ""
 	json.NewEncoder(w).Encode(toDaemonWithFunds(r.Context(), daemon, c.gateway))

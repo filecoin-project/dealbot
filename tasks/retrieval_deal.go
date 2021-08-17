@@ -284,17 +284,8 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(ctx context.Context, upda
 				fp, err := os.Open(filepath.Join(de.config.DataDir, de.task.PayloadCID.x))
 				if err == nil {
 					defer fp.Close()
-					cr, err := car.NewCarReader(fp)
+					numCids, err := tryReadCar(fp)
 					if err == nil {
-						numCids := 0
-						for err == nil {
-							_, err = cr.Next()
-							if err == io.EOF {
-								err = nil
-								break
-							}
-							numCids++
-						}
 						dealStage = AddLog(dealStage, fmt.Sprintf("CIDCount: %d", numCids))
 					}
 					dealStage = AddLog(dealStage, fmt.Sprintf("CARReadClean: %t", err == nil))
@@ -315,6 +306,28 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(ctx context.Context, upda
 		}
 	}
 
+}
+
+func tryReadCar(fp *os.File) (numCids int, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			numCids = 0
+			err = fmt.Errorf("invalid car")
+		}
+	}()
+
+	cr, err := car.NewCarReader(fp)
+	if err == nil {
+		for err == nil {
+			_, err = cr.Next()
+			if err == io.EOF {
+				err = nil
+				break
+			}
+			numCids++
+		}
+	}
+	return numCids, err
 }
 
 func (de *retrievalDealExecutor) cleanupDeal() error {

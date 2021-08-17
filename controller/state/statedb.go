@@ -965,6 +965,14 @@ func (s *stateDB) DrainWorker(ctx context.Context, worker string) error {
 	return nil
 }
 
+// undrainWorker adds a worker to the list of workers to not give work to.
+func (s *stateDB) UndrainWorker(ctx context.Context, worker string) error {
+	if _, err := s.db().ExecContext(ctx, drainedDelSQL, worker); err != nil {
+		return err
+	}
+	return nil
+}
+
 // ResetWorkerTasks finds all in progress tasks for a worker and resets them to as if they had never been run
 func (s *stateDB) ResetWorkerTasks(ctx context.Context, worker string) error {
 	var resetTasks []tasks.Task
