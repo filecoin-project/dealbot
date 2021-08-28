@@ -69,10 +69,10 @@ application:
     enabled: false
   storage:
     - mount: /shared
+      chownLotus: true
+      subdirPerRelease: true
       volume:
         - name: shared-volume
-          chownLotus: true
-          subdirPerRelease: true
           persistentVolumeClaim:
               claimName: chain-exports
 
