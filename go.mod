@@ -25,7 +25,7 @@ require (
 	github.com/ipld/go-ipld-graphql v0.0.0-20210608181858-5e7994523c5a
 	github.com/ipld/go-ipld-prime v0.7.1-0.20210519202903-3a67953d6ef3
 	github.com/ipld/go-ipld-prime-proto v0.1.1 // indirect
-	github.com/lib/pq v1.10.0
+	github.com/lib/pq v1.10.3
 	github.com/libp2p/go-libp2p v0.12.0
 	github.com/libp2p/go-libp2p-core v0.7.0
 	github.com/libp2p/go-libp2p-crypto v0.1.0
