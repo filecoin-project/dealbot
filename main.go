@@ -91,6 +91,6 @@ func main() {
 	}
 
 	if err := app.RunContext(ctx, os.Args); err != nil {
-		log.Fatal(err)
+		log.Panic(err)
 	}
 }
