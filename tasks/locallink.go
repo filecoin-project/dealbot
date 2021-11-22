@@ -1,10 +1,10 @@
 package tasks
 
 import (
-	"context"
 	"fmt"
 
 	ipld "github.com/ipld/go-ipld-prime"
+	"github.com/ipld/go-ipld-prime/datamodel"
 )
 
 type localLink struct {
@@ -13,14 +13,13 @@ type localLink struct {
 
 var _ ipld.Link = (*localLink)(nil)
 
-func (l *localLink) LinkBuilder() ipld.LinkBuilder {
+func (l *localLink) Binary() string {
+	return fmt.Sprintf("&%s", l.Node)
+}
+
+func (l *localLink) Prototype() datamodel.LinkPrototype {
 	return nil
 }
-
-func (l *localLink) Load(_ context.Context, _ ipld.LinkContext, na ipld.NodeAssembler, _ ipld.Loader) error {
-	return na.AssignNode(l.Node)
-}
-
 func (l *localLink) String() string {
 	return fmt.Sprintf("&%s", l.Node)
 }

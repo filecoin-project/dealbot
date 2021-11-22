@@ -23,7 +23,7 @@ require (
 	github.com/ipfs/go-log/v2 v2.1.2
 	github.com/ipld/go-car v0.1.1-0.20201119040415-11b6074b6d4d
 	github.com/ipld/go-ipld-graphql v0.0.0-20210608181858-5e7994523c5a
-	github.com/ipld/go-ipld-prime v0.7.1-0.20210519202903-3a67953d6ef3
+	github.com/ipld/go-ipld-prime v0.14.0
 	github.com/ipld/go-ipld-prime-proto v0.1.1 // indirect
 	github.com/lib/pq v1.10.3
 	github.com/libp2p/go-libp2p v0.12.0
@@ -31,8 +31,7 @@ require (
 	github.com/libp2p/go-libp2p-crypto v0.1.0
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/multiformats/go-multiaddr v0.3.1
-	github.com/multiformats/go-multicodec v0.2.0
-	github.com/multiformats/go-multihash v0.0.15 // indirect
+	github.com/multiformats/go-multicodec v0.3.0
 	github.com/polydawn/refmt v0.0.0-20201211092308-30ac6d18308e
 	github.com/prometheus/client_golang v1.7.1
 	github.com/robfig/cron/v3 v3.0.1

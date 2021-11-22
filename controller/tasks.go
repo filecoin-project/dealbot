@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -12,9 +11,10 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/ipld/go-car"
-	"github.com/ipld/go-ipld-prime"
 	"github.com/ipld/go-ipld-prime/codec/dagjson"
+	cidlink "github.com/ipld/go-ipld-prime/linking/cid"
 	basicnode "github.com/ipld/go-ipld-prime/node/basic"
+	"github.com/ipld/go-ipld-prime/storage/memstore"
 	"github.com/ipld/go-ipld-prime/traversal/selector"
 	"github.com/ipld/go-ipld-prime/traversal/selector/builder"
 
@@ -83,7 +83,7 @@ func (c *Controller) getTasksHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	tsks := tasks.Type.Tasks.Of(matchList)
-	dagjson.Encoder(tsks.Representation(), w)
+	dagjson.Encode(tsks.Representation(), w)
 }
 
 func (c *Controller) drainHandler(w http.ResponseWriter, r *http.Request) {
@@ -157,7 +157,7 @@ func (c *Controller) popTaskHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	ptp := tasks.Type.PopTask.NewBuilder()
-	err := dagjson.Decoder(ptp, r.Body)
+	err := dagjson.Decode(ptp, r.Body)
 	if err != nil {
 		log.Errorw("UpdateTaskRequest json decode", "err", err.Error())
 		w.WriteHeader(http.StatusBadRequest)
@@ -174,7 +174,7 @@ func (c *Controller) popTaskHandler(w http.ResponseWriter, r *http.Request) {
 	if task == nil {
 		w.WriteHeader(http.StatusNoContent)
 	} else {
-		dagjson.Encoder(task.Representation(), w)
+		dagjson.Encode(task.Representation(), w)
 	}
 }
 
@@ -186,7 +186,7 @@ func (c *Controller) updateTaskHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	utp := tasks.Type.UpdateTask.NewBuilder()
-	err := dagjson.Decoder(utp, r.Body)
+	err := dagjson.Decode(utp, r.Body)
 	if err != nil {
 		log.Errorw("UpdateTaskRequest json decode", "err", err.Error())
 		w.WriteHeader(http.StatusBadRequest)
@@ -207,7 +207,7 @@ func (c *Controller) updateTaskHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	dagjson.Encoder(task.Representation(), w)
+	dagjson.Encode(task.Representation(), w)
 }
 
 func mustString(s string, _ error) string {
@@ -222,7 +222,7 @@ func (c *Controller) newStorageTaskHandler(w http.ResponseWriter, r *http.Reques
 
 	w.Header().Set("Content-Type", "application/json")
 	stp := tasks.Type.StorageTask.NewBuilder()
-	if err := dagjson.Decoder(stp, r.Body); err != nil {
+	if err := dagjson.Decode(stp, r.Body); err != nil {
 		log.Errorw("StorageTask json decode", "err", err.Error())
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -245,7 +245,7 @@ func (c *Controller) newStorageTaskHandler(w http.ResponseWriter, r *http.Reques
 
 	w.Header().Set("Location", taskURL.String())
 	w.WriteHeader(http.StatusCreated)
-	dagjson.Encoder(task.Representation(), w)
+	dagjson.Encode(task.Representation(), w)
 }
 
 func (c *Controller) newRetrievalTaskHandler(w http.ResponseWriter, r *http.Request) {
@@ -257,7 +257,7 @@ func (c *Controller) newRetrievalTaskHandler(w http.ResponseWriter, r *http.Requ
 	w.Header().Set("Content-Type", "application/json")
 
 	rtp := tasks.Type.RetrievalTask.NewBuilder()
-	if err := dagjson.Decoder(rtp, r.Body); err != nil {
+	if err := dagjson.Decode(rtp, r.Body); err != nil {
 		log.Errorw("RetrievalTask json decode", "err", err.Error())
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -280,7 +280,7 @@ func (c *Controller) newRetrievalTaskHandler(w http.ResponseWriter, r *http.Requ
 
 	w.Header().Set("Location", taskURL.String())
 	w.WriteHeader(http.StatusCreated)
-	dagjson.Encoder(task.Representation(), w)
+	dagjson.Encode(task.Representation(), w)
 }
 
 func (c *Controller) getTaskHandler(w http.ResponseWriter, r *http.Request) {
@@ -307,18 +307,20 @@ func (c *Controller) getTaskHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if _, set := vars["parsed"]; set {
-		nilStore := func(_ ipld.LinkContext) (io.Writer, ipld.StoreCommitter, error) {
-			return io.Discard, func(_ ipld.Link) error { return nil }, nil
-		}
-		finished, err := task.Finalize(r.Context(), nilStore, true)
+		ls := cidlink.DefaultLinkSystem()
+		ms := memstore.Store{}
+		ls.SetReadStorage(&ms)
+		ls.SetWriteStorage(&ms)
+
+		finished, err := task.Finalize(r.Context(), ls, true)
 		if err != nil {
 			log.Errorw("finalize task error", "err", err.Error())
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		dagjson.Encoder(finished, w)
+		dagjson.Encode(finished, w)
 	} else {
-		dagjson.Encoder(task.Representation(), w)
+		dagjson.Encode(task.Representation(), w)
 	}
 }
 
@@ -372,6 +374,7 @@ func (c *Controller) carHandler(w http.ResponseWriter, r *http.Request) {
 		Root:     rootCid,
 		Selector: ss.Node(),
 	}
+
 	sc := car.NewSelectiveCar(r.Context(), store, []car.Dag{root})
 	err = sc.Write(w)
 	if err != nil {

@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/filecoin-project/dealbot/tasks"
-	blockformat "github.com/ipfs/go-block-format"
 	"github.com/ipfs/go-cid"
 )
 
@@ -27,6 +26,7 @@ type State interface {
 
 type Store interface {
 	Head() (cid.Cid, error)
-	Get(cid.Cid) (blockformat.Block, error)
-	Set(cid.Cid, []byte) error
+	Has(context.Context, string) (bool, error)
+	Get(context.Context, string) ([]byte, error)
+	Put(ctx context.Context, key string, content []byte) error
 }

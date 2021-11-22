@@ -115,7 +115,7 @@ var RetrievalStages = map[string]func() StageDetails{
 }
 
 // the multi-codec and hash we use for cid links by default
-var linkProto = linksystem.LinkBuilder{Prefix: cid.Prefix{
+var linkProto = linksystem.LinkPrototype{Prefix: cid.Prefix{
 	Version:  1,
 	Codec:    uint64(multicodec.DagJson),
 	MhType:   uint64(multicodec.Sha2_256),
@@ -358,7 +358,7 @@ func (t *_Task) Assign(worker string, status Status) Task {
 	return &newTask
 }
 
-func (t *_Task) Finalize(ctx context.Context, s ipld.Storer, local bool) (FinishedTask, error) {
+func (t *_Task) Finalize(ctx context.Context, ls ipld.LinkSystem, local bool) (FinishedTask, error) {
 	if !local {
 		if t.Status != *Failed && t.Status != *Successful {
 			return nil, fmt.Errorf("task cannot be finalized as it is not in a finished state")
@@ -394,7 +394,7 @@ func (t *_Task) Finalize(ctx context.Context, s ipld.Storer, local bool) (Finish
 	if local {
 		ft.Events = _Link_List_StageDetails{&localLink{logList}}
 	} else {
-		logLnk, err := linkProto.Build(ctx, ipld.LinkContext{}, logList, s)
+		logLnk, err := ls.Store(ipld.LinkContext{}, linkProto, logList)
 		if err != nil {
 			return nil, err
 		}
