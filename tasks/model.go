@@ -391,15 +391,11 @@ func (t *_Task) Finalize(ctx context.Context, ls ipld.LinkSystem, local bool) (F
 	if t.PastStageDetails.Exists() {
 		logList = t.PastStageDetails.Must()
 	}
-	if local {
-		ft.Events = _Link_List_StageDetails{&localLink{logList}}
-	} else {
-		logLnk, err := ls.Store(ipld.LinkContext{}, linkProto, logList)
-		if err != nil {
-			return nil, err
-		}
-		ft.Events = _Link_List_StageDetails{logLnk}
+	logLnk, err := ls.Store(ipld.LinkContext{}, linkProto, logList)
+	if err != nil {
+		return nil, err
 	}
+	ft.Events = _Link_List_StageDetails{logLnk}
 
 	return &ft, nil
 }
