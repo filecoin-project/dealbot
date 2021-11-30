@@ -28,7 +28,6 @@ require (
 	github.com/lib/pq v1.10.3
 	github.com/libp2p/go-libp2p v0.15.0
 	github.com/libp2p/go-libp2p-core v0.9.0
-	github.com/libp2p/go-libp2p-crypto v0.1.0
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/multiformats/go-multiaddr v0.4.1
 	github.com/multiformats/go-multicodec v0.3.1-0.20210902112759-1539a079fd61

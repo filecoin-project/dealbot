@@ -23,7 +23,7 @@ import (
 	cidlink "github.com/ipld/go-ipld-prime/linking/cid"
 	basicnode "github.com/ipld/go-ipld-prime/node/basic"
 	"github.com/ipld/go-ipld-prime/storage/memstore"
-	crypto "github.com/libp2p/go-libp2p-crypto"
+	crypto "github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/multiformats/go-multicodec"
 	tokenjson "github.com/polydawn/refmt/json"
 	"github.com/robfig/cron/v3"
