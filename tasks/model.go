@@ -137,7 +137,7 @@ func AddLog(stageDetails StageDetails, log string) StageDetails {
 	n := _StageDetails{
 		Description:      stageDetails.Description,
 		ExpectedDuration: stageDetails.ExpectedDuration,
-		UpdatedAt:        _Time__Maybe{m: schema.Maybe_Value, v: &_Time{now.UnixNano()}},
+		UpdatedAt:        _Time__Maybe{m: schema.Maybe_Value, v: _Time{now.UnixNano()}},
 		Logs: _List_Logs{
 			x: logs,
 		},
@@ -187,10 +187,10 @@ func executeStage(ctx context.Context, stage string, updateStage UpdateStage, st
 
 func (sdp *_StageDetails__Prototype) Of(desc, expected string) *_StageDetails {
 	sd := _StageDetails{
-		Description:      _String__Maybe{m: schema.Maybe_Value, v: &_String{desc}},
-		ExpectedDuration: _String__Maybe{m: schema.Maybe_Value, v: &_String{expected}},
+		Description:      _String__Maybe{m: schema.Maybe_Value, v: _String{desc}},
+		ExpectedDuration: _String__Maybe{m: schema.Maybe_Value, v: _String{expected}},
 		Logs:             _List_Logs{[]_Logs{}},
-		UpdatedAt:        _Time__Maybe{m: schema.Maybe_Value, v: &_Time{x: time.Now().UnixNano()}},
+		UpdatedAt:        _Time__Maybe{m: schema.Maybe_Value, v: _Time{x: time.Now().UnixNano()}},
 	}
 	return &sd
 }
@@ -207,7 +207,7 @@ func (sd *_StageDetails) WithLog(log string) *_StageDetails {
 		Description:      sd.Description,
 		ExpectedDuration: sd.ExpectedDuration,
 		Logs:             nl,
-		UpdatedAt:        _Time__Maybe{m: schema.Maybe_Value, v: &_Time{x: time.Now().UnixNano()}},
+		UpdatedAt:        _Time__Maybe{m: schema.Maybe_Value, v: _Time{x: time.Now().UnixNano()}},
 	}
 	return &n
 }
@@ -220,7 +220,7 @@ func (tp *_Task__Prototype) New(r RetrievalTask, s StorageTask) Task {
 	t := _Task{
 		UUID:                _String{uuid.New().String()},
 		Status:              *Available,
-		WorkedBy:            _String__Maybe{m: schema.Maybe_Value, v: &_String{""}},
+		WorkedBy:            _String__Maybe{m: schema.Maybe_Value, v: _String{""}},
 		Stage:               _String{""},
 		CurrentStageDetails: _StageDetails__Maybe{m: schema.Maybe_Absent},
 		StartedAt:           _Time__Maybe{m: schema.Maybe_Absent},
@@ -242,7 +242,7 @@ func (t *_Task) Reset() Task {
 	newTask := _Task{
 		UUID:                _String{t.UUID.x},
 		Status:              *Available,
-		WorkedBy:            _String__Maybe{m: schema.Maybe_Value, v: &_String{""}},
+		WorkedBy:            _String__Maybe{m: schema.Maybe_Value, v: _String{""}},
 		Stage:               _String{""},
 		CurrentStageDetails: _StageDetails__Maybe{m: schema.Maybe_Absent},
 		StartedAt:           _Time__Maybe{m: schema.Maybe_Absent},
@@ -256,7 +256,7 @@ func (t *_Task) MakeRunable(newUUID string, runCount int) Task {
 	newTask := _Task{
 		UUID:                _String{newUUID},
 		Status:              *Available,
-		WorkedBy:            _String__Maybe{m: schema.Maybe_Value, v: &_String{""}},
+		WorkedBy:            _String__Maybe{m: schema.Maybe_Value, v: _String{""}},
 		Stage:               _String{""},
 		CurrentStageDetails: _StageDetails__Maybe{m: schema.Maybe_Absent},
 		StartedAt:           _Time__Maybe{m: schema.Maybe_Absent},
@@ -344,11 +344,11 @@ func (t *_Task) Assign(worker string, status Status) Task {
 	newTask := _Task{
 		UUID:                t.UUID,
 		Status:              *status,
-		WorkedBy:            _String__Maybe{m: schema.Maybe_Value, v: &_String{worker}},
+		WorkedBy:            _String__Maybe{m: schema.Maybe_Value, v: _String{worker}},
 		Stage:               t.Stage,
 		CurrentStageDetails: t.CurrentStageDetails,
 		PastStageDetails:    t.PastStageDetails,
-		StartedAt:           _Time__Maybe{m: schema.Maybe_Value, v: &_Time{x: time.Now().UnixNano()}},
+		StartedAt:           _Time__Maybe{m: schema.Maybe_Value, v: _Time{x: time.Now().UnixNano()}},
 		RetrievalTask:       t.RetrievalTask,
 		RunCount:            t.RunCount,
 		StorageTask:         t.StorageTask,
@@ -368,7 +368,7 @@ func (t *_Task) Finalize(ctx context.Context, ls ipld.LinkSystem, local bool) (F
 	logs := parseFinalLogs(t)
 	ft := _FinishedTask{
 		Status:             t.Status,
-		StartedAt:          *t.StartedAt.v,
+		StartedAt:          t.StartedAt.v,
 		ErrorMessage:       t.ErrorMessage,
 		RetrievalTask:      t.RetrievalTask,
 		StorageTask:        t.StorageTask,
@@ -423,7 +423,7 @@ func (l *logExtraction) DealIDString() _String__Maybe {
 	if l.dealID == 0 {
 		return _String__Maybe{m: schema.Maybe_Absent}
 	}
-	return _String__Maybe{m: schema.Maybe_Value, v: &_String{strconv.Itoa(l.dealID)}}
+	return _String__Maybe{m: schema.Maybe_Value, v: _String{strconv.Itoa(l.dealID)}}
 }
 func parseFinalLogs(t Task) *logExtraction {
 	le := &logExtraction{
@@ -434,9 +434,9 @@ func parseFinalLogs(t Task) *logExtraction {
 	}
 
 	if t.StorageTask.Exists() {
-		le.size = _Int__Maybe{m: schema.Maybe_Value, v: &t.StorageTask.Must().Size}
+		le.size = _Int__Maybe{m: schema.Maybe_Value, v: t.StorageTask.Must().Size}
 	} else if t.RetrievalTask.Exists() {
-		le.payloadCID = _String__Maybe{m: schema.Maybe_Value, v: &t.RetrievalTask.Must().PayloadCID}
+		le.payloadCID = _String__Maybe{m: schema.Maybe_Value, v: t.RetrievalTask.Must().PayloadCID}
 	}
 
 	// If the task failed early, we might not have some of the info.
@@ -467,10 +467,10 @@ func parseFinalLogs(t Task) *logExtraction {
 			entryTime := stage.UpdatedAt.Must().Time()
 			if !le.timeFirstByte.Exists() && strings.Contains(entry, firstByteSubstring) {
 				le.timeFirstByte.m = schema.Maybe_Value
-				le.timeFirstByte.v = &_Int{entryTime.Sub(start).Milliseconds()}
+				le.timeFirstByte.v = _Int{entryTime.Sub(start).Milliseconds()}
 			} else if !le.timeLastByte.Exists() && strings.Contains(entry, lastByteSubstring) {
 				le.timeLastByte.m = schema.Maybe_Value
-				le.timeLastByte.v = &_Int{entryTime.Sub(start).Milliseconds()}
+				le.timeLastByte.v = _Int{entryTime.Sub(start).Milliseconds()}
 			}
 		}
 
@@ -480,19 +480,19 @@ func parseFinalLogs(t Task) *logExtraction {
 
 			if !le.timeFirstByte.Exists() && strings.Contains(entry, firstByteSubstring) {
 				le.timeFirstByte.m = schema.Maybe_Value
-				le.timeFirstByte.v = &_Int{entryTime.Sub(start).Milliseconds()}
+				le.timeFirstByte.v = _Int{entryTime.Sub(start).Milliseconds()}
 			} else if !le.timeLastByte.Exists() && strings.Contains(entry, lastByteSubstring) {
 				le.timeLastByte.m = schema.Maybe_Value
-				le.timeLastByte.v = &_Int{entryTime.Sub(start).Milliseconds()}
+				le.timeLastByte.v = _Int{entryTime.Sub(start).Milliseconds()}
 			}
 
 			if !le.minerVersion.Exists() && strings.Contains(entry, "NetAgentVersion: ") {
 				le.minerVersion.m = schema.Maybe_Value
-				le.minerVersion.v = &_String{strings.TrimPrefix(entry, "NetAgentVersion: ")}
+				le.minerVersion.v = _String{strings.TrimPrefix(entry, "NetAgentVersion: ")}
 			}
 			if !le.clientVersion.Exists() && strings.Contains(entry, "ClientVersion: ") {
 				le.clientVersion.m = schema.Maybe_Value
-				le.clientVersion.v = &_String{strings.TrimPrefix(entry, "ClientVersion: ")}
+				le.clientVersion.v = _String{strings.TrimPrefix(entry, "ClientVersion: ")}
 			}
 			if le.minerAddr == "" && strings.Contains(entry, "RemotePeerAddr: ") {
 				le.minerAddr = strings.TrimPrefix(entry, "RemotePeerAddr: ")
@@ -501,23 +501,23 @@ func parseFinalLogs(t Task) *logExtraction {
 				le.minerLatency.m = schema.Maybe_Value
 				val, err := strconv.Atoi(strings.TrimPrefix(entry, "RemotePeerLatency: "))
 				if err == nil {
-					le.minerLatency.v = &_Int{int64(val)}
+					le.minerLatency.v = _Int{int64(val)}
 				}
 			}
 			if le.size.IsAbsent() && strings.Contains(entry, "bytes received:") {
 				le.size.m = schema.Maybe_Value
 				b, err := strconv.ParseInt(strings.TrimPrefix(entry, "bytes received: "), 10, 10)
 				if err == nil {
-					le.size.v = &_Int{b}
+					le.size.v = _Int{b}
 				}
 			}
 			if le.payloadCID.IsAbsent() && strings.Contains(entry, "PayloadCID:") {
 				le.payloadCID.m = schema.Maybe_Value
-				le.payloadCID.v = &_String{strings.TrimPrefix(entry, "PayloadCID: ")}
+				le.payloadCID.v = _String{strings.TrimPrefix(entry, "PayloadCID: ")}
 			}
 			if le.proposalCID.IsAbsent() && strings.Contains(entry, "ProposalCID:") {
 				le.proposalCID.m = schema.Maybe_Value
-				le.proposalCID.v = &_String{strings.TrimPrefix(entry, "ProposalCID: ")}
+				le.proposalCID.v = _String{strings.TrimPrefix(entry, "ProposalCID: ")}
 			}
 			if le.dealID == 0 && strings.Contains(entry, "DealID:") {
 				val, err := strconv.Atoi(strings.TrimPrefix(entry, "DealID: "))
@@ -527,7 +527,7 @@ func parseFinalLogs(t Task) *logExtraction {
 			}
 			if le.minerPeerID.IsAbsent() && strings.Contains(entry, "RemotePeerID:") {
 				le.minerPeerID.m = schema.Maybe_Value
-				le.minerPeerID.v = &_String{strings.TrimPrefix(entry, "RemotePeerID: ")}
+				le.minerPeerID.v = _String{strings.TrimPrefix(entry, "RemotePeerID: ")}
 			}
 		}
 	}
@@ -551,7 +551,7 @@ func (t *_Task) UpdateTask(tsk UpdateTask) (Task, error) {
 	updatedTask := _Task{
 		UUID:                t.UUID,
 		Status:              tsk.Status,
-		WorkedBy:            _String__Maybe{m: schema.Maybe_Value, v: &tsk.WorkedBy},
+		WorkedBy:            _String__Maybe{m: schema.Maybe_Value, v: tsk.WorkedBy},
 		ErrorMessage:        tsk.ErrorMessage,
 		Stage:               _String{stage},
 		StartedAt:           t.StartedAt,
@@ -564,9 +564,9 @@ func (t *_Task) UpdateTask(tsk UpdateTask) (Task, error) {
 	// On stage transitions, archive the current stage.
 	if stage != t.Stage.x && t.CurrentStageDetails.Exists() {
 		if !t.PastStageDetails.Exists() {
-			updatedTask.PastStageDetails = _List_StageDetails__Maybe{m: schema.Maybe_Value, v: &_List_StageDetails{x: []_StageDetails{*t.CurrentStageDetails.v}}}
+			updatedTask.PastStageDetails = _List_StageDetails__Maybe{m: schema.Maybe_Value, v: _List_StageDetails{x: []_StageDetails{*t.CurrentStageDetails.v}}}
 		} else {
-			updatedTask.PastStageDetails = _List_StageDetails__Maybe{m: schema.Maybe_Value, v: &_List_StageDetails{x: append(t.PastStageDetails.v.x, *t.CurrentStageDetails.v)}}
+			updatedTask.PastStageDetails = _List_StageDetails__Maybe{m: schema.Maybe_Value, v: _List_StageDetails{x: append(t.PastStageDetails.v.x, *t.CurrentStageDetails.v)}}
 		}
 	} else {
 		updatedTask.PastStageDetails = t.PastStageDetails
@@ -618,10 +618,10 @@ func (alp *_List_AuthenticatedRecord__Prototype) Of(ars []*_AuthenticatedRecord)
 }
 
 func (rup *_RecordUpdate__Prototype) Of(rcrds *_List_AuthenticatedRecord, previous cid.Cid, previousSig []byte) *_RecordUpdate {
-	lrm := _Link__Maybe{m: schema.Maybe_Null, v: nil}
+	lrm := _Link__Maybe{m: schema.Maybe_Null, v: _Link{}}
 	if previous != cid.Undef {
 		lrm.m = schema.Maybe_Value
-		lrm.v = &_Link{x: linksystem.Link{Cid: previous}}
+		lrm.v = _Link{x: linksystem.Link{Cid: previous}}
 	}
 	ru := _RecordUpdate{
 		Records:  *rcrds,
