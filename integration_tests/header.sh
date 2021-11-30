@@ -35,6 +35,8 @@ if [[ -z $FULLNODE_API_INFO ]]; then
 	devnet &
 	DEVNETPID=$!
 
+	sleep 60
+
 	# We also wait for the APIs to be up before using them.
 	# The commands print every second by default, which is too verbose.
 
