@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/ipld/go-car"
+	car "github.com/ipld/go-car/v2"
 	"github.com/ipld/go-ipld-prime/codec/dagjson"
 	cidlink "github.com/ipld/go-ipld-prime/linking/cid"
 	basicnode "github.com/ipld/go-ipld-prime/node/basic"
@@ -370,13 +370,10 @@ func (c *Controller) carHandler(w http.ResponseWriter, r *http.Request) {
 		ssb.Matcher(),
 		ssb.ExploreAll(ssb.ExploreRecursiveEdge()),
 	))
-	root := car.Dag{
-		Root:     rootCid,
-		Selector: ss.Node(),
-	}
+	ls := cidlink.DefaultLinkSystem()
+	ls.SetReadStorage(store)
 
-	sc := car.NewSelectiveCar(r.Context(), store, []car.Dag{root})
-	err = sc.Write(w)
+	_, err = car.TraverseV1(r.Context(), &ls, rootCid, ss.Node(), w)
 	if err != nil {
 		logger.Info("car write failed", "err", err)
 	}

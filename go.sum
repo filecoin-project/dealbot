@@ -1168,8 +1168,9 @@ github.com/ipld/go-car v0.3.2-0.20211001225732-32d0d9933823 h1:8JMSJ0k71fU9lIUrp
 github.com/ipld/go-car v0.3.2-0.20211001225732-32d0d9933823/go.mod h1:jSlTph+i/q1jLFoiKKeN69KGG0fXpwrcD0izu5C1Tpo=
 github.com/ipld/go-car/v2 v2.0.0-beta1.0.20210721090610-5a9d1b217d25/go.mod h1:I2ACeeg6XNBe5pdh5TaR7Ambhfa7If9KXxmXgZsYENU=
 github.com/ipld/go-car/v2 v2.0.2/go.mod h1:I2ACeeg6XNBe5pdh5TaR7Ambhfa7If9KXxmXgZsYENU=
-github.com/ipld/go-car/v2 v2.0.3-0.20210811121346-c514a30114d7 h1:6Z0beJSZNsRY+7udoqUl4gQ/tqtrPuRvDySrlsvbqZA=
 github.com/ipld/go-car/v2 v2.0.3-0.20210811121346-c514a30114d7/go.mod h1:I2ACeeg6XNBe5pdh5TaR7Ambhfa7If9KXxmXgZsYENU=
+github.com/ipld/go-car/v2 v2.1.1-0.20211130182159-c35591a559b5 h1:ZTRoxo4P0NfidgyJUdj+7vLl1d2/Y7+3zcODyZ5aNZ8=
+github.com/ipld/go-car/v2 v2.1.1-0.20211130182159-c35591a559b5/go.mod h1:pC0PQCBTTdBVP7ENhff+g45/8d0b3Hg7XTtW48f4POM=
 github.com/ipld/go-codec-dagpb v1.2.0/go.mod h1:6nBN7X7h8EOsEejZGqC7tej5drsdBAXbMHyBT+Fne5s=
 github.com/ipld/go-codec-dagpb v1.3.0 h1:czTcaoAuNNyIYWs6Qe01DJ+sEX7B+1Z0LcXjSatMGe8=
 github.com/ipld/go-codec-dagpb v1.3.0/go.mod h1:ga4JTU3abYApDC3pZ00BC2RSvC3qfBb9MSJkMLSwnhA=
@@ -1192,6 +1193,8 @@ github.com/ipld/go-ipld-prime-proto v0.0.0-20191113031812-e32bd156a1e5/go.mod h1
 github.com/ipld/go-ipld-prime-proto v0.0.0-20200428191222-c1ffdadc01e1/go.mod h1:OAV6xBmuTLsPZ+epzKkPB1e25FHk/vCtyatkdHcArLs=
 github.com/ipld/go-ipld-prime-proto v0.0.0-20200922192210-9a2bfd4440a6/go.mod h1:3pHYooM9Ea65jewRwrb2u5uHZCNkNTe9ABsVB+SrkH0=
 github.com/ipld/go-ipld-prime-proto v0.1.0/go.mod h1:11zp8f3sHVgIqtb/c9Kr5ZGqpnCLF1IVTNOez9TopzE=
+github.com/ipld/go-ipld-prime/storage/bsadapter v0.0.0-20211119015904-892d2f92ba8b h1:uxXI0WOuhYE9Yhs/IC8lRSKuYmo8qJytr4di1RxgttA=
+github.com/ipld/go-ipld-prime/storage/bsadapter v0.0.0-20211119015904-892d2f92ba8b/go.mod h1:UIhTqo70axxJ2GXIIiLmk0+uNtZqJInbiw0DGzCgtbk=
 github.com/ipld/go-ipld-selector-text-lite v0.0.0 h1:MLU1YUAgd3Z+RfVCXUbvxH1RQjEe+larJ9jmlW1aMgA=
 github.com/ipld/go-ipld-selector-text-lite v0.0.0/go.mod h1:U2CQmFb+uWzfIEF3I1arrDa5rwtj00PrpiwwCO+k1RM=
 github.com/ipsn/go-secp256k1 v0.0.0-20180726113642-9d62b9f0bc52 h1:QG4CGBqCeuBo6aZlGAamSkxWdgWfZGeE49eUOWJPA4c=
@@ -1906,8 +1909,9 @@ github.com/multiformats/go-multibase v0.0.3/go.mod h1:5+1R4eQrT3PkYZ24C3W2Ue2tPw
 github.com/multiformats/go-multicodec v0.2.0/go.mod h1:/y4YVwkfMyry5kFbMTbLJKErhycTIftytRV+llXdyS4=
 github.com/multiformats/go-multicodec v0.2.1-0.20210713081508-b421db6850ae/go.mod h1:qGGaQmioCDh+TeFOnxrbU0DaIPw8yFgAZgFG0V7p1qQ=
 github.com/multiformats/go-multicodec v0.2.1-0.20210714093213-b2b5bd6fe68b/go.mod h1:qGGaQmioCDh+TeFOnxrbU0DaIPw8yFgAZgFG0V7p1qQ=
-github.com/multiformats/go-multicodec v0.3.0 h1:tstDwfIjiHbnIjeM5Lp+pMrSeN+LCMsEwOrkPmWm03A=
 github.com/multiformats/go-multicodec v0.3.0/go.mod h1:qGGaQmioCDh+TeFOnxrbU0DaIPw8yFgAZgFG0V7p1qQ=
+github.com/multiformats/go-multicodec v0.3.1-0.20210902112759-1539a079fd61 h1:ZrUuMKNgJ52qHPoQ+bx0h0uBfcWmN7Px+4uKSZeesiI=
+github.com/multiformats/go-multicodec v0.3.1-0.20210902112759-1539a079fd61/go.mod h1:1Hj/eHRaVWSXiSNNfcEPcwZleTmdNP81xlxDLnWU9GQ=
 github.com/multiformats/go-multihash v0.0.1/go.mod h1:w/5tugSrLEbWqlcgJabL3oHFKTwfvkofsjW2Qa1ct4U=
 github.com/multiformats/go-multihash v0.0.5/go.mod h1:lt/HCbqlQwlPBz7lv0sQCdtfcMtlJvakRUn/0Ual8po=
 github.com/multiformats/go-multihash v0.0.8/go.mod h1:YSLudS+Pi8NHE7o6tb3D8vrpKa63epEDmG8nTduyAew=
