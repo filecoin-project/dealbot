@@ -23,7 +23,7 @@ require (
 	github.com/ipfs/go-log/v2 v2.3.0
 	github.com/ipld/go-car v0.3.2-0.20211001225732-32d0d9933823
 	github.com/ipld/go-car/v2 v2.1.1-0.20211130182159-c35591a559b5
-	github.com/ipld/go-ipld-graphql v0.0.0-20210608181858-5e7994523c5a
+	github.com/ipld/go-ipld-graphql v0.0.0-20211021213353-9727002b9c62
 	github.com/ipld/go-ipld-prime v0.14.0
 	github.com/lib/pq v1.10.3
 	github.com/libp2p/go-libp2p v0.15.0

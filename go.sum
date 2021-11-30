@@ -1174,8 +1174,8 @@ github.com/ipld/go-car/v2 v2.1.1-0.20211130182159-c35591a559b5/go.mod h1:pC0PQCB
 github.com/ipld/go-codec-dagpb v1.2.0/go.mod h1:6nBN7X7h8EOsEejZGqC7tej5drsdBAXbMHyBT+Fne5s=
 github.com/ipld/go-codec-dagpb v1.3.0 h1:czTcaoAuNNyIYWs6Qe01DJ+sEX7B+1Z0LcXjSatMGe8=
 github.com/ipld/go-codec-dagpb v1.3.0/go.mod h1:ga4JTU3abYApDC3pZ00BC2RSvC3qfBb9MSJkMLSwnhA=
-github.com/ipld/go-ipld-graphql v0.0.0-20210608181858-5e7994523c5a h1:SHbnaSlBCr/HV1xESbE136iE+eqAPOW+B6NNKul7eBI=
-github.com/ipld/go-ipld-graphql v0.0.0-20210608181858-5e7994523c5a/go.mod h1:mOMXf1WKBUilb6y+zerpQrDrS/mEzFmkauXfR2Tz55o=
+github.com/ipld/go-ipld-graphql v0.0.0-20211021213353-9727002b9c62 h1:xXMdXV/jjR2dCDyxS/pVV3+qQNSnjcIDMom+iqj16Pg=
+github.com/ipld/go-ipld-graphql v0.0.0-20211021213353-9727002b9c62/go.mod h1:jS4EWaXGwq9jp11rXMAH8XBdGJqsw0ax2YOGupwPzNs=
 github.com/ipld/go-ipld-prime v0.0.2-0.20191108012745-28a82f04c785/go.mod h1:bDDSvVz7vaK12FNvMeRYnpRFkSUPNQOiCYQezMD/P3w=
 github.com/ipld/go-ipld-prime v0.0.2-0.20200428162820-8b59dc292b8e/go.mod h1:uVIwe/u0H4VdKv3kaN1ck7uCb6yD9cFLS9/ELyXbsw8=
 github.com/ipld/go-ipld-prime v0.5.1-0.20200828233916-988837377a7f/go.mod h1:0xEgdD6MKbZ1vF0GC+YcR/C4SQCAlRuOjIJ2i0HxqzM=
@@ -1187,6 +1187,7 @@ github.com/ipld/go-ipld-prime v0.10.0/go.mod h1:KvBLMr4PX1gWptgkzRjVZCrLmSGcZCb/
 github.com/ipld/go-ipld-prime v0.11.0/go.mod h1:+WIAkokurHmZ/KwzDOMUuoeJgaRQktHtEaLglS3ZeV8=
 github.com/ipld/go-ipld-prime v0.12.3-0.20210930132912-0b3aef3ca569/go.mod h1:PaeLYq8k6dJLmDUSLrzkEpoGV4PEfe/1OtFN/eALOc8=
 github.com/ipld/go-ipld-prime v0.12.3/go.mod h1:PaeLYq8k6dJLmDUSLrzkEpoGV4PEfe/1OtFN/eALOc8=
+github.com/ipld/go-ipld-prime v0.12.4-0.20211019203807-9ddc75a0c4ae/go.mod h1:5MlrRq70Knjd+zOWZ6OEOzpbVSLDSH1VAKSsdxQ369E=
 github.com/ipld/go-ipld-prime v0.14.0 h1:2FnBqUjmmgxgZD6/zB3eygWlmIsHNGrZ57L99x3xD6Q=
 github.com/ipld/go-ipld-prime v0.14.0/go.mod h1:9ASQLwUFLptCov6lIYc70GRB4V7UTyLD0IJtrDJe6ZM=
 github.com/ipld/go-ipld-prime-proto v0.0.0-20191113031812-e32bd156a1e5/go.mod h1:gcvzoEDBjwycpXt3LBE061wT9f46szXGHAmj9uoP6fU=
