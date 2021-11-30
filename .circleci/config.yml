@@ -28,7 +28,7 @@ commands:
   docker-login:
     steps:
       - run:
-          command: echo $DOCKERHUB_PASSWORD | docker login --username $DOCKERHUB_USERNAME --password-stdin
+          command: echo $DOCKERHUB_PASS | docker login --username $DOCKERHUB_USER --password-stdin
 
 jobs:
 #  build-and-test:
@@ -119,6 +119,8 @@ workflows:
       - build-push:
 #          requires:
 #            - build-and-test
+          context:
+            - filecoin-dockerhub-publish
           filters:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*$/
