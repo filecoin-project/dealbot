@@ -31,27 +31,27 @@ commands:
           command: echo $DOCKERHUB_PASSWORD | docker login --username $DOCKERHUB_USERNAME --password-stdin
 
 jobs:
-  build-and-test:
-    executor: golang-with-postgres
-    environment:
-      PGHOST: 127.0.0.1
-      PGPORT: 5432
-      PGUSER: postgres
-      PGPASSWORD: ""
-      PGDATABASE: circle_test
-      PGSSLMODE: disable
-    steps:
-      - run:
-          name: install dockerize
-          command: curl -LO https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && sudo tar -C /usr/local/bin -xzvf dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && rm dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz
-          environment:
-            DOCKERIZE_VERSION: v0.3.0
-      - run:
-          name: wait for database
-          command: dockerize -wait tcp://127.0.0.1:5432 -timeout 1m
-      - checkout-dealbot
-      - install-lotus
-      - test-integration-dealbot
+#  build-and-test:
+#    executor: golang-with-postgres
+#    environment:
+#      PGHOST: 127.0.0.1
+#      PGPORT: 5432
+#      PGUSER: postgres
+#      PGPASSWORD: ""
+#      PGDATABASE: circle_test
+#      PGSSLMODE: disable
+#    steps:
+#      - run:
+#          name: install dockerize
+#          command: curl -LO https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && sudo tar -C /usr/local/bin -xzvf dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && rm dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz
+#          environment:
+#            DOCKERIZE_VERSION: v0.3.0
+#      - run:
+#          name: wait for database
+#          command: dockerize -wait tcp://127.0.0.1:5432 -timeout 1m
+#      - checkout-dealbot
+#      - install-lotus
+#      - test-integration-dealbot
   build-push:
     machine:
       image: ubuntu-2004:202010-01
@@ -112,13 +112,13 @@ workflows:
   version: 2.1
   ci:
     jobs:
-      - build-and-test:
-          filters:
-            tags:
-              only: /^v[0-9]+(\.[0-9]+)*$/
+#      - build-and-test:
+#          filters:
+#            tags:
+#              only: /^v[0-9]+(\.[0-9]+)*$/
       - build-push:
-          requires:
-            - build-and-test
+#          requires:
+#            - build-and-test
           filters:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*$/
