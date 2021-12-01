@@ -1,9 +1,11 @@
 package controller
 
 import (
+	"bytes"
 	"database/sql"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -11,6 +13,7 @@ import (
 
 	"github.com/gorilla/mux"
 	car "github.com/ipld/go-car/v2"
+	"github.com/ipld/go-ipld-prime"
 	"github.com/ipld/go-ipld-prime/codec/dagjson"
 	cidlink "github.com/ipld/go-ipld-prime/linking/cid"
 	basicnode "github.com/ipld/go-ipld-prime/node/basic"
@@ -371,7 +374,13 @@ func (c *Controller) carHandler(w http.ResponseWriter, r *http.Request) {
 		ssb.ExploreAll(ssb.ExploreRecursiveEdge()),
 	))
 	ls := cidlink.DefaultLinkSystem()
-	ls.SetReadStorage(store)
+	ls.StorageReadOpener = func(_ ipld.LinkContext, lnk ipld.Link) (io.Reader, error) {
+		buf, err := store.Get(r.Context(), lnk.String())
+		if err != nil {
+			return nil, err
+		}
+		return bytes.NewBuffer(buf), nil
+	}
 
 	_, err = car.TraverseV1(r.Context(), &ls, rootCid, ss.Node(), w)
 	if err != nil {
