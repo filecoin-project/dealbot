@@ -67,13 +67,13 @@ $().ready(() => {
     $("#botlist").hide()
 
     $("#shutdownConfirm").on('click', confirmShutdown)
-    fetch("./regions", { method: "GET", headers: getHeaders()}).then((response) => response.json()).then(gotRegions)
+    fetch(getUrl("./regions"), { method: "GET",mode: 'cors',  headers: getHeaders()}).then((response) => response.json()).then(gotRegions)
     syncData()
 })
 
 
 function syncData() {
-    fetch("./tasks", { method: "GET", headers: getHeaders()}).then((response) => response.json()).then(gotTasks)
+    fetch(getUrl("./tasks"), { method: "GET", mode: 'cors', headers: getHeaders()}).then((response) => response.json()).then(gotTasks)
 }
 
 function operate(val, row) {
@@ -143,7 +143,7 @@ function gotRegions(data) {
                 $("#regionList .list-group-item").removeClass("active")
                 $(this).addClass("active")
                 currentRegion = regionList[reg]
-                fetch(`./regions/${regionList[reg]}`, { method: "GET", headers: getHeaders()}).then((response) => response.json()).then(gotDaemons)
+                fetch(getUrl(`./regions/${regionList[reg]}`), { method: "GET", mode: 'cors', headers: getHeaders()}).then((response) => response.json()).then(gotDaemons)
             })
             .appendTo($("#regionlist"));
         $('<option/>')
@@ -246,7 +246,7 @@ function drain(e, value, row, index) {
         e.preventDefault()
     }
     let url = `./drain/${row.id}`
-    fetch(url, { method: "POST", headers: getHeaders()}).then((response) => {
+    fetch(getUrl(url), { method: "POST", mode: 'cors', headers: getHeaders()}).then((response) => {
       if (response.ok) {
         successToast(`Daemon ${row.id} will receive no new tasks`)
       } else {
@@ -260,7 +260,7 @@ function reset(e, value, row, index) {
         e.preventDefault()
     }
     let url = `./reset-worker/${row.id}`
-    fetch(url, { method: "POST", headers: getHeaders()}).then((response) => {
+    fetch(getUrl(url), { method: "POST", mode: 'cors', headers: getHeaders()}).then((response) => {
         if (response.ok) {
           successToast(`All tasks on daemon ${row.id} will be reset to unstarted`)
         } else {
@@ -274,7 +274,7 @@ function complete(e, value, row, index) {
         e.preventDefault()
     }
     let url = `./complete/${row.id}`
-    fetch(url, { method: "POST", headers: getHeaders()}).then((response) => {
+    fetch(getUrl(url), { method: "POST", mode: 'cors',  headers: getHeaders()}).then((response) => {
         if (response.ok) {
           successToast(`Tasks for daemon ${row.id} will be published`)
         } else {
@@ -296,7 +296,7 @@ function shutdown(e, value, row, index) {
 function confirmShutdown(e) {
     modal.hide()
    let url = `./regions/${currentRegion}/${shutdownDaemonID}`
-    fetch(url, { method: "DELETE", headers: getHeaders()}).then((response) => {
+    fetch(getUrl(url), { method: "DELETE",mode: 'cors',  headers: getHeaders()}).then((response) => {
         if (response.ok) {
             $("#botdetail").bootstrapTable('hideRow', { index: shutdownDaemonIndex })
             successToast(`Daemon ${row.id} has been shutdown`)
@@ -312,7 +312,7 @@ function cancel(e, value, row, index) {
         e.preventDefault()
     }
     let url = `./tasks/${row.UUID}`
-    fetch(url, { method: "DELETE", headers: getHeaders()}).then((response) => {
+    fetch(getUrl(url), { method: "DELETE", mode: 'cors', headers: getHeaders()}).then((response) => {
         if (response.ok) {
             $("#taskTable").bootstrapTable('hideRow', { index })
             successToast(`Task ${row.UUID} has been cancelled`)
@@ -330,6 +330,10 @@ function getHeaders() {
        headers.Authorization =  `Basic ${btoa(auth)}`
     }
     return headers
+}
+
+function getUrl(rsrc) {
+    return "https://" + window.location.host + window.location.pathname + rsrc
 }
 
 function doSubmit(e) {
@@ -377,7 +381,7 @@ function doSubmit(e) {
             data.Tag = $('#newScheduleTag').val()
         }
 
-        requests.push(fetch(url, {method: "POST", headers: getHeaders(), body: JSON.stringify(data)}))
+        requests.push(fetch(getUrl(url), {method: "POST", mode: 'cors', headers: getHeaders(), body: JSON.stringify(data)}))
     }
 
     Promise.all(requests).then((_) => {
@@ -403,7 +407,7 @@ function doCreateBot(e) {
             "exported": $("#newBotWalletExported").val(),
         },
     }
-    fetch(url, {method: "POST", headers: getHeaders(), body: JSON.stringify(data)}).then(() => {
+    fetch(getUrl(url), {method: "POST", mode: 'cors', headers: getHeaders(), body: JSON.stringify(data)}).then(() => {
         successToast("Bot created!")
     })
 }
