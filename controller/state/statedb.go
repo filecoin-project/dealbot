@@ -9,20 +9,21 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"strings"
 	"time"
 
 	"github.com/filecoin-project/dealbot/metrics"
 	"github.com/filecoin-project/dealbot/tasks"
-	blockformat "github.com/ipfs/go-block-format"
 	"github.com/ipfs/go-cid"
 	logging "github.com/ipfs/go-log/v2"
 	"github.com/ipld/go-ipld-prime"
 	dagjson "github.com/ipld/go-ipld-prime/codec/dagjson"
+	"github.com/ipld/go-ipld-prime/linking"
 	cidlink "github.com/ipld/go-ipld-prime/linking/cid"
-	crypto "github.com/libp2p/go-libp2p-crypto"
+	basicnode "github.com/ipld/go-ipld-prime/node/basic"
+	"github.com/ipld/go-ipld-prime/storage/memstore"
+	crypto "github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/multiformats/go-multicodec"
 	tokenjson "github.com/polydawn/refmt/json"
 	"github.com/robfig/cron/v3"
@@ -54,7 +55,7 @@ const ErrWrongWorker = errorString("task already acquired by other worker")
 const ErrNoDeleteInProgressTasks = errorString("can only delete tasks that are not-started or tasks that are scheduled")
 const ErrTaskNotFound = errorString("task does not exist")
 
-var linkProto = cidlink.LinkBuilder{Prefix: cid.Prefix{
+var linkProto = cidlink.LinkPrototype{Prefix: cid.Prefix{
 	Version:  1,
 	Codec:    uint64(multicodec.DagJson),
 	MhType:   uint64(multicodec.Sha2_256),
@@ -64,20 +65,24 @@ var linkProto = cidlink.LinkBuilder{Prefix: cid.Prefix{
 func serializeToJSON(ctx context.Context, n ipld.Node) (cid.Cid, []byte, error) {
 	var data []byte
 
-	storer := func(ipld.LinkContext) (io.Writer, ipld.StoreCommitter, error) {
-		buf := bytes.Buffer{}
-		return &buf, func(lnk ipld.Link) error {
-			data = buf.Bytes()
-			return nil
-		}, nil
-	}
+	ls := cidlink.DefaultLinkSystem()
+	ms := memstore.Store{}
+	ls.SetWriteStorage(&ms)
+	ls.SetReadStorage(&ms)
 
-	link, err := linkProto.Build(ctx, ipld.LinkContext{}, n, storer)
+	link, err := ls.Store(ipld.LinkContext{}, linkProto, n)
 	if err != nil {
 		return cid.Undef, nil, err
 	}
 
-	return link.(cidlink.Link).Cid, data, nil
+	cl := link.(cidlink.Link).Cid
+
+	data, err = ms.Get(ctx, cl.KeyString())
+	if err != nil {
+		return cid.Undef, nil, err
+	}
+
+	return cl, data, nil
 }
 
 // stateDB is a persisted implementation of the State interface
@@ -161,15 +166,16 @@ type sdbstore struct {
 	*stateDB
 }
 
-func (s *sdbstore) Get(c cid.Cid) (blockformat.Block, error) {
+func (s *sdbstore) Get(ctx context.Context, key string) ([]byte, error) {
 	var data []byte
 	err := s.stateDB.transact(s.Context, func(tx *sql.Tx) error {
-		loader := txContextLoader(s.Context, tx)
-		blkReader, err := loader(cidlink.Link{Cid: c}, ipld.LinkContext{})
+		ls := txLS(s.Context, tx)
+		var err error
+		ci, err := cid.Decode(key)
 		if err != nil {
 			return err
 		}
-		data, err = ioutil.ReadAll(blkReader)
+		_, data, err = ls.LoadPlusRaw(ipld.LinkContext{}, cidlink.Link{Cid: ci}, basicnode.Prototype.Any)
 		if err != nil {
 			return err
 		}
@@ -178,7 +184,30 @@ func (s *sdbstore) Get(c cid.Cid) (blockformat.Block, error) {
 	if err != nil {
 		return nil, err
 	}
-	return blockformat.NewBlockWithCid(data, c)
+	return data, err
+}
+
+func (s *sdbstore) Has(ctx context.Context, key string) (bool, error) {
+	err := s.stateDB.transact(s.Context, func(tx *sql.Tx) error {
+		ls := txLS(s.Context, tx)
+		var err error
+		v, err := cid.Decode(key)
+		if err != nil {
+			return err
+		}
+		_, _, err = ls.LoadPlusRaw(ipld.LinkContext{}, cidlink.Link{Cid: v}, basicnode.Prototype.Any)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
 }
 
 func (s *sdbstore) Head() (cid.Cid, error) {
@@ -198,9 +227,9 @@ func (s *sdbstore) Head() (cid.Cid, error) {
 	return headCid, nil
 }
 
-func (s *sdbstore) Set(c cid.Cid, data []byte) error {
+func (s *sdbstore) Put(_ context.Context, key string, content []byte) error {
 	return s.stateDB.transact(s.Context, func(tx *sql.Tx) error {
-		_, err := tx.ExecContext(s.Context, cidArchiveSQL, c.String(), data, time.Now())
+		_, err := tx.ExecContext(s.Context, cidArchiveSQL, key, content, time.Now())
 		return err
 	})
 }
@@ -230,7 +259,7 @@ func (s *stateDB) getWithTag(ctx context.Context, taskID string) (tasks.Task, st
 		}
 
 		tp := tasks.Type.Task.NewBuilder()
-		if err = dagjson.Decoder(tp, bytes.NewBufferString(serialized)); err != nil {
+		if err = dagjson.Decode(tp, bytes.NewBufferString(serialized)); err != nil {
 			return err
 		}
 		task = tp.Build().(tasks.Task)
@@ -257,7 +286,7 @@ func (s *stateDB) GetByCID(ctx context.Context, taskCID cid.Cid) (tasks.Task, er
 		}
 
 		tp := tasks.Type.Task.NewBuilder()
-		if err := dagjson.Decoder(tp, bytes.NewBufferString(serialized)); err != nil {
+		if err := dagjson.Decode(tp, bytes.NewBufferString(serialized)); err != nil {
 			return err
 		}
 		task = tp.Build().(tasks.Task)
@@ -286,7 +315,7 @@ func (s *stateDB) GetAll(ctx context.Context) ([]tasks.Task, error) {
 				return err
 			}
 			tp := tasks.Type.Task.NewBuilder()
-			if err = dagjson.Decoder(tp, bytes.NewBufferString(serialized)); err != nil {
+			if err = dagjson.Decode(tp, bytes.NewBufferString(serialized)); err != nil {
 				return err
 			}
 			task := tp.Build().(tasks.Task)
@@ -414,7 +443,7 @@ func (s *stateDB) popTask(ctx context.Context, workedBy string, status tasks.Sta
 		}
 
 		tp := tasks.Type.Task.NewBuilder()
-		if err = dagjson.Decoder(tp, bytes.NewBufferString(serialized)); err != nil {
+		if err = dagjson.Decode(tp, bytes.NewBufferString(serialized)); err != nil {
 			return fmt.Errorf("could not decode task (%s): %w", serialized, err)
 		}
 		task := tp.Build().(tasks.Task)
@@ -477,7 +506,7 @@ func (s *stateDB) Update(ctx context.Context, taskID string, req tasks.UpdateTas
 		}
 
 		tp := tasks.Type.Task.NewBuilder()
-		if err = dagjson.Decoder(tp, bytes.NewBufferString(serialized)); err != nil {
+		if err = dagjson.Decode(tp, bytes.NewBufferString(serialized)); err != nil {
 			return err
 		}
 		task = tp.Build().(tasks.Task)
@@ -523,12 +552,13 @@ func (s *stateDB) Update(ctx context.Context, taskID string, req tasks.UpdateTas
 
 		// finish if neccesary
 		if updatedTask.Status == *tasks.Successful || updatedTask.Status == *tasks.Failed {
-			finalized, err := updatedTask.Finalize(ctx, txContextStorer(ctx, tx), false)
+			finalized, err := updatedTask.Finalize(ctx, txLS(ctx, tx), false)
 			if err != nil {
 				return err
 			}
 
-			flink, err := linkProto.Build(ctx, ipld.LinkContext{}, finalized.Representation(), txContextStorer(ctx, tx))
+			ls := txLS(ctx, tx)
+			flink, err := ls.Store(ipld.LinkContext{}, linkProto, finalized.Representation())
 			if err != nil {
 				return err
 			}
@@ -593,7 +623,7 @@ func (s *stateDB) Update(ctx context.Context, taskID string, req tasks.UpdateTas
 }
 
 func (s *stateDB) log(ctx context.Context, task tasks.Task, tx *sql.Tx) {
-	finalized, err := task.Finalize(ctx, txContextStorer(ctx, tx), true)
+	finalized, err := task.Finalize(ctx, txLS(ctx, tx), true)
 	if err != nil {
 		return
 	}
@@ -616,17 +646,16 @@ func (s *stateDB) log(ctx context.Context, task tasks.Task, tx *sql.Tx) {
 	}
 }
 
-func txContextStorer(ctx context.Context, tx *sql.Tx) ipld.Storer {
-	return func(ipld.LinkContext) (io.Writer, ipld.StoreCommitter, error) {
+func txLS(ctx context.Context, tx *sql.Tx) ipld.LinkSystem {
+	ls := cidlink.DefaultLinkSystem()
+	ls.StorageWriteOpener = func(lc linking.LinkContext) (io.Writer, linking.BlockWriteCommitter, error) {
 		buf := bytes.Buffer{}
 		return &buf, func(lnk ipld.Link) error {
 			_, err := tx.ExecContext(ctx, cidArchiveSQL, lnk.(cidlink.Link).Cid.String(), buf.Bytes(), time.Now())
 			return err
 		}, nil
 	}
-}
-func txContextLoader(ctx context.Context, tx *sql.Tx) ipld.Loader {
-	return func(lnk ipld.Link, lnkCtx ipld.LinkContext) (io.Reader, error) {
+	ls.StorageReadOpener = func(_ ipld.LinkContext, lnk ipld.Link) (io.Reader, error) {
 		lc := lnk.(cidlink.Link).Cid.String()
 		buf := []byte{}
 		if err := tx.QueryRowContext(ctx, cidGetArchiveSQL, lc).Scan(&buf); err != nil {
@@ -634,6 +663,7 @@ func txContextLoader(ctx context.Context, tx *sql.Tx) ipld.Loader {
 		}
 		return bytes.NewBuffer(buf), nil
 	}
+	return ls
 }
 
 func (s *stateDB) NewStorageTask(ctx context.Context, storageTask tasks.StorageTask) (tasks.Task, error) {
@@ -825,22 +855,22 @@ func (s *stateDB) GetHead(ctx context.Context, walkback int) (tasks.RecordUpdate
 			return err
 		}
 
-		na := tasks.Type.RecordUpdate.NewBuilder()
-		loader := txContextLoader(ctx, tx)
-		if err = (cidlink.Link{Cid: cidLink}).Load(ctx, ipld.LinkContext{}, na, loader); err != nil {
+		ls := txLS(ctx, tx)
+		ru, err := ls.Load(ipld.LinkContext{}, cidlink.Link{Cid: cidLink}, tasks.Type.RecordUpdate)
+		if err != nil {
 			return err
 		}
-		recordUpdate = na.Build().(tasks.RecordUpdate)
+		recordUpdate = ru.(tasks.RecordUpdate)
 		for walkback > 0 {
 			if !recordUpdate.Previous.Exists() {
 				return fmt.Errorf("no previous update to walk back to")
 			}
 
-			na = tasks.Type.RecordUpdate.NewBuilder()
-			if err = recordUpdate.Previous.Must().Link().Load(ctx, ipld.LinkContext{}, na, loader); err != nil {
+			ru, err := ls.Load(ipld.LinkContext{}, recordUpdate.Previous.Must().Link(), tasks.Type.RecordUpdate)
+			if err != nil {
 				return err
 			}
-			recordUpdate = na.Build().(tasks.RecordUpdate)
+			recordUpdate = ru.(tasks.RecordUpdate)
 
 			walkback--
 		}
@@ -909,15 +939,12 @@ func (s *stateDB) PublishRecordsFrom(ctx context.Context, worker string) error {
 			}
 
 			// check if we should include it.
-			rcrdRdr, err := txContextLoader(ctx, tx)(cidlink.Link{c}, ipld.LinkContext{})
+			ls := txLS(ctx, tx)
+			rcrdRdr, err := ls.Load(ipld.LinkContext{}, cidlink.Link{c}, tasks.Type.FinishedTask__Repr)
 			if err != nil {
 				return err
 			}
-			tskBuilder := tasks.Type.FinishedTask__Repr.NewBuilder()
-			if err := dagjson.Decoder(tskBuilder, rcrdRdr); err != nil {
-				return err
-			}
-			tsk := tskBuilder.Build().(tasks.FinishedTask)
+			tsk := rcrdRdr.(tasks.FinishedTask)
 			if tsk.FieldErrorMessage().Exists() {
 				em := tsk.FieldErrorMessage().Must().String()
 				if strings.Contains(em, "there is an active retrieval deal with") ||
@@ -940,7 +967,8 @@ func (s *stateDB) PublishRecordsFrom(ctx context.Context, worker string) error {
 		rcrdlst := tasks.Type.List_AuthenticatedRecord.Of(rcrds)
 
 		update := tasks.Type.RecordUpdate.Of(rcrdlst, headCid, headCidSig)
-		updateCid, err := linkProto.Build(ctx, ipld.LinkContext{}, update.Representation(), txContextStorer(ctx, tx))
+		ls := txLS(ctx, tx)
+		updateCid, err := ls.Store(ipld.LinkContext{}, linkProto, update.Representation())
 		if err != nil {
 			return err
 		}
@@ -991,7 +1019,7 @@ func (s *stateDB) ResetWorkerTasks(ctx context.Context, worker string) error {
 			}
 
 			tp := tasks.Type.Task.NewBuilder()
-			if err = dagjson.Decoder(tp, bytes.NewBufferString(serialized)); err != nil {
+			if err = dagjson.Decode(tp, bytes.NewBufferString(serialized)); err != nil {
 				return err
 			}
 			task := tp.Build().(tasks.Task)

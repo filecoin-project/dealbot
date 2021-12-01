@@ -425,9 +425,9 @@ func populateTestTasks(ctx context.Context, sampleTaskFile io.Reader, apiClient 
 	}
 	for _, task := range byTask {
 		rtp := tasks.Type.RetrievalTask.NewBuilder()
-		if err = dagjson.Decoder(rtp, bytes.NewBuffer(task)); err != nil {
+		if err = dagjson.Decode(rtp, bytes.NewBuffer(task)); err != nil {
 			stp := tasks.Type.StorageTask.NewBuilder()
-			if err = dagjson.Decoder(stp, bytes.NewBuffer(task)); err != nil {
+			if err = dagjson.Decode(stp, bytes.NewBuffer(task)); err != nil {
 				return fmt.Errorf("could not decode sample task as either storage or retrieval %s: %w", task, err)
 			}
 			st := stp.Build().(tasks.StorageTask)
