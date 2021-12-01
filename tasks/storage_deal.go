@@ -437,10 +437,10 @@ func mktime(t time.Time) _Time {
 }
 
 func asStrM(s string) _String__Maybe {
-	return _String__Maybe{m: schema.Maybe_Value, v: &_String{s}}
+	return _String__Maybe{m: schema.Maybe_Value, v: _String{s}}
 }
 func asIntM(i int64) _Int__Maybe {
-	return _Int__Maybe{m: schema.Maybe_Value, v: &_Int{i}}
+	return _Int__Maybe{m: schema.Maybe_Value, v: _Int{i}}
 }
 
 func toStageDetails(stage *storagemarket.DealStage) StageDetails {
@@ -456,7 +456,7 @@ func toStageDetails(stage *storagemarket.DealStage) StageDetails {
 	return &_StageDetails{
 		Description:      asStrM(stage.Description),
 		ExpectedDuration: asStrM(stage.ExpectedDuration),
-		UpdatedAt:        _Time__Maybe{m: schema.Maybe_Value, v: &detailTime},
+		UpdatedAt:        _Time__Maybe{m: schema.Maybe_Value, v: detailTime},
 		Logs:             _List_Logs{logs},
 	}
 }

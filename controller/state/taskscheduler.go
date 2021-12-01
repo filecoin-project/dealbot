@@ -190,7 +190,7 @@ func (s *stateDB) recoverScheduledTasks(ctx context.Context) (int, error) {
 				return err
 			}
 			tp := tasks.Type.Task.NewBuilder()
-			if err = dagjson.Decoder(tp, bytes.NewBufferString(serialized)); err != nil {
+			if err = dagjson.Decode(tp, bytes.NewBufferString(serialized)); err != nil {
 				return err
 			}
 			task := tp.Build().(tasks.Task)

@@ -17,7 +17,7 @@ commands:
     steps:
       - run: sudo apt-get update
       - run: sudo apt-get install ocl-icd-opencl-dev libhwloc-dev
-      - run: git clone --depth=1 https://github.com/filecoin-project/lotus /tmp/lotus
+      - run: git clone -b v1.13.0 --depth=1 https://github.com/filecoin-project/lotus /tmp/lotus
       - run: cd /tmp/lotus && git submodule update --init --depth=1
       - run: cd /tmp/lotus && make debug && sudo make install
       - run: cd /tmp/lotus && sudo cp lotus-seed /usr/local/bin
@@ -28,7 +28,21 @@ commands:
   docker-login:
     steps:
       - run:
-          command: echo $DOCKERHUB_PASSWORD | docker login --username $DOCKERHUB_USERNAME --password-stdin
+          command: echo $DOCKERHUB_PASS | docker login --username $DOCKERHUB_USER --password-stdin
+  download-params:
+    steps:
+      - restore_cache:
+          name: Restore parameters cache
+          keys:
+            - 'v28-2kb-lotus-params'
+          paths:
+            - /var/tmp/filecoin-proof-parameters/
+      - run:  lotus fetch-params 2048
+      - save_cache:
+          name: Save parameters cache
+          key: 'v28-2kb-lotus-params'
+          paths:
+            - /var/tmp/filecoin-proof-parameters/
 
 jobs:
   build-and-test:
@@ -51,6 +65,7 @@ jobs:
           command: dockerize -wait tcp://127.0.0.1:5432 -timeout 1m
       - checkout-dealbot
       - install-lotus
+      - download-params
       - test-integration-dealbot
   build-push:
     machine:
@@ -119,6 +134,8 @@ workflows:
       - build-push:
           requires:
             - build-and-test
+          context:
+            - filecoin-dockerhub-publish
           filters:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*$/

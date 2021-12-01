@@ -70,7 +70,7 @@ func (c *Client) ListTasks(ctx context.Context) ([]tasks.Task, error) {
 	defer resp.Body.Close()
 
 	tlp := tasks.Type.Tasks.NewBuilder()
-	err = dagjson.Decoder(tlp, resp.Body)
+	err = dagjson.Decode(tlp, resp.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +90,7 @@ func (c *Client) ListTasks(ctx context.Context) ([]tasks.Task, error) {
 // of the tags in the request, or any untagged task.
 func (c *Client) PopTask(ctx context.Context, r tasks.PopTask) (tasks.Task, error) {
 	var body bytes.Buffer
-	err := dagjson.Encoder(r.Representation(), &body)
+	err := dagjson.Encode(r.Representation(), &body)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +109,7 @@ func (c *Client) PopTask(ctx context.Context, r tasks.PopTask) (tasks.Task, erro
 	}
 
 	rp := tasks.Type.Task.NewBuilder()
-	if err := dagjson.Decoder(rp, resp.Body); err != nil {
+	if err := dagjson.Decode(rp, resp.Body); err != nil {
 		return nil, err
 	}
 	return rp.Build().(tasks.Task), nil
@@ -117,7 +117,7 @@ func (c *Client) PopTask(ctx context.Context, r tasks.PopTask) (tasks.Task, erro
 
 func (c *Client) UpdateTask(ctx context.Context, uuid string, r tasks.UpdateTask) (tasks.Task, error) {
 	var body bytes.Buffer
-	err := dagjson.Encoder(r.Representation(), &body)
+	err := dagjson.Encode(r.Representation(), &body)
 	if err != nil {
 		return nil, err
 	}
@@ -133,7 +133,7 @@ func (c *Client) UpdateTask(ctx context.Context, uuid string, r tasks.UpdateTask
 	}
 
 	rp := tasks.Type.Task.NewBuilder()
-	if err := dagjson.Decoder(rp, resp.Body); err != nil {
+	if err := dagjson.Decode(rp, resp.Body); err != nil {
 		return nil, err
 	}
 	return rp.Build().(tasks.Task), nil
@@ -151,7 +151,7 @@ func (c *Client) GetTask(ctx context.Context, uuid string) (tasks.Task, error) {
 	}
 
 	tp := tasks.Type.Task.NewBuilder()
-	err = dagjson.Decoder(tp, resp.Body)
+	err = dagjson.Decode(tp, resp.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -217,7 +217,7 @@ func (c *Client) CARExport(ctx context.Context) (*car.CarReader, func() error, e
 
 func (c *Client) CreateStorageTask(ctx context.Context, storageTask tasks.StorageTask) (tasks.Task, error) {
 	var body bytes.Buffer
-	err := dagjson.Encoder(storageTask.Representation(), &body)
+	err := dagjson.Encode(storageTask.Representation(), &body)
 	if err != nil {
 		return nil, err
 	}
@@ -233,7 +233,7 @@ func (c *Client) CreateStorageTask(ctx context.Context, storageTask tasks.Storag
 	}
 
 	tp := tasks.Type.Task.NewBuilder()
-	err = dagjson.Decoder(tp, resp.Body)
+	err = dagjson.Decode(tp, resp.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -242,7 +242,7 @@ func (c *Client) CreateStorageTask(ctx context.Context, storageTask tasks.Storag
 
 func (c *Client) CreateRetrievalTask(ctx context.Context, retrievalTask tasks.RetrievalTask) (tasks.Task, error) {
 	var body bytes.Buffer
-	err := dagjson.Encoder(retrievalTask.Representation(), &body)
+	err := dagjson.Encode(retrievalTask.Representation(), &body)
 	if err != nil {
 		return nil, err
 	}
@@ -258,7 +258,7 @@ func (c *Client) CreateRetrievalTask(ctx context.Context, retrievalTask tasks.Re
 	}
 
 	tp := tasks.Type.Task.NewBuilder()
-	err = dagjson.Decoder(tp, resp.Body)
+	err = dagjson.Decode(tp, resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("could not parse /tasks/retrieval response: %w", err)
 	}
