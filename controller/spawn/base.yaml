@@ -57,14 +57,13 @@ application:
         name: dealbot
   secrets: []
   configMaps: []
-  service:
-    enabled: true
-    type: ClusterIP
-    ports:
-      - protocol: TCP
-        port: 8764
-        targetPort: 8764
-        name: dealbot
+  services:
+    - type: ClusterIP
+      ports:
+        - protocol: TCP
+          port: 8764
+          targetPort: 8764
+          name: dealbot
   ingress:
     enabled: false
   storage:

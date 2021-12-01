@@ -25,7 +25,7 @@ type KubernetesSpawner struct {
 }
 
 func (s *KubernetesSpawner) Spawn(d *Daemon) error {
-	actionConfig, err := s.actionConfig(d.Region)
+	actionConfig, namespace, err := s.actionConfig(d.Region)
 	if err != nil {
 		log.Infow("could not create actionConfig during Spawn", "err", err)
 		return err
@@ -52,6 +52,7 @@ func (s *KubernetesSpawner) Spawn(d *Daemon) error {
 	client.ReleaseName = d.Id
 	client.UseReleaseName = true
 	client.CreateNamespace = false
+	client.Namespace = namespace
 
 	vals, err := dealbotValues(d)
 	if err != nil {
@@ -67,7 +68,7 @@ func (s *KubernetesSpawner) Spawn(d *Daemon) error {
 }
 
 func (s *KubernetesSpawner) Get(regionid string, daemonid string) (daemon *Daemon, err error) {
-	actionConfig, err := s.actionConfig(regionid)
+	actionConfig, _, err := s.actionConfig(regionid)
 	if err != nil {
 		log.Infow("could not create actionConfig during daemon Get", "err", err)
 		return daemon, err
@@ -82,7 +83,7 @@ func (s *KubernetesSpawner) Get(regionid string, daemonid string) (daemon *Daemo
 }
 
 func (s *KubernetesSpawner) Shutdown(regionid string, daemonid string) error {
-	actionConfig, err := s.actionConfig(regionid)
+	actionConfig, _, err := s.actionConfig(regionid)
 	if err != nil {
 		log.Infow("could not create actionConfig during daemon Get", "err", err)
 		return err
@@ -96,7 +97,7 @@ func (s *KubernetesSpawner) Shutdown(regionid string, daemonid string) error {
 }
 
 func (s *KubernetesSpawner) List(regionid string) (daemons []*Daemon, err error) {
-	actionConfig, err := s.actionConfig(regionid)
+	actionConfig, _, err := s.actionConfig(regionid)
 	if err != nil {
 		log.Infow("could not create actionConfig during daemon List", "err", err)
 		return daemons, err
@@ -125,15 +126,15 @@ func (s *KubernetesSpawner) Regions() []string {
 	return regions
 }
 
-func (s *KubernetesSpawner) actionConfig(regionid string) (*action.Configuration, error) {
+func (s *KubernetesSpawner) actionConfig(regionid string) (*action.Configuration, string, error) {
 	getter, ok := s.getters[regionid]
 	if !ok {
-		return nil, RegionNotFound
+		return nil, "", RegionNotFound
 	}
 	c := s.rawConfig.Contexts[regionid]
 	actionConfig := new(action.Configuration)
 	actionConfig.Init(getter, c.Namespace, "", log.Debugw)
-	return actionConfig, actionConfig.KubeClient.IsReachable()
+	return actionConfig, c.Namespace, actionConfig.KubeClient.IsReachable()
 }
 
 func NewKubernetes() *KubernetesSpawner {
