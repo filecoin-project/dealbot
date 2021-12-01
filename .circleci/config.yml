@@ -17,7 +17,7 @@ commands:
     steps:
       - run: sudo apt-get update
       - run: sudo apt-get install ocl-icd-opencl-dev libhwloc-dev
-      - run: git clone --depth=1 https://github.com/filecoin-project/lotus /tmp/lotus
+      - run: git clone -b v1.13.0 --depth=1 https://github.com/filecoin-project/lotus /tmp/lotus
       - run: cd /tmp/lotus && git submodule update --init --depth=1
       - run: cd /tmp/lotus && make debug && sudo make install
       - run: cd /tmp/lotus && sudo cp lotus-seed /usr/local/bin
