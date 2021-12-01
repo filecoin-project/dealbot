@@ -611,10 +611,10 @@ func TestComplete(t *testing.T) {
 		iter := nextHead.Records.Iterator()
 		_, record := iter.Next()
 		store := state.Store(ctx)
-		blk, err := store.Get(record.Record.Link().(cidlink.Link).Cid)
+		blk, err := store.Get(context.TODO(), record.Record.Link().(cidlink.Link).Cid.String())
 		require.NoError(t, err)
 		tskBuilder := tasks.Type.FinishedTask.NewBuilder()
-		require.NoError(t, dagjson.Decoder(tskBuilder, bytes.NewReader(blk.RawData())))
+		require.NoError(t, dagjson.Decode(tskBuilder, bytes.NewReader(blk)))
 		tsk := tskBuilder.Build().(tasks.FinishedTask)
 		require.Equal(t, task.RetrievalTask.Must().PayloadCID.String(), tsk.PayloadCID.Must().String())
 	})
@@ -721,9 +721,9 @@ func populateTestTasks(ctx context.Context, stream io.Reader, state State) error
 	}
 	for _, task := range byTask {
 		rtp := tasks.Type.RetrievalTask.NewBuilder()
-		if err = dagjson.Decoder(rtp, bytes.NewBuffer(task)); err != nil {
+		if err = dagjson.Decode(rtp, bytes.NewBuffer(task)); err != nil {
 			stp := tasks.Type.StorageTask.NewBuilder()
-			if err = dagjson.Decoder(stp, bytes.NewBuffer(task)); err != nil {
+			if err = dagjson.Decode(stp, bytes.NewBuffer(task)); err != nil {
 				return fmt.Errorf("could not decode sample task as either storage or retrieval %s: %w", task, err)
 			}
 			if _, err = state.NewStorageTask(ctx, stp.Build().(tasks.StorageTask)); err != nil {

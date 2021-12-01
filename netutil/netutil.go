@@ -29,7 +29,7 @@ func TryAcquireLatency(ctx context.Context, ai peer.AddrInfo, makeHost func(ctx 
 	remote := conn.RemoteMultiaddr()
 	start := time.Now()
 	var end time.Time
-	stream, err := conn.NewStream()
+	stream, err := conn.NewStream(ctx)
 	stream.SetReadDeadline(time.Now().Add(3 * time.Second))
 
 	wg := sync.WaitGroup{}

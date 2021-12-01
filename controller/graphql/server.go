@@ -6,7 +6,6 @@ import (
 	"embed"
 	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 
@@ -103,13 +102,10 @@ func GetHandler(db state.State, accessToken string) (*http.ServeMux, error) {
 						}
 
 						store := db.Store(p.Context)
-						storer := func(_ ipld.LinkContext) (io.Writer, ipld.StoreCommitter, error) {
-							buf := bytes.Buffer{}
-							return &buf, func(l ipld.Link) error {
-								c := l.(cidlink.Link).Cid
-								return store.Set(c, buf.Bytes())
-							}, nil
-						}
+						ls := cidlink.DefaultLinkSystem()
+						ls.SetWriteStorage(store)
+						ls.SetReadStorage(store)
+
 						uuids := p.Args["UUIDs"].([]interface{})
 						finishedTasks := make([]tasks.FinishedTask, 0, len(uuids))
 						for _, uuid := range uuids {
@@ -118,7 +114,7 @@ func GetHandler(db state.State, accessToken string) (*http.ServeMux, error) {
 							if err != nil {
 								return nil, err
 							}
-							finishedTask, err := tsk.Finalize(p.Context, storer, false)
+							finishedTask, err := tsk.Finalize(p.Context, ls, false)
 							if err != nil {
 								return nil, err
 							}
@@ -182,11 +178,11 @@ func GetHandler(db state.State, accessToken string) (*http.ServeMux, error) {
 
 	loader := func(ctx context.Context, cl cidlink.Link, builder ipld.NodeBuilder) (ipld.Node, error) {
 		store := db.Store(ctx)
-		block, err := store.Get(cl.Cid)
+		block, err := store.Get(ctx, cl.Cid.KeyString())
 		if err != nil {
 			return nil, err
 		}
-		if err := dagjson.Decoder(builder, bytes.NewBuffer(block.RawData())); err != nil {
+		if err := dagjson.Decode(builder, bytes.NewBuffer(block)); err != nil {
 			return nil, err
 		}
 

@@ -15,7 +15,7 @@ func (ptp *_PopTask__Prototype) Of(workedBy string, status Status, tags ...strin
 	pt := _PopTask{
 		WorkedBy: _String{workedBy},
 		Status:   *status,
-		Tags:     _List_String__Maybe{m: schema.Maybe_Value, v: &ls},
+		Tags:     _List_String__Maybe{m: schema.Maybe_Value, v: ls},
 	}
 	return &pt
 }
@@ -37,14 +37,14 @@ func (utp *_UpdateTask__Prototype) OfStage(workedBy string, status Status, error
 	if errorMessage == "" {
 		err = _String__Maybe{m: schema.Maybe_Absent}
 	} else {
-		err = _String__Maybe{m: schema.Maybe_Value, v: &_String{errorMessage}}
+		err = _String__Maybe{m: schema.Maybe_Value, v: _String{errorMessage}}
 	}
 	ut := _UpdateTask{
 		WorkedBy:            _String{workedBy},
 		Status:              *status,
 		ErrorMessage:        err,
 		CurrentStageDetails: _StageDetails__Maybe{m: schema.Maybe_Value, v: details},
-		Stage:               _String__Maybe{m: schema.Maybe_Value, v: &_String{stage}},
+		Stage:               _String__Maybe{m: schema.Maybe_Value, v: _String{stage}},
 		RunCount:            _Int{int64(runCount)},
 	}
 	return &ut
