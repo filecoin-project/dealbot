@@ -611,7 +611,7 @@ func TestComplete(t *testing.T) {
 		iter := nextHead.Records.Iterator()
 		_, record := iter.Next()
 		store := state.Store(ctx)
-		blk, err := store.Get(context.TODO(), record.Record.Link().(cidlink.Link).Cid.KeyString())
+		blk, err := store.Get(context.TODO(), record.Record.Link().(cidlink.Link).Cid.String())
 		require.NoError(t, err)
 		tskBuilder := tasks.Type.FinishedTask.NewBuilder()
 		require.NoError(t, dagjson.Decode(tskBuilder, bytes.NewReader(blk)))
