@@ -20,12 +20,17 @@ import (
 //go:embed index.html
 var index embed.FS
 
-func CorsMiddleware(next http.HandlerFunc) http.Handler {
+func CorsMiddlewareFunc(next http.HandlerFunc) http.Handler {
+	return CorsMiddleware(http.HandlerFunc(next))
+}
+
+func CorsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// allow cross domain AJAX requests
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept")
-		next(w, r)
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		next.ServeHTTP(w, r)
 	})
 }
 
@@ -186,8 +191,8 @@ func GetHandler(db state.State, accessToken string) (*http.ServeMux, error) {
 	}
 
 	mux := http.NewServeMux()
-	mux.Handle("/", http.FileServer(http.FS(index)))
-	mux.Handle("/graphql", CorsMiddleware(func(w http.ResponseWriter, r *http.Request) {
+	mux.Handle("/", CorsMiddleware(http.FileServer(http.FS(index))))
+	mux.Handle("/graphql", CorsMiddlewareFunc(func(w http.ResponseWriter, r *http.Request) {
 		var result *graphql.Result
 		ctx := context.WithValue(r.Context(), nodeLoaderCtxKey, loader)
 

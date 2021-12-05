@@ -135,6 +135,16 @@ func (fw *logEcapsulator) Write(p []byte) (n int, err error) {
 //go:embed static
 var static embed.FS
 
+func CorsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// allow cross domain AJAX requests
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		next.ServeHTTP(w, r)
+	})
+}
+
 func NewWithDependencies(ctx *cli.Context, listener, graphqlListener net.Listener, recorder metrics.MetricsRecorder, backend state.State) (*Controller, error) {
 	srv := new(Controller)
 	srv.db = backend
@@ -154,6 +164,7 @@ func NewWithDependencies(ctx *cli.Context, listener, graphqlListener net.Listene
 	}
 
 	r := mux.NewRouter().StrictSlash(true)
+	r.Use(CorsMiddleware)
 
 	// Set a unique request ID.
 	r.Use(func(next http.Handler) http.Handler {
