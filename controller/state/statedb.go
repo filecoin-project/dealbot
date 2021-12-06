@@ -848,17 +848,17 @@ func (s *stateDB) GetHead(ctx context.Context, walkback int) (tasks.RecordUpdate
 		var c string
 		err := tx.QueryRowContext(ctx, queryHeadSQL, LATEST_UPDATE, "").Scan(&c)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to load latest head: %w", err)
 		}
 		cidLink, err := cid.Decode(c)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed parse head cid: %w", err)
 		}
 
 		ls := txLS(ctx, tx)
-		ru, err := ls.Load(ipld.LinkContext{}, cidlink.Link{Cid: cidLink}, tasks.Type.RecordUpdate)
+		ru, raw, err := ls.LoadPlusRaw(ipld.LinkContext{}, cidlink.Link{Cid: cidLink}, tasks.Type.RecordUpdate)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to parse %s ('%s'): %w", cidLink, raw, err)
 		}
 		recordUpdate = ru.(tasks.RecordUpdate)
 		for walkback > 0 {
