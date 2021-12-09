@@ -230,6 +230,9 @@ func (s *sdbstore) Head() (cid.Cid, error) {
 func (s *sdbstore) Put(_ context.Context, key string, content []byte) error {
 	return s.stateDB.transact(s.Context, func(tx *sql.Tx) error {
 		_, err := tx.ExecContext(s.Context, cidArchiveSQL, key, content, time.Now())
+		if err != nil {
+			return fmt.Errorf("failed to archive %s ('%s'): %w", key, content, err)
+		}
 		return err
 	})
 }
