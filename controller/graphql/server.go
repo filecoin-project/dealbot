@@ -6,6 +6,7 @@ import (
 	"embed"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/graphql-go/graphql"
 	ipld "github.com/ipld/go-ipld-prime"
 	"github.com/ipld/go-ipld-prime/codec/dagjson"
+	"github.com/ipld/go-ipld-prime/linking"
 	cidlink "github.com/ipld/go-ipld-prime/linking/cid"
 )
 
@@ -103,8 +105,20 @@ func GetHandler(db state.State, accessToken string) (*http.ServeMux, error) {
 
 						store := db.Store(p.Context)
 						ls := cidlink.DefaultLinkSystem()
-						ls.SetWriteStorage(store)
-						ls.SetReadStorage(store)
+						ls.StorageWriteOpener = func(_ linking.LinkContext) (io.Writer, linking.BlockWriteCommitter, error) {
+							buf := bytes.Buffer{}
+							return &buf, func(lnk ipld.Link) error {
+								return store.Put(p.Context, lnk.(cidlink.Link).Cid.String(), buf.Bytes())
+							}, nil
+						}
+						ls.StorageReadOpener = func(_ ipld.LinkContext, lnk ipld.Link) (io.Reader, error) {
+							lc := lnk.(cidlink.Link).Cid.String()
+							buf, err := store.Get(p.Context, lc)
+							if err != nil {
+								return nil, err
+							}
+							return bytes.NewBuffer(buf), nil
+						}
 
 						uuids := p.Args["UUIDs"].([]interface{})
 						finishedTasks := make([]tasks.FinishedTask, 0, len(uuids))
