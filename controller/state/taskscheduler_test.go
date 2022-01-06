@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/filecoin-project/dealbot/tasks"
+	"github.com/multiformats/go-multiaddr"
 	"github.com/robfig/cron/v3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -26,7 +27,7 @@ func TestScheduledTask(t *testing.T) {
 
 	err = WipeAndReset(dbConn, migrator)
 	require.NoError(t, err)
-	stateInterface, err := newStateDBWithNotify(ctx, dbConn, migrator, "", key, nil, runNotice)
+	stateInterface, err := newStateDBWithNotify(ctx, dbConn, migrator, "", key, []multiaddr.Multiaddr{}, nil, runNotice)
 	require.NoError(t, err)
 	state := stateInterface.(*stateDB)
 
@@ -159,7 +160,7 @@ func TestScheduledTaskLimit(t *testing.T) {
 
 	err = WipeAndReset(dbConn, migrator)
 	require.NoError(t, err)
-	stateInterface, err := newStateDBWithNotify(ctx, dbConn, migrator, "", key, nil, runNotice)
+	stateInterface, err := newStateDBWithNotify(ctx, dbConn, migrator, "", key, []multiaddr.Multiaddr{}, nil, runNotice)
 	require.NoError(t, err)
 	state := stateInterface.(*stateDB)
 

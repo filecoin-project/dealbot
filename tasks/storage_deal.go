@@ -123,7 +123,7 @@ type dealExecutor struct {
 	minerInfo     miner.MinerInfo
 	pi            peer.AddrInfo
 	releaseWorker func()
-	makeHost      func(ctx context.Context, opts ...config.Option) (host.Host, error)
+	makeHost      func(opts ...config.Option) (host.Host, error)
 }
 
 type storageDealExecutor struct {

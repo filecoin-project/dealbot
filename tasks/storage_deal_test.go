@@ -24,7 +24,7 @@ func TestNetDiag(t *testing.T) {
 	ctx := context.Background()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	mn := mocknet.New(ctx)
+	mn := mocknet.New()
 	other, err := mn.GenPeer()
 	require.NoError(t, err)
 	node := mocks.NewMockFullNode(ctrl)
@@ -39,7 +39,7 @@ func TestNetDiag(t *testing.T) {
 			Addrs: other.Addrs(),
 		},
 		node: node,
-		makeHost: func(ctx context.Context, _ ...config.Option) (host.Host, error) {
+		makeHost: func(_ ...config.Option) (host.Host, error) {
 			h, err := mn.GenPeer()
 			if err == nil {
 				mn.LinkAll()

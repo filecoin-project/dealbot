@@ -26,6 +26,7 @@ import (
 	basicnode "github.com/ipld/go-ipld-prime/node/basic"
 	"github.com/ipld/go-ipld-prime/storage/memstore"
 	crypto "github.com/libp2p/go-libp2p-core/crypto"
+	"github.com/multiformats/go-multiaddr"
 	"github.com/multiformats/go-multicodec"
 	tokenjson "github.com/polydawn/refmt/json"
 	"github.com/robfig/cron/v3"
@@ -99,12 +100,12 @@ type stateDB struct {
 }
 
 // NewStateDB creates a state instance with a given driver and identity
-func NewStateDB(ctx context.Context, dbConn DBConnector, migrator Migrator, logfile string, identity crypto.PrivKey, recorder metrics.MetricsRecorder) (State, error) {
-	return newStateDBWithNotify(ctx, dbConn, migrator, logfile, identity, recorder, nil)
+func NewStateDB(ctx context.Context, dbConn DBConnector, migrator Migrator, logfile string, identity crypto.PrivKey, addrs []multiaddr.Multiaddr, recorder metrics.MetricsRecorder) (State, error) {
+	return newStateDBWithNotify(ctx, dbConn, migrator, logfile, identity, addrs, recorder, nil)
 }
 
 // newStateDBWithNotify is NewStateDB with additional parameters for testing
-func newStateDBWithNotify(ctx context.Context, dbConn DBConnector, migrator Migrator, logfile string, identity crypto.PrivKey, recorder metrics.MetricsRecorder, runNotice chan string) (State, error) {
+func newStateDBWithNotify(ctx context.Context, dbConn DBConnector, migrator Migrator, logfile string, identity crypto.PrivKey, addrs []multiaddr.Multiaddr, recorder metrics.MetricsRecorder, runNotice chan string) (State, error) {
 
 	// Open database connection
 	err := dbConn.Connect()
@@ -148,7 +149,7 @@ func newStateDBWithNotify(ctx context.Context, dbConn DBConnector, migrator Migr
 	}
 
 	storeLS := storeLS(st.Store(context.Background()))
-	host, err := NewHost(identity)
+	host, err := NewHost(identity, addrs)
 	if err != nil {
 		return nil, err
 	}

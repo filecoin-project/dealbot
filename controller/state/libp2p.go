@@ -20,12 +20,13 @@ import (
 	msmux "github.com/libp2p/go-stream-muxer-multistream"
 	"github.com/libp2p/go-tcp-transport"
 	ws "github.com/libp2p/go-ws-transport"
+	"github.com/multiformats/go-multiaddr"
 
 	sqlds "github.com/ipfs/go-ds-sql"
 	pg "github.com/ipfs/go-ds-sql/postgres"
 )
 
-func NewHost(priv crypto.PrivKey) (host.Host, error) {
+func NewHost(priv crypto.PrivKey, listenAddrs []multiaddr.Multiaddr) (host.Host, error) {
 	ps, err := pstoremem.NewPeerstore()
 	if err != nil {
 		return nil, err
@@ -45,6 +46,10 @@ func NewHost(priv crypto.PrivKey) (host.Host, error) {
 
 	net, err := swarm.NewSwarm(pid, ps)
 	if err != nil {
+		return nil, err
+	}
+
+	if err := net.Listen(listenAddrs...); err != nil {
 		return nil, err
 	}
 
