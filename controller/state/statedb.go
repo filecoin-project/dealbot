@@ -152,7 +152,9 @@ func newStateDBWithNotify(ctx context.Context, dbConn DBConnector, migrator Migr
 	if err != nil {
 		return nil, err
 	}
-	pub, err := dtsync.NewPublisher(host, nil, storeLS, "/dealbot/v1.0.0")
+
+	b := dbDS("legs_data", st.db())
+	pub, err := dtsync.NewPublisher(host, b, storeLS, "/dealbot/v1.0.0")
 	if err != nil {
 		return nil, err
 	}

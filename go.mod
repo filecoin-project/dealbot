@@ -21,8 +21,8 @@ require (
 	github.com/gorilla/mux v1.7.4
 	github.com/graphql-go/graphql v0.7.9
 	github.com/ipfs/go-cid v0.1.0
-	github.com/ipfs/go-datastore v0.5.0
-	github.com/ipfs/go-ds-sql v0.2.0
+	github.com/ipfs/go-datastore v0.5.1
+	github.com/ipfs/go-ds-sql v0.2.1-0.20220105185613-ab0fda210af1
 	github.com/ipfs/go-log/v2 v2.4.0
 	github.com/ipld/go-car v0.3.2-0.20211001225732-32d0d9933823
 	github.com/ipld/go-car/v2 v2.1.1-0.20211130182159-c35591a559b5

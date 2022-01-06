@@ -82,7 +82,7 @@ func NewHost(priv crypto.PrivKey) (host.Host, error) {
 	return host, nil
 }
 
-func dbDS(table string, db *sql.DB) datastore.Batch {
+func dbDS(table string, db *sql.DB) datastore.Batching {
 	queries := pg.NewQueries(table)
 	ds := sqlds.NewDatastore(db, queries)
 	return ds
