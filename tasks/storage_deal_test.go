@@ -10,7 +10,7 @@ import (
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/big"
 	"github.com/filecoin-project/lotus/api"
-	"github.com/filecoin-project/lotus/api/mocks"
+	"github.com/filecoin-project/lotus/api/v0api/v0mocks"
 	"github.com/filecoin-project/lotus/chain/types"
 	"github.com/golang/mock/gomock"
 	"github.com/libp2p/go-libp2p-core/host"
@@ -27,7 +27,7 @@ func TestNetDiag(t *testing.T) {
 	mn := mocknet.New()
 	other, err := mn.GenPeer()
 	require.NoError(t, err)
-	node := mocks.NewMockFullNode(ctrl)
+	node := v0mocks.NewMockFullNode(ctrl)
 	node.EXPECT().NetAgentVersion(gomock.Eq(ctx), gomock.Eq(other.ID())).Return("1.12.0", nil)
 	node.EXPECT().Version(gomock.Eq(ctx)).Return(api.APIVersion{
 		Version: "1.11.0",
@@ -71,7 +71,7 @@ func TestExecuteDeal(t *testing.T) {
 	ctx := context.Background()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	node := mocks.NewMockFullNode(ctrl)
+	node := v0mocks.NewMockFullNode(ctrl)
 	root := generateRandomCID(t)
 	proposalCid := generateRandomCID(t)
 	basePrice := abi.NewTokenAmount(1000000000000)

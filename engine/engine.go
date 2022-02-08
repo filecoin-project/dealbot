@@ -11,7 +11,7 @@ import (
 	"github.com/filecoin-project/dealbot/controller/client"
 	"github.com/filecoin-project/dealbot/lotus"
 	"github.com/filecoin-project/dealbot/tasks"
-	"github.com/filecoin-project/lotus/api"
+	"github.com/filecoin-project/lotus/api/v0api"
 	"github.com/google/uuid"
 	"github.com/urfave/cli/v2"
 
@@ -34,17 +34,17 @@ type apiClient interface {
 }
 
 type taskExecutor interface {
-	MakeStorageDeal(ctx context.Context, config tasks.NodeConfig, node api.FullNode, task tasks.StorageTask, updateStage tasks.UpdateStage, log tasks.LogStatus, stageTimeouts map[string]time.Duration, releaseWorker func()) error
-	MakeRetrievalDeal(ctx context.Context, config tasks.NodeConfig, node api.FullNode, task tasks.RetrievalTask, updateStage tasks.UpdateStage, log tasks.LogStatus, stageTimeouts map[string]time.Duration, releaseWorker func()) error
+	MakeStorageDeal(ctx context.Context, config tasks.NodeConfig, node v0api.FullNode, task tasks.StorageTask, updateStage tasks.UpdateStage, log tasks.LogStatus, stageTimeouts map[string]time.Duration, releaseWorker func()) error
+	MakeRetrievalDeal(ctx context.Context, config tasks.NodeConfig, node v0api.FullNode, task tasks.RetrievalTask, updateStage tasks.UpdateStage, log tasks.LogStatus, stageTimeouts map[string]time.Duration, releaseWorker func()) error
 }
 
 type defaultTaskExecutor struct{}
 
-func (defaultTaskExecutor) MakeStorageDeal(ctx context.Context, config tasks.NodeConfig, node api.FullNode, task tasks.StorageTask, updateStage tasks.UpdateStage, log tasks.LogStatus, stageTimeouts map[string]time.Duration, releaseWorker func()) error {
+func (defaultTaskExecutor) MakeStorageDeal(ctx context.Context, config tasks.NodeConfig, node v0api.FullNode, task tasks.StorageTask, updateStage tasks.UpdateStage, log tasks.LogStatus, stageTimeouts map[string]time.Duration, releaseWorker func()) error {
 	return tasks.MakeStorageDeal(ctx, config, node, task, updateStage, log, stageTimeouts, releaseWorker)
 }
 
-func (defaultTaskExecutor) MakeRetrievalDeal(ctx context.Context, config tasks.NodeConfig, node api.FullNode, task tasks.RetrievalTask, updateStage tasks.UpdateStage, log tasks.LogStatus, stageTimeouts map[string]time.Duration, releaseWorker func()) error {
+func (defaultTaskExecutor) MakeRetrievalDeal(ctx context.Context, config tasks.NodeConfig, node v0api.FullNode, task tasks.RetrievalTask, updateStage tasks.UpdateStage, log tasks.LogStatus, stageTimeouts map[string]time.Duration, releaseWorker func()) error {
 	return tasks.MakeRetrievalDeal(ctx, config, node, task, updateStage, log, stageTimeouts, releaseWorker)
 }
 
@@ -58,7 +58,7 @@ type Engine struct {
 	stageTimeouts map[string]time.Duration
 
 	// depedencies
-	node         api.FullNode
+	node         v0api.FullNode
 	nodeConfig   tasks.NodeConfig
 	closer       lotus.NodeCloser
 	client       apiClient
@@ -108,7 +108,7 @@ func new(
 	host string,
 	stageTimeouts map[string]time.Duration,
 	tags []string,
-	node api.FullNode,
+	node v0api.FullNode,
 	nodeConfig tasks.NodeConfig,
 	closer lotus.NodeCloser,
 	client apiClient,

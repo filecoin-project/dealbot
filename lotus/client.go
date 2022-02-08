@@ -9,6 +9,7 @@ import (
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/big"
 	"github.com/filecoin-project/lotus/api"
+	"github.com/filecoin-project/lotus/api/v0api"
 	"github.com/urfave/cli/v2"
 )
 
@@ -17,7 +18,7 @@ const defaultMinWalletFil = 100000000000000
 
 type NodeCloser func()
 
-func SetupClientFromCLI(cctx *cli.Context) (tasks.NodeConfig, api.FullNode, NodeCloser, error) {
+func SetupClientFromCLI(cctx *cli.Context) (tasks.NodeConfig, v0api.FullNode, NodeCloser, error) {
 	// read dir and assert it exists
 	dataDir := cctx.String("data-dir")
 	if _, err := os.Stat(dataDir); os.IsNotExist(err) {
@@ -86,7 +87,7 @@ func SetupClientFromCLI(cctx *cli.Context) (tasks.NodeConfig, api.FullNode, Node
 	}, node, closer, nil
 }
 
-func SetupClient(ctx context.Context, cliCtx *cli.Context) (tasks.NodeConfig, api.FullNode, NodeCloser, error) {
+func SetupClient(ctx context.Context, cliCtx *cli.Context) (tasks.NodeConfig, v0api.FullNode, NodeCloser, error) {
 	// read dir and assert it exists
 	dataDir := cliCtx.String("data-dir")
 	if _, err := os.Stat(dataDir); os.IsNotExist(err) {
