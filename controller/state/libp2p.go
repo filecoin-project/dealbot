@@ -73,10 +73,10 @@ func NewHost(priv crypto.PrivKey, listenAddrs []multiaddr.Multiaddr) (host.Host,
 		return nil, err
 	}
 
-	tcpT, _ := tcp.NewTCPTransport(upgrader)
+	tcpT, _ := tcp.NewTCPTransport(upgrader, nil)
 	for _, t := range []transport.Transport{
 		tcpT,
-		ws.New(upgrader),
+		ws.New(upgrader, nil),
 	} {
 		if err := net.AddTransport(t); err != nil {
 			return nil, err
