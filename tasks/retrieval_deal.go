@@ -117,7 +117,6 @@ func (de *retrievalDealExecutor) queryOffer(logg logFunc) error {
 		Root:                    ro.Root,
 		Piece:                   ro.Piece,
 		Size:                    ro.Size,
-		FromLocalCAR:            "",
 		Total:                   ro.Total,
 		UnsealPrice:             ro.UnsealPrice,
 		PaymentInterval:         ro.PaymentInterval,
