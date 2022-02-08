@@ -388,7 +388,8 @@ func newHarness(ctx context.Context, t *testing.T, connector state.DBConnector, 
 	pr, _, _ := crypto.GenerateKeyPair(crypto.Ed25519, 0)
 	require.NoError(t, err)
 
-	be, err := state.NewStateDB(ctx, connector, migrator, "", pr, []multiaddr.Multiaddr{}, h.recorder)
+	max, _ := multiaddr.NewMultiaddr("/ip4/127.0.0.1/tcp/0")
+	be, err := state.NewStateDB(ctx, connector, migrator, "", pr, []multiaddr.Multiaddr{max}, h.recorder)
 	require.NoError(t, err)
 	cc := cli.NewContext(cli.NewApp(), &flag.FlagSet{}, nil)
 	h.controller, err = controller.NewWithDependencies(cc, listener, nil, h.recorder, be)

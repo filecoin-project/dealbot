@@ -759,7 +759,8 @@ func withState(ctx context.Context, t *testing.T, fn func(*stateDB)) {
 
 	err = WipeAndReset(dbConn, migrator)
 	require.NoError(t, err)
-	stateInterface, err := NewStateDB(ctx, dbConn, migrator, "", key, []multiaddr.Multiaddr{}, nil)
+	max, _ := multiaddr.NewMultiaddr("/ip4/127.0.0.1/tcp/0")
+	stateInterface, err := NewStateDB(ctx, dbConn, migrator, "", key, []multiaddr.Multiaddr{max}, nil)
 	require.NoError(t, err)
 	state, ok := stateInterface.(*stateDB)
 	require.True(t, ok, "returned wrong type")
