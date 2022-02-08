@@ -49,15 +49,6 @@ func NewHost(priv crypto.PrivKey, listenAddrs []multiaddr.Multiaddr) (host.Host,
 		return nil, err
 	}
 
-	if err := net.Listen(listenAddrs...); err != nil {
-		return nil, err
-	}
-
-	host, err := basichost.NewHost(net, &basichost.HostOpts{})
-	if err != nil {
-		return nil, err
-	}
-
 	secMuxer := new(csms.SSMuxer)
 	noiseSec, _ := noise.New(priv)
 	secMuxer.AddTransport(noise.ID, noiseSec)
@@ -81,6 +72,15 @@ func NewHost(priv crypto.PrivKey, listenAddrs []multiaddr.Multiaddr) (host.Host,
 		if err := net.AddTransport(t); err != nil {
 			return nil, err
 		}
+	}
+
+	if err := net.Listen(listenAddrs...); err != nil {
+		return nil, err
+	}
+
+	host, err := basichost.NewHost(net, &basichost.HostOpts{})
+	if err != nil {
+		return nil, err
 	}
 
 	host.Start()
