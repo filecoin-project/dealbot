@@ -22,8 +22,9 @@ require (
 	github.com/graphql-go/graphql v0.7.9
 	github.com/ipfs/go-cid v0.1.0
 	github.com/ipfs/go-datastore v0.5.1
+	github.com/ipfs/go-ds-badger2 v0.1.2 // indirect
 	github.com/ipfs/go-ds-sql v0.2.1-0.20220105185613-ab0fda210af1
-	github.com/ipfs/go-log/v2 v2.4.0
+	github.com/ipfs/go-log/v2 v2.5.0
 	github.com/ipld/go-car v0.3.2-0.20211001225732-32d0d9933823
 	github.com/ipld/go-car/v2 v2.1.1-0.20211130182159-c35591a559b5
 	github.com/ipld/go-ipld-graphql v0.0.0-20211021213353-9727002b9c62
@@ -54,6 +55,7 @@ require (
 	github.com/urfave/cli/v2 v2.3.0
 	github.com/willscott/ipld-dumpjson v0.0.0-20210625231845-eb416d94fa54
 	golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2
+	golang.org/x/sys v0.0.0-20211216021012-1d35b9e2eb4e // indirect
 	helm.sh/helm/v3 v3.6.2
 	k8s.io/api v0.21.2
 	k8s.io/cli-runtime v0.21.2
