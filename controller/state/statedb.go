@@ -15,6 +15,8 @@ import (
 
 	"github.com/filecoin-project/dealbot/metrics"
 	"github.com/filecoin-project/dealbot/tasks"
+	legs "github.com/filecoin-project/go-legs"
+	"github.com/filecoin-project/go-legs/dtsync"
 	"github.com/ipfs/go-cid"
 	logging "github.com/ipfs/go-log/v2"
 	"github.com/ipld/go-ipld-prime"
@@ -24,6 +26,7 @@ import (
 	basicnode "github.com/ipld/go-ipld-prime/node/basic"
 	"github.com/ipld/go-ipld-prime/storage/memstore"
 	crypto "github.com/libp2p/go-libp2p-core/crypto"
+	"github.com/multiformats/go-multiaddr"
 	"github.com/multiformats/go-multicodec"
 	tokenjson "github.com/polydawn/refmt/json"
 	"github.com/robfig/cron/v3"
@@ -93,15 +96,16 @@ type stateDB struct {
 	recorder  metrics.MetricsRecorder
 	outlog    io.WriteCloser
 	runNotice chan string
+	legs      legs.Publisher
 }
 
 // NewStateDB creates a state instance with a given driver and identity
-func NewStateDB(ctx context.Context, dbConn DBConnector, migrator Migrator, logfile string, identity crypto.PrivKey, recorder metrics.MetricsRecorder) (State, error) {
-	return newStateDBWithNotify(ctx, dbConn, migrator, logfile, identity, recorder, nil)
+func NewStateDB(ctx context.Context, dbConn DBConnector, migrator Migrator, logfile string, identity crypto.PrivKey, addrs []multiaddr.Multiaddr, recorder metrics.MetricsRecorder) (State, error) {
+	return newStateDBWithNotify(ctx, dbConn, migrator, logfile, identity, addrs, recorder, nil)
 }
 
 // newStateDBWithNotify is NewStateDB with additional parameters for testing
-func newStateDBWithNotify(ctx context.Context, dbConn DBConnector, migrator Migrator, logfile string, identity crypto.PrivKey, recorder metrics.MetricsRecorder, runNotice chan string) (State, error) {
+func newStateDBWithNotify(ctx context.Context, dbConn DBConnector, migrator Migrator, logfile string, identity crypto.PrivKey, addrs []multiaddr.Multiaddr, recorder metrics.MetricsRecorder, runNotice chan string) (State, error) {
 
 	// Open database connection
 	err := dbConn.Connect()
@@ -144,6 +148,19 @@ func newStateDBWithNotify(ctx context.Context, dbConn DBConnector, migrator Migr
 		log.Infow("recovered scheduled tasks", "task_count", count)
 	}
 
+	storeLS := storeLS(st.Store(context.Background()))
+	host, err := NewHost(identity, addrs)
+	if err != nil {
+		return nil, err
+	}
+
+	b := dbDS("legs_data", st.db())
+	pub, err := dtsync.NewPublisher(host, b, storeLS, "/dealbot/v1.0.0")
+	if err != nil {
+		return nil, err
+	}
+	st.legs = pub
+
 	return st, nil
 }
 
@@ -164,6 +181,24 @@ func (s *stateDB) Store(ctx context.Context) Store {
 type sdbstore struct {
 	context.Context
 	*stateDB
+}
+
+func storeLS(s Store) ipld.LinkSystem {
+	ls := cidlink.DefaultLinkSystem()
+	ls.StorageReadOpener = func(lc linking.LinkContext, l ipld.Link) (io.Reader, error) {
+		b, err := s.Get(lc.Ctx, l.String())
+		if err != nil {
+			return nil, err
+		}
+		return bytes.NewBuffer(b), nil
+	}
+	ls.StorageWriteOpener = func(lc linking.LinkContext) (io.Writer, linking.BlockWriteCommitter, error) {
+		buf := bytes.NewBuffer(nil)
+		return buf, func(l ipld.Link) error {
+			return s.Put(lc.Ctx, l.String(), buf.Bytes())
+		}, nil
+	}
+	return ls
 }
 
 func (s *sdbstore) Get(ctx context.Context, key string) ([]byte, error) {
@@ -974,6 +1009,9 @@ func (s *stateDB) PublishRecordsFrom(ctx context.Context, worker string) error {
 		updateCid, err := ls.Store(ipld.LinkContext{}, linkProto, update.Representation())
 		if err != nil {
 			return err
+		}
+		if s.legs != nil {
+			s.legs.UpdateRoot(ctx, updateCid.(cidlink.Link).Cid)
 		}
 
 		if _, err = tx.ExecContext(ctx, addHeadSQL, updateCid.(cidlink.Link).Cid.String(), time.Now(), "", LATEST_UPDATE); err != nil {

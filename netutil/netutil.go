@@ -13,10 +13,10 @@ import (
 	"golang.org/x/net/context"
 )
 
-func TryAcquireLatency(ctx context.Context, ai peer.AddrInfo, makeHost func(ctx context.Context, opts ...config.Option) (host.Host, error)) (multiaddr.Multiaddr, int64, error) {
+func TryAcquireLatency(ctx context.Context, ai peer.AddrInfo, makeHost func(opts ...config.Option) (host.Host, error)) (multiaddr.Multiaddr, int64, error) {
 	cctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
-	h, err := makeHost(cctx)
+	h, err := makeHost()
 	if err != nil {
 		return nil, 0, err
 	}

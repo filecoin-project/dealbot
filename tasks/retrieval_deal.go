@@ -13,6 +13,7 @@ import (
 	"github.com/filecoin-project/go-fil-markets/retrievalmarket"
 	"github.com/filecoin-project/go-fil-markets/retrievalmarket/impl/clientstates"
 	"github.com/filecoin-project/lotus/api"
+	"github.com/filecoin-project/lotus/api/v0api"
 	"github.com/ipfs/go-cid"
 	"github.com/ipld/go-car"
 	"github.com/libp2p/go-libp2p"
@@ -36,7 +37,7 @@ var RetrievalDealStages = []RetrievalStage{
 	RetrievalStageDealComplete,
 }
 
-func MakeRetrievalDeal(ctx context.Context, config NodeConfig, node api.FullNode, task RetrievalTask, updateStage UpdateStage, log LogStatus, stageTimeouts map[string]time.Duration, releaseWorker func()) error {
+func MakeRetrievalDeal(ctx context.Context, config NodeConfig, node v0api.FullNode, task RetrievalTask, updateStage UpdateStage, log LogStatus, stageTimeouts map[string]time.Duration, releaseWorker func()) error {
 	de := &retrievalDealExecutor{
 		dealExecutor: dealExecutor{
 			ctx:           ctx,
@@ -98,7 +99,7 @@ func MakeRetrievalDeal(ctx context.Context, config NodeConfig, node api.FullNode
 type retrievalDealExecutor struct {
 	dealExecutor
 	task  RetrievalTask
-	offer api.QueryOffer
+	offer v0api.RetrievalOrder
 }
 
 func (de *retrievalDealExecutor) queryOffer(logg logFunc) error {
@@ -107,23 +108,36 @@ func (de *retrievalDealExecutor) queryOffer(logg logFunc) error {
 		return err
 	}
 
-	de.offer, err = de.node.ClientMinerQueryOffer(de.ctx, de.minerAddress, payloadCid, nil)
+	qo, err := de.node.ClientMinerQueryOffer(de.ctx, de.minerAddress, payloadCid, nil)
 	if err != nil {
 		return err
 	}
-
-	if de.offer.Err != "" {
-		return fmt.Errorf("got error in offer: %s", de.offer.Err)
+	ro := qo.Order(de.config.WalletAddress)
+	de.offer = v0api.RetrievalOrder{
+		Root:                    ro.Root,
+		Piece:                   ro.Piece,
+		Size:                    ro.Size,
+		Total:                   ro.Total,
+		UnsealPrice:             ro.UnsealPrice,
+		PaymentInterval:         ro.PaymentInterval,
+		PaymentIntervalIncrease: ro.PaymentIntervalIncrease,
+		Client:                  ro.Client,
+		Miner:                   ro.Miner,
+		MinerPeer:               ro.MinerPeer,
 	}
 
-	de.log("got query offer", "root", de.offer.Root, "piece", de.offer.Piece, "size", de.offer.Size, "minprice", de.offer.MinPrice, "unseal_price", de.offer.UnsealPrice)
+	if qo.Err != "" {
+		return fmt.Errorf("got error in offer: %s", qo.Err)
+	}
+
+	de.log("got query offer", "root", de.offer.Root, "piece", de.offer.Piece, "size", de.offer.Size, "minprice", qo.MinPrice, "unseal_price", de.offer.UnsealPrice)
 
 	if de.task.MaxPriceAttoFIL.Exists() {
-		sizePrice := big.NewInt(2).Mul(de.offer.MinPrice.Int, big.NewInt(0).SetUint64(de.offer.Size))
+		sizePrice := big.NewInt(2).Mul(qo.MinPrice.Int, big.NewInt(0).SetUint64(de.offer.Size))
 		totPrice := big.NewInt(0).Add(de.offer.UnsealPrice.Int, sizePrice)
 		if totPrice.Cmp(big.NewInt(de.task.MaxPriceAttoFIL.Must().Int())) == 1 {
 			// too expensive.
-			msg := fmt.Sprintf("RejectingDealOverCost min:%d, unseal:%d", de.offer.MinPrice.Int64(), de.offer.UnsealPrice.Int64())
+			msg := fmt.Sprintf("RejectingDealOverCost min:%d, unseal:%d", qo.MinPrice.Int64(), de.offer.UnsealPrice.Int64())
 			logg(msg)
 			return fmt.Errorf(msg)
 		}
@@ -173,7 +187,7 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(ctx context.Context, upda
 		IsCAR: de.task.CARExport.x,
 	}
 
-	events, err := de.node.ClientRetrieveWithEvents(de.ctx, de.offer.Order(de.config.WalletAddress), ref)
+	events, err := de.node.ClientRetrieveWithEvents(de.ctx, de.offer, ref)
 	if err != nil {
 		return err
 	}

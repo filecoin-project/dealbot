@@ -234,6 +234,11 @@ var ControllerFlags = []cli.Flag{
 		EnvVars: []string{"DEALBOT_LISTEN"},
 		Value:   "127.0.0.1:33258",
 	}),
+	altsrc.NewStringSliceFlag(&cli.StringSliceFlag{
+		Name:    "libp2p-addrs",
+		Usage:   "libp2p multiaddrs to listen on",
+		EnvVars: []string{"DEALBOT_LIBP2P_ADDRS"},
+	}),
 	altsrc.NewStringFlag(&cli.StringFlag{
 		Name:    "graphql",
 		Usage:   "host:port to bind graphql server on",

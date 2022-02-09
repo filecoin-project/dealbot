@@ -25,6 +25,7 @@ import (
 	"github.com/filecoin-project/dealbot/metrics/prometheus"
 	"github.com/filecoin-project/lotus/api"
 	"github.com/libp2p/go-libp2p-core/crypto"
+	"github.com/multiformats/go-multiaddr"
 
 	logging "github.com/ipfs/go-log/v2"
 	"github.com/urfave/cli/v2"
@@ -116,7 +117,16 @@ func New(ctx *cli.Context) (*Controller, error) {
 	if err != nil {
 		return nil, err
 	}
-	backend, err := state.NewStateDB(ctx.Context, connector, migrator, ctx.String("datapointlog"), key, recorder)
+	listenAddrs := make([]multiaddr.Multiaddr, 0)
+	for _, a := range ctx.StringSlice("libp2p-addrs") {
+		addr, err := multiaddr.NewMultiaddr(a)
+		if err != nil {
+			return nil, err
+		}
+		listenAddrs = append(listenAddrs, addr)
+	}
+
+	backend, err := state.NewStateDB(ctx.Context, connector, migrator, ctx.String("datapointlog"), key, listenAddrs, recorder)
 	if err != nil {
 		return nil, err
 	}
