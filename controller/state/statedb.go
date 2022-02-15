@@ -155,7 +155,7 @@ func newStateDBWithNotify(ctx context.Context, dbConn DBConnector, migrator Migr
 	}
 
 	b := dbDS("legs_data", st.db())
-	pub, err := dtsync.NewPublisher(host, b, storeLS, "/dealbot/v1.0.0")
+	pub, err := dtsync.NewPublisher(host, b, storeLS, "/pando/v0.0.1")
 	if err != nil {
 		return nil, err
 	}
@@ -1011,7 +1011,10 @@ func (s *stateDB) PublishRecordsFrom(ctx context.Context, worker string) error {
 			return err
 		}
 		if s.legs != nil {
-			s.legs.UpdateRoot(ctx, updateCid.(cidlink.Link).Cid)
+			err := s.legs.UpdateRoot(ctx, updateCid.(cidlink.Link).Cid)
+			if err != nil {
+				log.Errorw("failed to update legs root", "err", err)
+			}
 		}
 
 		if _, err = tx.ExecContext(ctx, addHeadSQL, updateCid.(cidlink.Link).Cid.String(), time.Now(), "", LATEST_UPDATE); err != nil {
