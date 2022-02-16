@@ -12,7 +12,7 @@ import (
 
 var log = logging.Logger("dealbot")
 
-var CommonFlags []cli.Flag = []cli.Flag{
+var CommonFlags = []cli.Flag{
 	altsrc.NewStringFlag(&cli.StringFlag{
 		Name:    "wallet",
 		Usage:   "deal client wallet address on node",
@@ -238,6 +238,11 @@ var ControllerFlags = []cli.Flag{
 		Name:    "libp2p-addrs",
 		Usage:   "libp2p multiaddrs to listen on",
 		EnvVars: []string{"DEALBOT_LIBP2P_ADDRS"},
+	}),
+	altsrc.NewStringSliceFlag(&cli.StringSliceFlag{
+		Name:    "libp2p-bootstrap-addrinfo",
+		Usage:   "libp2p addrinfos to use for bootstrapping",
+		EnvVars: []string{"DEALBOT_LIBP2P_BOOTSTRAP_ADDRINFO"},
 	}),
 	altsrc.NewStringFlag(&cli.StringFlag{
 		Name:    "graphql",

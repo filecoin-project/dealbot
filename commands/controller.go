@@ -32,7 +32,7 @@ func controllerCommand(c *cli.Context) error {
 		select {
 		case <-ctx.Done():
 		case <-exiting:
-			// no need to shutdown in this case.
+			// no need to shut down in this case.
 			return
 		}
 

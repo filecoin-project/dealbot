@@ -27,7 +27,7 @@ func TestScheduledTask(t *testing.T) {
 
 	err = WipeAndReset(dbConn, migrator)
 	require.NoError(t, err)
-	stateInterface, err := newStateDBWithNotify(ctx, dbConn, migrator, "", key, []multiaddr.Multiaddr{}, nil, runNotice)
+	stateInterface, err := newStateDBWithNotify(ctx, dbConn, migrator, "", key, []multiaddr.Multiaddr{}, nil, nil, runNotice)
 	require.NoError(t, err)
 	state := stateInterface.(*stateDB)
 
@@ -160,7 +160,7 @@ func TestScheduledTaskLimit(t *testing.T) {
 
 	err = WipeAndReset(dbConn, migrator)
 	require.NoError(t, err)
-	stateInterface, err := newStateDBWithNotify(ctx, dbConn, migrator, "", key, []multiaddr.Multiaddr{}, nil, runNotice)
+	stateInterface, err := newStateDBWithNotify(ctx, dbConn, migrator, "", key, []multiaddr.Multiaddr{}, nil, nil, runNotice)
 	require.NoError(t, err)
 	state := stateInterface.(*stateDB)
 
