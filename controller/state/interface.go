@@ -7,7 +7,7 @@ import (
 	"github.com/ipfs/go-cid"
 )
 
-// State provides an interface for presistence.
+// State provides an interface for persistence.
 type State interface {
 	AssignTask(ctx context.Context, req tasks.PopTask) (tasks.Task, error)
 	Get(ctx context.Context, uuid string) (tasks.Task, error)

@@ -2,8 +2,10 @@ package state
 
 import (
 	"database/sql"
+	"io"
 
 	"github.com/ipfs/go-datastore"
+	"github.com/ipfs/go-ipfs/core/bootstrap"
 	csms "github.com/libp2p/go-conn-security-multistream"
 	crypto "github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/host"
@@ -85,6 +87,16 @@ func NewHost(priv crypto.PrivKey, listenAddrs []multiaddr.Multiaddr) (host.Host,
 
 	host.Start()
 	return host, nil
+}
+
+func bootstrapHost(host host.Host, btstrp []peer.AddrInfo) (io.Closer, error) {
+	bCfg := bootstrap.DefaultBootstrapConfig
+	// TODO: parameterize this value, since the concrete value is application specific.
+	bCfg.MinPeerThreshold = 1
+	bCfg.BootstrapPeers = func() []peer.AddrInfo {
+		return btstrp
+	}
+	return bootstrap.Bootstrap(host.ID(), host, nil, bCfg)
 }
 
 func dbDS(table string, db *sql.DB) datastore.Batching {
