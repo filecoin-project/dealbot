@@ -76,17 +76,19 @@ func NewHost(priv crypto.PrivKey, listenAddrs []multiaddr.Multiaddr) (host.Host,
 		}
 	}
 
-	if err := net.Listen(listenAddrs...); err != nil {
+	if len(listenAddrs) == 0 {
+		log.Warn("no listen addresses are specified for libp2p host")
+	} else if err := net.Listen(listenAddrs...); err != nil {
 		return nil, err
 	}
 
-	host, err := basichost.NewHost(net, &basichost.HostOpts{})
+	h, err := basichost.NewHost(net, &basichost.HostOpts{})
 	if err != nil {
 		return nil, err
 	}
 
-	host.Start()
-	return host, nil
+	h.Start()
+	return h, nil
 }
 
 func bootstrapHost(host host.Host, btstrp []peer.AddrInfo) (io.Closer, error) {
