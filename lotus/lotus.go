@@ -60,7 +60,7 @@ func NewAPIOpenerFromCLI(cctx *cli.Context) (*APIOpener, APICloser, error) {
 		return nil, nil, fmt.Errorf("cannot connect to lotus api: missing --api or --repo flags")
 	}
 
-	addr, err := apiInfo.DialArgs("v1")
+	addr, err := apiInfo.DialArgs("v0")
 	if err != nil {
 		return nil, nil, fmt.Errorf("parse listen address: %w", err)
 	}
@@ -112,7 +112,7 @@ func NewAPIOpener(ctx *cli.Context) (*APIOpener, APICloser, error) {
 
 	apiInfo := cliutil.ParseApiInfo(tokenMaddr)
 
-	addr, err := apiInfo.DialArgs("v1")
+	addr, err := apiInfo.DialArgs("v0")
 	if err != nil {
 		return nil, nil, fmt.Errorf("parse listen address: %w", err)
 	}
