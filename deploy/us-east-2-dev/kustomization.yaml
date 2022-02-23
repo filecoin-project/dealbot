@@ -1,0 +1,7 @@
+---
+kind: Kustomization
+namespace: gitops-test-dealbot-controller
+resources:
+  - ../base
+patchesStrategicMerge:
+  - release.yaml
