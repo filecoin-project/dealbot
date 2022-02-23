@@ -4,6 +4,8 @@ kind: HelmRelease
 metadata:
   name: dealbot-controller
 spec:
+  targetNamespace: gitops-test-dealbot-controller
+  storageNamespace: gitops-test-dealbot-controller
   values:
     image:
       repo: filecoin/dealbot

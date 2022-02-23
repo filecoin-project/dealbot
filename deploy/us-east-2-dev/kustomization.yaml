@@ -1,6 +1,6 @@
 ---
 kind: Kustomization
-namespace: gitops-test-dealbot-controller
+namespace: cls-us-east-2-dev
 resources:
   - ../base
 patchesStrategicMerge:
