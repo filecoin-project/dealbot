@@ -23,7 +23,6 @@ import (
 	"github.com/filecoin-project/dealbot/tasks"
 	"github.com/ipld/go-ipld-prime/codec/dagjson"
 	"github.com/libp2p/go-libp2p-core/crypto"
-	"github.com/multiformats/go-multiaddr"
 	"github.com/stretchr/testify/require"
 	"github.com/urfave/cli/v2"
 )
@@ -388,11 +387,10 @@ func newHarness(ctx context.Context, t *testing.T, connector state.DBConnector, 
 	pr, _, _ := crypto.GenerateKeyPair(crypto.Ed25519, 0)
 	require.NoError(t, err)
 
-	max, _ := multiaddr.NewMultiaddr("/ip4/127.0.0.1/tcp/0")
-	be, err := state.NewStateDB(ctx, connector, migrator, "", pr, []multiaddr.Multiaddr{max}, nil, h.recorder)
+	be, err := state.NewStateDB(ctx, connector, migrator, "", pr, h.recorder)
 	require.NoError(t, err)
 	cc := cli.NewContext(cli.NewApp(), &flag.FlagSet{}, nil)
-	h.controller, err = controller.NewWithDependencies(cc, listener, nil, h.recorder, be)
+	h.controller, err = controller.NewWithDependencies(cc, listener, nil, h.recorder, be, nil)
 
 	h.serveErr = make(chan error, 1)
 	go func() {

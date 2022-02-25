@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/filecoin-project/dealbot/controller/graphql"
+	"github.com/filecoin-project/dealbot/controller/publisher"
 	"github.com/filecoin-project/dealbot/controller/spawn"
 	"github.com/filecoin-project/dealbot/controller/state"
 	"github.com/filecoin-project/dealbot/controller/webutil"
@@ -24,6 +25,9 @@ import (
 	metricslog "github.com/filecoin-project/dealbot/metrics/log"
 	"github.com/filecoin-project/dealbot/metrics/prometheus"
 	"github.com/filecoin-project/lotus/api"
+	sqlds "github.com/ipfs/go-ds-sql"
+	"github.com/ipfs/go-ds-sql/postgres"
+	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/multiformats/go-multiaddr"
@@ -56,6 +60,7 @@ type Controller struct {
 	spawner         spawn.Spawner
 	gateway         api.Gateway
 	nodeCloser      lotus.NodeCloser
+	pub             publisher.Publisher
 }
 
 func New(ctx *cli.Context) (*Controller, error) {
@@ -118,6 +123,13 @@ func New(ctx *cli.Context) (*Controller, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	backend, err := state.NewStateDB(ctx.Context, connector, migrator, ctx.String("datapointlog"), key, recorder)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get the configured libp2p host listen addresses
 	listenAddrs := make([]multiaddr.Multiaddr, 0)
 	for _, a := range ctx.StringSlice("libp2p-addrs") {
 		addr, err := multiaddr.NewMultiaddr(a)
@@ -127,6 +139,13 @@ func New(ctx *cli.Context) (*Controller, error) {
 		listenAddrs = append(listenAddrs, addr)
 	}
 
+	// Instantiate a new libp2p host needed by publisher.
+	host, err := libp2p.New(libp2p.ListenAddrs(listenAddrs...), libp2p.Identity(key))
+	if err != nil {
+		return nil, err
+	}
+
+	// Get libp2p bootstrap hosts.
 	var btstrp []peer.AddrInfo
 	for _, b := range ctx.StringSlice("libp2p-bootstrap-addrinfo") {
 		b, err := peer.AddrInfoFromString(b)
@@ -136,11 +155,20 @@ func New(ctx *cli.Context) (*Controller, error) {
 		btstrp = append(btstrp, *b)
 	}
 
-	backend, err := state.NewStateDB(ctx.Context, connector, migrator, ctx.String("datapointlog"), key, listenAddrs, btstrp, recorder)
+	// Instantiate a datastore backed by DB used internally by the publisher.
+	queries := postgres.NewQueries("legs_data")
+	ds := sqlds.NewDatastore(connector.SqlDB(), queries)
+
+	// Instantiate a store, used to read the state records created by state db.
+	store := backend.Store(ctx.Context)
+
+	// Instantiate publisher.
+	pub, err := publisher.NewPandoPublisher(ds, store, publisher.WithHost(host), publisher.WithBootstrapPeers(btstrp...))
 	if err != nil {
 		return nil, err
 	}
-	return NewWithDependencies(ctx, l, gl, recorder, backend)
+
+	return NewWithDependencies(ctx, l, gl, recorder, backend, pub)
 }
 
 type logEcapsulator struct {
@@ -165,9 +193,10 @@ func CorsMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func NewWithDependencies(ctx *cli.Context, listener, graphqlListener net.Listener, recorder metrics.MetricsRecorder, backend state.State) (*Controller, error) {
+func NewWithDependencies(ctx *cli.Context, listener, graphqlListener net.Listener, recorder metrics.MetricsRecorder, backend state.State, pub publisher.Publisher) (*Controller, error) {
 	srv := new(Controller)
 	srv.db = backend
+	srv.pub = pub
 	srv.basicauth = ctx.String("basicauth")
 	if ctx.String("daemon-driver") == "kubernetes" {
 		srv.spawner = spawn.NewKubernetes()
@@ -265,6 +294,13 @@ func NewWithDependencies(ctx *cli.Context, listener, graphqlListener net.Listene
 // explicitly via Shutdown, or due to a fault condition. It propagates the
 // non-nil err return value from http.Serve.
 func (c *Controller) Serve() error {
+	if c.pub != nil {
+		if err := c.pub.Start(context.TODO()); err != nil {
+			log.Errorw("Failed to start publisher", "err", err)
+			return err
+		}
+	}
+
 	select {
 	case <-c.doneCh:
 		return fmt.Errorf("tried to reuse a stopped server")
@@ -297,5 +333,12 @@ func (c *Controller) Shutdown(ctx context.Context) error {
 	if c.gateway != nil {
 		c.nodeCloser()
 	}
+
+	if c.pub != nil {
+		if err := c.pub.Shutdown(ctx); err != nil {
+			log.Errorw("Failed to shut down publisher", "err", err)
+		}
+	}
+
 	return c.server.Shutdown(ctx)
 }
