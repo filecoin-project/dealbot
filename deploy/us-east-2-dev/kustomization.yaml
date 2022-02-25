@@ -3,6 +3,6 @@ kind: Kustomization
 namespace: cls-us-east-2-dev
 resources:
   - ../base
-  - secrets
+  - secrets.yaml
 patchesStrategicMerge:
   - release.yaml

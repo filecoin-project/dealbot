@@ -4,6 +4,9 @@ kind: HelmRelease
 metadata:
   name: dealbot-controller
 spec:
+  kubeConfig:
+    secretRef:
+      name: us-east-2-dev-kubeconfig
   targetNamespace: gitops-test-dealbot-controller
   storageNamespace: gitops-test-dealbot-controller
   values:
