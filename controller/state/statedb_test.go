@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/ipfs/go-cid"
 	"io"
 	"io/ioutil"
 	"os"
@@ -17,7 +18,6 @@ import (
 	"github.com/ipld/go-ipld-prime/codec/dagjson"
 	cidlink "github.com/ipld/go-ipld-prime/linking/cid"
 	"github.com/libp2p/go-libp2p-core/crypto"
-	"github.com/multiformats/go-multiaddr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -603,7 +603,9 @@ func TestComplete(t *testing.T) {
 		require.NoError(t, err)
 		// drain the dealbot / finalize the task.
 		require.NoError(t, state.DrainWorker(ctx, "dealbot1"))
-		require.NoError(t, state.PublishRecordsFrom(ctx, "dealbot1"))
+		uc, err := state.PublishRecordsFrom(ctx, "dealbot1")
+		require.NoError(t, err)
+		require.NotEqual(t, cid.Undef, uc)
 
 		nextHead, err := state.GetHead(ctx, 0)
 		require.NoError(t, err)
@@ -759,8 +761,7 @@ func withState(ctx context.Context, t *testing.T, fn func(*stateDB)) {
 
 	err = WipeAndReset(dbConn, migrator)
 	require.NoError(t, err)
-	max, _ := multiaddr.NewMultiaddr("/ip4/127.0.0.1/tcp/0")
-	stateInterface, err := NewStateDB(ctx, dbConn, migrator, "", key, []multiaddr.Multiaddr{max}, nil, nil)
+	stateInterface, err := NewStateDB(ctx, dbConn, migrator, "", key, nil)
 	require.NoError(t, err)
 	state, ok := stateInterface.(*stateDB)
 	require.True(t, ok, "returned wrong type")

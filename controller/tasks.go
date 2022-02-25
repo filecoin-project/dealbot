@@ -141,11 +141,19 @@ func (c *Controller) completeHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	workedBy := vars["workedby"]
 
-	err := c.db.PublishRecordsFrom(r.Context(), workedBy)
+	uc, err := c.db.PublishRecordsFrom(r.Context(), workedBy)
 	if err != nil {
 		log.Errorw("complete worker DB error", "err", err.Error())
 		w.WriteHeader(http.StatusBadRequest)
 		return
+	}
+
+	if c.pub != nil {
+		// Attempt to publish work completion but do not fail the request handling if it fails.
+		// It is a non-critical and self-healing operation as long as one such publication succeeds eventually.
+		if err := c.pub.Publish(r.Context(), uc); err != nil {
+			log.Errorw("Failed to publish update CID", "cid", uc, "err", err)
+		}
 	}
 
 	w.WriteHeader(http.StatusOK)
