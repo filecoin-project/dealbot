@@ -1482,6 +1482,8 @@ github.com/kelseyhightower/envconfig v1.4.0 h1:Im6hONhd3pLkfDFsbRgu68RDNkGF1r3dv
 github.com/kelseyhightower/envconfig v1.4.0/go.mod h1:cccZRl6mQpaq41TPp5QxidR+Sa3axMbJDNb//FQX6Gg=
 github.com/kenlabs/pando v0.0.0-20220224155922-54cd14a34fca h1:wQJaoFE9HByXg0z3sqpq2mUHYylc89wOOMP4Ub0aD0k=
 github.com/kenlabs/pando v0.0.0-20220224155922-54cd14a34fca/go.mod h1:0GxV2qmD7mMv1oYoYn/xAuxI0WAvQdjTs3OtOn5sZy0=
+github.com/kenlabs/pando v0.0.0-20220228140431-14333ccd2a3c h1:Q9mskm6CC+4iGuhX5eRmgM8zE4snb0m6XNTI5z405MY=
+github.com/kenlabs/pando v0.0.0-20220228140431-14333ccd2a3c/go.mod h1:0GxV2qmD7mMv1oYoYn/xAuxI0WAvQdjTs3OtOn5sZy0=
 github.com/kilic/bls12-381 v0.0.0-20200607163746-32e1441c8a9f/go.mod h1:XXfR6YFCRSrkEXbNlIyDsgXVNJWVUV30m/ebkVy9n6s=
 github.com/kilic/bls12-381 v0.0.0-20200731194930-64c428e1bff5/go.mod h1:XXfR6YFCRSrkEXbNlIyDsgXVNJWVUV30m/ebkVy9n6s=
 github.com/kilic/bls12-381 v0.0.0-20200820230200-6b2c19996391/go.mod h1:XXfR6YFCRSrkEXbNlIyDsgXVNJWVUV30m/ebkVy9n6s=

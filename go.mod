@@ -28,7 +28,7 @@ require (
 	github.com/ipld/go-car/v2 v2.1.1
 	github.com/ipld/go-ipld-graphql v0.0.0-20211021213353-9727002b9c62
 	github.com/ipld/go-ipld-prime v0.14.4
-	github.com/kenlabs/pando v0.0.0-20220224155922-54cd14a34fca
+	github.com/kenlabs/pando v0.0.0-20220228140431-14333ccd2a3c
 	github.com/lib/pq v1.10.3
 	github.com/libp2p/go-libp2p v0.18.0-rc4
 	github.com/libp2p/go-libp2p-core v0.14.0
