@@ -244,6 +244,11 @@ var ControllerFlags = []cli.Flag{
 		Usage:   "libp2p addrinfos to use for bootstrapping",
 		EnvVars: []string{"DEALBOT_LIBP2P_BOOTSTRAP_ADDRINFO"},
 	}),
+	altsrc.NewStringSliceFlag(&cli.StringSliceFlag{
+		Name:    "legs-advertised-addrs",
+		Usage:   "Multiaddrs to advertise in legs messages. If unset, libp2p listen address are used instead",
+		EnvVars: []string{"DEALBOT_LEGS_ADDRS"},
+	}),
 	altsrc.NewStringFlag(&cli.StringFlag{
 		Name:    "graphql",
 		Usage:   "host:port to bind graphql server on",
