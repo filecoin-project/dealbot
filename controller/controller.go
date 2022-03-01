@@ -130,13 +130,23 @@ func New(ctx *cli.Context) (*Controller, error) {
 	}
 
 	// Get the configured libp2p host listen addresses
-	listenAddrs := make([]multiaddr.Multiaddr, 0)
+	var listenAddrs []multiaddr.Multiaddr
 	for _, a := range ctx.StringSlice("libp2p-addrs") {
 		addr, err := multiaddr.NewMultiaddr(a)
 		if err != nil {
 			return nil, err
 		}
 		listenAddrs = append(listenAddrs, addr)
+	}
+
+	// Get the list of multiaddrs to include in legs messages as the external address.
+	var legsAdvAddrs []multiaddr.Multiaddr
+	for _, a := range ctx.StringSlice("legs-advertised-addrs") {
+		addr, err := multiaddr.NewMultiaddr(a)
+		if err != nil {
+			return nil, err
+		}
+		legsAdvAddrs = append(legsAdvAddrs, addr)
 	}
 
 	// Instantiate a new libp2p host needed by publisher.
@@ -163,7 +173,12 @@ func New(ctx *cli.Context) (*Controller, error) {
 	store := backend.Store(ctx.Context)
 
 	// Instantiate publisher.
-	pub, err := publisher.NewPandoPublisher(ds, store, publisher.WithHost(host), publisher.WithBootstrapPeers(btstrp...))
+	pub, err := publisher.NewPandoPublisher(
+		ds,
+		store,
+		publisher.WithHost(host),
+		publisher.WithBootstrapPeers(btstrp...),
+		publisher.WithExternalAddrs(legsAdvAddrs))
 	if err != nil {
 		return nil, err
 	}

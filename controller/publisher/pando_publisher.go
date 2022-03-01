@@ -111,7 +111,7 @@ func (p *PandoPublisher) Start(_ context.Context) (err error) {
 		return err
 	}
 
-	log.Info("Started pando publisher")
+	log.Infow("Started pando publisher", "extAddrs", p.opts.extAddrs)
 	return nil
 }
 
@@ -175,12 +175,12 @@ func (p *PandoPublisher) Publish(ctx context.Context, c cid.Cid) error {
 	}
 
 	// Announce the latest
-	if err := p.pub.UpdateRoot(ctx, latest); err != nil {
+	if err := p.pub.UpdateRootWithAddrs(ctx, latest, p.opts.extAddrs); err != nil {
 		log.Errorw("Failed to update the latest legs root", "err", err)
 		return err
 	}
 
-	log.Info("Published the latest root successfully")
+	log.Infow("Published the latest root successfully", "extAddrs", p.opts.extAddrs)
 	return nil
 }
 

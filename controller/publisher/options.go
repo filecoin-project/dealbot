@@ -5,6 +5,7 @@ import (
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/multiformats/go-multiaddr"
 )
 
 type (
@@ -15,6 +16,7 @@ type (
 		h         host.Host
 		btstrpCfg *bootstrap.BootstrapConfig
 		topic     string
+		extAddrs  []multiaddr.Multiaddr
 	}
 )
 
@@ -33,6 +35,9 @@ func apply(o ...Option) (*options, error) {
 		if err != nil {
 			return nil, err
 		}
+	}
+	if len(opts.extAddrs) == 0 {
+		opts.extAddrs = opts.h.Addrs()
 	}
 	return opts, nil
 }
@@ -72,6 +77,16 @@ func WithHost(h host.Host) Option {
 func WithTopic(topic string) Option {
 	return func(o *options) error {
 		o.topic = topic
+		return nil
+	}
+}
+
+// WithExternalAddrs sets the addresses to include in published legs messages as the address on which
+// the hsot can be reached.
+// Defaults to host listen addresses.
+func WithExternalAddrs(addrs []multiaddr.Multiaddr) Option {
+	return func(o *options) error {
+		o.extAddrs = addrs
 		return nil
 	}
 }
