@@ -10,8 +10,7 @@ import (
 
 	"github.com/filecoin-project/go-fil-markets/retrievalmarket"
 	"github.com/filecoin-project/lotus/api"
-	"github.com/filecoin-project/lotus/api/v0api"
-	"github.com/filecoin-project/lotus/api/v0api/v0mocks"
+	"github.com/filecoin-project/lotus/api/mocks"
 	"github.com/golang/mock/gomock"
 	"github.com/ipfs/go-cid"
 	"github.com/libp2p/go-libp2p-core/peer"
@@ -27,12 +26,12 @@ func TestCancelOldDeals(t *testing.T) {
 	cancelID2 := retrievalmarket.DealID(rand.Uint64())
 
 	testCases := map[string]struct {
-		setExpectations func(t *testing.T, expect *v0mocks.MockFullNodeMockRecorder)
+		setExpectations func(t *testing.T, expect *mocks.MockFullNodeMockRecorder)
 		expectedErr     error
 		expectedLogs    []string
 	}{
 		"returns deals but non cancelled": {
-			setExpectations: func(t *testing.T, expect *v0mocks.MockFullNodeMockRecorder) {
+			setExpectations: func(t *testing.T, expect *mocks.MockFullNodeMockRecorder) {
 				expect.ClientListRetrievals(gomock.Any()).Return(
 					[]api.RetrievalInfo{
 						{
@@ -50,7 +49,7 @@ func TestCancelOldDeals(t *testing.T) {
 			},
 		},
 		"returns error when fetching retrievals": {
-			setExpectations: func(t *testing.T, expect *v0mocks.MockFullNodeMockRecorder) {
+			setExpectations: func(t *testing.T, expect *mocks.MockFullNodeMockRecorder) {
 				expect.ClientListRetrievals(gomock.Any()).Return(
 					[]api.RetrievalInfo{}, errors.New("something went wrong"),
 				)
@@ -58,7 +57,7 @@ func TestCancelOldDeals(t *testing.T) {
 			expectedErr: errors.New("something went wrong"),
 		},
 		"cancels a retrieval": {
-			setExpectations: func(t *testing.T, expect *v0mocks.MockFullNodeMockRecorder) {
+			setExpectations: func(t *testing.T, expect *mocks.MockFullNodeMockRecorder) {
 				expect.ClientListRetrievals(gomock.Any()).Return(
 					[]api.RetrievalInfo{
 						{
@@ -80,7 +79,7 @@ func TestCancelOldDeals(t *testing.T) {
 			},
 		},
 		"no cancels cause of finality state": {
-			setExpectations: func(t *testing.T, expect *v0mocks.MockFullNodeMockRecorder) {
+			setExpectations: func(t *testing.T, expect *mocks.MockFullNodeMockRecorder) {
 				expect.ClientListRetrievals(gomock.Any()).Return(
 					[]api.RetrievalInfo{
 						{
@@ -100,7 +99,7 @@ func TestCancelOldDeals(t *testing.T) {
 			expectedLogs: []string{},
 		},
 		"retrieval cancel errors": {
-			setExpectations: func(t *testing.T, expect *v0mocks.MockFullNodeMockRecorder) {
+			setExpectations: func(t *testing.T, expect *mocks.MockFullNodeMockRecorder) {
 				expect.ClientListRetrievals(gomock.Any()).Return(
 					[]api.RetrievalInfo{
 						{
@@ -120,7 +119,7 @@ func TestCancelOldDeals(t *testing.T) {
 			expectedErr: errors.New("something went wrong"),
 		},
 		"cancels multiple retrievals": {
-			setExpectations: func(t *testing.T, expect *v0mocks.MockFullNodeMockRecorder) {
+			setExpectations: func(t *testing.T, expect *mocks.MockFullNodeMockRecorder) {
 				expect.ClientListRetrievals(gomock.Any()).Return(
 					[]api.RetrievalInfo{
 						{
@@ -152,7 +151,7 @@ func TestCancelOldDeals(t *testing.T) {
 			dealStage := CommonStages["ProposeDeal"]()
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
-			node := v0mocks.NewMockFullNode(ctrl)
+			node := mocks.NewMockFullNode(ctrl)
 			de := &retrievalDealExecutor{
 				dealExecutor: dealExecutor{
 					ctx: ctx,
@@ -163,7 +162,7 @@ func TestCancelOldDeals(t *testing.T) {
 					log:  func(msg string, keysAndValues ...interface{}) {},
 				},
 				task: &_RetrievalTask{PayloadCID: _String{root.String()}},
-				offer: v0api.RetrievalOrder{
+				offer: api.RetrievalOrder{
 					Root: root,
 				},
 			}

@@ -16,8 +16,7 @@ import (
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/big"
 	"github.com/filecoin-project/lotus/api"
-	"github.com/filecoin-project/lotus/api/v0api"
-	"github.com/filecoin-project/lotus/api/v0api/v0mocks"
+	"github.com/filecoin-project/lotus/api/mocks"
 	"github.com/filecoin-project/lotus/chain/types"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
@@ -149,7 +148,7 @@ func TestEngineTiming(t *testing.T) {
 			// depedencies
 			walletAddress := address.TestAddress
 			head := &types.TipSet{}
-			node := v0mocks.NewMockFullNode(ctrl)
+			node := mocks.NewMockFullNode(ctrl)
 			ctxType := reflect.TypeOf((*context.Context)(nil)).Elem()
 			amt := abi.NewTokenAmount(1000000000000)
 			node.EXPECT().Version(gomock.AssignableToTypeOf(ctxType)).Return(api.APIVersion{
@@ -347,7 +346,7 @@ func (tte *testTaskExecutor) runTask(ctx context.Context, index int, releaseWork
 	return nil
 }
 
-func (tte *testTaskExecutor) MakeStorageDeal(ctx context.Context, config tasks.NodeConfig, node v0api.FullNode, task tasks.StorageTask, updateStage tasks.UpdateStage, log tasks.LogStatus, stageTimeouts map[string]time.Duration, releaseWorker func()) error {
+func (tte *testTaskExecutor) MakeStorageDeal(ctx context.Context, config tasks.NodeConfig, node api.FullNode, task tasks.StorageTask, updateStage tasks.UpdateStage, log tasks.LogStatus, stageTimeouts map[string]time.Duration, releaseWorker func()) error {
 	tag := task.Tag.Must().String()
 	index, err := strconv.Atoi(tag)
 	if err != nil {
@@ -359,7 +358,7 @@ func (tte *testTaskExecutor) MakeStorageDeal(ctx context.Context, config tasks.N
 	return tte.runTask(ctx, index, releaseWorker)
 }
 
-func (tte *testTaskExecutor) MakeRetrievalDeal(ctx context.Context, config tasks.NodeConfig, node v0api.FullNode, task tasks.RetrievalTask, updateStage tasks.UpdateStage, log tasks.LogStatus, stageTimeouts map[string]time.Duration, releaseWorker func()) error {
+func (tte *testTaskExecutor) MakeRetrievalDeal(ctx context.Context, config tasks.NodeConfig, node api.FullNode, task tasks.RetrievalTask, updateStage tasks.UpdateStage, log tasks.LogStatus, stageTimeouts map[string]time.Duration, releaseWorker func()) error {
 	tag := task.Tag.Must().String()
 	index, err := strconv.Atoi(tag)
 	if err != nil {
