@@ -13,10 +13,10 @@ import (
 	"github.com/filecoin-project/go-fil-markets/retrievalmarket"
 	"github.com/filecoin-project/go-fil-markets/retrievalmarket/impl/clientstates"
 	"github.com/filecoin-project/lotus/api"
-	"github.com/filecoin-project/lotus/api/v0api"
 	"github.com/ipfs/go-cid"
 	"github.com/ipld/go-car"
 	"github.com/libp2p/go-libp2p"
+	"golang.org/x/xerrors"
 )
 
 type RetrievalStage = string
@@ -37,7 +37,7 @@ var RetrievalDealStages = []RetrievalStage{
 	RetrievalStageDealComplete,
 }
 
-func MakeRetrievalDeal(ctx context.Context, config NodeConfig, node v0api.FullNode, task RetrievalTask, updateStage UpdateStage, log LogStatus, stageTimeouts map[string]time.Duration, releaseWorker func()) error {
+func MakeRetrievalDeal(ctx context.Context, config NodeConfig, node api.FullNode, task RetrievalTask, updateStage UpdateStage, log LogStatus, stageTimeouts map[string]time.Duration, releaseWorker func()) error {
 	de := &retrievalDealExecutor{
 		dealExecutor: dealExecutor{
 			ctx:           ctx,
@@ -99,7 +99,7 @@ func MakeRetrievalDeal(ctx context.Context, config NodeConfig, node v0api.FullNo
 type retrievalDealExecutor struct {
 	dealExecutor
 	task  RetrievalTask
-	offer v0api.RetrievalOrder
+	offer api.RetrievalOrder
 }
 
 func (de *retrievalDealExecutor) queryOffer(logg logFunc) error {
@@ -112,19 +112,7 @@ func (de *retrievalDealExecutor) queryOffer(logg logFunc) error {
 	if err != nil {
 		return err
 	}
-	ro := qo.Order(de.config.WalletAddress)
-	de.offer = v0api.RetrievalOrder{
-		Root:                    ro.Root,
-		Piece:                   ro.Piece,
-		Size:                    ro.Size,
-		Total:                   ro.Total,
-		UnsealPrice:             ro.UnsealPrice,
-		PaymentInterval:         ro.PaymentInterval,
-		PaymentIntervalIncrease: ro.PaymentIntervalIncrease,
-		Client:                  ro.Client,
-		Miner:                   ro.Miner,
-		MinerPeer:               ro.MinerPeer,
-	}
+	de.offer = qo.Order(de.config.WalletAddress)
 
 	if qo.Err != "" {
 		return fmt.Errorf("got error in offer: %s", qo.Err)
@@ -187,7 +175,12 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(ctx context.Context, upda
 		IsCAR: de.task.CARExport.x,
 	}
 
-	events, err := de.node.ClientRetrieveWithEvents(de.ctx, de.offer, ref)
+	subscribeEvents, err := de.node.ClientGetRetrievalUpdates(ctx)
+	if err != nil {
+		return xerrors.Errorf("error setting up retrieval updates: %w", err)
+	}
+
+	retrievalRes, err := de.node.ClientRetrieve(ctx, de.offer)
 	if err != nil {
 		return err
 	}
@@ -218,9 +211,10 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(ctx context.Context, upda
 			timer.Reset(timeout)
 			prevStage = stage
 		}
-
+		var event api.RetrievalInfo
 		select {
 		case <-timer.C:
+
 			timeout, ok := stageTimeouts[strings.ToLower(stage)]
 			if !ok {
 				timeout = defaultStageTimeout
@@ -228,48 +222,54 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(ctx context.Context, upda
 			msg := fmt.Sprintf("timed out after %s", timeout)
 			AddLog(dealStage, msg)
 			return fmt.Errorf("deal stage %q %s", stage, msg)
-		case event, ok := <-events:
-			if ok {
-				// non-terminal event, process
-				if event.Status != lastStatus {
-					de.log("Deal status",
-						"cid", de.task.PayloadCID.x,
-						"state", retrievalmarket.DealStatuses[event.Status],
-						"error", event.Err,
-						"received", event.BytesReceived,
-					)
-					lastStatus = event.Status
-				}
 
-				if event.Event == retrievalmarket.ClientEventDealAccepted {
-					stage = RetrievalStageDealAccepted
-					dealStage = RetrievalStages[stage]()
-					//there should be a deal now.
-					allRetrievals, err := de.node.ClientListRetrievals(ctx)
-					if err == nil {
-						for _, maybeOurRetrieval := range allRetrievals {
-							if maybeOurRetrieval.Provider == de.pi.ID && maybeOurRetrieval.PayloadCID.Equals(de.offer.Root) && !clientstates.IsFinalityState(maybeOurRetrieval.Status) {
-								dealStage = AddLog(dealStage, fmt.Sprintf("DealID: %d", maybeOurRetrieval.ID))
-								break
-							}
+		case event = <-subscribeEvents:
+			if event.ID != retrievalRes.DealID {
+				// we can't check the deal ID ahead of time because:
+				// 1. We need to subscribe before retrieving.
+				// 2. We won't know the deal ID until after retrieving.
+				continue
+			}
+
+			// non-terminal event, process
+			if event.Status != lastStatus {
+				de.log("Deal status",
+					"cid", de.task.PayloadCID.x,
+					"state", retrievalmarket.DealStatuses[event.Status],
+					"error", event.Message,
+					"received", event.BytesReceived,
+				)
+				lastStatus = event.Status
+			}
+
+			if event.Event != nil && *event.Event == retrievalmarket.ClientEventDealAccepted {
+				stage = RetrievalStageDealAccepted
+				dealStage = RetrievalStages[stage]()
+				//there should be a deal now.
+				allRetrievals, err := de.node.ClientListRetrievals(ctx)
+				if err == nil {
+					for _, maybeOurRetrieval := range allRetrievals {
+						if maybeOurRetrieval.Provider == de.pi.ID && maybeOurRetrieval.PayloadCID.Equals(de.offer.Root) && !clientstates.IsFinalityState(maybeOurRetrieval.Status) {
+							dealStage = AddLog(dealStage, fmt.Sprintf("DealID: %d", maybeOurRetrieval.ID))
+							break
 						}
 					}
-					err = updateStage(ctx, stage, dealStage)
-					if err != nil {
-						return err
-					}
 				}
-				if event.BytesReceived > 0 && lastBytesReceived == 0 {
-					stage = RetrievalStageFirstByteReceived
-					dealStage = RetrievalStages[stage]()
-					err := updateStage(ctx, stage, dealStage)
-					if err != nil {
-						return err
-					}
+				err = updateStage(ctx, stage, dealStage)
+				if err != nil {
+					return err
 				}
-			} else {
-				// steam closed, no errors, so the deal is a success
+			}
+			if event.BytesReceived > 0 && lastBytesReceived == 0 {
+				stage = RetrievalStageFirstByteReceived
+				dealStage = RetrievalStages[stage]()
+				err := updateStage(ctx, stage, dealStage)
+				if err != nil {
+					return err
+				}
+			}
 
+			if event.Status == retrievalmarket.DealStatusCompleted {
 				// deal is on chain, exit successfully
 				stage = RetrievalStageAllBytesReceived
 				dealStage = RetrievalStages[stage]()
@@ -277,6 +277,16 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(ctx context.Context, upda
 				err = updateStage(ctx, stage, dealStage)
 				if err != nil {
 					return err
+				}
+
+				eref := &api.ExportRef{
+					Root:   de.offer.Root,
+					DealID: retrievalRes.DealID,
+				}
+
+				err = de.node.ClientExport(ctx, *eref, *ref)
+				if err != nil {
+					return nil
 				}
 
 				rdata, err := os.Stat(filepath.Join(de.config.DataDir, de.task.PayloadCID.x))
@@ -310,11 +320,15 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(ctx context.Context, upda
 				}
 				return nil
 			}
-
-			// if the event has an error message, then something went wrong and deal failed
-			if event.Err != "" {
-				return fmt.Errorf("retrieval deal failed: %s", event.Err)
+			if event.Status == retrievalmarket.DealStatusRejected {
+				return fmt.Errorf("retrieval deal failed: Retrieval Proposal Rejected: %s", event.Message)
 			}
+			if event.Status ==
+				retrievalmarket.DealStatusDealNotFound || event.Status ==
+				retrievalmarket.DealStatusErrored {
+				return fmt.Errorf("retrieval deal failed: Retrieval Error: %s", event.Message)
+			}
+
 		case <-ctx.Done():
 			return ctx.Err()
 		}
