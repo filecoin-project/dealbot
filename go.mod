@@ -12,7 +12,7 @@ require (
 	github.com/filecoin-project/go-jsonrpc v0.1.5
 	github.com/filecoin-project/go-legs v0.3.7
 	github.com/filecoin-project/go-state-types v0.1.3
-	github.com/filecoin-project/lotus v1.13.3-0.20220208105256-b38adaa73640
+	github.com/filecoin-project/lotus v1.15.0-rc2
 	github.com/golang-migrate/migrate/v4 v4.14.2-0.20210511063805-2e7358e012a6
 	github.com/golang/mock v1.6.0
 	github.com/google/uuid v1.3.0
@@ -30,7 +30,7 @@ require (
 	github.com/ipld/go-ipld-prime v0.14.4
 	github.com/kenlabs/pando v0.0.0-20220224155922-54cd14a34fca
 	github.com/lib/pq v1.10.3
-	github.com/libp2p/go-libp2p v0.18.0-rc4
+	github.com/libp2p/go-libp2p v0.18.0-rc5
 	github.com/libp2p/go-libp2p-core v0.14.0
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/multiformats/go-multiaddr v0.5.0
@@ -43,6 +43,7 @@ require (
 	github.com/urfave/cli/v2 v2.3.0
 	github.com/willscott/ipld-dumpjson v0.0.0-20210625231845-eb416d94fa54
 	golang.org/x/net v0.0.0-20211209124913-491a49abca63
+	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1
 	helm.sh/helm/v3 v3.6.2
 	k8s.io/api v0.23.3
 	k8s.io/cli-runtime v0.23.3
@@ -129,7 +130,7 @@ require (
 	github.com/filecoin-project/specs-actors/v5 v5.0.4 // indirect
 	github.com/filecoin-project/specs-actors/v6 v6.0.1 // indirect
 	github.com/filecoin-project/specs-actors/v7 v7.0.0-rc1 // indirect
-	github.com/filecoin-project/specs-storage v0.1.1-0.20211228030229-6d460d25a0c9 // indirect
+	github.com/filecoin-project/specs-storage v0.2.0 // indirect
 	github.com/flynn/noise v1.0.0 // indirect
 	github.com/francoispqt/gojay v1.2.13 // indirect
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
@@ -233,7 +234,7 @@ require (
 	github.com/libp2p/go-libp2p-pubsub v0.6.1 // indirect
 	github.com/libp2p/go-libp2p-quic-transport v0.16.1 // indirect
 	github.com/libp2p/go-libp2p-resource-manager v0.1.3 // indirect
-	github.com/libp2p/go-libp2p-swarm v0.10.1 // indirect
+	github.com/libp2p/go-libp2p-swarm v0.10.2 // indirect
 	github.com/libp2p/go-libp2p-testing v0.7.0 // indirect
 	github.com/libp2p/go-libp2p-tls v0.3.2-0.20220104091339-280a5b5a7e79 // indirect
 	github.com/libp2p/go-libp2p-transport-upgrader v0.7.1 // indirect
@@ -246,7 +247,7 @@ require (
 	github.com/libp2p/go-reuseport v0.1.0 // indirect
 	github.com/libp2p/go-reuseport-transport v0.1.0 // indirect
 	github.com/libp2p/go-stream-muxer-multistream v0.4.0 // indirect
-	github.com/libp2p/go-tcp-transport v0.5.0 // indirect
+	github.com/libp2p/go-tcp-transport v0.5.1 // indirect
 	github.com/libp2p/go-ws-transport v0.6.0 // indirect
 	github.com/libp2p/go-yamux/v3 v3.0.2 // indirect
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de // indirect
@@ -353,7 +354,6 @@ require (
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac // indirect
 	golang.org/x/tools v0.1.8 // indirect
-	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20210917145530-b395a37504d4 // indirect
 	google.golang.org/grpc v1.40.0 // indirect
