@@ -200,12 +200,11 @@ func (p *PandoPublisher) getLatest(ctx context.Context) (cid.Cid, error) {
 	if err != nil {
 		return cid.Undef, err
 	}
-	_, latest, err := cid.CidFromBytes(d)
-	return latest, err
+	return cid.Decode(string(d))
 }
 
 func (p *PandoPublisher) setLatest(ctx context.Context, c cid.Cid) error {
-	return p.ds.Put(ctx, latestPublishedCid, c.Bytes())
+	return p.ds.Put(ctx, latestPublishedCid, []byte(c.String()))
 }
 
 func (p *PandoPublisher) storageReadOpener(lc linking.LinkContext, l ipld.Link) (io.Reader, error) {
