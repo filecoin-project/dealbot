@@ -25,7 +25,6 @@ import (
 	metricslog "github.com/filecoin-project/dealbot/metrics/log"
 	"github.com/filecoin-project/dealbot/metrics/prometheus"
 	"github.com/filecoin-project/lotus/api"
-	sqlds "github.com/ipfs/go-ds-sql"
 	"github.com/ipfs/go-ds-sql/postgres"
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/crypto"
@@ -167,7 +166,7 @@ func New(ctx *cli.Context) (*Controller, error) {
 
 	// Instantiate a datastore backed by DB used internally by the publisher.
 	queries := postgres.NewQueries("legs_data")
-	ds := sqlds.NewDatastore(connector.SqlDB(), queries)
+	ds := state.NewSqlDatastore(connector, queries)
 
 	// Instantiate a store, used to read the state records created by state db.
 	store := backend.Store(ctx.Context)
