@@ -11,7 +11,7 @@ import (
 	"github.com/filecoin-project/go-legs/dtsync"
 	"github.com/ipfs/go-cid"
 	"github.com/ipfs/go-datastore"
-	"github.com/ipfs/go-datastore/namespace"
+	dssync "github.com/ipfs/go-datastore/sync"
 	"github.com/ipfs/go-ipfs/core/bootstrap"
 	logging "github.com/ipfs/go-log/v2"
 	"github.com/ipld/go-ipld-prime"
@@ -80,7 +80,7 @@ func NewPandoPublisher(ds datastore.Batching, store storage.ReadableStorage, o .
 	return p, nil
 }
 
-func (p *PandoPublisher) Start(_ context.Context) (err error) {
+func (p *PandoPublisher) Start(ctx context.Context) (err error) {
 	// Dealbot registration as a provider on pando side is done manually.
 	// TODO: If the registration is idempotent, maybe re-register here automatically?
 	p.lock.Lock()
@@ -103,12 +103,35 @@ func (p *PandoPublisher) Start(_ context.Context) (err error) {
 		p.closer = closer
 	}
 
-	// Namespace the datastore used internally by legs.
-	lds := namespace.Wrap(p.ds, datastore.NewKey("/legs/dtsync/pub"))
+	// Use ephemeral storage to avoid UTF-8 encoding issues.
+	//
+	// Note that the datastore here is only used by datatrasnfer. The datatransfer manager uses the
+	// datastore to store byte value of CIDs, i.e. cid.Byte(). Since the backing db table uses type
+	// text as the data column, and go postgres requires UTF-8 encoding we will get an error when
+	// the SQL driver attempts to encode bytes, e.g.: pq: invalid byte sequence for encoding "UTF8".
+	//
+	// For now use an ephemeral storage for the datatransfer.
+	//TODO: Understand if we need a persistent datastore for datatransfer at all here.
+	//      If so, wrap a datastore with customized byte encoding so that postgres is happy.
+	lds := dssync.MutexWrap(datastore.NewMapDatastore())
 	p.pub, err = dtsync.NewPublisher(p.h, lds, p.ls, pandoTopic)
 	if err != nil {
 		log.Errorw("Failed to initialize legs publisher", "err", err)
 		return err
+	}
+
+	latest, err := p.getLatest(ctx)
+	if err != nil {
+		log.Errorw("Failed to get latest while starting pando publisher", "err", err)
+		return err
+	}
+	log = log.With("head", latest)
+
+	if latest != cid.Undef {
+		if err := p.pub.SetRoot(ctx, latest); err != nil {
+			log.Errorw("Failed to update the head CID while starting pando publisher", "err", err)
+			return err
+		}
 	}
 
 	log.Infow("Started pando publisher", "extAddrs", p.opts.extAddrs)

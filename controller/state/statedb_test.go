@@ -5,19 +5,29 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/ipfs/go-cid"
 	"io"
 	"io/ioutil"
 	"os"
 	"testing"
 	"time"
 
+	"github.com/filecoin-project/dealbot/controller/publisher"
 	"github.com/filecoin-project/dealbot/controller/state/postgresdb"
 	"github.com/filecoin-project/dealbot/controller/state/postgresdb/temporary"
 	"github.com/filecoin-project/dealbot/tasks"
+	"github.com/filecoin-project/go-legs"
+	"github.com/ipfs/go-cid"
+	"github.com/ipfs/go-datastore"
+	dssync "github.com/ipfs/go-datastore/sync"
+	"github.com/ipfs/go-ds-sql/postgres"
 	"github.com/ipld/go-ipld-prime/codec/dagjson"
 	cidlink "github.com/ipld/go-ipld-prime/linking/cid"
+	"github.com/ipld/go-ipld-prime/storage"
+	"github.com/ipld/go-ipld-prime/storage/memstore"
+	pando "github.com/kenlabs/pando/pkg/types/schema"
+	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/crypto"
+	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -587,7 +597,6 @@ func TestComplete(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	withState(ctx, t, func(state *stateDB) {
-
 		err := populateTestTasksFromFile(ctx, jsonTestDeals, state)
 		require.NoError(t, err)
 		// dealbot1 takes a task.
@@ -621,6 +630,135 @@ func TestComplete(t *testing.T) {
 		tsk := tskBuilder.Build().(tasks.FinishedTask)
 		require.Equal(t, task.RetrievalTask.Must().PayloadCID.String(), tsk.PayloadCID.Must().String())
 	})
+}
+
+func TestCompleteWithPublish(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	withState(ctx, t, func(state *stateDB) {
+		err := populateTestTasksFromFile(ctx, jsonTestDeals, state)
+		require.NoError(t, err)
+		// dealbot1 takes a task.
+		task, err := state.AssignTask(ctx, tasks.Type.PopTask.Of("dealbot1", tasks.InProgress))
+		require.NoError(t, err)
+		require.Equal(t, *tasks.InProgress, task.Status)
+
+		// succeed task.
+		task, err = state.Update(ctx, task.GetUUID(), tasks.Type.UpdateTask.Of("dealbot1", tasks.Successful, 1))
+		require.NoError(t, err)
+		require.Equal(t, *tasks.Successful, task.Status)
+
+		require.NoError(t, err)
+		// drain the dealbot / finalize the task.
+		require.NoError(t, state.DrainWorker(ctx, "dealbot1"))
+		uc, err := state.PublishRecordsFrom(ctx, "dealbot1")
+		require.NoError(t, err)
+		require.NotEqual(t, cid.Undef, uc)
+
+		subhost, err := libp2p.New()
+		require.NoError(t, err)
+
+		pubhost, err := libp2p.New()
+		require.NoError(t, err)
+
+		queries := postgres.NewQueries("legs_data")
+		ds := NewSqlDatastore(state.dbconn, queries)
+		pub, err := publisher.NewPandoPublisher(
+			ds,
+			state.Store(ctx),
+			publisher.WithHost(pubhost),
+			publisher.WithBootstrapPeers(subhost.Peerstore().PeerInfo(subhost.ID())))
+		require.NoError(t, err)
+
+		err = pub.Start(ctx)
+		require.NoError(t, err)
+		defer pub.Shutdown(ctx)
+
+		err = pub.Publish(ctx, uc)
+		require.NoError(t, err)
+
+		subLS := cidlink.DefaultLinkSystem()
+		subStore := &memstore.Store{}
+		subLS.SetReadStorage(subStore)
+		subLS.SetWriteStorage(subStore)
+
+		sub, err := legs.NewSubscriber(subhost, dssync.MutexWrap(datastore.NewMapDatastore()), subLS, "/pando/v0.0.1", nil)
+		require.NoError(t, err)
+
+		// sync latest by specifying cid.Undef to fetch the head on the fly.
+		got1stLatest, err := sub.Sync(ctx, pubhost.ID(), cid.Undef, nil, pubhost.Addrs()[0])
+		require.NoError(t, err)
+
+		// Assert that synced data is a valid pando metadata with no previous link and get the payload as CID
+		got1stPayloadCid := requirePandoMetadataPayloadAsCid(t, subStore, got1stLatest, pubhost.ID(), cid.Undef)
+
+		// Assert that the decoded metadata payload as CID is retrievable.
+		got1stSyncCid, err := sub.Sync(ctx, pubhost.ID(), got1stPayloadCid, nil, pubhost.Addrs()[0])
+		require.NoError(t, err)
+		require.Equal(t, got1stSyncCid, got1stPayloadCid)
+
+		// Make another record and publish it to assert previous ID is set properly in pando metadata.
+		uc2, err := state.PublishRecordsFrom(ctx, "dealbot1")
+		require.NoError(t, err)
+		require.NotEqual(t, cid.Undef, uc2)
+		require.NotEqual(t, uc, uc2)
+
+		err = pub.Publish(ctx, uc2)
+		require.NoError(t, err)
+
+		// sync latest by specifying cid.Undef to fetch the head on the fly and assert it's different from previous latest.
+		got2ndLatest, err := sub.Sync(ctx, pubhost.ID(), cid.Undef, nil, pubhost.Addrs()[0])
+		require.NoError(t, err)
+		require.NotEqual(t, got1stLatest, got2ndLatest)
+
+		// Assert the synced data decodes as pando metadata with the expected publisher ID and previous link.
+		got2ndPayloadCid := requirePandoMetadataPayloadAsCid(t, subStore, got2ndLatest, pubhost.ID(), got1stLatest)
+
+		// Explicitly sync the payload to assert it is also retrievable.
+		got2ndSyncCid, err := sub.Sync(ctx, pubhost.ID(), got2ndPayloadCid, nil, pubhost.Addrs()[0])
+		require.NoError(t, err)
+		require.Equal(t, got2ndSyncCid, got2ndPayloadCid)
+	})
+}
+
+func requirePandoMetadataPayloadAsCid(t *testing.T, store storage.ReadableStorage, key cid.Cid, wantProvId peer.ID, wantPrev cid.Cid) cid.Cid {
+	ctx := context.Background()
+	gotBytes, err := store.Get(ctx, key.KeyString())
+	require.NoError(t, err)
+
+	// Assert the synced data decodes as a valid pando metadata.
+	nb := pando.Type.Metadata.NewBuilder()
+	err = dagjson.Decode(nb, bytes.NewBuffer(gotBytes))
+	require.NoError(t, err)
+	gotMetadata := nb.Build().(pando.Metadata)
+
+	// Assert that provider ID is as expected
+	str, err := gotMetadata.FieldProvider().AsString()
+	require.NoError(t, err)
+	require.Equal(t, wantProvId.String(), str)
+
+	// Assert that the metadata payload is a valid CID.
+	pp, err := gotMetadata.FieldPayload().AsBytes()
+	require.NoError(t, err)
+	_, payloadCid, err := cid.CidFromBytes(pp)
+	require.NoError(t, err)
+
+	// Assert signature validity
+	sigPeerID, err := pando.VerifyMetadata(gotMetadata)
+	require.NoError(t, err)
+	require.Equal(t, wantProvId, sigPeerID)
+
+	// Assert expected previous link
+	hasPrev := gotMetadata.FieldPreviousID().IsAbsent() || gotMetadata.FieldPreviousID().IsNull()
+	if wantPrev == cid.Undef {
+		require.True(t, hasPrev)
+	} else {
+		require.False(t, hasPrev)
+		gotPrev, err := gotMetadata.FieldPreviousID().AsNode().AsLink()
+		require.NoError(t, err)
+		require.Equal(t, wantPrev, gotPrev.(cidlink.Link).Cid)
+	}
+	return payloadCid
 }
 
 func TestDelete(t *testing.T) {
