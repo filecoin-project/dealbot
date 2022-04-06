@@ -22,7 +22,7 @@ require (
 	github.com/ipfs/go-cid v0.1.0
 	github.com/ipfs/go-datastore v0.5.1
 	github.com/ipfs/go-ds-sql v0.3.0
-	github.com/ipfs/go-ipfs v0.11.0
+	github.com/ipfs/go-ipfs v0.12.1
 	github.com/ipfs/go-log/v2 v2.5.0
 	github.com/ipld/go-car v0.3.3
 	github.com/ipld/go-car/v2 v2.1.1
