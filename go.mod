@@ -27,8 +27,8 @@ require (
 	github.com/ipld/go-car v0.3.3
 	github.com/ipld/go-car/v2 v2.1.1
 	github.com/ipld/go-ipld-graphql v0.0.0-20211021213353-9727002b9c62
-	github.com/ipld/go-ipld-prime v0.14.4
-	github.com/kenlabs/pando v0.0.0-20220228140431-14333ccd2a3c
+	github.com/ipld/go-ipld-prime v0.16.0
+	github.com/kenlabs/pando v0.0.0-20220429140253-aa01180111ae
 	github.com/lib/pq v1.10.3
 	github.com/libp2p/go-libp2p v0.18.0-rc5
 	github.com/libp2p/go-libp2p-core v0.14.0
@@ -154,7 +154,7 @@ require (
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.3 // indirect
 	github.com/google/btree v1.0.1 // indirect
-	github.com/google/go-cmp v0.5.6 // indirect
+	github.com/google/go-cmp v0.5.7 // indirect
 	github.com/google/gofuzz v1.1.0 // indirect
 	github.com/google/gopacket v1.1.19 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
