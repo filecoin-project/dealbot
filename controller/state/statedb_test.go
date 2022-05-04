@@ -727,21 +727,19 @@ func requirePandoMetadataPayloadAsCid(t *testing.T, store storage.ReadableStorag
 	require.NoError(t, err)
 
 	// Assert the synced data decodes as a valid pando metadata.
-	nb := pando.Type.Metadata.NewBuilder()
+	nb := pando.MetadataPrototype.NewBuilder()
 	err = dagjson.Decode(nb, bytes.NewBuffer(gotBytes))
 	require.NoError(t, err)
-	gotMetadata := nb.Build().(pando.Metadata)
+	gotMetadata, err := pando.UnwrapMetadata(nb.Build())
+	require.NoError(t, err)
 
 	// Assert that provider ID is as expected
-	str, err := gotMetadata.FieldProvider().AsString()
-	require.NoError(t, err)
-	require.Equal(t, wantProvId.String(), str)
+	require.Equal(t, wantProvId.String(), gotMetadata.Provider)
 
 	// Assert that the metadata payload is a valid CID.
-	pp, err := gotMetadata.FieldPayload().AsBytes()
+	payloadAsLink, err := gotMetadata.Payload.AsLink()
 	require.NoError(t, err)
-	_, payloadCid, err := cid.CidFromBytes(pp)
-	require.NoError(t, err)
+	require.NotNil(t, payloadAsLink)
 
 	// Assert signature validity
 	sigPeerID, err := pando.VerifyMetadata(gotMetadata)
@@ -749,16 +747,15 @@ func requirePandoMetadataPayloadAsCid(t *testing.T, store storage.ReadableStorag
 	require.Equal(t, wantProvId, sigPeerID)
 
 	// Assert expected previous link
-	hasPrev := gotMetadata.FieldPreviousID().IsAbsent() || gotMetadata.FieldPreviousID().IsNull()
+	hasPrev := gotMetadata.PreviousID == nil
 	if wantPrev == cid.Undef {
 		require.True(t, hasPrev)
 	} else {
 		require.False(t, hasPrev)
-		gotPrev, err := gotMetadata.FieldPreviousID().AsNode().AsLink()
-		require.NoError(t, err)
+		gotPrev := *gotMetadata.PreviousID
 		require.Equal(t, wantPrev, gotPrev.(cidlink.Link).Cid)
 	}
-	return payloadCid
+	return payloadAsLink.(cidlink.Link).Cid
 }
 
 func TestDelete(t *testing.T) {

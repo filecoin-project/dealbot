@@ -17,6 +17,7 @@ import (
 	"github.com/ipld/go-ipld-prime"
 	"github.com/ipld/go-ipld-prime/linking"
 	cidlink "github.com/ipld/go-ipld-prime/linking/cid"
+	basicnode "github.com/ipld/go-ipld-prime/node/basic"
 	"github.com/ipld/go-ipld-prime/storage"
 	pando "github.com/kenlabs/pando/pkg/types/schema"
 	"github.com/libp2p/go-libp2p-core/crypto"
@@ -159,31 +160,37 @@ func (p *PandoPublisher) Publish(ctx context.Context, c cid.Cid) error {
 		return errNotStarted
 	}
 
-	// Use the byte value of the CID to RecordUpdate as the payload of Pando metadata.
-	payload := c.Bytes()
 	log := log.With("payload", c)
-
+	// Construct optional link to the previously published metadata.
 	previous, err := p.getLatest(ctx)
 	if err != nil {
 		log.Errorw("Failed to get the latest metadata link", "err", err)
 		return err
 	}
-
-	// Construct pando metadata
-	var pm pando.Metadata
-	if previous == cid.Undef {
-		pm, err = pando.NewMetadata(payload, p.id(), p.key())
-	} else {
+	var previousLink ipld.Link
+	if previous != cid.Undef {
 		log = log.With("previous", previous)
-		pm, err = pando.NewMetadataWithLink(payload, p.id(), p.key(), cidlink.Link{Cid: previous})
+		previousLink = cidlink.Link{Cid: previous}
 	}
+
+	// According to the Pando metadata schema, the payload can be of type Any. Here we use the CID
+	// link itself as the metadata payload. The link itself is then traversable via the graphsync
+	// server exposed by this publisher, which allows Pando to fully traverse and store the dealbot
+	// DAG to which the link points.
+	payload := basicnode.NewLink(cidlink.Link{Cid: c})
+	pm, err := pando.NewMetaWithPayloadNode(payload, p.id(), p.key(), previousLink)
 	if err != nil {
 		log.Errorw("Failed to instantiate pando metadata", "err", err)
 		return err
 	}
 
 	// Store the metadata in linksystem so that sync requests are traversable
-	pmLnk, err := p.ls.Store(linking.LinkContext{Ctx: ctx}, pando.LinkProto, pm.Representation())
+	node, err := pm.ToNode()
+	if err != nil {
+		log.Errorw("Failed to convert pando metadata to IPLD node", "err", err)
+		return err
+	}
+	pmLnk, err := p.ls.Store(linking.LinkContext{Ctx: ctx}, pando.LinkProto, node)
 	if err != nil {
 		log.Errorw("Failed to store pando metadata in linksystem", "err", err)
 		return err
