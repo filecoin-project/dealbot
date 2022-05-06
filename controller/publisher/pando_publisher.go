@@ -25,7 +25,8 @@ import (
 	"github.com/libp2p/go-libp2p-core/peer"
 )
 
-const pandoTopic = "/pando/v0.0.1"
+// PandoTopic is the gossipsub topic on which the metadata announcements are published.
+const PandoTopic = "/pando/v0.0.1"
 
 var (
 	log = logging.Logger("publisher")
@@ -115,7 +116,7 @@ func (p *PandoPublisher) Start(ctx context.Context) (err error) {
 	//TODO: Understand if we need a persistent datastore for datatransfer at all here.
 	//      If so, wrap a datastore with customized byte encoding so that postgres is happy.
 	lds := dssync.MutexWrap(datastore.NewMapDatastore())
-	p.pub, err = dtsync.NewPublisher(p.h, lds, p.ls, pandoTopic)
+	p.pub, err = dtsync.NewPublisher(p.h, lds, p.ls, PandoTopic)
 	if err != nil {
 		log.Errorw("Failed to initialize legs publisher", "err", err)
 		return err
