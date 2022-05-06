@@ -183,7 +183,7 @@ point to dealbot's records chain.`,
 								}
 
 								selHead := ssb.ExploreRecursive(selector.RecursionLimitDepth(0), ssb.ExploreAll(ssb.ExploreRecursiveEdge())).Node()
-								err = syncer.Sync(cctx.Context, rootCid, selHead)
+								err = syncer.Sync(cctx.Context, headMetaCid, selHead)
 								if err != nil {
 									return err
 								}
