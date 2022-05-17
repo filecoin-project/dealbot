@@ -50,13 +50,13 @@ type TaskEvent struct {
 
 var (
 	// Available indicates a task is ready to be assigned to a deal bot
-	Available Status = &_Status{x: 1}
+	Available Status = 1
 	// InProgress means the task is running
-	InProgress Status = &_Status{x: 2}
+	InProgress Status = 2
 	// Successful means the task completed successfully
-	Successful Status = &_Status{x: 3}
+	Successful Status = 3
 	// Failed means the task has failed
-	Failed Status = &_Status{x: 4}
+	Failed Status = 4
 )
 
 func (f *_Status__Prototype) Of(x int) Status {

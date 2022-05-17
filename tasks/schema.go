@@ -9,19 +9,6 @@ import (
 )
 
 var (
-	// Linkproto is the ipld.LinkProtocol used for the legs protocol.
-	// Refer to it if you have encoding questions.
-	//LinkProto = cidlink.LinkPrototype{
-	//	Prefix: cid.Prefix{
-	//		Version:  1,
-	//		Codec:    uint64(multicodec.DagJson),
-	//		MhType:   uint64(multicodec.Sha2_256),
-	//		MhLength: 16,
-	//	},
-	//}
-
-	// MetadataPrototype represents the IPLD node prototype of Metadata.
-	// See: bindnode.Prototype.
 	TaskPrototype                schema.TypedPrototype
 	FinishedTaskPrototype        schema.TypedPrototype
 	RetrievalTaskPrototype       schema.TypedPrototype
@@ -30,6 +17,7 @@ var (
 	StageDetailsPrototype        schema.TypedPrototype
 	CurrentStageDetailsPrototype schema.TypedPrototype
 	StorageTaskPrototype         schema.TypedPrototype
+	PopTaskPrototype             schema.TypedPrototype
 	UpdatedTaskPrototype         schema.TypedPrototype
 	//go:embed schema.ipldsch
 	schemaBytes []byte
@@ -45,6 +33,7 @@ func init() {
 	StageDetailsPrototype = bindnode.Prototype((*StageDetails)(nil), typeSystem.TypeByName("StageDetails"))
 	StorageTaskPrototype = bindnode.Prototype((*StorageTask)(nil), typeSystem.TypeByName("StorageTask"))
 	UpdatedTaskPrototype = bindnode.Prototype((*UpdateTask)(nil), typeSystem.TypeByName("UpdateTask"))
+	PopTaskPrototype = bindnode.Prototype((*PopTask)(nil), typeSystem.TypeByName("PopTask"))
 	AuthenticatedRecordPrototype = bindnode.Prototype((*AuthenticatedRecord)(nil), typeSystem.TypeByName("AuthenticatedRecord"))
 	TaskPrototype = bindnode.Prototype((*Task)(nil), typeSystem.TypeByName("Task"))
 	FinishedTaskPrototype = bindnode.Prototype((*FinishedTask)(nil), typeSystem.TypeByName("FinishedTask"))

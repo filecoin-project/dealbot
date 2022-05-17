@@ -7,8 +7,10 @@ import (
 	"github.com/ipld/go-ipld-prime/node/bindnode"
 )
 
+type Status int64
+
 type PopTask struct {
-	Status   int64
+	Status   Status
 	WorkedBy string
 	Tag      []string
 }
@@ -62,7 +64,7 @@ type StageDetails struct {
 }
 
 type UpdateTask struct {
-	Status              int64
+	Status              Status
 	ErrorMessage        string
 	Stage               string
 	CurrentStageDetails *StageDetails
@@ -74,7 +76,7 @@ type StageDetailsList []*StageDetails
 
 type Task struct {
 	UUID                string
-	Status              int64
+	Status              Status
 	WorkedBy            string
 	Stage               string
 	CurrentStageDetails *StageDetails
@@ -87,7 +89,7 @@ type Task struct {
 }
 
 type FinishedTask struct {
-	Status             int64
+	Status             Status
 	StartedAt          int64
 	ErrorMessage       string
 	RetrievalTask      *RetrievalTask
