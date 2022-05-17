@@ -1,0 +1,113 @@
+
+
+type StorageTask struct{
+    Miner String
+    MaxPriceAttoFIL Int
+    Size Int
+    StartOffset Int
+    FastRetrieval Bool
+    Verified Bool
+    Schedule String
+    ScheduleLimit String
+    Tag String
+    RetrievalSchedule String
+    RetrievalScheduleLimit String
+    RetrievalMaxPriceAttoFIL Int
+}
+
+type Logs struct{
+    Log String
+    UpdatedAt Int
+}
+
+type StageDetails struct{
+    Description String
+    ExpectedDuration String
+    Logs [Logs]
+    UpdatedAt Int
+}
+
+type UpdateTask struct{
+    Int Int
+    ErrorMessage String
+    Stage   String
+    CurrentStageDetails optional StageDetails
+    WorkedBy String
+    RunCount Int
+}
+
+type RetrievalTask struct {
+	Miner           String
+	PayloadCID      String
+	CARExport       Bool
+	Schedule        String
+	ScheduleLimit   String
+	Tag             String
+	MaxPriceAttoFIL Int
+}
+
+type StageDetailsList [StageDetails]
+
+type LinkStageDetailsList &StageDetailsList
+
+type FinishedTask struct{
+    Int Int
+    StartedAt Int
+    ErrorMessage String
+    RetrievalTask optional RetrievalTask
+    StorageTask optional StorageTask
+    DealID Int
+    MinerMultiAddr String
+    ClientApparentAddr String
+    MinerLatencyMS    Int
+    TimeToFirstByteMS Int
+    TimeToLastByteMS  Int
+    Events LinkStageDetailsList
+    MinerVersion       String
+    ClientVersion      String
+    Size               Int
+    PayloadCID         String
+    ProposalCID        String
+    DealIDString       String
+    MinerPeerID        String
+
+}
+
+type Link_FinishedTask &FinishedTask
+
+type AuthenticatedRecord struct {
+    Record    Link_FinishedTask
+	Signature Bytes
+}
+
+type AuthenticatedRecordList [AuthenticatedRecord]
+
+type RecordUpdate struct {
+	Records  AuthenticatedRecordList
+	SigPrev  Bytes
+	Previous optional Link
+}
+
+type PopTask struct {
+	Int   Int
+	WorkedBy String
+	Tags     [String]
+}
+
+
+type Task struct{
+    UUID String
+    Int  Int
+    WorkedBy String
+    Stage String
+    CurrentStageDetails optional StageDetails
+    PastStageDetails StageDetailsList
+    Started Int
+    RunCount Int
+    ErrorMessage String
+    RetrievalTask optional RetrievalTask
+    StorageTask   optional StorageTask
+}
+
+
+
