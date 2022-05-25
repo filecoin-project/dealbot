@@ -344,7 +344,7 @@ func TestUpdateTasks(t *testing.T) {
 		require.NoError(t, err)
 
 		type statusHistory struct {
-			status *tasks.Status
+			status tasks.Status
 			stage  string
 			run    int
 		}
@@ -379,9 +379,9 @@ func TestUpdateTasks(t *testing.T) {
 				updateTaskRequest: tasks.NewUpdateTask(*(inProgressTasks[0].WorkedBy), tasks.Successful, 1),
 				expectedStatus:    &tasks.Successful,
 				expectedTaskHistory: []statusHistory{
-					{&tasks.Available, "", 0},
-					{&tasks.InProgress, "", 0},
-					{&tasks.Successful, "", 1},
+					{tasks.Available, "", 0},
+					{tasks.InProgress, "", 0},
+					{tasks.Successful, "", 1},
 				},
 				expectedRun: 1,
 			},
@@ -393,9 +393,9 @@ func TestUpdateTasks(t *testing.T) {
 				expectedStageDetails: exStageDetail,
 				expectedStatus:       &tasks.InProgress,
 				expectedTaskHistory: []statusHistory{
-					{&tasks.Available, "", 0},
-					{&tasks.InProgress, "", 0},
-					{&tasks.InProgress, "Stuff", 1},
+					{tasks.Available, "", 0},
+					{tasks.InProgress, "", 0},
+					{tasks.InProgress, "Stuff", 1},
 				},
 				expectedRun: 1,
 			},
@@ -407,9 +407,9 @@ func TestUpdateTasks(t *testing.T) {
 				expectedStageDetails: workedStageDetail,
 				expectedStatus:       &tasks.InProgress,
 				expectedTaskHistory: []statusHistory{
-					{&tasks.Available, "", 0},
-					{&tasks.InProgress, "", 0},
-					{&tasks.InProgress, "Stuff", 1},
+					{tasks.Available, "", 0},
+					{tasks.InProgress, "", 0},
+					{tasks.InProgress, "Stuff", 1},
 				},
 				expectedRun: 1,
 			},
@@ -422,10 +422,10 @@ func TestUpdateTasks(t *testing.T) {
 				expectedStageDetails: workedStageDetail,
 				expectedStatus:       &tasks.Failed,
 				expectedTaskHistory: []statusHistory{
-					{&tasks.Available, "", 0},
-					{&tasks.InProgress, "", 0},
-					{&tasks.InProgress, "Stuff", 1},
-					{&tasks.Failed, "Stuff", 1},
+					{tasks.Available, "", 0},
+					{tasks.InProgress, "", 0},
+					{tasks.InProgress, "Stuff", 1},
+					{tasks.Failed, "Stuff", 1},
 				},
 				expectedRun: 1,
 			},
@@ -459,7 +459,7 @@ func TestUpdateTasks(t *testing.T) {
 
 					history := make([]statusHistory, len(taskEvents))
 					for i, te := range taskEvents {
-						history[i] = statusHistory{&te.Status, te.Stage, te.Run}
+						history[i] = statusHistory{te.Status, te.Stage, te.Run}
 					}
 					require.Equal(t, tc.expectedTaskHistory, history)
 					require.Equal(t, tc.expectedStage, taskEvents[len(taskEvents)-1].Stage)
