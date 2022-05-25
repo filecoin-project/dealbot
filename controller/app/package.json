@@ -20,7 +20,7 @@
     "@babel/runtime": "^7.14.6",
     "@glif/filecoin-number": "^1.1.0",
     "bootstrap-cron-picker": "^1.0.0",
-    "bootstrap-table": "^1.18.3",
+    "bootstrap-table": "^1.20.2",
     "jquery": "^3.6.0",
     "pretty-bytes": "^5.6.0"
   }
