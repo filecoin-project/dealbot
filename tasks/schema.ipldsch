@@ -7,12 +7,12 @@ type StorageTask struct{
     StartOffset Int
     FastRetrieval Bool
     Verified Bool
-    Schedule String
-    ScheduleLimit String
-    Tag String
-    RetrievalSchedule String
-    RetrievalScheduleLimit String
-    RetrievalMaxPriceAttoFIL Int
+    Schedule optional String
+    ScheduleLimit optional String
+    Tag optional String
+    RetrievalSchedule optional String
+    RetrievalScheduleLimit optional String
+    RetrievalMaxPriceAttoFIL optional Int
 }
 
 type Logs struct{
@@ -21,16 +21,16 @@ type Logs struct{
 }
 
 type StageDetails struct{
-    Description String
-    ExpectedDuration String
+    Description optional String
+    ExpectedDuration optional String
     Logs [Logs]
-    UpdatedAt Int
+    UpdatedAt optional Int
 }
 
 type UpdateTask struct{
-    Int Int
-    ErrorMessage String
-    Stage   String
+    Status Int
+    ErrorMessage optional String
+    Stage   optional String
     CurrentStageDetails optional StageDetails
     WorkedBy String
     RunCount Int
@@ -40,10 +40,10 @@ type RetrievalTask struct {
 	Miner           String
 	PayloadCID      String
 	CARExport       Bool
-	Schedule        String
-	ScheduleLimit   String
-	Tag             String
-	MaxPriceAttoFIL Int
+	Schedule        optional String
+	ScheduleLimit   optional String
+	Tag             optional String
+	MaxPriceAttoFIL optional Int
 }
 
 type StageDetailsList [StageDetails]
@@ -51,27 +51,29 @@ type StageDetailsList [StageDetails]
 type LinkStageDetailsList &StageDetailsList
 
 type FinishedTask struct{
-    Int Int
+    Status Int
     StartedAt Int
-    ErrorMessage String
+    ErrorMessage optional String
     RetrievalTask optional RetrievalTask
     StorageTask optional StorageTask
     DealID Int
     MinerMultiAddr String
     ClientApparentAddr String
-    MinerLatencyMS    Int
-    TimeToFirstByteMS Int
-    TimeToLastByteMS  Int
+    MinerLatencyMS    optional Int
+    TimeToFirstByteMS optional Int
+    TimeToLastByteMS  optional Int
     Events LinkStageDetailsList
-    MinerVersion       String
-    ClientVersion      String
-    Size               Int
-    PayloadCID         String
-    ProposalCID        String
-    DealIDString       String
-    MinerPeerID        String
+    MinerVersion       optional String
+    ClientVersion      optional String
+    Size               optional Int
+    PayloadCID         optional String
+    ProposalCID        optional String
+    DealIDString       optional String
+    MinerPeerID        optional String
 
 }
+
+type FinishedTasks [FinishedTask]
 
 type Link_FinishedTask &FinishedTask
 
@@ -89,7 +91,7 @@ type RecordUpdate struct {
 }
 
 type PopTask struct {
-	Int   Int
+	Status   Int
 	WorkedBy String
 	Tags     [String]
 }
@@ -97,17 +99,16 @@ type PopTask struct {
 
 type Task struct{
     UUID String
-    Int  Int
-    WorkedBy String
+    Status  Int
+    WorkedBy optional String
     Stage String
     CurrentStageDetails optional StageDetails
     PastStageDetails StageDetailsList
-    Started Int
+    Started optional Int
     RunCount Int
-    ErrorMessage String
+    ErrorMessage optional String
     RetrievalTask optional RetrievalTask
     StorageTask   optional StorageTask
 }
 
-
-
+type Tasks [Task]

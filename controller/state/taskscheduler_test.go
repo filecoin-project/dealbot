@@ -39,7 +39,7 @@ func TestScheduledTask(t *testing.T) {
 	require.NoError(t, err)
 
 	worker := "test_worker"
-	task, scheduled, err := state.popTask(ctx, worker, tasks.InProgress, nil)
+	task, scheduled, err := state.popTask(ctx, worker, &tasks.InProgress, nil)
 	require.NoError(t, err)
 	require.Nil(t, task, "should not find unassigned task")
 
@@ -55,25 +55,25 @@ func TestScheduledTask(t *testing.T) {
 	newTask, err := state.Get(ctx, newTaskID)
 	require.NoError(t, err)
 	require.NotNil(t, newTask, "Did not find new generated task")
-	assert.Equal(t, newTaskID, newTask.UUID.String(), "wrong uuid for new task")
+	assert.Equal(t, newTaskID, newTask.UUID, "wrong uuid for new task")
 
 	sch, _ := newTask.Schedule()
 	assert.Equal(t, "", sch, "new task should not have schedule")
 
 	t.Log("popping generated task")
-	task, scheduled, err = state.popTask(ctx, worker, tasks.InProgress, nil)
+	task, scheduled, err = state.popTask(ctx, worker, &tasks.InProgress, nil)
 	require.NoError(t, err)
 	require.NotNil(t, task, "Did not find runable task")
 	require.False(t, scheduled, "should not have found scheduled task")
-	require.Equal(t, worker, task.WorkedBy.Must().String(), "should be assigned to test_worker")
-	runCount, err := task.RunCount.AsInt()
+	require.Equal(t, worker, *task.WorkedBy, "should be assigned to test_worker")
+	runCount := task.RunCount
 	require.NoError(t, err)
 	assert.Equal(t, 0, int(runCount))
 	t.Log("popped task assigned to", worker)
 
 	// Make task as in progress
 	err = state.transact(ctx, func(tx *sql.Tx) error {
-		_, err := tx.ExecContext(ctx, setTaskStatusSQL, newTaskID, tasks.InProgress.Int(), time.Now())
+		_, err := tx.ExecContext(ctx, setTaskStatusSQL, newTaskID, int64(tasks.InProgress), time.Now())
 		return err
 	})
 	if err != nil {
@@ -83,7 +83,7 @@ func TestScheduledTask(t *testing.T) {
 
 	// Make task as complete
 	err = state.transact(ctx, func(tx *sql.Tx) error {
-		_, err := tx.ExecContext(ctx, setTaskStatusSQL, newTaskID, tasks.Failed.Int(), time.Now())
+		_, err := tx.ExecContext(ctx, setTaskStatusSQL, newTaskID, int64(tasks.Failed), time.Now())
 		return err
 	})
 	if err != nil {
@@ -100,22 +100,22 @@ func TestScheduledTask(t *testing.T) {
 	newTask, err = state.Get(ctx, newTaskID)
 	require.NoError(t, err)
 	require.NotNil(t, newTask, "Did not find new generated task")
-	assert.Equal(t, newTaskID, newTask.UUID.String(), "wrong uuid for new task")
+	assert.Equal(t, newTaskID, newTask.UUID, "wrong uuid for new task")
 
 	t.Log("popping next generated task")
-	task, scheduled, err = state.popTask(ctx, worker, tasks.InProgress, nil)
+	task, scheduled, err = state.popTask(ctx, worker, &tasks.InProgress, nil)
 	require.NoError(t, err)
 	require.NotNil(t, task, "Did not find runable task")
 	require.False(t, scheduled, "should not have found scheduled task")
-	require.Equal(t, worker, task.WorkedBy.Must().String(), "should be assigned to test_worker")
-	runCount, err = task.RunCount.AsInt()
+	require.Equal(t, worker, *(task.WorkedBy), "should be assigned to test_worker")
+	runCount = task.RunCount
 	require.NoError(t, err)
 	assert.Equal(t, 1, int(runCount))
 	t.Log("popped another task assigned to", worker)
 
 	// Make task as in progress
 	err = state.transact(ctx, func(tx *sql.Tx) error {
-		_, err := tx.ExecContext(ctx, setTaskStatusSQL, newTaskID, tasks.InProgress.Int(), time.Now())
+		_, err := tx.ExecContext(ctx, setTaskStatusSQL, newTaskID, int64(tasks.InProgress), time.Now())
 		return err
 	})
 	if err != nil {
@@ -131,7 +131,7 @@ func TestScheduledTask(t *testing.T) {
 
 	// Make task as complete
 	err = state.transact(ctx, func(tx *sql.Tx) error {
-		_, err := tx.ExecContext(ctx, setTaskStatusSQL, newTaskID, tasks.Successful.Int(), time.Now())
+		_, err := tx.ExecContext(ctx, setTaskStatusSQL, newTaskID, int64(tasks.Successful), time.Now())
 		return err
 	})
 	if err != nil {
@@ -182,7 +182,7 @@ func TestScheduledTaskLimit(t *testing.T) {
 
 	// Make task as complete so it does not block more generation
 	err = state.transact(ctx, func(tx *sql.Tx) error {
-		_, err := tx.ExecContext(ctx, setTaskStatusSQL, newTaskID, tasks.Failed.Int(), time.Now())
+		_, err := tx.ExecContext(ctx, setTaskStatusSQL, newTaskID, int64(tasks.Failed), time.Now())
 		return err
 	})
 	if err != nil {

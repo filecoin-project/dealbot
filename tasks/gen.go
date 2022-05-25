@@ -1,6 +1,7 @@
+//go:build ignore
 // +build ignore
 
-package main
+package tasks
 
 import (
 	"fmt"

@@ -64,7 +64,8 @@ func GetHandler(db state.State, accessToken string) (*http.ServeMux, error) {
 						if err != nil {
 							return nil, err
 						}
-						return tasks.Type.Tasks.Of(tsks), nil
+						ts := tasks.NewTasks(tsks)
+						return &ts, nil
 					},
 				},
 				"Task": &graphql.Field{
@@ -132,9 +133,10 @@ func GetHandler(db state.State, accessToken string) (*http.ServeMux, error) {
 							if err != nil {
 								return nil, err
 							}
-							finishedTasks = append(finishedTasks, finishedTask)
+							finishedTasks = append(finishedTasks, *finishedTask)
 						}
-						return tasks.Type.FinishedTasks.Of(finishedTasks), nil
+						fts := tasks.FinishedTasks(finishedTasks)
+						return &fts, nil
 					},
 				},
 				"RecordUpdate": &graphql.Field{

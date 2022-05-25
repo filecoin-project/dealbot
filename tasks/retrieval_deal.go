@@ -37,13 +37,13 @@ var RetrievalDealStages = []RetrievalStage{
 	RetrievalStageDealComplete,
 }
 
-func MakeRetrievalDeal(ctx context.Context, config NodeConfig, node api.FullNode, task RetrievalTask, updateStage UpdateStage, log LogStatus, stageTimeouts map[string]time.Duration, releaseWorker func()) error {
+func MakeRetrievalDeal(ctx context.Context, config NodeConfig, node api.FullNode, task *RetrievalTask, updateStage UpdateStage, log LogStatus, stageTimeouts map[string]time.Duration, releaseWorker func()) error {
 	de := &retrievalDealExecutor{
 		dealExecutor: dealExecutor{
 			ctx:           ctx,
 			config:        config,
 			node:          node,
-			miner:         task.Miner.x,
+			miner:         task.Miner,
 			log:           log,
 			makeHost:      libp2p.New,
 			releaseWorker: releaseWorker,
@@ -98,12 +98,12 @@ func MakeRetrievalDeal(ctx context.Context, config NodeConfig, node api.FullNode
 
 type retrievalDealExecutor struct {
 	dealExecutor
-	task  RetrievalTask
+	task  *RetrievalTask
 	offer api.RetrievalOrder
 }
 
 func (de *retrievalDealExecutor) queryOffer(logg logFunc) error {
-	payloadCid, err := cid.Parse(de.task.PayloadCID.x)
+	payloadCid, err := cid.Parse(de.task.PayloadCID)
 	if err != nil {
 		return err
 	}
@@ -120,10 +120,10 @@ func (de *retrievalDealExecutor) queryOffer(logg logFunc) error {
 
 	de.log("got query offer", "root", de.offer.Root, "piece", de.offer.Piece, "size", de.offer.Size, "minprice", qo.MinPrice, "unseal_price", de.offer.UnsealPrice)
 
-	if de.task.MaxPriceAttoFIL.Exists() {
+	if de.task.MaxPriceAttoFIL != nil {
 		sizePrice := big.NewInt(2).Mul(qo.MinPrice.Int, big.NewInt(0).SetUint64(de.offer.Size))
 		totPrice := big.NewInt(0).Add(de.offer.UnsealPrice.Int, sizePrice)
-		if totPrice.Cmp(big.NewInt(de.task.MaxPriceAttoFIL.Must().Int())) == 1 {
+		if totPrice.Cmp(big.NewInt(*(de.task.MaxPriceAttoFIL))) == 1 {
 			// too expensive.
 			msg := fmt.Sprintf("RejectingDealOverCost min:%d, unseal:%d", qo.MinPrice.Int64(), de.offer.UnsealPrice.Int64())
 			logg(msg)
@@ -134,7 +134,7 @@ func (de *retrievalDealExecutor) queryOffer(logg logFunc) error {
 	return nil
 }
 
-func (de *retrievalDealExecutor) cancelOldDeals(ctx context.Context, dealStage StageDetails) (StageDetails, error) {
+func (de *retrievalDealExecutor) cancelOldDeals(ctx context.Context, dealStage *StageDetails) (*StageDetails, error) {
 	retrievals, err := de.node.ClientListRetrievals(ctx)
 	if err != nil {
 		return nil, err
@@ -171,8 +171,8 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(ctx context.Context, upda
 	}
 
 	ref := &api.FileRef{
-		Path:  filepath.Join(de.config.NodeDataDir, de.task.PayloadCID.x),
-		IsCAR: de.task.CARExport.x,
+		Path:  filepath.Join(de.config.NodeDataDir, de.task.PayloadCID),
+		IsCAR: de.task.CARExport,
 	}
 
 	subscribeEvents, err := de.node.ClientGetRetrievalUpdates(ctx)
@@ -234,7 +234,7 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(ctx context.Context, upda
 			// non-terminal event, process
 			if event.Status != lastStatus {
 				de.log("Deal status",
-					"cid", de.task.PayloadCID.x,
+					"cid", de.task.PayloadCID,
 					"state", retrievalmarket.DealStatuses[event.Status],
 					"error", event.Message,
 					"received", event.BytesReceived,
@@ -289,12 +289,12 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(ctx context.Context, upda
 					return nil
 				}
 
-				rdata, err := os.Stat(filepath.Join(de.config.DataDir, de.task.PayloadCID.x))
+				rdata, err := os.Stat(filepath.Join(de.config.DataDir, de.task.PayloadCID))
 				if err != nil {
 					return err
 				}
 
-				de.log("retrieval successful", "PayloadCID", de.task.PayloadCID.x)
+				de.log("retrieval successful", "PayloadCID", de.task.PayloadCID)
 
 				_ = rdata
 
@@ -305,7 +305,7 @@ func (de *retrievalDealExecutor) executeAndMonitorDeal(ctx context.Context, upda
 				}
 
 				// See if car and estimate number of CIDs in the piece.
-				fp, err := os.Open(filepath.Join(de.config.DataDir, de.task.PayloadCID.x))
+				fp, err := os.Open(filepath.Join(de.config.DataDir, de.task.PayloadCID))
 				if err == nil {
 					defer fp.Close()
 					numCids, err := tryReadCar(fp)
@@ -365,13 +365,13 @@ func (de *retrievalDealExecutor) cleanupDeal() error {
 		return err
 	}
 	for _, i := range imports {
-		if i.Root != nil && i.Root.String() == de.task.PayloadCID.String() {
+		if i.Root != nil && i.Root.String() == de.task.PayloadCID {
 			if err := de.node.ClientRemoveImport(de.ctx, i.Key); err != nil {
 				return err
 			}
 		}
 	}
-	dbPath := filepath.Join(de.config.DataDir, de.task.PayloadCID.x)
+	dbPath := filepath.Join(de.config.DataDir, de.task.PayloadCID)
 	if _, err := os.Stat(dbPath); !os.IsNotExist(err) {
 		if err := os.RemoveAll(dbPath); err != nil {
 			return err
@@ -380,25 +380,48 @@ func (de *retrievalDealExecutor) cleanupDeal() error {
 	return nil
 }
 
-func (rp _RetrievalTask__Prototype) Of(minerParam string, payloadCid string, carExport bool, tag string) RetrievalTask {
-	rt := _RetrievalTask{
-		Miner:      _String{minerParam},
-		PayloadCID: _String{payloadCid},
-		CARExport:  _Bool{carExport},
-		Tag:        asStrM(tag),
+//func (rp _RetrievalTask__Prototype) Of(minerParam string, payloadCid string, carExport bool, tag string) RetrievalTask {
+//	rt := _RetrievalTask{
+//		Miner:      _String{minerParam},
+//		PayloadCID: _String{payloadCid},
+//		CARExport:  _Bool{carExport},
+//		Tag:        asStrM(tag),
+//	}
+//	return &rt
+//}
+
+func NewRetrievalTask(minerParam string, payloadCid string, carExport bool, tag string) *RetrievalTask {
+	rt := RetrievalTask{
+		Miner:      minerParam,
+		PayloadCID: payloadCid,
+		CARExport:  carExport,
+		Tag:        &tag,
 	}
 	return &rt
 }
 
-func (rp _RetrievalTask__Prototype) OfSchedule(minerParam string, payloadCid string, carExport bool, tag string, schedule string, scheduleLimit string, maxPrice int64) RetrievalTask {
-	rt := _RetrievalTask{
-		Miner:           _String{minerParam},
-		PayloadCID:      _String{payloadCid},
-		CARExport:       _Bool{carExport},
-		Tag:             asStrM(tag),
-		Schedule:        asStrM(schedule),
-		ScheduleLimit:   asStrM(scheduleLimit),
-		MaxPriceAttoFIL: asIntM(maxPrice),
+func NewRetrievalTaskWithSchedule(minerParam string, payloadCid string, carExport bool, tag string, schedule string, scheduleLimit string, maxPrice int64) *RetrievalTask {
+	rt := RetrievalTask{
+		Miner:           minerParam,
+		PayloadCID:      payloadCid,
+		CARExport:       carExport,
+		Tag:             &tag,
+		Schedule:        &schedule,
+		ScheduleLimit:   &scheduleLimit,
+		MaxPriceAttoFIL: &maxPrice,
 	}
 	return &rt
 }
+
+//func (rp _RetrievalTask__Prototype) OfSchedule(minerParam string, payloadCid string, carExport bool, tag string, schedule string, scheduleLimit string, maxPrice int64) RetrievalTask {
+//	rt := _RetrievalTask{
+//		Miner:           _String{minerParam},
+//		PayloadCID:      _String{payloadCid},
+//		CARExport:       _Bool{carExport},
+//		Tag:             asStrM(tag),
+//		Schedule:        asStrM(schedule),
+//		ScheduleLimit:   asStrM(scheduleLimit),
+//		MaxPriceAttoFIL: asIntM(maxPrice),
+//	}
+//	return &rt
+//}

@@ -8,21 +8,22 @@ import (
 )
 
 type Status int64
+type Time int64
 
 type PopTask struct {
 	Status   Status
 	WorkedBy string
-	Tag      []string
+	Tags     []string
 }
 
 type RetrievalTask struct {
 	Miner           string
 	PayloadCID      string
 	CARExport       bool
-	Schedule        string
-	ScheduleLimit   string
-	Tag             string
-	MaxPriceAttoFIL int
+	Schedule        *string
+	ScheduleLimit   *string
+	Tag             *string
+	MaxPriceAttoFIL *int64 // nil Exist() ???   &(int64(0))
 }
 
 type AuthenticatedRecord struct {
@@ -31,86 +32,90 @@ type AuthenticatedRecord struct {
 }
 
 type RecordUpdate struct {
-	Records  []*AuthenticatedRecord
+	Records  []AuthenticatedRecord
 	SigPrev  []byte
 	Previous *ipld.Link
 }
 
 type StorageTask struct {
 	Miner                    string
-	MaxPriceAttoFIL          int
-	Size                     int
-	StartOffset              int
+	MaxPriceAttoFIL          int64
+	Size                     int64
+	StartOffset              int64
 	FastRetrieval            bool
 	Verified                 bool
-	Schedule                 string
-	ScheduleLimit            string
-	Tag                      string
-	RetrievalSchedule        string
-	RetrievalScheduleLimit   string
-	RetrievalMaxPriceAttoFIL int
+	Schedule                 *string
+	ScheduleLimit            *string
+	Tag                      *string
+	RetrievalSchedule        *string
+	RetrievalScheduleLimit   *string
+	RetrievalMaxPriceAttoFIL *int64
 }
 
 type Logs struct {
 	Log       string
-	UpdatedAt int64
+	UpdatedAt Time
 }
 
 type StageDetails struct {
-	Description      string
-	ExpectedDuration string
-	Logs             []*Logs
-	UpdatedAt        int64
+	Description      *string
+	ExpectedDuration *string
+	Logs             []Logs
+	UpdatedAt        *Time
 }
 
 type UpdateTask struct {
 	Status              Status
-	ErrorMessage        string
-	Stage               string
+	ErrorMessage        *string
+	Stage               *string
 	CurrentStageDetails *StageDetails
 	WorkedBy            string
-	RunCount            int
+	RunCount            int64
 }
 
-type StageDetailsList []*StageDetails
+type StageDetailsList []StageDetails
 
 type Task struct {
 	UUID                string
 	Status              Status
-	WorkedBy            string
+	WorkedBy            *string // &"" ?? null value
 	Stage               string
 	CurrentStageDetails *StageDetails
 	PastStageDetails    StageDetailsList
-	Started             int64
+	StartedAt           *Time
 	RunCount            int64
-	ErrorMessage        string
+	ErrorMessage        *string
 	RetrievalTask       *RetrievalTask
 	StorageTask         *StorageTask
 }
 
+type Tasks []Task
+
 type FinishedTask struct {
 	Status             Status
-	StartedAt          int64
-	ErrorMessage       string
+	StartedAt          Time
+	ErrorMessage       *string
 	RetrievalTask      *RetrievalTask
 	StorageTask        *StorageTask
 	DealID             int64
 	MinerMultiAddr     string
 	ClientApparentAddr string
-	MinerLatencyMS     int
-	TimeToFirstByteMS  int
-	TimeToLastByteMS   int
+	MinerLatencyMS     *int64
+	TimeToFirstByteMS  *int64
+	TimeToLastByteMS   *int64
 	Events             ipld.Link
-	MinerVersion       string
-	ClientVersion      string
-	Size               int
-	PayloadCID         string
-	ProposalCID        string
-	DealIDString       string
-	MinerPeerID        string
+	MinerVersion       *string
+	ClientVersion      *string
+	Size               *int64
+	PayloadCID         *string
+	ProposalCID        *string
+	DealIDString       *string
+	MinerPeerID        *string
 }
 
-func (t *Task) ToNode() (n ipld.Node, err error) {
+type FinishedTasks []FinishedTask
+
+func (t Task) ToNode() (n ipld.Node, err error) {
 	// TODO: remove the panic recovery once IPLD bindnode is stabilized.
 	defer func() {
 		if r := recover(); r != nil {
@@ -135,12 +140,12 @@ func UnwrapTask(node ipld.Node) (*Task, error) {
 	// The code in this repo, however should load nodes with appropriate prototype and never trigger
 	// this if statement.
 	if node.Prototype() != TaskPrototype {
-		adBuilder := TaskPrototype.NewBuilder()
-		err := adBuilder.AssignNode(node)
+		tsBuilder := TaskPrototype.NewBuilder()
+		err := tsBuilder.AssignNode(node)
 		if err != nil {
 			return nil, fmt.Errorf("faild to convert node prototype: %w", err)
 		}
-		node = adBuilder.Build()
+		node = tsBuilder.Build()
 	}
 
 	t, ok := bindnode.Unwrap(node).(*Task)
@@ -150,8 +155,7 @@ func UnwrapTask(node ipld.Node) (*Task, error) {
 	return t, nil
 }
 
-func (f *FinishedTask) ToNode() (n ipld.Node, err error) {
-	// TODO: remove the panic recovery once IPLD bindnode is stabilized.
+func (f FinishedTask) ToNode() (n ipld.Node, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = toError(r)
@@ -163,12 +167,12 @@ func (f *FinishedTask) ToNode() (n ipld.Node, err error) {
 
 func UnwrapFinishedTask(node ipld.Node) (*FinishedTask, error) {
 	if node.Prototype() != FinishedTaskPrototype {
-		adBuilder := FinishedTaskPrototype.NewBuilder()
-		err := adBuilder.AssignNode(node)
+		tsBuilder := FinishedTaskPrototype.NewBuilder()
+		err := tsBuilder.AssignNode(node)
 		if err != nil {
 			return nil, fmt.Errorf("faild to convert node prototype: %w", err)
 		}
-		node = adBuilder.Build()
+		node = tsBuilder.Build()
 	}
 
 	t, ok := bindnode.Unwrap(node).(*FinishedTask)
@@ -178,8 +182,7 @@ func UnwrapFinishedTask(node ipld.Node) (*FinishedTask, error) {
 	return t, nil
 }
 
-func (s *StorageTask) ToNode() (n ipld.Node, err error) {
-	// TODO: remove the panic recovery once IPLD bindnode is stabilized.
+func (s StorageTask) ToNode() (n ipld.Node, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = toError(r)
@@ -191,12 +194,12 @@ func (s *StorageTask) ToNode() (n ipld.Node, err error) {
 
 func UnwrapStorageTask(node ipld.Node) (*StorageTask, error) {
 	if node.Prototype() != StorageTaskPrototype {
-		adBuilder := StorageTaskPrototype.NewBuilder()
-		err := adBuilder.AssignNode(node)
+		tsBuilder := StorageTaskPrototype.NewBuilder()
+		err := tsBuilder.AssignNode(node)
 		if err != nil {
 			return nil, fmt.Errorf("faild to convert node prototype: %w", err)
 		}
-		node = adBuilder.Build()
+		node = tsBuilder.Build()
 	}
 
 	t, ok := bindnode.Unwrap(node).(*StorageTask)
@@ -206,8 +209,7 @@ func UnwrapStorageTask(node ipld.Node) (*StorageTask, error) {
 	return t, nil
 }
 
-func (u *UpdateTask) ToNode() (n ipld.Node, err error) {
-	// TODO: remove the panic recovery once IPLD bindnode is stabilized.
+func (u UpdateTask) ToNode() (n ipld.Node, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = toError(r)
@@ -219,12 +221,12 @@ func (u *UpdateTask) ToNode() (n ipld.Node, err error) {
 
 func UnwrapUpdateTask(node ipld.Node) (*UpdateTask, error) {
 	if node.Prototype() != UpdatedTaskPrototype {
-		adBuilder := UpdatedTaskPrototype.NewBuilder()
-		err := adBuilder.AssignNode(node)
+		tsBuilder := UpdatedTaskPrototype.NewBuilder()
+		err := tsBuilder.AssignNode(node)
 		if err != nil {
 			return nil, fmt.Errorf("faild to convert node prototype: %w", err)
 		}
-		node = adBuilder.Build()
+		node = tsBuilder.Build()
 	}
 
 	t, ok := bindnode.Unwrap(node).(*UpdateTask)
@@ -234,8 +236,7 @@ func UnwrapUpdateTask(node ipld.Node) (*UpdateTask, error) {
 	return t, nil
 }
 
-func (r *RetrievalTask) ToNode() (n ipld.Node, err error) {
-	// TODO: remove the panic recovery once IPLD bindnode is stabilized.
+func (r RetrievalTask) ToNode() (n ipld.Node, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = toError(r)
@@ -247,12 +248,12 @@ func (r *RetrievalTask) ToNode() (n ipld.Node, err error) {
 
 func UnwrapRetrievalTask(node ipld.Node) (*RetrievalTask, error) {
 	if node.Prototype() != RetrievalTaskPrototype {
-		adBuilder := RetrievalTaskPrototype.NewBuilder()
-		err := adBuilder.AssignNode(node)
+		tsBuilder := RetrievalTaskPrototype.NewBuilder()
+		err := tsBuilder.AssignNode(node)
 		if err != nil {
 			return nil, fmt.Errorf("faild to convert node prototype: %w", err)
 		}
-		node = adBuilder.Build()
+		node = tsBuilder.Build()
 	}
 
 	t, ok := bindnode.Unwrap(node).(*RetrievalTask)
@@ -260,6 +261,176 @@ func UnwrapRetrievalTask(node ipld.Node) (*RetrievalTask, error) {
 		return nil, fmt.Errorf("unwrapped node does not match schema.Task")
 	}
 	return t, nil
+}
+
+func NewTasks(ts []*Task) *Tasks {
+	t := Tasks{}
+	for _, c := range ts {
+		t = append(t, *c)
+	}
+	return &t
+}
+
+func (ts Tasks) ToNode() (n ipld.Node, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = toError(r)
+		}
+	}()
+	n = bindnode.Wrap(&ts, TasksPrototype.Type()).Representation()
+	return
+}
+
+func UnwrapTasks(node ipld.Node) (*Tasks, error) {
+	if node.Prototype() != TasksPrototype {
+		tsBuilder := TasksPrototype.NewBuilder()
+		err := tsBuilder.AssignNode(node)
+		if err != nil {
+			return nil, fmt.Errorf("faild to convert node prototype: %w", err)
+		}
+		node = tsBuilder.Build()
+	}
+
+	t, ok := bindnode.Unwrap(node).(*Tasks)
+	if !ok || t == nil {
+		return nil, fmt.Errorf("unwrapped node does not match schema.Task")
+	}
+	return t, nil
+}
+
+func (pt PopTask) ToNode() (n ipld.Node, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = toError(r)
+		}
+	}()
+	n = bindnode.Wrap(&pt, PopTaskPrototype.Type()).Representation()
+	return
+}
+
+func UnwrapPopTask(node ipld.Node) (*PopTask, error) {
+	if node.Prototype() != PopTaskPrototype {
+		ptBuilder := PopTaskPrototype.NewBuilder()
+		err := ptBuilder.AssignNode(node)
+		if err != nil {
+			return nil, fmt.Errorf("faild to convert node prototype: %w", err)
+		}
+		node = ptBuilder.Build()
+	}
+
+	t, ok := bindnode.Unwrap(node).(*PopTask)
+	if !ok || t == nil {
+		return nil, fmt.Errorf("unwrapped node does not match schema.Task")
+	}
+	return t, nil
+}
+
+func (sdl StageDetailsList) ToNode() (n ipld.Node, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = toError(r)
+		}
+	}()
+	n = bindnode.Wrap(&sdl, StageDetailsListPrototype.Type()).Representation()
+	return
+}
+
+func UnwrapStageDetailsList(node ipld.Node) (*StageDetailsList, error) {
+	if node.Prototype() != StageDetailsListPrototype {
+		sdlBuilder := StageDetailsListPrototype.NewBuilder()
+		err := sdlBuilder.AssignNode(node)
+		if err != nil {
+			return nil, fmt.Errorf("faild to convert node prototype: %w", err)
+		}
+		node = sdlBuilder.Build()
+	}
+
+	s, ok := bindnode.Unwrap(node).(*StageDetailsList)
+	if !ok || s == nil {
+		return nil, fmt.Errorf("unwrapped node does not match schema.Task")
+	}
+	return s, nil
+}
+
+func (sd StageDetails) ToNode() (n ipld.Node, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = toError(r)
+		}
+	}()
+	n = bindnode.Wrap(&sd, StageDetailsPrototype.Type()).Representation()
+	return
+}
+
+func UnwrapStageDetails(node ipld.Node) (*StageDetails, error) {
+	if node.Prototype() != StageDetailsPrototype {
+		sdBuilder := StageDetailsPrototype.NewBuilder()
+		err := sdBuilder.AssignNode(node)
+		if err != nil {
+			return nil, fmt.Errorf("faild to convert node prototype: %w", err)
+		}
+		node = sdBuilder.Build()
+	}
+
+	s, ok := bindnode.Unwrap(node).(*StageDetails)
+	if !ok || s == nil {
+		return nil, fmt.Errorf("unwrapped node does not match schema.Task")
+	}
+	return s, nil
+}
+
+func (l Logs) ToNode() (n ipld.Node, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = toError(r)
+		}
+	}()
+	n = bindnode.Wrap(&l, LogsPrototype.Type()).Representation()
+	return
+}
+
+func UnwrapLogs(node ipld.Node) (*Logs, error) {
+	if node.Prototype() != LogsPrototype {
+		lBuilder := LogsPrototype.NewBuilder()
+		err := lBuilder.AssignNode(node)
+		if err != nil {
+			return nil, fmt.Errorf("faild to convert node prototype: %w", err)
+		}
+		node = lBuilder.Build()
+	}
+
+	l, ok := bindnode.Unwrap(node).(*Logs)
+	if !ok || l == nil {
+		return nil, fmt.Errorf("unwrapped node does not match schema.Task")
+	}
+	return l, nil
+}
+
+func (ru RecordUpdate) ToNode() (n ipld.Node, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = toError(r)
+		}
+	}()
+	n = bindnode.Wrap(&ru, RecordUpdatePrototype.Type()).Representation()
+	return
+}
+
+func UnwrapRecordUpdate(node ipld.Node) (*RecordUpdate, error) {
+	if node.Prototype() != RecordUpdatePrototype {
+		ruBuilder := RecordUpdatePrototype.NewBuilder()
+		err := ruBuilder.AssignNode(node)
+		if err != nil {
+			return nil, fmt.Errorf("faild to convert node prototype: %w", err)
+		}
+		node = ruBuilder.Build()
+	}
+
+	ru, ok := bindnode.Unwrap(node).(*RecordUpdate)
+	if !ok || ru == nil {
+		return nil, fmt.Errorf("unwrapped node does not match schema.Task")
+	}
+	return ru, nil
 }
 
 func toError(r interface{}) error {

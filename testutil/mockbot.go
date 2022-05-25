@@ -65,12 +65,12 @@ func (md *MockDaemon) worker(n int) {
 	}
 	retrievalFailStates = append(retrievalFailStates, baseFailStates...)
 	storageFailStates := make([]string, 0, len(storagemarket.DealStates)-1+len(baseFailStates))
-	storageStageDetails := make(map[string]tasks.StageDetails, len(storagemarket.DealStates))
+	storageStageDetails := make(map[string]*tasks.StageDetails, len(storagemarket.DealStates))
 	for state, stateName := range storagemarket.DealStates {
 		if state != storagemarket.StorageDealActive {
 			storageFailStates = append(storageFailStates, stateName)
 		}
-		storageStageDetails[stateName] = tasks.Type.StageDetails.Of(storagemarket.DealStatesDescriptions[state], storagemarket.DealStatesDurations[state])
+		storageStageDetails[stateName] = tasks.NewStageDetails(storagemarket.DealStatesDescriptions[state], storagemarket.DealStatesDurations[state])
 	}
 	storageFailStates = append(storageFailStates, baseFailStates...)
 	for {
@@ -80,7 +80,7 @@ func (md *MockDaemon) worker(n int) {
 		// pop a task
 		ctx := context.Background()
 		task, err := md.client.PopTask(ctx,
-			tasks.Type.PopTask.Of(md.host, tasks.InProgress))
+			tasks.NewPopTask(md.host, tasks.InProgress))
 		if err != nil {
 			log.Warnw("pop-task returned error", "err", err)
 			continue
@@ -90,7 +90,7 @@ func (md *MockDaemon) worker(n int) {
 			continue // no task available
 		}
 
-		if !task.WorkedBy.Exists() || (task.WorkedBy.Must().String() != md.host) {
+		if task.WorkedBy == nil || (*(task.WorkedBy) != md.host) {
 			log.Warnw("pop-task returned a non-available task", "err", err)
 			continue
 		}
@@ -99,10 +99,10 @@ func (md *MockDaemon) worker(n int) {
 		isSuccess := rand.Float64() <= md.successRate
 		var taskDuration time.Duration
 		var stage string
-		var stageDetails tasks.StageDetails
+		var stageDetails *tasks.StageDetails
 		var ok bool
 		if isSuccess {
-			if task.RetrievalTask.Exists() {
+			if task.RetrievalTask != nil {
 				stage = "DealComplete"
 				stageDetails = tasks.RetrievalStages[stage]()
 			} else {
@@ -111,7 +111,7 @@ func (md *MockDaemon) worker(n int) {
 			}
 			taskDuration = md.successAvg + time.Duration(rand.NormFloat64()*float64(md.successDeviation))
 		} else {
-			if task.RetrievalTask.Exists() {
+			if task.RetrievalTask != nil {
 				stage = retrievalFailStates[rand.Intn(len(retrievalFailStates))]
 				if stageDetailsFn := tasks.RetrievalStages[stage]; stageDetailsFn != nil {
 					stageDetails = stageDetailsFn()
@@ -141,7 +141,7 @@ func (md *MockDaemon) worker(n int) {
 				result = tasks.Failed
 				errorMessage = "Something terrible happened"
 			}
-			req := tasks.Type.UpdateTask.OfStage(
+			req := tasks.NewUpdateTaskWithStage(
 				md.host,
 				result,
 				errorMessage,

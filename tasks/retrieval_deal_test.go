@@ -161,7 +161,7 @@ func TestCancelOldDeals(t *testing.T) {
 					node: node,
 					log:  func(msg string, keysAndValues ...interface{}) {},
 				},
-				task: &_RetrievalTask{PayloadCID: _String{root.String()}},
+				task: &RetrievalTask{PayloadCID: root.String()},
 				offer: api.RetrievalOrder{
 					Root: root,
 				},
@@ -173,7 +173,7 @@ func TestCancelOldDeals(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 				for _, expectedLog := range data.expectedLogs {
-					assertHasLogWithPrefix(t, dealStage.FieldLogs(), expectedLog)
+					assertHasLogWithPrefix(t, dealStage.Logs, expectedLog)
 				}
 			}
 		})
