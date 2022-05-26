@@ -367,11 +367,11 @@ func (t *Task) Tag() string {
 	return ""
 }
 
-func (t *Task) Assign(worker string, status *Status) *Task {
+func (t *Task) Assign(worker string, status Status) *Task {
 	timenow := Time(time.Now().UnixNano())
 	newTask := &Task{
 		UUID:                t.UUID,
-		Status:              *status,
+		Status:              status,
 		WorkedBy:            &worker,
 		Stage:               t.Stage,
 		CurrentStageDetails: t.CurrentStageDetails,

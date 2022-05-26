@@ -385,7 +385,7 @@ func (s *stateDB) AssignTask(ctx context.Context, req *tasks.PopTask) (*tasks.Ta
 	// are no more tasks
 	var assigned *tasks.Task
 	for {
-		task, scheduled, err := s.popTask(ctx, req.WorkedBy, &req.Status, tags)
+		task, scheduled, err := s.popTask(ctx, req.WorkedBy, req.Status, tags)
 		if err != nil {
 			return nil, err
 		}
@@ -434,7 +434,7 @@ func (s *stateDB) drainingWorker(ctx context.Context, worker string) (bool, erro
 	return draining, nil
 }
 
-func (s *stateDB) popTask(ctx context.Context, workedBy string, status *tasks.Status, tags []interface{}) (*tasks.Task, bool, error) {
+func (s *stateDB) popTask(ctx context.Context, workedBy string, status tasks.Status, tags []interface{}) (*tasks.Task, bool, error) {
 	var assigned *tasks.Task
 	var scheduled bool
 
@@ -500,7 +500,7 @@ func (s *stateDB) popTask(ctx context.Context, workedBy string, status *tasks.St
 		}
 
 		// Set new status for task
-		_, err = tx.ExecContext(ctx, setTaskStatusSQL, taskID, *status, time.Now())
+		_, err = tx.ExecContext(ctx, setTaskStatusSQL, taskID, int64(status), time.Now())
 		if err != nil {
 			return fmt.Errorf("could not update status task: %w", err)
 		}

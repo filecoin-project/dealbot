@@ -24,7 +24,7 @@ func (tr *TestMetricsRecorder) Handler() http.Handler {
 	return nil
 }
 
-func (tr *TestMetricsRecorder) ObserveTask(task tasks.Task) error {
+func (tr *TestMetricsRecorder) ObserveTask(task *tasks.Task) error {
 	tr.tasks[task.GetUUID()] = append(tr.tasks[task.GetUUID()], task.Status)
 	return nil
 }

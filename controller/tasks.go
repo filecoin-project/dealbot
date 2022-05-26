@@ -196,11 +196,18 @@ func (c *Controller) popTaskHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+
 	// If none are available, we return a JSON "null".
 	if task == nil {
 		w.WriteHeader(http.StatusNoContent)
 	} else {
-		dagjson.Encode(n, w)
+		tnode, err := task.ToNode()
+		if err != nil {
+			log.Errorw("Convert task ipld node", "err", err.Error())
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		dagjson.Encode(tnode, w)
 	}
 }
 
@@ -230,7 +237,7 @@ func (c *Controller) updateTaskHandler(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 	uuid := vars["uuid"]
-	_, err = c.db.Update(r.Context(), uuid, updateTask)
+	task, err := c.db.Update(r.Context(), uuid, updateTask)
 	if err != nil {
 		log.Errorw("UpdateTaskRequest db update", "err", err.Error())
 		if errors.Is(err, sql.ErrNoRows) {
@@ -240,8 +247,16 @@ func (c *Controller) updateTaskHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+
+	tnode, err := task.ToNode()
+	if err != nil {
+		log.Errorw("Convert task ipld node", "err", err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	w.WriteHeader(http.StatusOK)
-	dagjson.Encode(n, w)
+	dagjson.Encode(tnode, w)
 }
 
 func mustString(s string, _ error) string {
@@ -277,6 +292,13 @@ func (c *Controller) newStorageTaskHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	tnode, err := task.ToNode()
+	if err != nil {
+		log.Errorw("Convert task ipld node", "err", err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	taskURL, err := r.URL.Parse("/tasks/" + task.UUID)
 	if err != nil {
 		log.Errorw("StorageTask parse URL", "err", err.Error())
@@ -286,7 +308,7 @@ func (c *Controller) newStorageTaskHandler(w http.ResponseWriter, r *http.Reques
 
 	w.Header().Set("Location", taskURL.String())
 	w.WriteHeader(http.StatusCreated)
-	dagjson.Encode(n, w)
+	dagjson.Encode(tnode, w)
 }
 
 func (c *Controller) newRetrievalTaskHandler(w http.ResponseWriter, r *http.Request) {
@@ -325,10 +347,16 @@ func (c *Controller) newRetrievalTaskHandler(w http.ResponseWriter, r *http.Requ
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+	tnode, err := task.ToNode()
+	if err != nil {
+		log.Errorw("Convert task ipld node", "err", err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 
 	w.Header().Set("Location", taskURL.String())
 	w.WriteHeader(http.StatusCreated)
-	dagjson.Encode(n, w)
+	dagjson.Encode(tnode, w)
 }
 
 func (c *Controller) getTaskHandler(w http.ResponseWriter, r *http.Request) {

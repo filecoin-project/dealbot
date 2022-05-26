@@ -65,7 +65,7 @@ func GetHandler(db state.State, accessToken string) (*http.ServeMux, error) {
 							return nil, err
 						}
 						ts := tasks.NewTasks(tsks)
-						return &ts, nil
+						return ts, nil
 					},
 				},
 				"Task": &graphql.Field{

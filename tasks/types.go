@@ -31,8 +31,10 @@ type AuthenticatedRecord struct {
 	Signature []byte
 }
 
+type AuthenticatedRecordList []AuthenticatedRecord
+
 type RecordUpdate struct {
-	Records  []AuthenticatedRecord
+	Records  AuthenticatedRecordList
 	SigPrev  []byte
 	Previous *ipld.Link
 }
@@ -78,7 +80,7 @@ type StageDetailsList []StageDetails
 type Task struct {
 	UUID                string
 	Status              Status
-	WorkedBy            *string // &"" ?? null value
+	WorkedBy            *string
 	Stage               string
 	CurrentStageDetails *StageDetails
 	PastStageDetails    StageDetailsList
