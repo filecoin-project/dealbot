@@ -39,7 +39,7 @@ func TestScheduledTask(t *testing.T) {
 	require.NoError(t, err)
 
 	worker := "test_worker"
-	task, scheduled, err := state.popTask(ctx, worker, &tasks.InProgress, nil)
+	task, scheduled, err := state.popTask(ctx, worker, tasks.InProgress, nil)
 	require.NoError(t, err)
 	require.Nil(t, task, "should not find unassigned task")
 
@@ -61,7 +61,7 @@ func TestScheduledTask(t *testing.T) {
 	assert.Equal(t, "", sch, "new task should not have schedule")
 
 	t.Log("popping generated task")
-	task, scheduled, err = state.popTask(ctx, worker, &tasks.InProgress, nil)
+	task, scheduled, err = state.popTask(ctx, worker, tasks.InProgress, nil)
 	require.NoError(t, err)
 	require.NotNil(t, task, "Did not find runable task")
 	require.False(t, scheduled, "should not have found scheduled task")
@@ -103,7 +103,7 @@ func TestScheduledTask(t *testing.T) {
 	assert.Equal(t, newTaskID, newTask.UUID, "wrong uuid for new task")
 
 	t.Log("popping next generated task")
-	task, scheduled, err = state.popTask(ctx, worker, &tasks.InProgress, nil)
+	task, scheduled, err = state.popTask(ctx, worker, tasks.InProgress, nil)
 	require.NoError(t, err)
 	require.NotNil(t, task, "Did not find runable task")
 	require.False(t, scheduled, "should not have found scheduled task")

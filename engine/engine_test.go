@@ -138,7 +138,7 @@ func TestEngineTiming(t *testing.T) {
 					retrievalTask := tasks.NewRetrievalTask("t1000", "qmXXXXX", false, strconv.Itoa(i))
 					task = tasks.NewTask(retrievalTask, nil)
 				}
-				task = task.Assign(host, &tasks.InProgress)
+				task = task.Assign(host, tasks.InProgress)
 				generatedTestTasks = append(generatedTestTasks, generatedTestTask{task, tt})
 			}
 

@@ -386,7 +386,7 @@ func newHarness(ctx context.Context, t *testing.T, connector state.DBConnector, 
 	be, err := state.NewStateDB(ctx, connector, migrator, "", pr, h.recorder)
 	require.NoError(t, err)
 	cc := cli.NewContext(cli.NewApp(), &flag.FlagSet{}, nil)
-	h.controller, err = controller.NewWithDependencies(cc, listener, nil, h.recorder, be, nil)
+	h.controller, err = controller.NewWithDependencies(cc, listener, h.recorder, be, nil)
 
 	h.serveErr = make(chan error, 1)
 	go func() {

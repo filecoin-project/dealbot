@@ -46,12 +46,10 @@ Dealbot Controller
 | Flag | Env Var | Function |
 | :--- | :--- | --- |
 | listen | `DEALBOT_LISTEN` | exposed `host:port` for daemons to contact and for tasking the system |
-| graphql | `DEALBOT_GRAPHQL_LISTEN` | exposed `host:port` for external public graphql queries |
 | metrics | `DEALBOT_METRICS` | either `prometheus` to expose a `/metrics` api, or `log` to write metrics to stdout |
 | identity | `DEALBOT_IDENTITY_KEYPAIR` | filepath of a libp2p identity to sign public records of dealbot activity |
 | driver | `DEALBOT_PERSISTENCE_DRIVER` | `postgres` |
 | dbloc | `DEALBOT_PERSISTENCE_CONN` |  db conn string from postgres |
-| gqlAccessToken | `DEALBOT_GRAPHQL_ACCESS_TOKEN` | a static key for querying non-public data from the graphql server |
 | devAssetDir| - | serve controller assets from disk rather the compiled binary for development |
 | basicauth | `DEALBOT_BASICAUTH` | basic authentication credentials if the controller is being served behind them to make xhrs work in that environment |
 | datapointlog | `DEALBOT_DATAPOINT_LOG` | file / stream to write out a json line for each completed task |
