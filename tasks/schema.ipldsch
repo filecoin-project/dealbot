@@ -1,0 +1,114 @@
+
+
+type StorageTask struct{
+    Miner String
+    MaxPriceAttoFIL Int
+    Size Int
+    StartOffset Int
+    FastRetrieval Bool
+    Verified Bool
+    Schedule optional String
+    ScheduleLimit optional String
+    Tag optional String
+    RetrievalSchedule optional String
+    RetrievalScheduleLimit optional String
+    RetrievalMaxPriceAttoFIL optional Int
+}
+
+type Logs struct{
+    Log String
+    UpdatedAt Int
+}
+
+type StageDetails struct{
+    Description optional String
+    ExpectedDuration optional String
+    Logs [Logs]
+    UpdatedAt optional Int
+}
+
+type UpdateTask struct{
+    Status Int
+    ErrorMessage optional String
+    Stage   optional String
+    CurrentStageDetails optional StageDetails
+    WorkedBy String
+    RunCount Int
+}
+
+type RetrievalTask struct {
+	Miner           String
+	PayloadCID      String
+	CARExport       Bool
+	Schedule        optional String
+	ScheduleLimit   optional String
+	Tag             optional String
+	MaxPriceAttoFIL optional Int
+}
+
+type StageDetailsList [StageDetails]
+
+type LinkStageDetailsList &StageDetailsList
+
+type FinishedTask struct{
+    Status Int
+    StartedAt Int
+    ErrorMessage optional String
+    RetrievalTask optional RetrievalTask
+    StorageTask optional StorageTask
+    DealID Int
+    MinerMultiAddr String
+    ClientApparentAddr String
+    MinerLatencyMS    optional Int
+    TimeToFirstByteMS optional Int
+    TimeToLastByteMS  optional Int
+    Events LinkStageDetailsList
+    MinerVersion       optional String
+    ClientVersion      optional String
+    Size               optional Int
+    PayloadCID         optional String
+    ProposalCID        optional String
+    DealIDString       optional String
+    MinerPeerID        optional String
+
+}
+
+type FinishedTasks [FinishedTask]
+
+type Link_FinishedTask &FinishedTask
+
+type AuthenticatedRecord struct {
+    Record    Link_FinishedTask
+	Signature Bytes
+}
+
+type AuthenticatedRecordList [AuthenticatedRecord]
+
+type RecordUpdate struct {
+	Records  AuthenticatedRecordList
+	SigPrev  Bytes
+	Previous optional Link
+}
+
+type PopTask struct {
+	Status   Int
+	WorkedBy String
+	Tags     [String]
+}
+
+
+type Task struct{
+    UUID String
+    Status  Int
+    WorkedBy optional String
+    Stage String
+    CurrentStageDetails optional StageDetails
+    PastStageDetails StageDetailsList
+    StartedAt optional Int
+    RunCount Int
+    ErrorMessage optional String
+    RetrievalTask optional RetrievalTask
+    StorageTask   optional StorageTask
+}
+
+type Tasks [Task]

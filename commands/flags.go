@@ -250,11 +250,6 @@ var ControllerFlags = []cli.Flag{
 		EnvVars: []string{"DEALBOT_LEGS_ADDRS"},
 	}),
 	altsrc.NewStringFlag(&cli.StringFlag{
-		Name:    "graphql",
-		Usage:   "host:port to bind graphql server on",
-		EnvVars: []string{"DEALBOT_GRAPHQL_LISTEN"},
-	}),
-	altsrc.NewStringFlag(&cli.StringFlag{
 		Name:    "metrics",
 		Usage:   "value of 'prometheus' or 'log'",
 		Aliases: []string{"m"},
@@ -276,11 +271,6 @@ var ControllerFlags = []cli.Flag{
 		Name:    "dbloc",
 		Usage:   "connection string for sql DB",
 		EnvVars: []string{"DEALBOT_PERSISTENCE_CONN"},
-	}),
-	altsrc.NewStringFlag(&cli.StringFlag{
-		Name:    "gqlAccessToken",
-		Usage:   "set an access secret for access to inprogress data over gql",
-		EnvVars: []string{"DEALBOT_GRAPHQL_ACCESS_TOKEN"},
 	}),
 	altsrc.NewStringFlag(&cli.StringFlag{
 		Name:    "daemon-driver",

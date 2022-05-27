@@ -73,20 +73,26 @@ func (c *Controller) getTasksHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	matchList := make([]tasks.Task, 0, len(taskList))
+	matchList := make([]*tasks.Task, 0, len(taskList))
 	for _, t := range taskList {
-		if t.StartedAt.IsAbsent() {
+		if t.StartedAt == nil {
 			if !strict {
 				matchList = append(matchList, t)
 			}
 			continue
 		}
-		if sa := t.StartedAt.Must().Time(); sa.After(dateStart) && sa.Before(dateEnd) {
+		if sa := t.StartedAt.Time(); sa.After(dateStart) && sa.Before(dateEnd) {
 			matchList = append(matchList, t)
 		}
 	}
-	tsks := tasks.Type.Tasks.Of(matchList)
-	dagjson.Encode(tsks.Representation(), w)
+	tsks := tasks.NewTasks(taskList)
+	nd, err := tsks.ToNode()
+	if err != nil {
+		log.Errorw("write result failed: backend", "err", err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	dagjson.Encode(nd, w)
 }
 
 func (c *Controller) drainHandler(w http.ResponseWriter, r *http.Request) {
@@ -167,7 +173,7 @@ func (c *Controller) popTaskHandler(w http.ResponseWriter, r *http.Request) {
 	defer logger.Debugw("request handled", "command", "pop task")
 
 	w.Header().Set("Content-Type", "application/json")
-	ptp := tasks.Type.PopTask.NewBuilder()
+	ptp := tasks.PopTaskPrototype.NewBuilder()
 	err := dagjson.Decode(ptp, r.Body)
 	if err != nil {
 		log.Errorw("UpdateTaskRequest json decode", "err", err.Error())
@@ -175,17 +181,33 @@ func (c *Controller) popTaskHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	task, err := c.db.AssignTask(r.Context(), ptp.Build().(tasks.PopTask))
+	n := ptp.Build()
+
+	popTask, err := tasks.UnwrapPopTask(n)
+	if err != nil {
+		log.Errorw("Unwrap PopTask ipld node: backend", "err", err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	task, err := c.db.AssignTask(r.Context(), popTask)
 	if err != nil {
 		log.Errorw("popTask failed: backend", "err", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+
 	// If none are available, we return a JSON "null".
 	if task == nil {
 		w.WriteHeader(http.StatusNoContent)
 	} else {
-		dagjson.Encode(task.Representation(), w)
+		tnode, err := task.ToNode()
+		if err != nil {
+			log.Errorw("Convert task ipld node", "err", err.Error())
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		dagjson.Encode(tnode, w)
 	}
 }
 
@@ -196,7 +218,7 @@ func (c *Controller) updateTaskHandler(w http.ResponseWriter, r *http.Request) {
 	defer logger.Debugw("request handled", "command", "update task")
 
 	w.Header().Set("Content-Type", "application/json")
-	utp := tasks.Type.UpdateTask.NewBuilder()
+	utp := tasks.UpdatedTaskPrototype.NewBuilder()
 	err := dagjson.Decode(utp, r.Body)
 	if err != nil {
 		log.Errorw("UpdateTaskRequest json decode", "err", err.Error())
@@ -204,9 +226,18 @@ func (c *Controller) updateTaskHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	n := utp.Build()
+
+	updateTask, err := tasks.UnwrapUpdateTask(n)
+	if err != nil {
+		log.Errorw("Unwrap UpdateTask ipld node: backend", "err", err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	vars := mux.Vars(r)
 	uuid := vars["uuid"]
-	task, err := c.db.Update(r.Context(), uuid, utp.Build().(tasks.UpdateTask))
+	task, err := c.db.Update(r.Context(), uuid, updateTask)
 	if err != nil {
 		log.Errorw("UpdateTaskRequest db update", "err", err.Error())
 		if errors.Is(err, sql.ErrNoRows) {
@@ -217,8 +248,15 @@ func (c *Controller) updateTaskHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	tnode, err := task.ToNode()
+	if err != nil {
+		log.Errorw("Convert task ipld node", "err", err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	w.WriteHeader(http.StatusOK)
-	dagjson.Encode(task.Representation(), w)
+	dagjson.Encode(tnode, w)
 }
 
 func mustString(s string, _ error) string {
@@ -232,13 +270,20 @@ func (c *Controller) newStorageTaskHandler(w http.ResponseWriter, r *http.Reques
 	defer logger.Debugw("request handled", "command", "create task")
 
 	w.Header().Set("Content-Type", "application/json")
-	stp := tasks.Type.StorageTask.NewBuilder()
+	stp := tasks.StorageTaskPrototype.NewBuilder()
 	if err := dagjson.Decode(stp, r.Body); err != nil {
 		log.Errorw("StorageTask json decode", "err", err.Error())
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	storageTask := stp.Build().(tasks.StorageTask)
+	n := stp.Build()
+
+	storageTask, err := tasks.UnwrapStorageTask(n)
+	if err != nil {
+		log.Errorw("Unwrap StorageTask ipld node: backend", "err", err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 
 	task, err := c.db.NewStorageTask(r.Context(), storageTask)
 	if err != nil {
@@ -247,7 +292,14 @@ func (c *Controller) newStorageTaskHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	taskURL, err := r.URL.Parse("/tasks/" + mustString(task.UUID.AsString()))
+	tnode, err := task.ToNode()
+	if err != nil {
+		log.Errorw("Convert task ipld node", "err", err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	taskURL, err := r.URL.Parse("/tasks/" + task.UUID)
 	if err != nil {
 		log.Errorw("StorageTask parse URL", "err", err.Error())
 		w.WriteHeader(http.StatusBadRequest)
@@ -256,7 +308,7 @@ func (c *Controller) newStorageTaskHandler(w http.ResponseWriter, r *http.Reques
 
 	w.Header().Set("Location", taskURL.String())
 	w.WriteHeader(http.StatusCreated)
-	dagjson.Encode(task.Representation(), w)
+	dagjson.Encode(tnode, w)
 }
 
 func (c *Controller) newRetrievalTaskHandler(w http.ResponseWriter, r *http.Request) {
@@ -267,13 +319,20 @@ func (c *Controller) newRetrievalTaskHandler(w http.ResponseWriter, r *http.Requ
 
 	w.Header().Set("Content-Type", "application/json")
 
-	rtp := tasks.Type.RetrievalTask.NewBuilder()
+	rtp := tasks.RetrievalTaskPrototype.NewBuilder()
 	if err := dagjson.Decode(rtp, r.Body); err != nil {
 		log.Errorw("RetrievalTask json decode", "err", err.Error())
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	retrievalTask := rtp.Build().(tasks.RetrievalTask)
+	n := rtp.Build()
+
+	retrievalTask, err := tasks.UnwrapRetrievalTask(n)
+	if err != nil {
+		log.Errorw("Unwrap RetrievalTask ipld node: backend", "err", err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 
 	task, err := c.db.NewRetrievalTask(r.Context(), retrievalTask)
 	if err != nil {
@@ -282,16 +341,22 @@ func (c *Controller) newRetrievalTaskHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	taskURL, err := r.URL.Parse("/tasks/" + mustString(task.UUID.AsString()))
+	taskURL, err := r.URL.Parse("/tasks/" + task.UUID)
 	if err != nil {
 		log.Errorw("RetrievalTask parse URL", "err", err.Error())
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+	tnode, err := task.ToNode()
+	if err != nil {
+		log.Errorw("Convert task ipld node", "err", err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 
 	w.Header().Set("Location", taskURL.String())
 	w.WriteHeader(http.StatusCreated)
-	dagjson.Encode(task.Representation(), w)
+	dagjson.Encode(tnode, w)
 }
 
 func (c *Controller) getTaskHandler(w http.ResponseWriter, r *http.Request) {
@@ -317,6 +382,13 @@ func (c *Controller) getTaskHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	tnode, err := task.ToNode()
+	if err != nil {
+		log.Errorw("convert Task ipld node error", "err", err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	if _, set := vars["parsed"]; set {
 		ls := cidlink.DefaultLinkSystem()
 		ms := memstore.Store{}
@@ -329,9 +401,15 @@ func (c *Controller) getTaskHandler(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		dagjson.Encode(finished, w)
+		fnode, err := finished.ToNode()
+		if err != nil {
+			log.Errorw("unwrap FinishedTask error", "err", err.Error())
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		dagjson.Encode(fnode, w)
 	} else {
-		dagjson.Encode(task.Representation(), w)
+		dagjson.Encode(tnode, w)
 	}
 }
 

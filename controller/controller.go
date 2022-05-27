@@ -15,7 +15,6 @@ import (
 	"path"
 	"time"
 
-	"github.com/filecoin-project/dealbot/controller/graphql"
 	"github.com/filecoin-project/dealbot/controller/publisher"
 	"github.com/filecoin-project/dealbot/controller/spawn"
 	"github.com/filecoin-project/dealbot/controller/state"
@@ -49,9 +48,7 @@ var (
 
 type Controller struct {
 	server          *http.Server
-	gserver         *http.Server
 	l               net.Listener
-	gl              net.Listener
 	doneCh          chan struct{}
 	db              state.State
 	basicauth       string
@@ -72,13 +69,6 @@ func New(ctx *cli.Context) (*Controller, error) {
 	l, err := net.Listen("tcp", ctx.String("listen"))
 	if err != nil {
 		return nil, err
-	}
-	var gl net.Listener
-	if ctx.IsSet("graphql") {
-		gl, err = net.Listen("tcp", ctx.String("graphql"))
-		if err != nil {
-			return nil, err
-		}
 	}
 
 	var key crypto.PrivKey
@@ -182,7 +172,7 @@ func New(ctx *cli.Context) (*Controller, error) {
 		return nil, err
 	}
 
-	return NewWithDependencies(ctx, l, gl, recorder, backend, pub)
+	return NewWithDependencies(ctx, l, recorder, backend, pub)
 }
 
 type logEcapsulator struct {
@@ -207,7 +197,7 @@ func CorsMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func NewWithDependencies(ctx *cli.Context, listener, graphqlListener net.Listener, recorder metrics.MetricsRecorder, backend state.State, pub publisher.Publisher) (*Controller, error) {
+func NewWithDependencies(ctx *cli.Context, listener net.Listener, recorder metrics.MetricsRecorder, backend state.State, pub publisher.Publisher) (*Controller, error) {
 	srv := new(Controller)
 	srv.db = backend
 	srv.pub = pub
@@ -285,21 +275,7 @@ func NewWithDependencies(ctx *cli.Context, listener, graphqlListener net.Listene
 		ReadTimeout:  30 * time.Second,
 	}
 
-	if graphqlListener != nil {
-		gqlHandler, err := graphql.GetHandler(srv.db, ctx.String("gqlAccessToken"))
-		if err != nil {
-			return nil, err
-		}
-
-		srv.gserver = &http.Server{
-			Handler:      handlers.LoggingHandler(&logEcapsulator{log}, gqlHandler),
-			WriteTimeout: 30 * time.Second,
-			ReadTimeout:  30 * time.Second,
-		}
-	}
-
 	srv.l = listener
-	srv.gl = graphqlListener
 	srv.metricsRecorder = recorder
 	return srv, nil
 }
@@ -321,12 +297,6 @@ func (c *Controller) Serve() error {
 	default:
 	}
 
-	if c.gserver != nil {
-		go func() {
-			log.Infow("graphql listening", "addr", c.gl.Addr().String())
-			c.gserver.Serve(c.gl)
-		}()
-	}
 	log.Infow("controller listening", "addr", c.Addr())
 	return c.server.Serve(c.l)
 }
@@ -341,9 +311,6 @@ func (c *Controller) Port() int {
 
 func (c *Controller) Shutdown(ctx context.Context) error {
 	defer close(c.doneCh)
-	if c.gserver != nil {
-		c.gserver.Shutdown(ctx)
-	}
 	if c.gateway != nil {
 		c.nodeCloser()
 	}

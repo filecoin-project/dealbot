@@ -40,8 +40,8 @@ func (j *job) Run() {
 	j.runCount++
 }
 
-func (s *stateDB) scheduleTask(task tasks.Task) error {
-	taskID := task.UUID.String()
+func (s *stateDB) scheduleTask(task *tasks.Task) error {
+	taskID := task.UUID
 	taskSchedule, limit := task.Schedule()
 	if taskSchedule == "" {
 		log.Infow("task became unscheduled, unassigning from scheduler", "taskID", taskID)
@@ -119,7 +119,7 @@ func (s *stateDB) runTask(taskID, schedule, limit string, expireAt time.Time, ru
 	// Check for a previous generated task that is not yet finished
 	var count int
 	err = s.transact(ctx, func(tx *sql.Tx) error {
-		return s.db().QueryRowContext(ctx, countChildTasksLTStatusSQL, taskID, tasks.Successful.Int()).Scan(&count)
+		return s.db().QueryRowContext(ctx, countChildTasksLTStatusSQL, taskID, int64(tasks.Successful)).Scan(&count)
 	})
 	if err != nil {
 		log.Errorw("could not check for unfinished previous task", "err", err)
@@ -148,7 +148,7 @@ func (s *stateDB) runTask(taskID, schedule, limit string, expireAt time.Time, ru
 }
 
 // createRunableTask generates a new runable (not scheduled) task from a scheduled task
-func (s *stateDB) createRunableTask(task tasks.Task, tag, parent string, runCount int) (string, error) {
+func (s *stateDB) createRunableTask(task *tasks.Task, tag, parent string, runCount int) (string, error) {
 	newTaskID := uuid.New().String()
 	runableTask := task.MakeRunable(newTaskID, runCount)
 	err := s.saveTask(context.Background(), runableTask, tag, parent)
@@ -175,7 +175,7 @@ func (s *stateDB) unassignScheduledTask(taskID string) error {
 // schedules them.  This should only be called during controller startup to
 // recover tasks that were scheduled during a previous run of the controller.
 func (s *stateDB) recoverScheduledTasks(ctx context.Context) (int, error) {
-	var tasklist []tasks.Task
+	var tasklist []*tasks.Task
 	err := s.transact(ctx, func(tx *sql.Tx) error {
 		rows, err := tx.QueryContext(ctx, getAllTasksForOwnerSQL, schedulerOwner)
 		if err != nil {
@@ -189,11 +189,14 @@ func (s *stateDB) recoverScheduledTasks(ctx context.Context) (int, error) {
 			if err = rows.Scan(&serialized); err != nil {
 				return err
 			}
-			tp := tasks.Type.Task.NewBuilder()
+			tp := tasks.TaskPrototype.NewBuilder()
 			if err = dagjson.Decode(tp, bytes.NewBufferString(serialized)); err != nil {
 				return err
 			}
-			task := tp.Build().(tasks.Task)
+			task, err := tasks.UnwrapTask(tp.Build())
+			if err != nil {
+				return err
+			}
 			tasklist = append(tasklist, task)
 		}
 		return nil
@@ -206,7 +209,7 @@ func (s *stateDB) recoverScheduledTasks(ctx context.Context) (int, error) {
 	for i := range tasklist {
 		err = s.scheduleTask(tasklist[i])
 		if err != nil {
-			log.Errorw("cannot reschedule task", "taskID", tasklist[i].UUID.String(), "err", err)
+			log.Errorw("cannot reschedule task", "taskID", tasklist[i].UUID, "err", err)
 		} else {
 			recovered++
 		}

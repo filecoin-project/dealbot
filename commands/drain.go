@@ -43,8 +43,8 @@ func isActive(ctx context.Context, cli *client.Client, host string) bool {
 		return false
 	}
 	for _, t := range tasks {
-		if t.FieldWorkedBy().Exists() && t.FieldWorkedBy().Must().String() == host {
-			if t.FieldStatus().Int() < 3 {
+		if t.WorkedBy != nil && *t.WorkedBy == host {
+			if int(t.Status) < 3 {
 				return true
 			}
 		}

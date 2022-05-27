@@ -244,13 +244,13 @@ func (s *stateDB) db() *sql.DB {
 }
 
 // Get returns a specific task identified by ID
-func (s *stateDB) Get(ctx context.Context, taskID string) (tasks.Task, error) {
+func (s *stateDB) Get(ctx context.Context, taskID string) (*tasks.Task, error) {
 	task, _, err := s.getWithTag(ctx, taskID)
 	return task, err
 }
 
-func (s *stateDB) getWithTag(ctx context.Context, taskID string) (tasks.Task, string, error) {
-	var task tasks.Task
+func (s *stateDB) getWithTag(ctx context.Context, taskID string) (*tasks.Task, string, error) {
+	var task *tasks.Task
 	var tag string
 	err := s.transact(ctx, func(tx *sql.Tx) error {
 		var serialized string
@@ -263,11 +263,14 @@ func (s *stateDB) getWithTag(ctx context.Context, taskID string) (tasks.Task, st
 			return err
 		}
 
-		tp := tasks.Type.Task.NewBuilder()
+		tp := tasks.TaskPrototype.NewBuilder()
 		if err = dagjson.Decode(tp, bytes.NewBufferString(serialized)); err != nil {
 			return err
 		}
-		task = tp.Build().(tasks.Task)
+		task, err = tasks.UnwrapTask(tp.Build())
+		if err != nil {
+			return err
+		}
 
 		if tagString.Valid {
 			tag = tagString.String
@@ -281,8 +284,8 @@ func (s *stateDB) getWithTag(ctx context.Context, taskID string) (tasks.Task, st
 }
 
 // Get returns a specific task identified by CID
-func (s *stateDB) GetByCID(ctx context.Context, taskCID cid.Cid) (tasks.Task, error) {
-	var task tasks.Task
+func (s *stateDB) GetByCID(ctx context.Context, taskCID cid.Cid) (*tasks.Task, error) {
+	var task *tasks.Task
 	err := s.transact(ctx, func(tx *sql.Tx) error {
 		var serialized string
 		err := tx.QueryRowContext(ctx, getTaskByCidSQL, taskCID.KeyString()).Scan(&serialized)
@@ -290,11 +293,14 @@ func (s *stateDB) GetByCID(ctx context.Context, taskCID cid.Cid) (tasks.Task, er
 			return err
 		}
 
-		tp := tasks.Type.Task.NewBuilder()
+		tp := tasks.TaskPrototype.NewBuilder()
 		if err := dagjson.Decode(tp, bytes.NewBufferString(serialized)); err != nil {
 			return err
 		}
-		task = tp.Build().(tasks.Task)
+		task, err = tasks.UnwrapTask(tp.Build())
+		if err != nil {
+			return err
+		}
 		return nil
 	})
 	if err != nil {
@@ -304,8 +310,8 @@ func (s *stateDB) GetByCID(ctx context.Context, taskCID cid.Cid) (tasks.Task, er
 }
 
 // GetAll queries all tasks from the DB
-func (s *stateDB) GetAll(ctx context.Context) ([]tasks.Task, error) {
-	var tasklist []tasks.Task
+func (s *stateDB) GetAll(ctx context.Context) ([]*tasks.Task, error) {
+	var tasklist []*tasks.Task
 	err := s.transact(ctx, func(tx *sql.Tx) error {
 		rows, err := tx.QueryContext(ctx, getAllTasksSQL)
 		if err != nil {
@@ -319,11 +325,14 @@ func (s *stateDB) GetAll(ctx context.Context) ([]tasks.Task, error) {
 			if err = rows.Scan(&serialized); err != nil {
 				return err
 			}
-			tp := tasks.Type.Task.NewBuilder()
+			tp := tasks.TaskPrototype.NewBuilder()
 			if err = dagjson.Decode(tp, bytes.NewBufferString(serialized)); err != nil {
 				return err
 			}
-			task := tp.Build().(tasks.Task)
+			task, err := tasks.UnwrapTask(tp.Build())
+			if err != nil {
+				return err
+			}
 			tasklist = append(tasklist, task)
 		}
 		return nil
@@ -342,16 +351,16 @@ func (s *stateDB) GetAll(ctx context.Context) ([]tasks.Task, error) {
 // If the request specifies no tags, then this selects any task.  If the
 // request specifies tags, then this selects any task with a tag matching one
 // of the tags in the request, or any untagged task.
-func (s *stateDB) AssignTask(ctx context.Context, req tasks.PopTask) (tasks.Task, error) {
-	if req.WorkedBy.String() == "" {
+func (s *stateDB) AssignTask(ctx context.Context, req *tasks.PopTask) (*tasks.Task, error) {
+	if req.WorkedBy == "" {
 		return nil, errors.New("PopTask request must specify WorkedBy")
 	}
-	if req.Status == *tasks.Available {
+	if req.Status == tasks.Available {
 		return nil, fmt.Errorf("cannot assign %q status to task", req.Status.String())
 	}
 
 	// Check if this worker is being drained
-	draining, err := s.drainingWorker(ctx, req.WorkedBy.String())
+	draining, err := s.drainingWorker(ctx, req.WorkedBy)
 	if err != nil {
 		return nil, err
 	}
@@ -360,13 +369,11 @@ func (s *stateDB) AssignTask(ctx context.Context, req tasks.PopTask) (tasks.Task
 	}
 
 	var tags []interface{}
-	if req.Tags.Exists() {
-		reqTags := req.Tags.Must()
-		tags = make([]interface{}, 0, reqTags.Length())
-		iter := reqTags.Iterator()
-		for !iter.Done() {
-			_, v := iter.Next()
-			t := strings.TrimSpace(v.String())
+	if req.Tags != nil {
+		reqTags := req.Tags
+		tags = make([]interface{}, 0, int64(len(reqTags)))
+		for _, v := range reqTags {
+			t := strings.TrimSpace(v)
 			if t == "" {
 				continue
 			}
@@ -376,9 +383,9 @@ func (s *stateDB) AssignTask(ctx context.Context, req tasks.PopTask) (tasks.Task
 
 	// Keep popping tasks until there a runanable task is found or until there
 	// are no more tasks
-	var assigned tasks.Task
+	var assigned *tasks.Task
 	for {
-		task, scheduled, err := s.popTask(ctx, req.WorkedBy.String(), &req.Status, tags)
+		task, scheduled, err := s.popTask(ctx, req.WorkedBy, req.Status, tags)
 		if err != nil {
 			return nil, err
 		}
@@ -394,7 +401,7 @@ func (s *stateDB) AssignTask(ctx context.Context, req tasks.PopTask) (tasks.Task
 		// Got a scheduled task, so schedule it.
 		err = s.scheduleTask(task)
 		if err != nil {
-			log.Errorw("failed to schedule task", "taskID", task.UUID.String(), "err", err)
+			log.Errorw("failed to schedule task", "taskID", task.UUID, "err", err)
 		}
 	}
 
@@ -427,8 +434,8 @@ func (s *stateDB) drainingWorker(ctx context.Context, worker string) (bool, erro
 	return draining, nil
 }
 
-func (s *stateDB) popTask(ctx context.Context, workedBy string, status tasks.Status, tags []interface{}) (tasks.Task, bool, error) {
-	var assigned tasks.Task
+func (s *stateDB) popTask(ctx context.Context, workedBy string, status tasks.Status, tags []interface{}) (*tasks.Task, bool, error) {
+	var assigned *tasks.Task
 	var scheduled bool
 
 	err := s.transact(ctx, func(tx *sql.Tx) error {
@@ -447,11 +454,14 @@ func (s *stateDB) popTask(ctx context.Context, workedBy string, status tasks.Sta
 			return err
 		}
 
-		tp := tasks.Type.Task.NewBuilder()
+		tp := tasks.TaskPrototype.NewBuilder()
 		if err = dagjson.Decode(tp, bytes.NewBufferString(serialized)); err != nil {
 			return fmt.Errorf("could not decode task (%s): %w", serialized, err)
 		}
-		task := tp.Build().(tasks.Task)
+		task, err := tasks.UnwrapTask(tp.Build())
+		if err != nil {
+			return err
+		}
 
 		if task.HasSchedule() {
 			// This task has a schedule, but is not owned by the scheduler.
@@ -473,7 +483,12 @@ func (s *stateDB) popTask(ctx context.Context, workedBy string, status tasks.Sta
 
 		assigned = task.Assign(workedBy, status)
 
-		lnk, data, err := serializeToJSON(ctx, assigned.Representation())
+		n, err := assigned.ToNode()
+		if err != nil {
+			return err
+		}
+
+		lnk, data, err := serializeToJSON(ctx, n)
 		if err != nil {
 			return err
 		}
@@ -485,7 +500,7 @@ func (s *stateDB) popTask(ctx context.Context, workedBy string, status tasks.Sta
 		}
 
 		// Set new status for task
-		_, err = tx.ExecContext(ctx, setTaskStatusSQL, taskID, status.Int(), time.Now())
+		_, err = tx.ExecContext(ctx, setTaskStatusSQL, taskID, int64(status), time.Now())
 		if err != nil {
 			return fmt.Errorf("could not update status task: %w", err)
 		}
@@ -498,10 +513,10 @@ func (s *stateDB) popTask(ctx context.Context, workedBy string, status tasks.Sta
 	return assigned, scheduled, nil
 }
 
-func (s *stateDB) Update(ctx context.Context, taskID string, req tasks.UpdateTask) (tasks.Task, error) {
-	var task tasks.Task
+func (s *stateDB) Update(ctx context.Context, taskID string, req *tasks.UpdateTask) (*tasks.Task, error) {
+	var task *tasks.Task
 
-	var downstreamRetrieval tasks.RetrievalTask
+	var downstreamRetrieval *tasks.RetrievalTask
 
 	err := s.transact(ctx, func(tx *sql.Tx) error {
 		var serialized string
@@ -510,19 +525,22 @@ func (s *stateDB) Update(ctx context.Context, taskID string, req tasks.UpdateTas
 			return err
 		}
 
-		tp := tasks.Type.Task.NewBuilder()
+		tp := tasks.TaskPrototype.NewBuilder()
 		if err = dagjson.Decode(tp, bytes.NewBufferString(serialized)); err != nil {
 			return err
 		}
-		task = tp.Build().(tasks.Task)
+		task, err = tasks.UnwrapTask(tp.Build())
+		if err != nil {
+			return err
+		}
 
-		if !task.WorkedBy.Exists() {
+		if task.WorkedBy == nil {
 			return ErrNotAssigned
 		}
-		twb := task.WorkedBy.Must().String()
+		twb := *(task.WorkedBy)
 		if twb == "" {
 			return ErrNotAssigned
-		} else if req.WorkedBy.String() != twb {
+		} else if req.WorkedBy != twb {
 			return ErrWrongWorker
 		}
 
@@ -531,7 +549,12 @@ func (s *stateDB) Update(ctx context.Context, taskID string, req tasks.UpdateTas
 			return err
 		}
 
-		lnk, data, err := serializeToJSON(ctx, updatedTask.Representation())
+		utNode, err := updatedTask.ToNode()
+		if err != nil {
+			return err
+		}
+
+		lnk, data, err := serializeToJSON(ctx, utNode)
 		if err != nil {
 			return err
 		}
@@ -543,27 +566,31 @@ func (s *stateDB) Update(ctx context.Context, taskID string, req tasks.UpdateTas
 		}
 
 		// publish a task event update as neccesary
-		if (req.Stage.Exists() && req.Stage.Must().String() != task.Stage.String()) || (req.Status.Int() != task.Status.Int()) {
-			runCount := updatedTask.RunCount.Int()
+		if (req.Stage != nil && *(req.Stage) != task.Stage) || (req.Status != task.Status) {
+			runCount := updatedTask.RunCount
 			if runCount < 1 {
 				return errors.New("runCount must be at least 1")
 			}
 
-			_, err = tx.ExecContext(ctx, upsertTaskStatusSQL, taskID, updatedTask.Status.Int(), updatedTask.Stage.String(), runCount, time.Now())
+			_, err = tx.ExecContext(ctx, upsertTaskStatusSQL, taskID, updatedTask.Status, updatedTask.Stage, runCount, time.Now())
 			if err != nil {
 				return err
 			}
 		}
 
 		// finish if neccesary
-		if updatedTask.Status == *tasks.Successful || updatedTask.Status == *tasks.Failed {
+		if updatedTask.Status == tasks.Successful || updatedTask.Status == tasks.Failed {
 			finalized, err := updatedTask.Finalize(ctx, txLS(ctx, tx), false)
+			if err != nil {
+				return err
+			}
+			fnode, err := finalized.ToNode()
 			if err != nil {
 				return err
 			}
 
 			ls := txLS(ctx, tx)
-			flink, err := ls.Store(ipld.LinkContext{}, linkProto, finalized.Representation())
+			flink, err := ls.Store(ipld.LinkContext{}, linkProto, fnode)
 			if err != nil {
 				return err
 			}
@@ -571,31 +598,31 @@ func (s *stateDB) Update(ctx context.Context, taskID string, req tasks.UpdateTas
 			if _, err := tx.ExecContext(ctx, addHeadSQL,
 				flink.(cidlink.Link).Cid.String(),
 				time.Now(),
-				req.WorkedBy.String(),
+				req.WorkedBy,
 				UNATTACHED_RECORD); err != nil {
 				return err
 			}
 
-			if updatedTask.Status == *tasks.Successful &&
-				finalized.StorageTask.Exists() &&
-				finalized.StorageTask.Must().RetrievalSchedule.Exists() {
+			if updatedTask.Status == tasks.Successful &&
+				finalized.StorageTask != nil &&
+				finalized.StorageTask.RetrievalSchedule != nil {
 				// we're in a tx context already. we'll enqueue these and put them in non-atomically.
 				tag := ""
-				if finalized.StorageTask.Must().Tag.Exists() {
-					tag = finalized.StorageTask.Must().Tag.Must().String()
+				if finalized.StorageTask.Tag != nil {
+					tag = *(finalized.StorageTask.Tag)
 				}
 				var maxPrice int64 = 0
-				if finalized.StorageTask.Must().RetrievalMaxPriceAttoFIL.Exists() {
-					maxPrice = finalized.StorageTask.Must().RetrievalMaxPriceAttoFIL.Must().Int()
+				if finalized.StorageTask.RetrievalMaxPriceAttoFIL != nil {
+					maxPrice = *(finalized.StorageTask.RetrievalMaxPriceAttoFIL)
 				}
 
-				ret := tasks.Type.RetrievalTask.OfSchedule(
-					finalized.StorageTask.Must().Miner.String(),
-					finalized.PayloadCID.Must().String(),
+				ret := tasks.NewRetrievalTaskWithSchedule(
+					finalized.StorageTask.Miner,
+					*(finalized.PayloadCID),
 					false,
 					tag,
-					finalized.StorageTask.Must().RetrievalSchedule.Must().String(),
-					finalized.StorageTask.Must().RetrievalScheduleLimit.Must().String(),
+					*(finalized.StorageTask.RetrievalSchedule),
+					*(finalized.StorageTask.RetrievalScheduleLimit),
 					maxPrice,
 				)
 				downstreamRetrieval = ret
@@ -627,14 +654,19 @@ func (s *stateDB) Update(ctx context.Context, taskID string, req tasks.UpdateTas
 	return task, nil
 }
 
-func (s *stateDB) log(ctx context.Context, task tasks.Task, tx *sql.Tx) {
+func (s *stateDB) log(ctx context.Context, task *tasks.Task, tx *sql.Tx) {
 	finalized, err := task.Finalize(ctx, txLS(ctx, tx), true)
 	if err != nil {
 		return
 	}
 
+	fnode, err := finalized.ToNode()
+	if err != nil {
+		return
+	}
+
 	taskBytes := bytes.Buffer{}
-	err = dumpjson.Marshal(finalized, tokenjson.NewEncoder(&taskBytes, tokenjson.EncodeOptions{}), true)
+	err = dumpjson.Marshal(fnode, tokenjson.NewEncoder(&taskBytes, tokenjson.EncodeOptions{}), true)
 	if err != nil {
 		return
 	}
@@ -643,7 +675,7 @@ func (s *stateDB) log(ctx context.Context, task tasks.Task, tx *sql.Tx) {
 		if err := json.Unmarshal(taskBytes.Bytes(), &rawJSON); err != nil {
 			return
 		}
-		log.Infow("Task Finalized", "taskID", task.UUID.String(), "taskOutput", rawJSON)
+		log.Infow("Task Finalized", "taskID", task.UUID, "taskOutput", rawJSON)
 		if _, err := s.outlog.Write(taskBytes.Bytes()); err != nil {
 			log.Warnw("could not write to outlog", "error", err)
 		}
@@ -671,11 +703,11 @@ func txLS(ctx context.Context, tx *sql.Tx) ipld.LinkSystem {
 	return ls
 }
 
-func (s *stateDB) NewStorageTask(ctx context.Context, storageTask tasks.StorageTask) (tasks.Task, error) {
-	task := tasks.Type.Task.New(nil, storageTask)
+func (s *stateDB) NewStorageTask(ctx context.Context, storageTask *tasks.StorageTask) (*tasks.Task, error) {
+	task := tasks.NewTask(nil, storageTask)
 	var tag string
-	if storageTask.Tag.Exists() {
-		tag = storageTask.Tag.Must().String()
+	if storageTask.Tag != nil {
+		tag = *(storageTask.Tag)
 	}
 	// save the update back to DB
 	if err := s.saveTask(ctx, task, tag, ""); err != nil {
@@ -685,11 +717,11 @@ func (s *stateDB) NewStorageTask(ctx context.Context, storageTask tasks.StorageT
 	return task, nil
 }
 
-func (s *stateDB) NewRetrievalTask(ctx context.Context, retrievalTask tasks.RetrievalTask) (tasks.Task, error) {
-	task := tasks.Type.Task.New(retrievalTask, nil)
+func (s *stateDB) NewRetrievalTask(ctx context.Context, retrievalTask *tasks.RetrievalTask) (*tasks.Task, error) {
+	task := tasks.NewTask(retrievalTask, nil)
 	var tag string
-	if retrievalTask.Tag.Exists() {
-		tag = retrievalTask.Tag.Must().String()
+	if retrievalTask.Tag != nil {
+		tag = *(retrievalTask.Tag)
 	}
 
 	// save the update back to DB
@@ -718,7 +750,7 @@ func (s *stateDB) TaskHistory(ctx context.Context, taskID string) ([]tasks.TaskE
 				return err
 			}
 			history = append(history, tasks.TaskEvent{
-				Status: tasks.Type.Status.Of(status),
+				Status: tasks.Status(status),
 				Stage:  stage,
 				Run:    run,
 				At:     ts,
@@ -780,8 +812,12 @@ func withTransaction(ctx context.Context, db *sql.DB, f func(*sql.Tx) error) (er
 }
 
 // createTask inserts a new task and new task status into the database
-func (s *stateDB) saveTask(ctx context.Context, task tasks.Task, tag, parent string) error {
-	lnk, data, err := serializeToJSON(ctx, task.Representation())
+func (s *stateDB) saveTask(ctx context.Context, task *tasks.Task, tag, parent string) error {
+	tnode, err := task.ToNode()
+	if err != nil {
+		return err
+	}
+	lnk, data, err := serializeToJSON(ctx, tnode)
 	if err != nil {
 		return err
 	}
@@ -802,7 +838,7 @@ func (s *stateDB) saveTask(ctx context.Context, task tasks.Task, tag, parent str
 		}
 	}
 
-	taskID := task.UUID.String()
+	taskID := task.UUID
 	scheduledTask := task.HasSchedule()
 
 	err = s.transact(ctx, func(tx *sql.Tx) error {
@@ -811,7 +847,7 @@ func (s *stateDB) saveTask(ctx context.Context, task tasks.Task, tag, parent str
 			return err
 		}
 
-		if _, err := tx.ExecContext(ctx, setTaskStatusSQL, taskID, tasks.Available.Int(), now); err != nil {
+		if _, err := tx.ExecContext(ctx, setTaskStatusSQL, taskID, int64(tasks.Available), now); err != nil {
 			return err
 		}
 
@@ -847,8 +883,8 @@ func (s *stateDB) countTasks(ctx context.Context) (int, error) {
 }
 
 // GetHead gets the latest record update from the controller.
-func (s *stateDB) GetHead(ctx context.Context, walkback int) (tasks.RecordUpdate, error) {
-	var recordUpdate tasks.RecordUpdate
+func (s *stateDB) GetHead(ctx context.Context, walkback int) (*tasks.RecordUpdate, error) {
+	var recordUpdate *tasks.RecordUpdate
 	err := s.transact(ctx, func(tx *sql.Tx) error {
 		var c string
 		err := tx.QueryRowContext(ctx, queryHeadSQL, LATEST_UPDATE, "").Scan(&c)
@@ -861,21 +897,27 @@ func (s *stateDB) GetHead(ctx context.Context, walkback int) (tasks.RecordUpdate
 		}
 
 		ls := txLS(ctx, tx)
-		ru, raw, err := ls.LoadPlusRaw(ipld.LinkContext{}, cidlink.Link{Cid: cidLink}, tasks.Type.RecordUpdate)
+		ru, raw, err := ls.LoadPlusRaw(ipld.LinkContext{}, cidlink.Link{Cid: cidLink}, tasks.RecordUpdatePrototype)
 		if err != nil {
 			return fmt.Errorf("failed to parse %s ('%s'): %w", cidLink, raw, err)
 		}
-		recordUpdate = ru.(tasks.RecordUpdate)
+		recordUpdate, err = tasks.UnwrapRecordUpdate(ru)
+		if err != nil {
+			return fmt.Errorf("failed to unwrap RecordUpdate node, %w", err)
+		}
 		for walkback > 0 {
-			if !recordUpdate.Previous.Exists() {
+			if recordUpdate.Previous == nil {
 				return fmt.Errorf("no previous update to walk back to")
 			}
 
-			ru, err := ls.Load(ipld.LinkContext{}, recordUpdate.Previous.Must().Link(), tasks.Type.RecordUpdate)
+			ru, err := ls.Load(ipld.LinkContext{}, *(recordUpdate.Previous), tasks.RecordUpdatePrototype)
 			if err != nil {
 				return err
 			}
-			recordUpdate = ru.(tasks.RecordUpdate)
+			recordUpdate, err = tasks.UnwrapRecordUpdate(ru)
+			if err != nil {
+				return fmt.Errorf("failed to unwrap RecordUpdate node, %w", err)
+			}
 
 			walkback--
 		}
@@ -929,7 +971,7 @@ func (s *stateDB) PublishRecordsFrom(ctx context.Context, worker string) (cid.Ci
 			lnks = append(lnks, lnk)
 		}
 
-		rcrds := []tasks.AuthenticatedRecord{}
+		var rcrds []*tasks.AuthenticatedRecord
 
 		updateHeadStmt, err := tx.PrepareContext(ctx, updateHeadSQL)
 		if err != nil {
@@ -949,13 +991,16 @@ func (s *stateDB) PublishRecordsFrom(ctx context.Context, worker string) (cid.Ci
 
 			// check if we should include it.
 			ls := txLS(ctx, tx)
-			rcrdRdr, err := ls.Load(ipld.LinkContext{}, cidlink.Link{c}, tasks.Type.FinishedTask__Repr)
+			rcrdRdr, err := ls.Load(ipld.LinkContext{}, cidlink.Link{c}, tasks.FinishedTaskPrototype)
 			if err != nil {
 				return err
 			}
-			tsk := rcrdRdr.(tasks.FinishedTask)
-			if tsk.FieldErrorMessage().Exists() {
-				em := tsk.FieldErrorMessage().Must().String()
+			tsk, err := tasks.UnwrapFinishedTask(rcrdRdr)
+			if err != nil {
+				return err
+			}
+			if tsk.ErrorMessage != nil {
+				em := *tsk.ErrorMessage
 				if strings.Contains(em, "there is an active retrieval deal with") ||
 					strings.Contains(em, "blockstore: block not found") ||
 					strings.Contains(em, "missing permission to invoke") ||
@@ -970,14 +1015,18 @@ func (s *stateDB) PublishRecordsFrom(ctx context.Context, worker string) (cid.Ci
 				return err
 			}
 
-			rcrd := tasks.Type.AuthenticatedRecord.Of(c, sig)
+			rcrd := tasks.NewAuthenticatedRecord(c, sig)
 			rcrds = append(rcrds, rcrd)
 		}
-		rcrdlst := tasks.Type.List_AuthenticatedRecord.Of(rcrds)
+		rcrdlst := tasks.NewAuthenticatedRecordList(rcrds)
 
-		update := tasks.Type.RecordUpdate.Of(rcrdlst, headCid, headCidSig)
+		update := tasks.NewRecordUpdate(rcrdlst, headCid, headCidSig)
 		ls := txLS(ctx, tx)
-		updateCid, err := ls.Store(ipld.LinkContext{}, linkProto, update.Representation())
+		unode, err := update.ToNode()
+		if err != nil {
+			return err
+		}
+		updateCid, err := ls.Store(ipld.LinkContext{}, linkProto, unode)
 		if err != nil {
 			log.Errorw("Failed to store update in link system", "err", err)
 			return err
@@ -1017,14 +1066,14 @@ func (s *stateDB) UndrainWorker(ctx context.Context, worker string) error {
 
 // ResetWorkerTasks finds all in progress tasks for a worker and resets them to as if they had never been run
 func (s *stateDB) ResetWorkerTasks(ctx context.Context, worker string) error {
-	var resetTasks []tasks.Task
+	var resetTasks []*tasks.Task
 	err := s.transact(ctx, func(tx *sql.Tx) error {
-		inProgressWorkerTasks, err := tx.QueryContext(ctx, workerTasksByStatusSQL, worker, tasks.InProgress.Int())
+		inProgressWorkerTasks, err := tx.QueryContext(ctx, workerTasksByStatusSQL, worker, int64(tasks.InProgress))
 		if err != nil {
 			return err
 		}
 
-		var queriedTasks []tasks.Task
+		var queriedTasks []*tasks.Task
 		for inProgressWorkerTasks.Next() {
 			var serialized string
 			err := inProgressWorkerTasks.Scan(&serialized)
@@ -1032,28 +1081,34 @@ func (s *stateDB) ResetWorkerTasks(ctx context.Context, worker string) error {
 				return err
 			}
 
-			tp := tasks.Type.Task.NewBuilder()
+			tp := tasks.TaskPrototype.NewBuilder()
 			if err = dagjson.Decode(tp, bytes.NewBufferString(serialized)); err != nil {
 				return err
 			}
-			task := tp.Build().(tasks.Task)
+			task, err := tasks.UnwrapTask(tp.Build())
+			if err != nil {
+				return err
+			}
 			queriedTasks = append(queriedTasks, task)
 		}
 
 		for _, task := range queriedTasks {
 			updatedTask := task.Reset()
-
-			lnk, data, err := serializeToJSON(ctx, updatedTask.Representation())
+			utNode, err := updatedTask.ToNode()
+			if err != nil {
+				return err
+			}
+			lnk, data, err := serializeToJSON(ctx, utNode)
 			if err != nil {
 				return err
 			}
 			// save the update back to DB
-			_, err = tx.ExecContext(ctx, unassignTaskSQL, updatedTask.UUID.String(), data, lnk.String())
+			_, err = tx.ExecContext(ctx, unassignTaskSQL, updatedTask.UUID, data, lnk.String())
 			if err != nil {
 				return err
 			}
 			// reset the task in the task status ledger
-			_, err = tx.ExecContext(ctx, upsertTaskStatusSQL, updatedTask.UUID.String(), updatedTask.Status.Int(), updatedTask.Stage.String(), 0, time.Now())
+			_, err = tx.ExecContext(ctx, upsertTaskStatusSQL, updatedTask.UUID, int64(updatedTask.Status), updatedTask.Stage, 0, time.Now())
 			if err != nil {
 				return err
 			}
@@ -1085,7 +1140,7 @@ func (s *stateDB) Delete(ctx context.Context, uuid string) error {
 	if task == nil {
 		return ErrTaskNotFound
 	}
-	if !(task.HasSchedule() || task.Status.Int() == tasks.Available.Int()) {
+	if !(task.HasSchedule() || int64(task.Status) == int64(tasks.Available)) {
 		return ErrNoDeleteInProgressTasks
 	}
 	return s.transact(ctx, func(tx *sql.Tx) error {

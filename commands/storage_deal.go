@@ -43,7 +43,7 @@ func makeStorageDeal(cctx *cli.Context) error {
 		return err
 	}
 
-	task := tasks.Type.StorageTask.Of(miner, int64(maxPrice), int64(size.Bytes()), int64(startOffset), fastRetrieval, verified, "")
+	task := tasks.NewStorageTask(miner, int64(maxPrice), int64(size.Bytes()), int64(startOffset), fastRetrieval, verified, "")
 
 	return tasks.MakeStorageDeal(cctx.Context, nodeConfig, node, task, emptyUpdateStage, log.Infow, stageTimeouts, func() {})
 }

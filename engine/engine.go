@@ -27,24 +27,24 @@ const (
 var log = logging.Logger("engine")
 
 type apiClient interface {
-	GetTask(ctx context.Context, uuid string) (tasks.Task, error)
-	UpdateTask(ctx context.Context, uuid string, r tasks.UpdateTask) (tasks.Task, error)
-	PopTask(ctx context.Context, r tasks.PopTask) (tasks.Task, error)
+	GetTask(ctx context.Context, uuid string) (*tasks.Task, error)
+	UpdateTask(ctx context.Context, uuid string, r *tasks.UpdateTask) (*tasks.Task, error)
+	PopTask(ctx context.Context, r *tasks.PopTask) (*tasks.Task, error)
 	ResetWorker(ctx context.Context, worker string) error
 }
 
 type taskExecutor interface {
-	MakeStorageDeal(ctx context.Context, config tasks.NodeConfig, node api.FullNode, task tasks.StorageTask, updateStage tasks.UpdateStage, log tasks.LogStatus, stageTimeouts map[string]time.Duration, releaseWorker func()) error
-	MakeRetrievalDeal(ctx context.Context, config tasks.NodeConfig, node api.FullNode, task tasks.RetrievalTask, updateStage tasks.UpdateStage, log tasks.LogStatus, stageTimeouts map[string]time.Duration, releaseWorker func()) error
+	MakeStorageDeal(ctx context.Context, config tasks.NodeConfig, node api.FullNode, task *tasks.StorageTask, updateStage tasks.UpdateStage, log tasks.LogStatus, stageTimeouts map[string]time.Duration, releaseWorker func()) error
+	MakeRetrievalDeal(ctx context.Context, config tasks.NodeConfig, node api.FullNode, task *tasks.RetrievalTask, updateStage tasks.UpdateStage, log tasks.LogStatus, stageTimeouts map[string]time.Duration, releaseWorker func()) error
 }
 
 type defaultTaskExecutor struct{}
 
-func (defaultTaskExecutor) MakeStorageDeal(ctx context.Context, config tasks.NodeConfig, node api.FullNode, task tasks.StorageTask, updateStage tasks.UpdateStage, log tasks.LogStatus, stageTimeouts map[string]time.Duration, releaseWorker func()) error {
+func (defaultTaskExecutor) MakeStorageDeal(ctx context.Context, config tasks.NodeConfig, node api.FullNode, task *tasks.StorageTask, updateStage tasks.UpdateStage, log tasks.LogStatus, stageTimeouts map[string]time.Duration, releaseWorker func()) error {
 	return tasks.MakeStorageDeal(ctx, config, node, task, updateStage, log, stageTimeouts, releaseWorker)
 }
 
-func (defaultTaskExecutor) MakeRetrievalDeal(ctx context.Context, config tasks.NodeConfig, node api.FullNode, task tasks.RetrievalTask, updateStage tasks.UpdateStage, log tasks.LogStatus, stageTimeouts map[string]time.Duration, releaseWorker func()) error {
+func (defaultTaskExecutor) MakeRetrievalDeal(ctx context.Context, config tasks.NodeConfig, node api.FullNode, task *tasks.RetrievalTask, updateStage tasks.UpdateStage, log tasks.LogStatus, stageTimeouts map[string]time.Duration, releaseWorker func()) error {
 	return tasks.MakeRetrievalDeal(ctx, config, node, task, updateStage, log, stageTimeouts, releaseWorker)
 }
 
@@ -238,7 +238,7 @@ func (e *Engine) Close(ctx context.Context) {
 	e.closer()
 }
 
-func (e *Engine) tryPopTask() tasks.Task {
+func (e *Engine) tryPopTask() *tasks.Task {
 	if !e.apiGood() {
 		return nil
 	}
@@ -247,7 +247,7 @@ func (e *Engine) tryPopTask() tasks.Task {
 	defer cancel()
 
 	// pop a task
-	task, err := e.client.PopTask(ctx, tasks.Type.PopTask.Of(e.host, tasks.InProgress, e.tags...))
+	task, err := e.client.PopTask(ctx, tasks.NewPopTask(e.host, tasks.InProgress, e.tags...))
 	if err != nil {
 		log.Warnw("pop-task returned error", "err", err)
 		return nil
@@ -255,18 +255,18 @@ func (e *Engine) tryPopTask() tasks.Task {
 	if task == nil {
 		return nil // no task available
 	}
-	if task.WorkedBy.Must().String() != e.host {
+	if *(task.WorkedBy) != e.host {
 		log.Warnw("pop-task returned task that is not for this host", "err", err)
 		return nil
 	}
 
-	log.Infow("successfully acquired task", "taskID", task.UUID.String())
+	log.Infow("successfully acquired task", "taskID", task.UUID)
 	return task // found a runable task
 }
 
-func (e *Engine) runTask(ctx context.Context, task tasks.Task, runCount int, released chan<- struct{}) {
+func (e *Engine) runTask(ctx context.Context, task *tasks.Task, runCount int, released chan<- struct{}) {
 	var err error
-	log.Infow("worker running task", "taskID", task.UUID.String(), "run_count", runCount)
+	log.Infow("worker running task", "taskID", task.UUID, "run_count", runCount)
 
 	var releaseOnce sync.Once
 	releaseWorker := func() {
@@ -276,9 +276,9 @@ func (e *Engine) runTask(ctx context.Context, task tasks.Task, runCount int, rel
 	}
 
 	// Define function to update task stage.  Use shutdown context, not task
-	updateStage := func(ctx context.Context, stage string, stageDetails tasks.StageDetails) error {
-		_, err := e.client.UpdateTask(ctx, task.UUID.String(),
-			tasks.Type.UpdateTask.OfStage(
+	updateStage := func(ctx context.Context, stage string, stageDetails *tasks.StageDetails) error {
+		_, err := e.client.UpdateTask(ctx, task.UUID,
+			tasks.NewUpdateTaskWithStage(
 				e.host,
 				tasks.InProgress,
 				"",
@@ -291,11 +291,11 @@ func (e *Engine) runTask(ctx context.Context, task tasks.Task, runCount int, rel
 
 	finalStatus := tasks.Successful
 	finalErrorMessage := ""
-	tlog := log.With("taskID", task.UUID.String())
+	tlog := log.With("taskID", task.UUID)
 
 	// Start deals
-	if task.RetrievalTask.Exists() {
-		err = e.taskExecutor.MakeRetrievalDeal(ctx, e.nodeConfig, e.node, task.RetrievalTask.Must(), updateStage, log.Infow, e.stageTimeouts, releaseWorker)
+	if task.RetrievalTask != nil {
+		err = e.taskExecutor.MakeRetrievalDeal(ctx, e.nodeConfig, e.node, task.RetrievalTask, updateStage, log.Infow, e.stageTimeouts, releaseWorker)
 		if err != nil {
 			if err == context.Canceled {
 				// Engine closed, do not update final state
@@ -308,8 +308,8 @@ func (e *Engine) runTask(ctx context.Context, task tasks.Task, runCount int, rel
 		} else {
 			tlog.Info("successfully retrieved data")
 		}
-	} else if task.StorageTask.Exists() {
-		err = e.taskExecutor.MakeStorageDeal(ctx, e.nodeConfig, e.node, task.StorageTask.Must(), updateStage, log.Infow, e.stageTimeouts, releaseWorker)
+	} else if task.StorageTask != nil {
+		err = e.taskExecutor.MakeStorageDeal(ctx, e.nodeConfig, e.node, task.StorageTask, updateStage, log.Infow, e.stageTimeouts, releaseWorker)
 		if err != nil {
 			if err == context.Canceled {
 				// Engine closed, do not update final state
@@ -328,7 +328,7 @@ func (e *Engine) runTask(ctx context.Context, task tasks.Task, runCount int, rel
 	}
 
 	// Fetch task with all the updates from deal execution
-	task, err = e.client.GetTask(ctx, task.UUID.String())
+	task, err = e.client.GetTask(ctx, task.UUID)
 	if err != nil {
 		tlog.Errorw("cannot get updated task to finalize", "err", err)
 	}
@@ -337,18 +337,18 @@ func (e *Engine) runTask(ctx context.Context, task tasks.Task, runCount int, rel
 	releaseWorker()
 
 	// Update task final status. Do not use task context.
-	var stageDetails tasks.StageDetails
-	if task.CurrentStageDetails.Exists() {
-		stageDetails = task.CurrentStageDetails.Must()
+	var stageDetails *tasks.StageDetails
+	if task.CurrentStageDetails != nil {
+		stageDetails = task.CurrentStageDetails
 	} else {
 		stageDetails = tasks.BlankStage()
 	}
-	_, err = e.client.UpdateTask(ctx, task.UUID.String(),
-		tasks.Type.UpdateTask.OfStage(
+	_, err = e.client.UpdateTask(ctx, task.UUID,
+		tasks.NewUpdateTaskWithStage(
 			e.host,
 			finalStatus,
 			finalErrorMessage,
-			task.Stage.String(),
+			task.Stage,
 			stageDetails,
 			runCount,
 		))

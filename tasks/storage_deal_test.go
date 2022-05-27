@@ -48,8 +48,8 @@ func TestNetDiag(t *testing.T) {
 		},
 		log: func(msg string, keysAndValues ...interface{}) {},
 	}
-	var finalStageDetails StageDetails
-	executeStage(ctx, "MinerOnline", func(ctx context.Context, stage string, stageDetails StageDetails) error {
+	var finalStageDetails *StageDetails
+	executeStage(ctx, "MinerOnline", func(ctx context.Context, stage string, stageDetails *StageDetails) error {
 		finalStageDetails = stageDetails
 		return nil
 	}, []step{
@@ -58,13 +58,13 @@ func TestNetDiag(t *testing.T) {
 			stepSuccess:   "Got Miner Version",
 		},
 	})
-	minerVersion := assertHasLogWithPrefix(t, finalStageDetails.FieldLogs(), "NetAgentVersion: ")
+	minerVersion := assertHasLogWithPrefix(t, finalStageDetails.Logs, "NetAgentVersion: ")
 	require.Equal(t, "1.12.0", minerVersion)
-	clientVersion := assertHasLogWithPrefix(t, finalStageDetails.FieldLogs(), "ClientVersion: ")
+	clientVersion := assertHasLogWithPrefix(t, finalStageDetails.Logs, "ClientVersion: ")
 	require.Equal(t, "1.11.0", clientVersion)
-	remotePeerAddr := assertHasLogWithPrefix(t, finalStageDetails.FieldLogs(), "RemotePeerAddr: ")
+	remotePeerAddr := assertHasLogWithPrefix(t, finalStageDetails.Logs, "RemotePeerAddr: ")
 	require.Equal(t, other.Addrs()[0].String(), remotePeerAddr)
-	_ = assertHasLogWithPrefix(t, finalStageDetails.FieldLogs(), "RemotePeerLatency: ")
+	_ = assertHasLogWithPrefix(t, finalStageDetails.Logs, "RemotePeerLatency: ")
 }
 
 func TestExecuteDeal(t *testing.T) {
@@ -98,7 +98,7 @@ func TestExecuteDeal(t *testing.T) {
 				released = true
 			},
 		},
-		task: Type.StorageTask.Of("f1000", 1000000000000, 21474836480, 6152, true, true, "verified"),
+		task: NewStorageTask("f1000", 1000000000000, 21474836480, 6152, true, true, "verified"),
 		importRes: &api.ImportRes{
 			Root: root,
 		},
@@ -119,24 +119,22 @@ func TestExecuteDeal(t *testing.T) {
 		EpochPrice:        big.Mul(basePrice, big.NewInt(32)),
 		MinBlocksDuration: 2880 * 180,
 		DealStartEpoch:    de.tipSet.Height() + abi.ChainEpoch(6152),
-		FastRetrieval:     de.task.FastRetrieval.x,
-		VerifiedDeal:      de.task.Verified.x,
+		FastRetrieval:     de.task.FastRetrieval,
+		VerifiedDeal:      de.task.Verified,
 	})).Return(&proposalCid, nil)
 
 	node.EXPECT().ClientGetDealUpdates(gomock.Eq(ctx)).Return(dealInfo, nil)
 
-	err := de.executeAndMonitorDeal(ctx, func(ctx context.Context, stage string, stageDetails StageDetails) error { return nil }, map[string]time.Duration{})
+	err := de.executeAndMonitorDeal(ctx, func(ctx context.Context, stage string, stageDetails *StageDetails) error { return nil }, map[string]time.Duration{})
 	require.NoError(t, err)
 
 	require.True(t, released)
 }
 
-func assertHasLogWithPrefix(t *testing.T, logs List_Logs, prefix string) (postfix string) {
-	itr := logs.Iterator()
-	for !itr.Done() {
-		_, log := itr.Next()
-		if strings.Contains(log.FieldLog().String(), prefix) {
-			return strings.TrimPrefix(log.FieldLog().String(), prefix)
+func assertHasLogWithPrefix(t *testing.T, logs []Logs, prefix string) (postfix string) {
+	for _, log := range logs {
+		if strings.Contains(log.Log, prefix) {
+			return strings.TrimPrefix(log.Log, prefix)
 		}
 	}
 	t.Fatalf("expected logs to contain a string that begins with: '%s'", prefix)

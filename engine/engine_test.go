@@ -130,13 +130,13 @@ func TestEngineTiming(t *testing.T) {
 			generatedTestTasks := make([]generatedTestTask, 0, len(data.testTasks))
 			for i, tt := range data.testTasks {
 				// alternate storage and retrieval
-				var task tasks.Task
+				var task *tasks.Task
 				if i%2 == 0 {
-					storageTask := tasks.Type.StorageTask.Of("t1000", 0, 1000000000, 6152, true, true, strconv.Itoa(i))
-					task = tasks.Type.Task.New(nil, storageTask)
+					storageTask := tasks.NewStorageTask("t1000", 0, 1000000000, 6152, true, true, strconv.Itoa(i))
+					task = tasks.NewTask(nil, storageTask)
 				} else {
-					retrievalTask := tasks.Type.RetrievalTask.Of("t1000", "qmXXXXX", false, strconv.Itoa(i))
-					task = tasks.Type.Task.New(retrievalTask, nil)
+					retrievalTask := tasks.NewRetrievalTask("t1000", "qmXXXXX", false, strconv.Itoa(i))
+					task = tasks.NewTask(retrievalTask, nil)
 				}
 				task = task.Assign(host, tasks.InProgress)
 				generatedTestTasks = append(generatedTestTasks, generatedTestTask{task, tt})
@@ -268,7 +268,7 @@ type testTask struct {
 }
 
 type generatedTestTask struct {
-	tasks.Task
+	*tasks.Task
 	testTask
 }
 
@@ -279,29 +279,29 @@ type testAPIClient struct {
 	popped    map[string]struct{}
 }
 
-func (tapi *testAPIClient) GetTask(ctx context.Context, uuid string) (tasks.Task, error) {
+func (tapi *testAPIClient) GetTask(ctx context.Context, uuid string) (*tasks.Task, error) {
 	for _, task := range tapi.tasks {
-		if task.Task.UUID.String() == uuid {
+		if task.Task.UUID == uuid {
 			return task.Task, nil
 		}
 	}
 	return nil, errors.New("not found")
 }
 
-func (tapi *testAPIClient) UpdateTask(ctx context.Context, uuid string, r tasks.UpdateTask) (tasks.Task, error) {
+func (tapi *testAPIClient) UpdateTask(ctx context.Context, uuid string, r *tasks.UpdateTask) (*tasks.Task, error) {
 	for _, task := range tapi.tasks {
-		if task.Task.UUID.String() == uuid {
+		if task.Task.UUID == uuid {
 			return task.Task, nil
 		}
 	}
 	return nil, errors.New("not found")
 }
 
-func (tapi *testAPIClient) PopTask(ctx context.Context, r tasks.PopTask) (tasks.Task, error) {
+func (tapi *testAPIClient) PopTask(ctx context.Context, r *tasks.PopTask) (*tasks.Task, error) {
 	for _, task := range tapi.tasks {
-		_, popped := tapi.popped[task.UUID.String()]
+		_, popped := tapi.popped[task.UUID]
 		if !popped && task.availableAt <= tapi.clock.Since(tapi.startTime) {
-			tapi.popped[task.UUID.String()] = struct{}{}
+			tapi.popped[task.UUID] = struct{}{}
 			return task.Task, nil
 		}
 	}
@@ -346,8 +346,8 @@ func (tte *testTaskExecutor) runTask(ctx context.Context, index int, releaseWork
 	return nil
 }
 
-func (tte *testTaskExecutor) MakeStorageDeal(ctx context.Context, config tasks.NodeConfig, node api.FullNode, task tasks.StorageTask, updateStage tasks.UpdateStage, log tasks.LogStatus, stageTimeouts map[string]time.Duration, releaseWorker func()) error {
-	tag := task.Tag.Must().String()
+func (tte *testTaskExecutor) MakeStorageDeal(ctx context.Context, config tasks.NodeConfig, node api.FullNode, task *tasks.StorageTask, updateStage tasks.UpdateStage, log tasks.LogStatus, stageTimeouts map[string]time.Duration, releaseWorker func()) error {
+	tag := *(task.Tag)
 	index, err := strconv.Atoi(tag)
 	if err != nil {
 		return err
@@ -358,8 +358,8 @@ func (tte *testTaskExecutor) MakeStorageDeal(ctx context.Context, config tasks.N
 	return tte.runTask(ctx, index, releaseWorker)
 }
 
-func (tte *testTaskExecutor) MakeRetrievalDeal(ctx context.Context, config tasks.NodeConfig, node api.FullNode, task tasks.RetrievalTask, updateStage tasks.UpdateStage, log tasks.LogStatus, stageTimeouts map[string]time.Duration, releaseWorker func()) error {
-	tag := task.Tag.Must().String()
+func (tte *testTaskExecutor) MakeRetrievalDeal(ctx context.Context, config tasks.NodeConfig, node api.FullNode, task *tasks.RetrievalTask, updateStage tasks.UpdateStage, log tasks.LogStatus, stageTimeouts map[string]time.Duration, releaseWorker func()) error {
+	tag := *(task.Tag)
 	index, err := strconv.Atoi(tag)
 	if err != nil {
 		return err
