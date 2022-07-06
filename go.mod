@@ -25,7 +25,7 @@ require (
 	github.com/ipfs/go-ipfs v0.11.0
 	github.com/ipfs/go-log/v2 v2.5.0
 	github.com/ipld/go-car v0.3.3
-	github.com/ipld/go-car/v2 v2.1.1
+	github.com/ipld/go-car/v2 v2.4.0
 	github.com/ipld/go-ipld-graphql v0.0.0-20211021213353-9727002b9c62
 	github.com/ipld/go-ipld-prime v0.16.0
 	github.com/kenlabs/pando v0.0.0-20220429140253-aa01180111ae
@@ -34,7 +34,7 @@ require (
 	github.com/libp2p/go-libp2p-core v0.14.0
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/multiformats/go-multiaddr v0.5.0
-	github.com/multiformats/go-multicodec v0.4.0
+	github.com/multiformats/go-multicodec v0.5.0
 	github.com/polydawn/refmt v0.0.0-20201211092308-30ac6d18308e
 	github.com/prometheus/client_golang v1.11.0
 	github.com/robfig/cron/v3 v3.0.1
@@ -174,13 +174,13 @@ require (
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/ipfs/bbloom v0.0.4 // indirect
 	github.com/ipfs/go-block-format v0.0.3 // indirect
-	github.com/ipfs/go-blockservice v0.2.1 // indirect
+	github.com/ipfs/go-blockservice v0.3.0 // indirect
 	github.com/ipfs/go-ds-badger2 v0.1.2 // indirect
 	github.com/ipfs/go-ds-leveldb v0.5.0 // indirect
 	github.com/ipfs/go-ds-measure v0.2.1-0.20211210144622-128d71257f12 // indirect
 	github.com/ipfs/go-fs-lock v0.0.7 // indirect
 	github.com/ipfs/go-graphsync v0.12.0 // indirect
-	github.com/ipfs/go-ipfs-blockstore v1.1.2 // indirect
+	github.com/ipfs/go-ipfs-blockstore v1.2.0 // indirect
 	github.com/ipfs/go-ipfs-cmds v0.6.0 // indirect
 	github.com/ipfs/go-ipfs-ds-help v1.1.0 // indirect
 	github.com/ipfs/go-ipfs-exchange-interface v0.1.0 // indirect
@@ -189,17 +189,17 @@ require (
 	github.com/ipfs/go-ipfs-pq v0.0.2 // indirect
 	github.com/ipfs/go-ipfs-util v0.0.2 // indirect
 	github.com/ipfs/go-ipld-cbor v0.0.6 // indirect
-	github.com/ipfs/go-ipld-format v0.2.0 // indirect
+	github.com/ipfs/go-ipld-format v0.3.0 // indirect
 	github.com/ipfs/go-ipld-legacy v0.1.1 // indirect
 	github.com/ipfs/go-log v1.0.5 // indirect
-	github.com/ipfs/go-merkledag v0.5.1 // indirect
+	github.com/ipfs/go-merkledag v0.6.0 // indirect
 	github.com/ipfs/go-metrics-interface v0.0.1 // indirect
 	github.com/ipfs/go-path v0.2.1 // indirect
 	github.com/ipfs/go-peertaskqueue v0.7.1 // indirect
 	github.com/ipfs/go-unixfs v0.3.1 // indirect
 	github.com/ipfs/go-verifcid v0.0.1 // indirect
 	github.com/ipfs/interface-go-ipfs-core v0.5.2 // indirect
-	github.com/ipld/go-codec-dagpb v1.3.0 // indirect
+	github.com/ipld/go-codec-dagpb v1.3.1 // indirect
 	github.com/ipld/go-ipld-selector-text-lite v0.0.1 // indirect
 	github.com/ipsn/go-secp256k1 v0.0.0-20180726113642-9d62b9f0bc52 // indirect
 	github.com/jackpal/go-nat-pmp v1.0.2 // indirect
