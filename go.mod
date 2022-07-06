@@ -24,7 +24,7 @@ require (
 	github.com/ipfs/go-ds-sql v0.3.0
 	github.com/ipfs/go-ipfs v0.11.0
 	github.com/ipfs/go-log/v2 v2.5.0
-	github.com/ipld/go-car v0.3.3
+	github.com/ipld/go-car v0.4.0
 	github.com/ipld/go-car/v2 v2.1.1
 	github.com/ipld/go-ipld-graphql v0.0.0-20211021213353-9727002b9c62
 	github.com/ipld/go-ipld-prime v0.16.0
@@ -199,7 +199,7 @@ require (
 	github.com/ipfs/go-unixfs v0.3.1 // indirect
 	github.com/ipfs/go-verifcid v0.0.1 // indirect
 	github.com/ipfs/interface-go-ipfs-core v0.5.2 // indirect
-	github.com/ipld/go-codec-dagpb v1.3.0 // indirect
+	github.com/ipld/go-codec-dagpb v1.3.1 // indirect
 	github.com/ipld/go-ipld-selector-text-lite v0.0.1 // indirect
 	github.com/ipsn/go-secp256k1 v0.0.0-20180726113642-9d62b9f0bc52 // indirect
 	github.com/jackpal/go-nat-pmp v1.0.2 // indirect
