@@ -12,7 +12,7 @@ jobs:
         uses: actions/checkout@v2
       - name: Docker meta
         id: docker_meta
-        uses: crazy-max/ghaction-docker-meta@818d4b7b91585d195f67373fd9cb0332e31a7175
+        uses: docker/metadata-action@818d4b7b91585d195f67373fd9cb0332e31a7175 # v4.6.0
         with:
           images: filecoin/dealbot
           tags: |
