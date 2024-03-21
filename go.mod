@@ -30,7 +30,7 @@ require (
 	github.com/ipld/go-ipld-prime v0.16.0
 	github.com/kenlabs/pando v0.0.0-20220429140253-aa01180111ae
 	github.com/lib/pq v1.10.3
-	github.com/libp2p/go-libp2p v0.18.0-rc5
+	github.com/libp2p/go-libp2p v0.18.0
 	github.com/libp2p/go-libp2p-core v0.14.0
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/multiformats/go-multiaddr v0.5.0
@@ -226,20 +226,20 @@ require (
 	github.com/libp2p/go-libp2p-blankhost v0.3.0 // indirect
 	github.com/libp2p/go-libp2p-discovery v0.6.1-0.20220103094126-80f7185c80ca // indirect
 	github.com/libp2p/go-libp2p-gostream v0.3.1 // indirect
-	github.com/libp2p/go-libp2p-mplex v0.5.0 // indirect
+	github.com/libp2p/go-libp2p-mplex v0.6.0 // indirect
 	github.com/libp2p/go-libp2p-nat v0.1.0 // indirect
 	github.com/libp2p/go-libp2p-noise v0.3.0 // indirect
 	github.com/libp2p/go-libp2p-peerstore v0.6.1-0.20220103074142-c583a9b96634 // indirect
 	github.com/libp2p/go-libp2p-pnet v0.2.0 // indirect
 	github.com/libp2p/go-libp2p-pubsub v0.6.1 // indirect
 	github.com/libp2p/go-libp2p-quic-transport v0.16.1 // indirect
-	github.com/libp2p/go-libp2p-resource-manager v0.1.3 // indirect
+	github.com/libp2p/go-libp2p-resource-manager v0.1.5 // indirect
 	github.com/libp2p/go-libp2p-swarm v0.10.2 // indirect
-	github.com/libp2p/go-libp2p-testing v0.7.0 // indirect
+	github.com/libp2p/go-libp2p-testing v0.8.0 // indirect
 	github.com/libp2p/go-libp2p-tls v0.3.2-0.20220104091339-280a5b5a7e79 // indirect
 	github.com/libp2p/go-libp2p-transport-upgrader v0.7.1 // indirect
 	github.com/libp2p/go-libp2p-yamux v0.8.2 // indirect
-	github.com/libp2p/go-mplex v0.4.0 // indirect
+	github.com/libp2p/go-mplex v0.6.0 // indirect
 	github.com/libp2p/go-msgio v0.1.0 // indirect
 	github.com/libp2p/go-nat v0.1.0 // indirect
 	github.com/libp2p/go-netroute v0.2.0 // indirect
