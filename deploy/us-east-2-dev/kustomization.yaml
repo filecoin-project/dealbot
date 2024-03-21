@@ -1,0 +1,7 @@
+---
+kind: Kustomization
+namespace: cls-us-east-2-dev
+resources:
+  - ../base
+patchesStrategicMerge:
+  - release.yaml

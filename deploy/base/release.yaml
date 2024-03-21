@@ -1,0 +1,18 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: dealbot-controller
+spec:
+  releaseName: dealbot-controller
+  chart:
+    spec:
+      chart: dealbot
+      sourceRef:
+        kind: HelmRepository
+        name: filecoin
+  interval: 10m
+  install:
+    remediation:
+      retries: 3
+  values: {}

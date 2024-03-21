@@ -1,0 +1,87 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: dealbot-controller
+spec:
+  kubeConfig:
+    secretRef:
+      name: us-east-2-dev-kubeconfig
+  targetNamespace: gitops-test-dealbot-controller
+  storageNamespace: gitops-test-dealbot-controller
+  values:
+    image:
+      repo: filecoin/dealbot
+      tag: latest
+      pullPolicy: Always
+    prometheusOperatorServiceMonitor: true
+    prometheusPort: ":9991"
+    controller:
+      enabled: true
+      postgres:
+        enabled: true
+      ingress:
+        enabled: true
+        annotations:
+          # kubernetes.io/ingress.class: nginx
+          # kubernetes.io/tls-acme: "true"
+          nginx.ingress.kubernetes.io/auth-realm: Filecoin Infrastructure Team
+          nginx.ingress.kubernetes.io/auth-secret: basic-auth
+          nginx.ingress.kubernetes.io/auth-secret-type: auth-file
+          nginx.ingress.kubernetes.io/auth-type: basic
+          nginx.ingress.kubernetes.io/force-ssl-redirect: "false"
+          nginx.ingress.kubernetes.io/rewrite-target: /$2
+        hosts:
+          - host: lb.mainnet-us-east-1.filops.net
+            paths:
+             - path: /gitops-test-dealbot-controller(/|$)(.*)
+      services:
+        api:
+          annotations: {}
+        graphql:
+          annotations: {}
+        libp2p:
+          annotations: {}
+      secrets:
+        keySecret: dealbot-controller-key
+        awsKeysSecret: dealbot-controller-aws-keys
+        selfServeConfigSecret: dealbot-selfserve
+      env:
+        # Bootstrap with Pando service needed to propagate go-legs announcements over gossipsub.
+        # See: 
+        #  - http://pando-api.kencloud.com/pando/info
+        #  - https://github.com/kenlabs/pando
+        - name: DEALBOT_LIBP2P_BOOTSTRAP_ADDRINFO
+          value: "/ip4/52.14.211.248/tcp/9013/p2p/12D3KooWFC1cAXB7DJ71hafj8x6oLkGuATLMrqSauw4rp2fHFzoc"
+        - name: GOLOG_LOG_LEVEL
+          value: info
+      resources:
+        limits:
+          cpu: 1000m
+          memory: 1000Mi
+        requests:
+          cpu: 500m
+          memory: 500Mi
+    postgres:
+      enabled: true
+      instances: 1
+      version: 13
+      teamid: dealbotteam
+      user: dealbotuser
+      database: dealbotdb
+      volume: 100Gi
+      resources:
+        limits:
+          cpu: 4000m
+          memory: 4000Mi
+        requests:
+          cpu: 2000m
+          memory: 2000Mi
+      env:
+        - name: DEALBOT_BASICAUTH
+          valueFrom:
+            secretKeyRef:
+              name: basic-auth-plain
+              key: auth
+    daemon:
+      enabled: false
